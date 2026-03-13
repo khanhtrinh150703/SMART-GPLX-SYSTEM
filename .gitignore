@@ -1,0 +1,140 @@
+# =====================================
+#          Common / OS / Editor
+# =====================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.swn
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# =====================================
+#          Node.js / Next.js
+# =====================================
+node_modules/
+.next/
+out/
+dist/
+build/
+.next/cache/
+.cache/
+coverage/
+*.tsbuildinfo
+*.swc
+
+# Next.js specific
+.vercel
+.now/
+public/build/
+
+# Playwright / Testing artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# =====================================
+#          TypeScript / JS build
+# =====================================
+*.d.ts
+*.js.map
+*.ts.map
+
+# =====================================
+#          Python
+# =====================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+venv/
+.venv/
+ENV/
+env/
+.env/
+venv.bak/
+env.bak/
+.mypy_cache/
+.dmypy.json
+.pytype/
+dmypy.json
+.pyright/
+.ruff_cache/
+uv/
+uv.lock
+
+# Poetry / Pipenv
+poetry.lock
+Pipfile.lock
+
+# Jupyter / Data science
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+*.ipynb
+
+# =====================================
+#          Databases / Cache / Temp
+# =====================================
+*.sqlite
+*.sqlite3
+*.db
+redis-data/
+mongo-data/
+postgres-data/
+
+# =====================================
+#          Docker / DevOps
+# =====================================
+docker-compose.override.yml
+*.dockerignore
+Dockerfile.*
+
+# =====================================
+#          Deployment / CI
+# =====================================
+.netlify
+.vercel_project
+.output
+
+# =====================================
+#          Optional: ignore large data
+# =====================================
+# data/
+# datasets/
+# *.csv
+# *.parquet
+# *.xlsx
+# *.jsonl
+# large-files/
+
+# =====================================
+#          Custom project folders
+#         (bạn có thể thêm/xoá tuỳ ý)
+# =====================================
+# temp/
+# scratch/
+# experiments/
+# backup/

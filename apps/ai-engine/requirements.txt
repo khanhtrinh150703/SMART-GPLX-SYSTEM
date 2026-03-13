@@ -1,0 +1,6 @@
+pytest
+pandas
+pyarrow
+python-dotenv
+pre-commit
+ruff>=0.5
