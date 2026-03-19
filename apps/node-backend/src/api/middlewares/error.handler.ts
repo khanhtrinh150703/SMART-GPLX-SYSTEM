@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../../shared/errors/app-error';
-import { ErrorCode } from '../../domain/constants/error-codes';
-import { ErrorCatalog } from '../../domain/constants/error-catalog';
+import { Result } from '../../shared/utils/response';
+import { ErrorCode, AppError, ErrorStatus, ErrorMessages } from '@/shared/errors';
 
 export const globalErrorHandler = (
   err: any,
@@ -9,24 +8,25 @@ export const globalErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  // 1. Nếu là lỗi do mình chủ động throw (AppError)
+  // 1. Trường hợp lỗi đã được định nghĩa (AppError)
   if (err instanceof AppError) {
-    return res.status(err.httpStatus).json({
-      success: false,
-      code: err.errorCode,
-      statusCode: err.httpStatus,
-      message: err.message
-    });
+    // Trả về đúng mã HTTP, Mã lỗi (String) và Message đã map sẵn
+    return Result.send(res, err.statusCode, err.errorCode, err.message);
   }
 
-  // 2. Nếu là lỗi hệ thống không mong muốn (Crash, DB lỗi...)
-  console.error('ERROR 💥:', err); // Log để dev xem
-  
-  const internalError = ErrorCatalog[ErrorCode.INTERNAL_ERROR];
-  return res.status(500).json({
-    success: false,
-    code: ErrorCode.INTERNAL_ERROR,
-    statusCode: 500,
-    message: internalError.message
-  });
+  // 2. Trường hợp lỗi chưa biết (Ví dụ: Lỗi code, lỗi DB, lỗi Logic Runtime)
+  // Luôn log lỗi ra console để dev dễ debug
+  console.error('ERROR 💥:', err);
+
+  // Lấy thông tin mặc định cho lỗi hệ thống từ các file Map
+  const systemErrorCode = ErrorCode.SYSTEM.INTERNAL_ERROR;
+  const systemStatus = ErrorStatus[systemErrorCode] || 500;
+  const systemMessage = ErrorMessages[systemErrorCode] || 'Lỗi hệ thống, vui lòng thử lại sau';
+
+  return Result.send(
+    res, 
+    systemStatus, 
+    systemErrorCode, 
+    systemMessage
+  );
 };

@@ -1,33 +1,72 @@
 import { REGEX } from "../../domain/constants/regex";
 
-
 export class RegisterDTO {
-  // Readonly để đảm bảo tính bất biến (immutability) trong suốt quá trình xử lý
   readonly username!: string;
   readonly email!: string;
   readonly password!: string;
   readonly confirmPassword!: string;
-  readonly fullName?: string; // Dấu ? vì theo Excel trường này có thể không bắt buộc lúc đầu
+  readonly fullName?: string;
 
   constructor(data: Partial<RegisterDTO>) {
     Object.assign(this, data);
   }
 
   /**
-   * Phương thức kiểm tra logic cơ bản ngay tại DTO
-   * Giúp đảm bảo dữ liệu "sạch" trước khi chạm tới Service
+   * Kiểm tra tổng thể tính hợp lệ của DTO
    */
   public isValid(): boolean {
     return (
-      this.password === this.confirmPassword &&
+      this.isEmail() &&
+      this.isPasswordMatching() &&
       this.password.length >= 8 &&
       this.validatePasswordComplexity(this.password)
     );
   }
 
+  /**
+   * Kiểm tra tính hợp lệ của mật khẩu
+   */
+  public isPassword(): boolean {
+    return (
+      this.isPasswordMatching() &&
+      this.validatePasswordComplexity(this.password)
+    );
+  }
+  
+  /**
+  * Kiểm tra mật khẩu và xác nhận mật khẩu có khớp nhau không
+ */
+  public isPasswordMapping(): boolean {
+    return this.isPasswordMatching();
+  }
+
+  /**
+   * Kiểm tra định dạng Email (Sử dụng mẫu BASIC)
+   */
+  public isEmail(): boolean {
+    return this.validateEmailFormat(this.email);
+  }
+
+  /**
+   * Kiểm tra mật khẩu và xác nhận mật khẩu có khớp nhau không
+   */
+  private isPasswordMatching(): boolean {
+    return this.password === this.confirmPassword;
+  }
+
+  /**
+   * Logic kiểm tra định dạng email
+   */
+  private validateEmailFormat(email: string): boolean {
+    // Sử dụng cụm EMAIL.BASIC đã gom nhóm
+    return REGEX.EMAIL.BASIC.test(email);
+  }
+
+  /**
+   * Logic kiểm tra độ phức tạp mật khẩu
+   */
   private validatePasswordComplexity(pass: string): boolean {
-    // Regex: Ít nhất 1 chữ cái và 1 chữ số (Theo US-04)
-    const regex = REGEX.PASSWORD_COMPLEXITY;
-    return regex.test(pass);
+    // Regex: Ít nhất 1 chữ cái và 1 chữ số (Sử dụng cụm PASSWORD)
+    return REGEX.PASSWORD.COMPLEXITY.test(pass);
   }
 }
