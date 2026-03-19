@@ -1,13 +1,14 @@
-import express, { Response as ExResponse, Request as ExRequest } from "express";
+import express from "express";
 import morgan from 'morgan';
 import rootRouter from "./api/routes/index";
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './infrastructure/swagger/swagger.config';
 import { globalErrorHandler } from './api/middlewares/error.handler';
+import { requestTimer } from "./api/middlewares/timer.middlewares";
 
 const app = express();
 
-app.use(morgan('dev')); 
+app.use(morgan('dev'));
 
 app.use(express.json()); // Đọc body JSON
 
@@ -19,5 +20,6 @@ app.use('/api/v1', rootRouter);
 
 // "Lưới an toàn" bắt mọi lỗi
 app.use(globalErrorHandler);
+app.use(requestTimer)
 
 export default app; // Xuất bản động cơ ra ngoài

@@ -57,7 +57,7 @@ jobs:
           cache-dependency-path: apps/node-backend/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: Sync Database Schema
         # FIX: Sửa comment cho đúng MySQL

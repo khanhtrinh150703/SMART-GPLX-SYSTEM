@@ -1,10 +1,9 @@
 import { env } from 'node:process';
 import app from './app';
- 
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma/prisma';
+
 // Import Redis connection ở đây...
 
-const prisma = new PrismaClient();
 const PORT = env.PORT || 3000
 
 async function startServer() {

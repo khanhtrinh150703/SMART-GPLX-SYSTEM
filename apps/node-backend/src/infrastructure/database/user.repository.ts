@@ -1,14 +1,16 @@
-import { PrismaClient } from '@prisma/client';
+// import { PrismaClient } from '@prisma/client';
+
 import { IUserRepository } from '../../domain/interfaces/IUserRepository';
 import { User } from '../../domain/entities/User'; // Domain Entity
 import { UserMapper } from './mappers/user.mapper'; // Bộ chuyển đổi
+import prisma from '../../../prisma/prisma';
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 export class UserRepository implements IUserRepository {
-  
+
   async findByEmail(email: string): Promise<User | null> {
-    const rawUser = await prisma.user.findUnique({ 
+    const rawUser = await prisma.user.findUnique({
       where: { email, deletedAt: null } // Chỉ lấy user chưa bị xóa (Soft Delete)
     });
 
@@ -17,16 +19,22 @@ export class UserRepository implements IUserRepository {
     return UserMapper.toDomain(rawUser);
   }
 
-  async create(data: any): Promise<User> {
-    const rawUser = await prisma.user.create({ data });
-    
-    // Luôn trả về Entity thay vì Prisma Model
+  async create(user: User): Promise<User> {
+    // 1. Chuyển từ Entity (Domain) sang Object phẳng (Database)
+    const persistenceData = UserMapper.toPersistence(user);
+
+    // 2. Đưa dữ liệu đã "lọc" vào Prisma
+    const rawUser = await prisma.user.create({
+      data: persistenceData
+    });
+
+    // 3. Chuyển ngược lại từ Prisma Model sang Entity để trả về cho Service
     return UserMapper.toDomain(rawUser);
   }
 
   async findById(id: string): Promise<User | null> {
-    const rawUser = await prisma.user.findUnique({ 
-      where: { id } 
+    const rawUser = await prisma.user.findUnique({
+      where: { id }
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;

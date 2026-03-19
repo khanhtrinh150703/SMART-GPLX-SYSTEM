@@ -1,5 +1,5 @@
-// 1. Định nghĩa Type cho Status để đảm bảo Type Safety
-export type UserStatus = 'active' | 'inactive' | 'suspended';
+import { UserStatus } from "../constants/UserStatus";
+import { IUserProps } from "../interfaces/IUserProps";
 
 // 2. Class User Entity
 export class User {
@@ -9,7 +9,7 @@ export class User {
     public readonly email: string,
     private _fullName: string | null,
     private _status: UserStatus,
-    public readonly urlPicture: string | null,
+    public  urlPicture: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     private _passwordHash?: string
@@ -21,6 +21,7 @@ export class User {
     username: string;
     email: string;
     fullName?: string;
+    passwordHash?: string
   }): User {
     // Bạn có thể thêm logic validation ở đây trước khi khởi tạo
     const now = new Date();
@@ -32,12 +33,13 @@ export class User {
       'active', // Default status
       null,
       now,
-      now
+      now,
+      data.passwordHash
     );
   }
   
   // Dùng riêng cho Mapper/Repository để tái tạo object từ DB
-  public static reconstitute(props: any): User {
+  public static reconstitute(props: IUserProps): User {
     return new User(
       props.id,
       props.username,
@@ -63,6 +65,7 @@ export class User {
   // 5. Cập nhật thông tin qua các phương thức (Encapsulation)
   public updateProfile(fullName: string, urlPicture: string): void {
     this._fullName = fullName;
+    this.urlPicture = urlPicture;
     // Cập nhật updatedAt tự động hoặc thông qua logic riêng
   }
 
@@ -70,4 +73,10 @@ export class User {
     if (this._status === 'suspended') return;
     this._status = 'suspended';
   }
+
+  public get passwordHash(): string | undefined {
+    return this._passwordHash;
+  }
 }
+
+export { UserStatus };

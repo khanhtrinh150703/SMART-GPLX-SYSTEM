@@ -3,10 +3,10 @@ import { Result } from '../../shared/utils/response';
 import { ErrorCode, AppError, ErrorStatus, ErrorMessages } from '@/shared/errors';
 
 export const globalErrorHandler = (
-  err: any,
-  req: Request,
+  err: AppError,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   // 1. Trường hợp lỗi đã được định nghĩa (AppError)
   if (err instanceof AppError) {
