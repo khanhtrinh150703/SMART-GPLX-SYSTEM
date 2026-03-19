@@ -32,13 +32,13 @@ jobs:
       run:
         working-directory: apps/node-backend
     services:
-      postgres:
-        image: postgres:15
+      mysql:
+        image: mysql:8
         env:
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: smart_gplx_test
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: smart_gplx_test
         ports:
-          - 5432:5432
+          - 3306:3306
         # Đảm bảo Postgres đã sẵn sàng trước khi chạy các bước tiếp theo
         options: >-
           --health-cmd pg_isready
@@ -62,7 +62,7 @@ jobs:
       - name: Sync Database Schema
         run: npx prisma db push # Tạo bảng vào Postgres service
         env:
-          DATABASE_URL: "postgresql://postgres:password@localhost:5432/smart_gplx_test"
+          DATABASE_URL: "mysql://root:password@127.0.0.1:3306/smart_gplx_test"
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -73,4 +73,4 @@ jobs:
       - name: Run Tests
         run: npm test
         env:
-          DATABASE_URL: "postgresql://postgres:password@localhost:5432/smart_gplx_test"
+          DATABASE_URL: "mysql://root:password@127.0.0.1:3306/smart_gplx_test"
