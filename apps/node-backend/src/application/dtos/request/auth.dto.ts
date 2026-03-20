@@ -1,4 +1,4 @@
-import { REGEX } from "../../domain/constants/regex";
+import { REGEX } from "../../../domain/constants/regex";
 
 export class RegisterDTO {
   readonly username!: string;

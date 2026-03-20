@@ -1,6 +1,7 @@
 import { Prisma, User as PrismaUser } from '@prisma/client';
 import { User } from '../../../domain/entities/User';
 import { UserStatus } from "../../../domain/constants/UserStatus";
+import { UserResponseDTO } from '@/application/dtos/respone/user.dto';
 
 export class UserMapper {
   static toDomain(raw: PrismaUser): User {
@@ -39,7 +40,7 @@ export class UserMapper {
     };
   }
 
-  static toResponse(user: User) {
+  static toResponse(user: User): UserResponseDTO {
     return {
       id: user.id,
       username: user.username,
@@ -48,7 +49,6 @@ export class UserMapper {
       urlPicture: user.urlPicture,
       status: user.isActive() ? 'active' : 'suspended',
       createdAt: user.createdAt,
-      // Tuyệt đối KHÔNG đưa passwordHash vào đây nhé!
     };
   }
 }

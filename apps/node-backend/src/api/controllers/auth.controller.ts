@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../../application/services/auth.service';
 import { UserRepository } from '../../infrastructure/database/user.repository';
 import { Result } from '../../shared/utils/response';
-import { RegisterDTO } from '@/application/dtos/auth.dto';
+import { RegisterDTO } from '@/application/dtos/request/auth.dto';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 
 const userRepo = new UserRepository();

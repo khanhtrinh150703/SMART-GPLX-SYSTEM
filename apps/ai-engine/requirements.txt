@@ -1,6 +1,7 @@
-pytest
-pandas
-pyarrow
-python-dotenv
-pre-commit
-ruff>=0.5
+certifi==2026.2.25
+charset-normalizer==3.4.6
+idna==3.11
+python-logging-loki==0.3.1
+requests==2.32.5
+rfc3339==6.2
+urllib3==2.6.3

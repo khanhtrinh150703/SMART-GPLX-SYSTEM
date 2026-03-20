@@ -105,6 +105,7 @@ Pipfile.lock
 redis-data/
 mongo-data/
 postgres-data/
+loki-data/
 
 # =====================================
 #          Docker / DevOps
@@ -112,6 +113,7 @@ postgres-data/
 docker-compose.override.yml
 *.dockerignore
 Dockerfile.*
+Dockerfile
 
 # =====================================
 #          Deployment / CI
