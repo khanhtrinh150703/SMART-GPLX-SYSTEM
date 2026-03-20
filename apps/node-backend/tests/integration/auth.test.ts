@@ -41,7 +41,7 @@ describe('Auth API', () => {
 
             expect(response.status).toBe(409);
             expect(response.body.success).toBe(false);
-            expect(response.body.code).toBe('USER_001'); // ALREADY_EXISTS
+            expect(response.body.code).toBe('USER_409'); // ALREADY_EXISTS
         });
 
         it('should return 400 Bad Request for an invalid email format', async () => {
@@ -57,7 +57,7 @@ describe('Auth API', () => {
 
             expect(response.status).toBe(400);
             expect(response.body.success).toBe(false);
-            expect(response.body.code).toBe('VAL_001'); // INVALID_EMAIL
+            expect(response.body.code).toBe('VAL_101'); // INVALID_EMAIL
         });
 
         it('should return 400 Bad Request for a weak password', async () => {
@@ -73,7 +73,7 @@ describe('Auth API', () => {
 
             expect(response.status).toBe(400);
             expect(response.body.success).toBe(false);
-            expect(response.body.code).toBe('VAL_002'); // INVALID_PASSWORD
+            expect(response.body.code).toBe('VAL_102'); // INVALID_PASSWORD
         });
     });
 });

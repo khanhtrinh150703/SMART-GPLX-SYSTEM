@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { RegisterDTO } from '../dtos/request/auth.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
 import { User } from '@/domain/entities/User';
+import { LoginInputDTO } from '../dtos/request/loginInput.dto';
 
 export class AuthService {
   constructor(private userRepo: IUserRepository) { }
@@ -31,7 +32,7 @@ export class AuthService {
     // (Tùy chọn) Kiểm tra mật khẩu và xác nhận mật khẩu có khớp không
     if (!dto.isPasswordMapping()) {
       // console.timeEnd("Step 1: Validation (DTO Checks)");
-      throw new AppError(ErrorCode.VALIDATION.INVALID_MAPPING_PASSWORD);
+      throw new AppError(ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH);
     }
     // console.timeEnd("Step 1: Validation (DTO Checks)");
 
@@ -53,7 +54,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     // console.timeEnd("Step 3: Bcrypt_Hashing_Process");
 
-
+    console.log(hashedPassword)
     // --- 4. DB CREATE ---
     // Lưu vào Database qua Repository
     // console.time("Step 4: DB_Create_New_User_Record");
@@ -66,6 +67,11 @@ export class AuthService {
     });
 
     const newUser = await this.userRepo.create(userToCreate);
+
+    if (!newUser) {
+      // Ném lỗi ngay tại Service
+      throw new AppError(ErrorCode.USER.REGISTER_FAILED);
+    }
     // console.timeEnd("Step 4: DB_Create_New_User_Record");
 
 
@@ -74,5 +80,31 @@ export class AuthService {
     // console.log("--- REGISTER PROCESS FINISHED ---\n");
 
     return newUser;
+  }
+
+  async login(dto: LoginInputDTO) {
+
+    // Kiểm tra độ phức tạp mật khẩu (dùng phương thức riêng trong DTO)
+    // Giả sử logic là: độ dài < 8 hoặc không khớp regex
+    if (!dto.isPassword()) {
+      // console.timeEnd("Step 1: Validation (DTO Checks)");
+      throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
+    }
+
+    const dbUser = await this.userRepo.findByUserName(dto.username)
+
+    // Bước 2: Chặn đứng nếu không thấy user
+    if (!dbUser || !dbUser.passwordHash) {
+      throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS); // Báo lỗi sai tài khoản/mật khẩu
+    }
+
+    // 3. So sánh mật khẩu (Compare, không phải Hash lại nhé!)
+    const isMatch = await bcrypt.compare(dto.password, dbUser.passwordHash);
+    if (!isMatch) {
+      // Ghi log warn sang Loki nếu muốn theo dõi Brute-force
+      throw new AppError(ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH);
+    }
+
+    return dbUser;
   }
 }

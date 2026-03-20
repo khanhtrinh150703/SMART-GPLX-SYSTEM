@@ -1,4 +1,4 @@
-import { UserStatus } from "../constants/UserStatus";
+import { UserStatus } from "../constants/userStatus";
 import { IUserProps } from "../interfaces/IUserProps";
 
 // 2. Class User Entity

@@ -1,6 +1,6 @@
 import { Prisma, User as PrismaUser } from '@prisma/client';
 import { User } from '../../../domain/entities/User';
-import { UserStatus } from "../../../domain/constants/UserStatus";
+import { UserStatus } from "../../../domain/constants/userStatus";
 import { UserResponseDTO } from '@/application/dtos/respone/user.dto';
 
 export class UserMapper {
@@ -34,7 +34,7 @@ export class UserMapper {
       status: user.isActive() ? 'active' : 'suspended',
       urlPicture: user.urlPicture,
       deletedAt: null,
-      passwordHash: "",
+      passwordHash: user.passwordHash!,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

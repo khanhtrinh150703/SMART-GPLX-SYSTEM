@@ -14,7 +14,7 @@ const options = {
         post: {
           tags: ['Authentication'],
           summary: 'Register a new member',
-          description: 'Create a new user account with email and password complexity validation.',
+          description: 'Create a new user account with validated email, password, and confirm password.',
           requestBody: {
             required: true,
             content: {
@@ -28,23 +28,34 @@ const options = {
               description: 'User registered successfully',
               content: {
                 'application/json': {
-                  schema: { $ref: '#/components/schemas/SuccessResponse' }
+                  schema: { $ref: '#/components/schemas/SuccessResponse' },
+                  example: {
+                    success: true,
+                    code: 'SYS_000',
+                    statusCode: 200,
+                    message: 'Thao tác thực hiện thành công',
+                    data: { userId: 'user_123', email: 'trinh@example.com' }
+                  }
                 }
               }
             },
-            '400': {
-              description: 'Validation Error (Invalid Email or Weak Password)',
+            '400': { 
+              description: 'Validation Error',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/ErrorResponse' },
                   examples: {
                     invalidEmail: {
-                      summary: 'Invalid Email Format',
-                      value: { success: false, code: 'VAL_001', statusCode: 400, message: 'Invalid email format' }
+                      summary: 'Email không hợp lệ',
+                      value: { success: false, code: 'VAL_101', statusCode: 400, message: 'Địa chỉ email không đúng định dạng (ví dụ: abc@gmail.com)' }
                     },
                     weakPassword: {
-                      summary: 'Weak Password',
-                      value: { success: false, code: 'VAL_002', statusCode: 400, message: 'Password is too weak' }
+                      summary: 'Mật khẩu yếu',
+                      value: { success: false, code: 'VAL_102', statusCode: 400, message: 'Mật khẩu phải từ 8-20 ký tự, bao gồm chữ cái và số' }
+                    },
+                    passwordMismatch: {
+                      summary: 'Mật khẩu không khớp',
+                      value: { success: false, code: 'VAL_103', statusCode: 400, message: 'Mật khẩu xác nhận không khớp, vui lòng kiểm tra lại' }
                     }
                   }
                 }
@@ -55,7 +66,12 @@ const options = {
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/ErrorResponse' },
-                  example: { success: false, code: 'USER_001', statusCode: 409, message: 'Email already exists' }
+                  example: { 
+                    success: false, 
+                    code: 'USER_409', 
+                    statusCode: 409, 
+                    message: 'Thông tin tài khoản hoặc email đã tồn tại trên hệ thống' 
+                  }
                 }
               }
             },
@@ -64,7 +80,12 @@ const options = {
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/ErrorResponse' },
-                  example: { success: false, code: 'SYS_500', statusCode: 500, message: 'Internal server error' }
+                  example: { 
+                    success: false, 
+                    code: 'SYS_500', 
+                    statusCode: 500, 
+                    message: 'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau' 
+                  }
                 }
               }
             }
@@ -89,9 +110,9 @@ const options = {
           type: 'object',
           properties: {
             success: { type: 'boolean', example: true },
-            code: { type: 'string', example: 'SUC_000' },
+            code: { type: 'string', example: 'SYS_000' },
             statusCode: { type: 'number', example: 200 },
-            message: { type: 'string', example: 'Operation successful' },
+            message: { type: 'string', example: 'Thao tác thực hiện thành công' },
             data: { type: 'object' }
           }
         },
@@ -99,9 +120,9 @@ const options = {
           type: 'object',
           properties: {
             success: { type: 'boolean', example: false },
-            code: { type: 'string', example: 'VAL_001' },
+            code: { type: 'string', example: 'VAL_101' },
             statusCode: { type: 'number', example: 400 },
-            message: { type: 'string', example: 'Error message details' }
+            message: { type: 'string', example: 'Thông báo lỗi chi tiết' }
           }
         }
       },

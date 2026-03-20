@@ -3,46 +3,47 @@
  * Tổ chức theo dạng Domain-driven để dễ dàng quản lý và mở rộng.
  */
 export const ErrorCode = {
-    /** * --- SYSTEM & GENERAL --- 
-     * Các mã lỗi liên quan đến hệ thống và phản hồi chung
+    /** * --- SYSTEM & INFRASTRUCTURE (SYS) --- 
+     * Lỗi liên quan đến hạ tầng, server và phản hồi chung.
      */
     SYSTEM: {
-        SUCCESS: 'SUC_000',           // Thao tác thành công
-        INTERNAL_ERROR: 'SYS_500',    // Lỗi hệ thống nội bộ
-        SERVICE_UNAVAILABLE: 'SYS_503' // Dịch vụ tạm thời không khả dụng
+        SUCCESS: 'SYS_000',           // Thao tác thành công
+        INTERNAL_ERROR: 'SYS_500',    // Lỗi logic server không xác định
+        SERVICE_UNAVAILABLE: 'SYS_503', // Server bảo trì hoặc quá tải
+        DATABASE_ERROR: 'SYS_504',    // Lỗi truy vấn cơ sở dữ liệu
     },
 
-    /** * --- AUTHENTICATION --- 
-     * Các lỗi liên quan đến định danh và quyền truy cập
+    /** * --- AUTHENTICATION & AUTHORIZATION (AUTH) --- 
+     * Quản lý định danh, quyền hạn và trạng thái phiên làm việc.
      */
     AUTH: {
-        UNAUTHORIZED: 'AUTH_401',     // Chưa đăng nhập hoặc token không hợp lệ
-        FORBIDDEN: 'AUTH_403',        // Không có quyền truy cập tài nguyên
-        TOKEN_EXPIRED: 'AUTH_402',    // Phiên đăng nhập đã hết hạn
+        UNAUTHORIZED: 'AUTH_401',     // Chưa đăng nhập / Token không hợp lệ
+        FORBIDDEN: 'AUTH_403',        // Không có quyền truy cập (Role không đủ)
+        TOKEN_EXPIRED: 'AUTH_402',    // Token hết hạn
+        INVALID_CREDENTIALS: 'AUTH_001', // Sai tài khoản hoặc mật khẩu (Nên ở đây thay vì Validation)
     },
 
-    /** * --- USER DOMAIN --- 
-     * Các lỗi liên quan đến nghiệp vụ người dùng
+    /** * --- USER & BUSINESS LOGIC (USER) --- 
+     * Các lỗi liên quan chặt chẽ đến nghiệp vụ người dùng.
      */
     USER: {
-        ALREADY_EXISTS: 'USER_001',   // Tài khoản/Email đã tồn tại
-        NOT_FOUND: 'USER_002',        // Không tìm thấy người dùng
-        ACCOUNT_LOCKED: 'USER_003',   // Tài khoản đang bị khóa
+        NOT_FOUND: 'USER_404',        // Không tìm thấy người dùng
+        ALREADY_EXISTS: 'USER_409',   // Email/SĐT đã được sử dụng
+        ACCOUNT_LOCKED: 'USER_001',   // Tài khoản bị khóa do vi phạm
+        NOT_ACTIVATED: 'USER_002',    // Tài khoản chưa kích hoạt (OTP)
+        REGISTER_FAILED: 'USER_003', // Đăng ký không thành công
     },
 
-    /** * --- VALIDATION & REQUEST --- 
-     * Kiểm tra dữ liệu đầu vào (DTO Validation)
+    /** * --- DATA VALIDATION (VAL) --- 
+     * Chỉ dùng cho việc kiểm tra định dạng dữ liệu (Schema Validation).
      */
     VALIDATION: {
-        // Yêu cầu của Trinh: Email và Mật khẩu
-        INVALID_EMAIL: 'VAL_001',     // Email không đúng định dạng
-        INVALID_PASSWORD: 'VAL_002',  // Mật khẩu không đúng quy định (độ dài, ký tự đặc biệt)
-        INVALID_MAPPING_PASSWORD: 'VAL_003', // Mật khẩu không mapping với nhau
-        
-        // Các trường hợp phổ biến khác
-        MISSING_FIELD: 'VAL_004',     // Thiếu trường thông tin bắt buộc
-        INVALID_FORMAT: 'VAL_005',    // Định dạng dữ liệu không hợp lệ (ví dụ: ngày tháng, số điện thoại)
-        TOO_MANY_REQUESTS: 'VAL_006'  // Gửi quá nhiều yêu cầu trong thời gian ngắn
+        INVALID_EMAIL: 'VAL_101',     
+        INVALID_PASSWORD: 'VAL_102',  
+        CONFIRM_PASSWORD_MISMATCH: 'VAL_103',
+        MISSING_FIELD: 'VAL_201',     
+        INVALID_FORMAT: 'VAL_202',    
+        TOO_MANY_REQUESTS: 'VAL_301'  
     }
 } as const;
 
@@ -50,5 +51,5 @@ export const ErrorCode = {
  * Type helper để trích xuất các giá trị chuỗi từ ErrorCode
  */
 export type ErrorCodeType = {
-  [K in keyof typeof ErrorCode]: typeof ErrorCode[K][keyof typeof ErrorCode[K]]
+    [K in keyof typeof ErrorCode]: typeof ErrorCode[K][keyof typeof ErrorCode[K]]
 }[keyof typeof ErrorCode];

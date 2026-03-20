@@ -19,6 +19,23 @@ export class UserRepository implements IUserRepository {
     return UserMapper.toDomain(rawUser);
   }
 
+  async findByUserName(username: string): Promise<User | null> {
+    const rawUser = await prisma.user.findUnique({
+      where: { username, deletedAt: null }
+    });
+
+    return rawUser ? UserMapper.toDomain(rawUser) : null;
+  }
+
+
+  async findById(id: string): Promise<User | null> {
+    const rawUser = await prisma.user.findUnique({
+      where: { id, deletedAt: null }
+    });
+
+    return rawUser ? UserMapper.toDomain(rawUser) : null;
+  }
+
   async create(user: User): Promise<User> {
     // 1. Chuyển từ Entity (Domain) sang Object phẳng (Database)
     const persistenceData = UserMapper.toPersistence(user);
@@ -27,16 +44,11 @@ export class UserRepository implements IUserRepository {
     const rawUser = await prisma.user.create({
       data: persistenceData
     });
+    
 
     // 3. Chuyển ngược lại từ Prisma Model sang Entity để trả về cho Service
     return UserMapper.toDomain(rawUser);
   }
 
-  async findById(id: string): Promise<User | null> {
-    const rawUser = await prisma.user.findUnique({
-      where: { id }
-    });
 
-    return rawUser ? UserMapper.toDomain(rawUser) : null;
-  }
 }

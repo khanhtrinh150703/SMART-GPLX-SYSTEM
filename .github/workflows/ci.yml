@@ -2,9 +2,9 @@ name: Project CI - Standard Validation
 
 on:
   push:
-    branches: [main, develop, feat/auth-core]
+    branches: [main, develop, back-end, front-end, ai]
   pull_request:
-    branches: [main, develop, feat/auth-core]
+    branches: [main, develop, back-end, front-end, ai]
 
 jobs:
   nextjs-frontend:

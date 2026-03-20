@@ -2,7 +2,7 @@
 export * from './error-codes';
 
 // Export class để ném lỗi (throw)
-export * from './app-error';
+export * from './error-app';
 
 // Export các bản đồ ánh xạ (nếu cần dùng ở Middleware)
 export * from './error-status';

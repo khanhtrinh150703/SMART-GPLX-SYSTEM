@@ -3,9 +3,9 @@ import morgan from 'morgan';
 import rootRouter from "./api/routes/index";
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './infrastructure/swagger/swagger.config';
-import { globalErrorHandler } from './api/middlewares/error.handler';
-import { requestTimer } from "./api/middlewares/timer.middlewares";
-import { apiMonitor } from "./api/middlewares/monitor.middlewares";
+import { globalErrorHandler } from './api/middlewares/error.middleware';
+import { requestTimer } from "./api/middlewares/timer.middleware";
+import { apiMonitor } from "./api/middlewares/monitor.middleware";
 import logger from "./infrastructure/logging/logger";
 
 const app = express();

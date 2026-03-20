@@ -42,9 +42,9 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **API Documentation:** Swagger (OpenAPI 3.0)
 
 
-### **Frontend (React)**
+### **Frontend (Nextjs)**
 
-* **Framework:** React + Vite
+* **Framework:** Nextjs
 * **Language:** TypeScript
 * **State Management:** Zustand / Redux Toolkit
 * **Styling:** Tailwind CSS / SCSS
@@ -56,13 +56,26 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **Logic:** Pydantic, OpenCV, PyTorch/TensorFlow
 
 ### **DevOps & Monitoring**
-
 * **Containerization** Docker & Docker Compose (Quản lý đa dịch vụ).
 * **Logging: Grafana Loki:** tích hợp với Winston để quản lý nhật ký hệ thống tập trung.
 * **Metrics:** Prometheus & Grafana Dashboard (Theo dõi sức khỏe hệ thống real-time).
 * **Error Tracking:** Sentry (Giám sát lỗi trên cả Frontend và Backend).
 
----
+
+## 🚀 CI/CD Pipeline (GitHub Actions)
+
+Dự án sử dụng **GitHub Actions** để tự động hóa quy trình phát triển và deploy, đảm bảo code luôn chất lượng cao trước khi merge.
+
+### Tính năng chính của pipeline
+- Lint code (ESLint + Prettier cho JS/TS, Ruff/Black cho Python)
+- Chạy unit & integration tests (Jest/Vitest cho frontend & backend, pytest cho AI Engine)
+- Build Docker images cho toàn bộ hệ thống
+- Scan lỗ hổng bảo mật (npm audit, pip-audit, Trivy cho container)
+- Deploy preview (Vercel/Netlify cho frontend, Railway/Render/Fly.io cho backend nếu cấu hình)
+
+### Workflow chính
+- **`ci.yml`** — Chạy trên mọi **push** và **pull_request** (lint + test + build + scan)
+- **`cd.yml`** — Deploy tự động khi merge vào `main` (hoặc manual dispatch)
 
 ## 📁 Cấu Trúc Thư Mục
 
@@ -162,14 +175,13 @@ MIT
 ---
 
 ---
-
 ## Mục lục
-- [Giới thiệu](#-giới-thiệu)
-- [Tính năng nổi bật](#-tính-năng-nổi-bật)
+- [Quick Start](#-quick-start)
 - [Kiến trúc hệ thống](#️-kiến-trúc-hệ-thống)
 - [Công nghệ sử dụng](#️-công-nghệ-sử-dụng)
+- [CI/CD Pipeline](#-cicd-pipeline-github-actions)
 - [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
+- [Tính năng nổi bật](#-tính-năng-nổi-bật)
 - [Cài đặt](#-cài-đặt)
 - [Giấy phép](#-giấy-phép)
-  
 ---
