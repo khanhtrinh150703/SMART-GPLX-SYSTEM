@@ -22,6 +22,9 @@ export class AuthService {
       throw new AppError(ErrorCode.VALIDATION.INVALID_EMAIL);
     }
 
+    const normalizedUsername = dto.username.trim().toLowerCase();
+    const normalizedEmail = dto.email.trim().toLowerCase();
+
     // Kiểm tra độ phức tạp mật khẩu (dùng phương thức riêng trong DTO)
     // Giả sử logic là: độ dài < 8 hoặc không khớp regex
     if (!dto.isPassword()) {
@@ -40,12 +43,12 @@ export class AuthService {
     // --- 2. BUSINESS LOGIC (CHECK EXISTENCE) ---
     // Đây thường là nơi Prisma khởi động (Cold Start) lần đầu
     // console.time("Step 2: DB_Find_Existing_Email (Cold Start Suspect)");
-    const existingUser = await this.userRepo.findByEmail(dto.email);
+    const existingUser = await this.userRepo.checkUserExists(normalizedEmail, normalizedUsername);
     // console.timeEnd("Step 2: DB_Find_Existing_Email (Cold Start Suspect)");
 
     // Kiểm tra email đã tồn tại trong hệ thống chưa
     if (existingUser) {
-      throw new AppError(ErrorCode.USER.ALREADY_EXISTS);
+      throw new AppError(ErrorCode.USER.EMAIL_EXISTS);
     }
 
     // --- 3. BCRYPT HASHING ---
@@ -54,14 +57,13 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     // console.timeEnd("Step 3: Bcrypt_Hashing_Process");
 
-    console.log(hashedPassword)
     // --- 4. DB CREATE ---
     // Lưu vào Database qua Repository
     // console.time("Step 4: DB_Create_New_User_Record");
     const userToCreate = User.create({
       id: crypto.randomUUID(),
-      username: dto.username,
-      email: dto.email,
+      username: normalizedUsername,
+      email: normalizedEmail,
       fullName: dto.fullName,
       passwordHash: hashedPassword,
     });
@@ -84,14 +86,12 @@ export class AuthService {
 
   async login(dto: LoginInputDTO) {
 
+    const normalizedUsername = dto.username.trim().toLowerCase();
+    // const normalizedEmail = dto.email.trim().toLowerCase();
+
     // Kiểm tra độ phức tạp mật khẩu (dùng phương thức riêng trong DTO)
     // Giả sử logic là: độ dài < 8 hoặc không khớp regex
-    if (!dto.isPassword()) {
-      // console.timeEnd("Step 1: Validation (DTO Checks)");
-      throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
-    }
-
-    const dbUser = await this.userRepo.findByUserName(dto.username)
+    const dbUser = await this.userRepo.findByUserName(normalizedUsername)
 
     // Bước 2: Chặn đứng nếu không thấy user
     if (!dbUser || !dbUser.passwordHash) {
@@ -102,9 +102,14 @@ export class AuthService {
     const isMatch = await bcrypt.compare(dto.password, dbUser.passwordHash);
     if (!isMatch) {
       // Ghi log warn sang Loki nếu muốn theo dõi Brute-force
-      throw new AppError(ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH);
+      throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
+    }
+
+    if (dbUser.isDeleted()) {
+      throw new AppError(ErrorCode.AUTH.ACCOUNT_LOCKED); 
     }
 
     return dbUser;
   }
+
 }

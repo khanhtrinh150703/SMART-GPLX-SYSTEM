@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
-// import userRoutes from './user.routes'; // Giả sử bạn có module user
+import userRoutes from './user.routes'; 
 
 const rootRouter = Router();
 
 rootRouter.use('/auth', authRoutes);
-// rootRouter.use('/users', userRoutes);
+rootRouter.use('/users', userRoutes);
 
 export default rootRouter;

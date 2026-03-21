@@ -28,11 +28,11 @@ export class RegisterDTO {
    */
   public isPassword(): boolean {
     return (
-      this.isPasswordMatching() &&
+      this.password.length >= 8 &&
       this.validatePasswordComplexity(this.password)
     );
   }
-  
+
   /**
   * Kiểm tra mật khẩu và xác nhận mật khẩu có khớp nhau không
  */

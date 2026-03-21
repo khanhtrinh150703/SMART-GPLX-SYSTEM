@@ -1,4 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+// import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   log: [
@@ -9,12 +10,12 @@ const prisma = new PrismaClient({
 });
 
 // Sử dụng Prisma.QueryEvent thay vì any
-prisma.$on('query', (e: Prisma.QueryEvent) => {
-  console.log("\n--- [PRISMA QUERY MONITOR] ---");
-  console.log(`Query: ${e.query}`);
-  console.log(`Params: ${e.params}`);
-  console.log(`Duration: ${e.duration}ms`);
-  console.log("------------------------------\n");
-});
+// prisma.$on('query', (e: Prisma.QueryEvent) => {
+//   console.log("\n--- [PRISMA QUERY MONITOR] ---");
+//   console.log(`Query: ${e.query}`);
+//   console.log(`Params: ${e.params}`);
+//   console.log(`Duration: ${e.duration}ms`);
+//   console.log("------------------------------\n");
+// });
 
 export default prisma;

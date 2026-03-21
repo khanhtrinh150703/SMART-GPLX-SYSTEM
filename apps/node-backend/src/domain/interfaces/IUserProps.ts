@@ -1,4 +1,4 @@
-import { UserStatus } from "../entities/User";
+import { UserStatus } from "@/domain/constants/userStatus";
 
 export interface IUserProps {
   id: string;
@@ -7,6 +7,7 @@ export interface IUserProps {
   fullName: string;
   status: UserStatus;
   urlPicture: string | null; // Dấu ? nghĩa là có thể có hoặc không
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   passwordHash: string;

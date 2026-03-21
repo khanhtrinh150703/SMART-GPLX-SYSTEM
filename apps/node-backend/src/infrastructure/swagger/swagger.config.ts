@@ -14,7 +14,6 @@ const options = {
         post: {
           tags: ['Authentication'],
           summary: 'Register a new member',
-          description: 'Create a new user account with validated email, password, and confirm password.',
           requestBody: {
             required: true,
             content: {
@@ -28,72 +27,205 @@ const options = {
               description: 'User registered successfully',
               content: {
                 'application/json': {
-                  schema: { $ref: '#/components/schemas/SuccessResponse' },
-                  example: {
-                    success: true,
-                    code: 'SYS_000',
-                    statusCode: 200,
-                    message: 'Thao tác thực hiện thành công',
-                    data: { userId: 'user_123', email: 'trinh@example.com' }
+                  schema: { $ref: '#/components/schemas/SuccessResponse' }
+                }
+              }
+            },
+            '400': { $ref: '#/components/responses/ValidationError' },
+            '409': { $ref: '#/components/responses/ConflictError' }
+          }
+        }
+      },
+      // BỔ SUNG THÊM LOGIN
+      '/auth/login': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'User Login', // Nghĩa: Đăng nhập người dùng
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    username: { type: 'string', example: 'trinh_v1' },
+                    password: { type: 'string', example: 'Password123' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Login successful',
+              content: {
+                'application/json': {
+                  schema: {
+                    allOf: [
+                      { $ref: '#/components/schemas/SuccessResponse' },
+                      {
+                        type: 'object',
+                        properties: {
+                          data: {
+                            type: 'object',
+                            properties: {
+                              user: { type: 'object' },
+                              accessToken: { type: 'string', example: 'eyJhbGci...' }
+                            }
+                          }
+                        }
+                      }
+                    ]
                   }
                 }
               }
             },
-            '400': { 
-              description: 'Validation Error',
+            '401': {
+              description: 'Unauthorized', // Nghĩa: Không được phép/Sai thông tin
               content: {
                 'application/json': {
-                  schema: { $ref: '#/components/schemas/ErrorResponse' },
-                  examples: {
-                    invalidEmail: {
-                      summary: 'Email không hợp lệ',
-                      value: { success: false, code: 'VAL_101', statusCode: 400, message: 'Địa chỉ email không đúng định dạng (ví dụ: abc@gmail.com)' }
-                    },
-                    weakPassword: {
-                      summary: 'Mật khẩu yếu',
-                      value: { success: false, code: 'VAL_102', statusCode: 400, message: 'Mật khẩu phải từ 8-20 ký tự, bao gồm chữ cái và số' }
-                    },
-                    passwordMismatch: {
-                      summary: 'Mật khẩu không khớp',
-                      value: { success: false, code: 'VAL_103', statusCode: 400, message: 'Mật khẩu xác nhận không khớp, vui lòng kiểm tra lại' }
-                    }
-                  }
-                }
-              }
-            },
-            '409': {
-              description: 'Conflict - Email already exists',
-              content: {
-                'application/json': {
-                  schema: { $ref: '#/components/schemas/ErrorResponse' },
-                  example: { 
-                    success: false, 
-                    code: 'USER_409', 
-                    statusCode: 409, 
-                    message: 'Thông tin tài khoản hoặc email đã tồn tại trên hệ thống' 
-                  }
-                }
-              }
-            },
-            '500': {
-              description: 'Internal Server Error',
-              content: {
-                'application/json': {
-                  schema: { $ref: '#/components/schemas/ErrorResponse' },
-                  example: { 
-                    success: false, 
-                    code: 'SYS_500', 
-                    statusCode: 500, 
-                    message: 'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau' 
-                  }
+                  example: { success: false, code: 'AUTH_001', statusCode: 401, message: 'Tài khoản hoặc mật khẩu không chính xác' }
                 }
               }
             }
           }
         }
+      },
+      // --- USER MANAGEMENT (Bổ sung mới) ---
+      '/users/{id}/profile': {
+        patch: {
+          tags: ['User Management'],
+          summary: 'Update user profile',
+          description: 'Cập nhật thông tin cá nhân (fullName, urlPicture).',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID người dùng' }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    fullName: { type: 'string', example: 'Trinh Update V2' },
+                    urlPicture: { type: 'string', example: 'https://example.com/avatar.png' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Profile updated successfully', // Nghĩa: Cập nhật hồ sơ thành công
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } }
+            }
+          }
+        }
+      },
+
+      '/users/{id}/password': {
+        patch: {
+          tags: ['User Management'],
+          summary: 'Change password',
+          description: 'Thay đổi mật khẩu người dùng.',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    oldPassword: { type: 'string', example: 'Password123' },
+                    newPassword: { type: 'string', example: 'NewPassword123!' },
+                    confirmNewPassword: { type: 'string', example: 'NewPassword123!' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': { description: 'Password changed successfully' },
+            '400': {
+              description: 'Bad Request - Password mismatch', // Nghĩa: Yêu cầu không hợp lệ - Mật khẩu không khớp
+              content: { 'application/json': { example: { success: false, code: 'VAL_103', message: 'Mật khẩu xác nhận không khớp' } } }
+            },
+            '401': { description: 'Unauthorized - Incorrect old password' } // Nghĩa: Sai mật khẩu cũ
+          }
+        }
+      },
+
+      '/users/{id}/status': {
+        patch: {
+          tags: ['User Management'],
+          summary: 'Update user status',
+          description: 'Cập nhật trạng thái tài khoản (ví dụ: ACTIVE, BANNED).',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['ACTIVE', 'BANNED', 'INACTIVE'], example: 'BANNED' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': { description: 'Status updated successfully' }
+          }
+        }
+      },
+
+      '/users/{id}': {
+        delete: {
+          tags: ['User Management'],
+          summary: 'Soft delete user',
+          description: 'Xóa mềm tài khoản người dùng khỏi hệ thống.',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': {
+              description: 'User deleted successfully', // Nghĩa: Xóa người dùng thành công
+              content: { 'application/json': { example: { success: true, message: 'Xóa tài khoản thành công' } } }
+            }
+          }
+        }
       }
     },
+
+
     components: {
+      responses: {
+        ValidationError: {
+          description: 'Validation Error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+              examples: {
+                invalidEmail: { value: { success: false, code: 'VAL_101', statusCode: 400, message: 'Email không hợp lệ' } },
+                weakPassword: { value: { success: false, code: 'VAL_102', statusCode: 400, message: 'Mật khẩu quá yếu' } }
+              }
+            }
+          }
+        },
+        ConflictError: {
+          description: 'Conflict',
+          content: {
+            'application/json': {
+              example: { success: false, code: 'USER_409', statusCode: 409, message: 'Email/Username đã tồn tại' }
+            }
+          }
+        }
+      },
       schemas: {
         RegisterDTO: {
           type: 'object',
@@ -120,15 +252,15 @@ const options = {
           type: 'object',
           properties: {
             success: { type: 'boolean', example: false },
-            code: { type: 'string', example: 'VAL_101' },
-            statusCode: { type: 'number', example: 400 },
-            message: { type: 'string', example: 'Thông báo lỗi chi tiết' }
+            code: { type: 'string' },
+            statusCode: { type: 'number' },
+            message: { type: 'string' }
           }
         }
       },
     },
   },
-  apis: ['./src/api/routes/*.ts'],
+  apis: [], // Nếu đã viết paths ở trên thì nên để trống hoặc trỏ đúng chỗ
 };
 
 export const specs = swaggerJsdoc(options);

@@ -16,6 +16,7 @@ export class UserMapper {
       fullName: raw.fullName ?? "",
       status: raw.status as UserStatus, // Ép kiểu nếu cần
       urlPicture: raw.urlPicture,
+      deletedAt: raw.deletedAt,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       passwordHash: raw.passwordHash
@@ -33,7 +34,7 @@ export class UserMapper {
       fullName: user.displayName,
       status: user.isActive() ? 'active' : 'suspended',
       urlPicture: user.urlPicture,
-      deletedAt: null,
+      deletedAt: user.deletedAt,
       passwordHash: user.passwordHash!,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

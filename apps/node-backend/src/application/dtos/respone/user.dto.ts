@@ -7,3 +7,4 @@ export interface UserResponseDTO {
   status: string;
   createdAt: Date;
 }
+
