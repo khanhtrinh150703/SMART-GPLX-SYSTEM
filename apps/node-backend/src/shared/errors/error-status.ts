@@ -22,6 +22,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.AUTH.NOT_ACTIVATED]: 403,            // Forbidden (Chưa kích hoạt)
     [ErrorCode.AUTH.OTP_INVALID]: 400,              // Bad Request
     [ErrorCode.AUTH.OTP_EXPIRED]: 400,              // Bad Request
+    [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 400,              // Bad Request
 
     // --- USER & PROFILE ---
     [ErrorCode.USER.NOT_FOUND]: 404,                // Not Found

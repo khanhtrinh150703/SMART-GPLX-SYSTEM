@@ -1,48 +1,91 @@
 import request from 'supertest';
 import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
+import { redisClient } from '@/infrastructure/database/redis.config';
+// import { OtpService } from '@/application/services/otp.service'; // Thêm mới (Newly added)
+// import { UserRepository } from '@/infrastructure/repositories/user/user.repository';
+// import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis.repository.otp';
+// import { NodemailerService } from '@/application/services/nodemailer.service';
+// import { AuthService } from '@/application/services/auth.service';
+
+
+// const userRepo = new UserRepository();
+// const otpRepo = new RedisOtpRepository();
+// const emailService = new NodemailerService();
+// const otpService = new OtpService(otpRepo, emailService);
+
+// const authService = new AuthService(userRepo, otpService);
 
 export const authSteps = () => {
-    describe('Auth API', () => {
-        const validLoginData = {
-            username: 'trinh_v1',
-            password: 'Password123'
-        };
-        describe('POST /auth/register', () => {
+    describe('Auth API Integration Tests', () => {
 
-            it('should successfully register a new user with valid data', async () => {
+        // Data mẫu đồng bộ với hệ thống của bạn
+        const testUser = {
+            email: 'gplx@dividesk.com',
+            username: 'trinh_pro_v1',
+            password: 'Password123!',
+            confirmPassword: 'Password123!',
+            fullName: 'Trinh Cậu Vàng'
+        };
+
+        const testUserLG = {
+            username: 'trinh_pro_v1',
+            password: 'Password123!'
+        }
+
+        describe('POST /api/v1/auth/register', () => {
+
+            it('nên gửi OTP thành công khi dữ liệu hợp lệ', async () => {
                 const response = await request(app)
                     .post('/api/v1/auth/register')
-                    .send({
-                        email: 'trinh.v1@test.com',
-                        username: 'trinh_v1',
-                        password: 'Password123',
-                        confirmPassword: 'Password123',
-                        fullname: 'Trinh'
-                    });
-
-                // Log for debugging (optional)
-                // console.log(response.body);
+                    .send(testUser);
 
                 expect(response.status).toBe(200);
                 expect(response.body.success).toBe(true);
-                expect(response.body.data.email).toBe('trinh.v1@test.com');
-
-                // Security check: Sensitive data must not be returned
-                expect(response.body.data.password).toBeUndefined();
-                expect(response.body.data.passwordHash).toBeUndefined();
+                const exists = await redisClient.exists(`otp:${testUser.email.toLowerCase()}`);
+                expect(exists).toBe(1);
             });
+
+            it('should successfully resennd OTP', async () => {
+                await request(app).post('/api/v1/auth/resend-otp').send(testUser);
+
+                const response = await request(app)
+                    .post('/api/v1/auth/resend-otp')
+                    .send({
+                        email: testUser.email,
+                    });
+
+                const otpKey = `otp:${testUser.email}`;
+                const otp = await redisClient.get(otpKey); // Lấy trực tiếp chuỗi số
+
+                console.log("✅ Mã OTP lấy được:", otp);
+
+                expect(response.status).toBe(200);
+            }, 10000);
+
+            it('should successfully verify OTP', async () => {
+                await request(app).post('/api/v1/auth/register').send(testUser);
+
+                const otpKey = `otp:${testUser.email}`;
+                const otp = await redisClient.get(otpKey); // Lấy trực tiếp chuỗi số
+
+                console.log("✅ Mã OTP lấy được:", otp);
+
+                const response = await request(app)
+                    .post('/api/v1/auth/verify')
+                    .send({
+                        email: testUser.email,
+                        otp: otp // Truyền thẳng chuỗi vừa lấy
+                    });
+
+                expect(response.status).toBe(200);
+            });
+
 
             it('should return 409 Conflict when the email is already registered', async () => {
                 const response = await request(app)
                     .post('/api/v1/auth/register')
-                    .send({
-                        email: 'trinh.v1@test.com', // Already registered in the test case above
-                        username: 'trinh_duplicate',
-                        password: 'Password123',
-                        confirmPassword: 'Password123',
-                        fullname: 'Trinh'
-                    });
+                    .send(testUser);
 
                 expect(response.status).toBe(409);
                 expect(response.body.success).toBe(false);
@@ -101,7 +144,7 @@ export const authSteps = () => {
                     .post('/api/v1/auth/register')
                     .send({
                         email: 'another.email@test.com', // Email mới chưa từng đăng ký
-                        username: 'trinh_v1', // Đã được đăng ký ở test case đầu tiên
+                        username: 'trinh_pro_v1', // Đã được đăng ký ở test case đầu tiên
                         password: 'Password123',
                         confirmPassword: 'Password123',
                         fullname: 'Trinh Duplicate Username'
@@ -120,12 +163,12 @@ export const authSteps = () => {
             it('should successfully log in with valid credentials', async () => {
                 const response = await request(app)
                     .post('/api/v1/auth/login')
-                    .send(validLoginData);
+                    .send(testUserLG);
 
                 console.log(response.body.data)
                 expect(response.status).toBe(200);
                 expect(response.body.success).toBe(true);
-                expect(response.body.data.user.username).toBe('trinh_v1');
+                expect(response.body.data.user.username).toBe('trinh_pro_v1');
 
                 // Nếu API có trả về token sau này, hãy expect token ở đây
                 // expect(response.body.data.accessToken).toBeDefined();
@@ -148,7 +191,7 @@ export const authSteps = () => {
                 const response = await request(app)
                     .post('/api/v1/auth/login')
                     .send({
-                        username: 'trinh_v1', // Username đúng
+                        username: 'trinh_pro_v1', // Username đúng
                         password: 'WrongPassword123!' // Mật khẩu sai
                     });
 

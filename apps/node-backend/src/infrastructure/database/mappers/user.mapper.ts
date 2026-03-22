@@ -5,51 +5,37 @@ import { UserResponseDTO } from '@/application/dtos/respone/user.dto';
 
 export class UserMapper {
   static toDomain(raw: PrismaUser): User {
-    // Mapper là nơi lý tưởng để xử lý các vấn đề về kiểu dữ liệu 
-    // Ví dụ: mapping Enum của Prisma sang Enum của Domain, 
-    // hoặc xử lý null/undefined để đảm bảo Domain Entity luôn "sạch".
-
     return User.reconstitute({
-      id: raw.id,
-      username: raw.username,
-      email: raw.email,
+      ...raw, // Copy toàn bộ những gì giống nhau
       fullName: raw.fullName ?? "",
-      status: raw.status as UserStatus, // Ép kiểu nếu cần
-      urlPicture: raw.urlPicture,
-      deletedAt: raw.deletedAt,
-      createdAt: raw.createdAt,
-      updatedAt: raw.updatedAt,
-      passwordHash: raw.passwordHash
+      status: raw.status as UserStatus,
     });
   }
 
   static toPersistence(user: User): Prisma.UserCreateInput {
-    if (!(user instanceof User)) {
-      user = User.reconstitute(user);
-    }
+    // Chỉ lấy những gì cần thiết để lưu vào DB
     return {
       id: user.id,
       username: user.username,
       email: user.email,
-      fullName: user.displayName,
+      fullName: user.displayName, // Mapping logic khác tên trường
+      passwordHash: user.passwordHash!,
       status: user.isActive() ? 'active' : 'suspended',
       urlPicture: user.urlPicture,
-      deletedAt: user.deletedAt,
-      passwordHash: user.passwordHash!,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      deletedAt: user.deletedAt,
     };
   }
 
   static toResponse(user: User): UserResponseDTO {
+    // Bạn có thể dùng destructuring để lấy ra những thứ cần trả về
+    const { id, username, email, urlPicture, createdAt } = user;
+    
     return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
+      id, username, email, urlPicture, createdAt,
       fullName: user.displayName,
-      urlPicture: user.urlPicture,
       status: user.isActive() ? 'active' : 'suspended',
-      createdAt: user.createdAt,
     };
   }
 }

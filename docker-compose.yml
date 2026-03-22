@@ -10,6 +10,7 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - smart-gplx-network
+    # restart: always
 
   grafana:
     image: grafana/grafana:latest
@@ -21,6 +22,17 @@ services:
       - smart-gplx-network
     depends_on:
       - loki
+    # restart: always
+
+  redis-cache: # Tên dịch vụ (Service name)
+    image: redis:alpine # Sử dụng phiên bản Alpine (phiên bản Linux siêu nhẹ, tiết kiệm RAM)
+    container_name: redis # Tên của thùng chứa (Container name)
+    restart: always # Tự động khởi động lại nếu bị lỗi hoặc khi bật máy tính (Auto restart)
+    ports:
+      - "6379:6379" # Ánh xạ cổng (Port mapping): Cổng máy tính của cậu : Cổng bên trong Docker
+    volumes:
+      - redis_data:/data # Ánh xạ dữ liệu (Data volume): Giúp dữ liệu OTP không bị mất khi xóa container
+    command: redis-server --requirepass "root" # (Tùy chọn) Đặt mật khẩu cho Redis. Nếu test ở máy cá nhân (Localhost) có thể xóa dòng này đi cho nhanh.
 
   # --- NHÓM APPS ---
   # web:
@@ -45,3 +57,6 @@ services:
 networks:
   smart-gplx-network:
     driver: bridge
+
+volumes:
+  redis_data:

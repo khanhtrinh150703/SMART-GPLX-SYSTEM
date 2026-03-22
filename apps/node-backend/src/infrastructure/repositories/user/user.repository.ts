@@ -1,11 +1,10 @@
-// import { PrismaClient } from '@prisma/client';
-
-import { IUserRepository } from '../../domain/interfaces/IUserRepository';
-import { User } from '../../domain/entities/User'; // Domain Entity
-import { UserMapper } from './mappers/user.mapper'; // Bộ chuyển đổi
-import prisma from '../../../prisma/prisma';
 
 // const prisma = new PrismaClient();
+
+import { User } from "@/domain/entities/User";
+import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { UserMapper } from "../../database/mappers/user.mapper";
+import prisma from "../../../../prisma/prisma";
 
 export class UserRepository implements IUserRepository {
 
@@ -50,19 +49,20 @@ export class UserRepository implements IUserRepository {
   }
 
 
-  async create(user: User): Promise<User> {
-    // 1. Chuyển từ Entity (Domain) sang Object phẳng (Database)
-    const persistenceData = UserMapper.toPersistence(user);
+    async create(user: User): Promise<User> {
+      // 1. Chuyển từ Entity (Domain) sang Object phẳng (Database)
+      const persistenceData = UserMapper.toPersistence(user);
 
-    // 2. Đưa dữ liệu đã "lọc" vào Prisma
-    const rawUser = await prisma.user.create({
-      data: persistenceData
-    });
+      // 2. Đưa dữ liệu đã "lọc" vào Prisma
+      const rawUser = await prisma.user.create({
+        data: persistenceData
+      });
 
-    // 3. Chuyển ngược lại từ Prisma Model sang Entity để trả về cho Service
-    return UserMapper.toDomain(rawUser);
-  }
-  
+      // 3. Chuyển ngược lại từ Prisma Model sang Entity để trả về cho Service
+      return UserMapper.toDomain(rawUser);
+    }
+
+
   async update(user: User): Promise<User> {
     // 1. Chuyển từ Domain Entity sang Persistence Data (Object phẳng của Prisma)
     const persistenceData = UserMapper.toPersistence(user);

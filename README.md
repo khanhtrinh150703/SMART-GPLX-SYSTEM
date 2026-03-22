@@ -88,7 +88,7 @@ Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
 * `src/api`: Tầng giao tiếp (Controllers, Routes, Middlewares).
 * `src/application`: Xử lý nghiệp vụ (Services, DTOs).
 * `src/domain`: Tầng lõi (Constant, Entities, Interfaces).
-* `src/infrastructure`: Kết nối bên ngoài (Database, AI Client, Storage, Logging, Swagger).
+* `src/infrastructure`: Kết nối bên ngoài (Database, AI Client, Storage, Logging, Swagger, Repo).
 
 ### 2. Frontend (`react-enterprise-boilerplate/`)
 

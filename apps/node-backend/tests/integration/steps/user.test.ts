@@ -4,17 +4,18 @@ import { describe, it, expect, beforeAll } from '@jest/globals';
 
 // 1. Dùng từ khóa 'export' để các file khác có thể import
 export const userSteps = () => {
-        describe('User Management API', () => {
+    const testUserLG = {
+        username: 'trinh_pro_v1',
+        password: 'Password123!'
+    }
+    describe('User Management API', () => {
         let userId: string; // Biến lưu trữ ID động của tài khoản trinh_v1
 
         // Bước chuẩn bị: Đăng nhập để lấy ID trước khi chạy các test sửa/xóa
         beforeAll(async () => {
             const loginResponse = await request(app)
                 .post('/api/v1/auth/login')
-                .send({
-                    username: 'trinh_v1',
-                    password: 'Password123'
-                });
+                .send(testUserLG);
 
             // Trích xuất ID từ kết quả trả về của hàm login
             // Đảm bảo Mapper của bạn có trả về trường 'id' nhé!
@@ -57,7 +58,7 @@ export const userSteps = () => {
                 const response = await request(app)
                     .patch(`/api/v1/users/${userId}/password`)
                     .send({
-                        oldPassword: 'Password123', // Mật khẩu cũ đúng
+                        oldPassword: 'Password123!', // Mật khẩu cũ đúng
                         newPassword: 'NewPassword123!',
                         confirmNewPassword: 'MismatchPassword123!'
                     });
@@ -71,7 +72,7 @@ export const userSteps = () => {
                 const response = await request(app)
                     .patch(`/api/v1/users/${userId}/password`)
                     .send({
-                        oldPassword: 'Password123',
+                        oldPassword: 'Password123!',
                         newPassword: 'NewPassword123!', // Đổi sang pass mới
                         confirmNewPassword: 'NewPassword123!'
                     });
@@ -113,7 +114,7 @@ export const userSteps = () => {
                 const loginResponse = await request(app)
                     .post('/api/v1/auth/login')
                     .send({
-                        username: 'trinh_v1',
+                        username: 'trinh_pro_v1',
                         password: 'NewPassword123!'
                     });
 

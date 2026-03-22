@@ -27,6 +27,7 @@ export const ErrorCode = {
         INVALID_CREDENTIALS: 'AUTH_001',// Sai tài khoản/mật khẩu
         OTP_INVALID: 'AUTH_002',        // Mã OTP sai
         OTP_EXPIRED: 'AUTH_003',        // Mã OTP hết hạn
+       REGISTRATION_EXPIRED: 'AUTH_004', // Link hoặc phiên đăng ký đã hết hạn
     },
 
     /** * --- USER & PROFILE (USER) --- 

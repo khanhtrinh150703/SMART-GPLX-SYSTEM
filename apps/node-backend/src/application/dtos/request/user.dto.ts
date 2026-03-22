@@ -44,3 +44,14 @@ export class ChangeStatusDTO {
     Object.assign(this, data);
   }
 }
+
+export class VerifyUserDTO {
+  email: string;
+  otp: string;
+
+  // Ở đây ta định nghĩa data PHẢI có đủ email và otp
+  constructor(data: { email: string; otp: string }) {
+    this.email = data.email;
+    this.otp = data.otp;
+  }
+}

@@ -1,7 +1,7 @@
 import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from '@/application/dtos/request/user.dto';
 import { UserService } from '@/application/services/user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
-import { UserRepository } from '@/infrastructure/database/user.repository';
+import { UserRepository } from '@/infrastructure/repositories/user/user.repository';
 import { Result } from '@/shared/utils/response';
 import { Request, Response, NextFunction } from 'express';
 

@@ -22,6 +22,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.NOT_ACTIVATED]: 'Tài khoản chưa được kích hoạt, vui lòng xác thực Email/OTP.',
     [ErrorCode.AUTH.OTP_INVALID]: 'Mã xác thực (OTP) không chính xác.',
     [ErrorCode.AUTH.OTP_EXPIRED]: 'Mã xác thực đã hết hiệu lực, vui lòng lấy mã mới.',
+    [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 'Liên kết đăng ký đã hết hạn hoặc không còn tồn tại, vui lòng thực hiện lại quy trình đăng ký.',
 
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',

@@ -24,7 +24,7 @@ const options = {
           },
           responses: {
             '200': {
-              description: 'User registered successfully',
+              description: 'User registered successfully, please check otp in your email',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/SuccessResponse' }
@@ -33,6 +33,73 @@ const options = {
             },
             '400': { $ref: '#/components/responses/ValidationError' },
             '409': { $ref: '#/components/responses/ConflictError' }
+          }
+        }
+      },
+      '/auth/resend-otp': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Resend OTP',
+          description: 'Gửi lại mã OTP mới vào email trong trường hợp mã cũ hết hạn hoặc không nhận được. Có cooldown 60s.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string', example: 'khanhtrinh123oki@gmail.com' }
+                  },
+                  required: ['email']
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Mã OTP mới đã được gửi',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/SuccessResponse' }
+                }
+              }
+            },
+            '400': { description: 'Email không hợp lệ hoặc phiên đăng ký đã hết hạn' },
+            '429': { description: 'Thao tác quá nhanh, vui lòng đợi 60s' }
+          }
+        }
+      },
+      '/auth/verify': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Authencation OTP',
+          description: 'Kiểm tra mã OTP người dùng nhập vào. Nếu đúng, tài khoản chính thức được tạo trong hệ thống.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string', example: 'khanhtrinh123oki@gmail.com' },
+                    otp: { type: 'string', example: '123456' }
+                  },
+                  required: ['email', 'otp']
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Xác thực thành công, tài khoản đã được tạo',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/SuccessResponse' }
+                }
+              }
+            },
+            '400': { description: 'Mã OTP sai hoặc không hợp lệ' },
+            '410': { description: 'Dữ liệu đăng ký đã hết hạn (quá 10 phút)' }
           }
         }
       },
@@ -236,6 +303,48 @@ const options = {
             password: { type: 'string', format: 'password', example: 'Password123' },
             confirmPassword: { type: 'string', format: 'password', example: 'Password123' },
             fullName: { type: 'string', example: 'Trinh AI' },
+          },
+        },
+
+        VerifyUserDTO: {
+          type: 'object',
+          required: ['email', 'otp'],
+          properties: {
+            email: { type: 'string', format: 'email', example: 'khanhtrinh123oki@gmail.com' },
+            otp: { type: 'string', minLength: 6, maxLength: 6, example: '448728' },
+          },
+        },
+
+        // 3. Cập nhật thông tin (Update Profile)
+        UpdateProfileDTO: {
+          type: 'object',
+          properties: {
+            fullName: { type: 'string', example: 'Trinh Cậu Vàng' },
+            urlPicture: { type: 'string', format: 'uri', example: 'https://avatar.com/trinh.jpg' },
+          },
+        },
+
+        // 4. Đổi mật khẩu (Change Password)
+        ChangePasswordDTO: {
+          type: 'object',
+          required: ['oldPassword', 'newPassword', 'confirmNewPassword'],
+          properties: {
+            oldPassword: { type: 'string', format: 'password', example: 'OldPass123!' },
+            newPassword: { type: 'string', format: 'password', minLength: 8, example: 'NewPass123!' },
+            confirmNewPassword: { type: 'string', format: 'password', example: 'NewPass123!' },
+          },
+        },
+
+        // 5. Thay đổi trạng thái (Admin dùng)
+        ChangeStatusDTO: {
+          type: 'object',
+          required: ['status'],
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['ACTIVE', 'INACTIVE', 'BANNED', 'PENDING'],
+              example: 'ACTIVE'
+            },
           },
         },
         SuccessResponse: {
