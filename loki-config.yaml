@@ -26,7 +26,7 @@ query_range:
 schema_config:
   configs:
     - from: 2024-01-01
-      store: tsdb       # Ghi vào CV: Sử dụng TSDB để tối ưu hóa hiệu năng
+      store: tsdb      
       object_store: filesystem
       schema: v13
       index:

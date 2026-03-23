@@ -1,4 +1,4 @@
-import { UserStatus } from "../constants/userStatus";
+import { UserStatus } from "../constants/UserStatus"
 import { IUserProps } from "../interfaces/IUserProps";
 
 export class User {

@@ -28,27 +28,20 @@ jobs:
 
   node-backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/node-backend
-    services:
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: smart_gplx_test
-        ports:
-          - 3306:3306
-        # FIX: Thay pg_isready bằng mysqladmin ping
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
+    # KHÔNG DÙNG services CỦA GITHUB NỮA, CHÚNG TA SẼ DÙNG DOCKER COMPOSE
+    
     steps:
       - uses: actions/checkout@v4
 
+      # 1. KHỞI ĐỘNG DỊCH VỤ BẰNG DOCKER COMPOSE
+      - name: Start Database & Redis with Docker Compose
+        # Giả sử file docker-compose.yml của bạn nằm ở thư mục gốc (root)
+        run: docker compose up -d
+        
+      # 2. CHỜ DATABASE KHỞI ĐỘNG XONG (Rất quan trọng)
+      # MySQL thường mất khoảng 10-15 giây để sẵn sàng nhận kết nối
+
+      # 3. TIẾP TỤC SETUP NODE VÀ CHẠY TEST NHƯ BÌNH THƯỜNG
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -57,24 +50,33 @@ jobs:
           cache-dependency-path: apps/node-backend/package-lock.json
 
       - name: Install dependencies
+        working-directory: apps/node-backend
         run: npm install --ignore-scripts
 
       - name: Sync Database Schema
-        # FIX: Sửa comment cho đúng MySQL
+        working-directory: apps/node-backend
         run: npx prisma db push 
         env:
           DATABASE_URL: "mysql://root:password@127.0.0.1:3306/smart_gplx_test"
 
       - name: Generate Prisma Client
+        working-directory: apps/node-backend
         run: npx prisma generate
 
       - name: Run Lint
+        working-directory: apps/node-backend
         run: npm run lint
 
       - name: Run Tests
+        working-directory: apps/node-backend
         run: npm test
         env:
           DATABASE_URL: "mysql://root:password@127.0.0.1:3306/smart_gplx_test"
           REDIS_URL: "redis://:root@localhost:6379"
           EMAIL_USER: gplx@dividesk.com
           EMAIL_PASS: rhrkeoshkiuehtej
+
+      # 4. DỌN DẸP SAU KHI TEST XONG (Tùy chọn)
+      - name: Stop Docker Compose
+        if: always() # Luôn chạy dù test pass hay fail
+        run: docker compose down
