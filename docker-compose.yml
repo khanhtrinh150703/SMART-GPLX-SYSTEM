@@ -1,12 +1,62 @@
 services:
-  web:
-    build: ./apps/web
-    ports: ["3000:3000"]
-  server:
-    build: ./apps/server
-    ports: ["4000:4000"]
+  # --- NHÓM MONITORING ---
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - ./loki-data:/loki # Gắn thư mục máy thật vào thư mục /loki của container
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - smart-gplx-network
+    # restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3200:3000" # Truy cập Grafana qua localhost:3200
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - smart-gplx-network
     depends_on:
-      - ai-engine
-  ai-engine:
-    build: ./apps/ai-engine
-    ports: ["8000:8000"]
+      - loki
+    # restart: always
+
+  redis-cache: # Tên dịch vụ (Service name)
+    image: redis:alpine # Sử dụng phiên bản Alpine (phiên bản Linux siêu nhẹ, tiết kiệm RAM)
+    container_name: redis # Tên của thùng chứa (Container name)
+    restart: always # Tự động khởi động lại nếu bị lỗi hoặc khi bật máy tính (Auto restart)
+    ports:
+      - "6379:6379" # Ánh xạ cổng (Port mapping): Cổng máy tính của cậu : Cổng bên trong Docker
+    volumes:
+      - redis_data:/data # Ánh xạ dữ liệu (Data volume): Giúp dữ liệu OTP không bị mất khi xóa container
+    command: redis-server --requirepass "root" # (Tùy chọn) Đặt mật khẩu cho Redis. Nếu test ở máy cá nhân (Localhost) có thể xóa dòng này đi cho nhanh.
+
+  # --- NHÓM APPS ---
+  # web:
+  #   build: ./apps/web
+  #   ports:
+  #     - "3000:3000" # Frontend chạy cổng 3000
+  #   networks:
+  #     - smart-gplx-network
+
+  # backend:
+  #   build: ./apps/node-backend
+  #   ports:
+  #     - "3001:3000" # Backend chạy cổng 3001 (tránh trùng với Web)
+  #   environment:
+  #     - LOKI_HOST=http://loki:3100 # Gọi trực tiếp bằng tên dịch vụ "loki"
+  #     - DATABASE_URL=mysql://user:pass@mysql:3306/smart_gplx_db # (Nếu có DB)
+  #   networks:
+  #     - smart-gplx-network
+  #   depends_on:
+  #     - loki
+
+networks:
+  smart-gplx-network:
+    driver: bridge
+
+volumes:
+  redis_data:

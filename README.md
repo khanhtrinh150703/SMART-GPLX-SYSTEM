@@ -2,7 +2,22 @@
 
 **Smart GPLX** là một hệ thống ôn luyện và thi thử giấy phép lái xe (GPLX) thông minh. Không chỉ dừng lại ở các bài trắc nghiệm thông thường, hệ thống ứng dụng Trí tuệ nhân tạo (AI) để giải thích luật, phân tích hành vi người dùng và cá nhân hóa lộ trình học tập, giúp tối ưu hóa tỷ lệ đỗ cho học viên.
 
----
+## 🚀 Quick Start 
+
+```bash
+# Chạy toàn bộ hệ thống bằng Docker (khuyến nghị)
+docker compose up -d
+
+# Hoặc chạy từng phần
+# Backend
+cd node-backend && npm run dev
+
+# Frontend
+cd nextjs-frontend && npm run dev
+
+# AI Engine
+cd ai-engine && python src/main.py
+```
 
 ## 🏗️ Kiến Trúc Hệ Thống (Core Modules)
 
@@ -24,10 +39,12 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **ORM:** Prisma / TypeORM
 * **Architecture:** Clean Architecture (Domain-Driven Design focus)
 * **Database:** PostgreSQL / MySQL
+* **API Documentation:** Swagger (OpenAPI 3.0)
 
-### **Frontend (React)**
 
-* **Framework:** React + Vite
+### **Frontend (Nextjs)**
+
+* **Framework:** Nextjs
 * **Language:** TypeScript
 * **State Management:** Zustand / Redux Toolkit
 * **Styling:** Tailwind CSS / SCSS
@@ -38,7 +55,27 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **CV Models:** YOLO (Object Detection), OCR (EasyOCR/PaddleOCR)
 * **Logic:** Pydantic, OpenCV, PyTorch/TensorFlow
 
----
+### **DevOps & Monitoring**
+* **Containerization** Docker & Docker Compose (Quản lý đa dịch vụ).
+* **Logging: Grafana Loki:** tích hợp với Winston để quản lý nhật ký hệ thống tập trung.
+* **Metrics:** Prometheus & Grafana Dashboard (Theo dõi sức khỏe hệ thống real-time).
+* **Error Tracking:** Sentry (Giám sát lỗi trên cả Frontend và Backend).
+
+
+## 🚀 CI/CD Pipeline (GitHub Actions)
+
+Dự án sử dụng **GitHub Actions** để tự động hóa quy trình phát triển và deploy, đảm bảo code luôn chất lượng cao trước khi merge.
+
+### Tính năng chính của pipeline
+- Lint code (ESLint + Prettier cho JS/TS, Ruff/Black cho Python)
+- Chạy unit & integration tests (Jest/Vitest cho frontend & backend, pytest cho AI Engine)
+- Build Docker images cho toàn bộ hệ thống
+- Scan lỗ hổng bảo mật (npm audit, pip-audit, Trivy cho container)
+- Deploy preview (Vercel/Netlify cho frontend, Railway/Render/Fly.io cho backend nếu cấu hình)
+
+### Workflow chính
+- **`ci.yml`** — Chạy trên mọi **push** và **pull_request** (lint + test + build + scan)
+- **`cd.yml`** — Deploy tự động khi merge vào `main` (hoặc manual dispatch)
 
 ## 📁 Cấu Trúc Thư Mục
 
@@ -50,16 +87,24 @@ Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
 
 * `src/api`: Tầng giao tiếp (Controllers, Routes, Middlewares).
 * `src/application`: Xử lý nghiệp vụ (Services, DTOs).
-* `src/domain`: Tầng lõi (Entities, Interfaces).
-* `src/infrastructure`: Kết nối bên ngoài (Database, AI Client, Storage).
+* `src/domain`: Tầng lõi (Constant, Entities, Interfaces).
+* `src/infrastructure`: Kết nối bên ngoài (Database, AI Client, Storage, Logging, Swagger, Repo).
 
 ### 2. Frontend (`react-enterprise-boilerplate/`)
 
 Tổ chức theo tính năng (Feature-based):
 
-* `src/features`: Mỗi tính năng (Thi thử, Lịch sử, Tài khoản) nằm trong một folder riêng biệt.
-* `src/components`: Các UI Component dùng chung (Atom/Molecule).
-* `src/store`: Quản lý State toàn cục.
+## Folder Structure
+
+- `src/app/`          → Pages & Layouts (App Router)  
+- `src/api/`          → API services (feature-based: auth, exam, ...)  
+- `src/components/ui/` → Reusable UI atoms (Button, Input, ...)  
+- `src/components/layouts/` → Page layouts (Dashboard, Auth, ...)  
+- `src/constants/`    → Routes, API URLs, config  
+- `src/store/`        → Global state  
+- `src/utils/`        → Helpers, formatters, validators  
+- `src/middleware.ts` → Auth & route protection
+
 
 ### 3. AI Engine (`ai-engine/`)
 
@@ -137,4 +182,14 @@ python src/main.py
 MIT
 ---
 
-
+---
+## Mục lục
+- [Quick Start](#-quick-start)
+- [Kiến trúc hệ thống](#️-kiến-trúc-hệ-thống)
+- [Công nghệ sử dụng](#️-công-nghệ-sử-dụng)
+- [CI/CD Pipeline](#-cicd-pipeline-github-actions)
+- [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
+- [Tính năng nổi bật](#-tính-năng-nổi-bật)
+- [Cài đặt](#-cài-đặt)
+- [Giấy phép](#-giấy-phép)
+---

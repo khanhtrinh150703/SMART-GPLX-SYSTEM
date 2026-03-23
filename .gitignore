@@ -16,6 +16,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log
 .env
+.env.test
 .env.local
 .env.development.local
 .env.test.local
@@ -104,6 +105,7 @@ Pipfile.lock
 redis-data/
 mongo-data/
 postgres-data/
+loki-data/
 
 # =====================================
 #          Docker / DevOps
@@ -111,6 +113,7 @@ postgres-data/
 docker-compose.override.yml
 *.dockerignore
 Dockerfile.*
+Dockerfile
 
 # =====================================
 #          Deployment / CI
