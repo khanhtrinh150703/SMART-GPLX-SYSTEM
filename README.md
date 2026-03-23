@@ -10,10 +10,10 @@ docker compose up -d
 
 # Hoặc chạy từng phần
 # Backend
-cd smart-gplx-backend && npm run dev
+cd node-backend && npm run dev
 
 # Frontend
-cd react-enterprise-boilerplate && npm run dev
+cd nextjs-frontend && npm run dev
 
 # AI Engine
 cd ai-engine && python src/main.py
@@ -94,9 +94,17 @@ Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
 
 Tổ chức theo tính năng (Feature-based):
 
-* `src/features`: Mỗi tính năng (Thi thử, Lịch sử, Tài khoản) nằm trong một folder riêng biệt.
-* `src/components`: Các UI Component dùng chung (Atom/Molecule).
-* `src/store`: Quản lý State toàn cục.
+## Folder Structure
+
+- `src/app/`          → Pages & Layouts (App Router)  
+- `src/api/`          → API services (feature-based: auth, exam, ...)  
+- `src/components/ui/` → Reusable UI atoms (Button, Input, ...)  
+- `src/components/layouts/` → Page layouts (Dashboard, Auth, ...)  
+- `src/constants/`    → Routes, API URLs, config  
+- `src/store/`        → Global state  
+- `src/utils/`        → Helpers, formatters, validators  
+- `src/middleware.ts` → Auth & route protection
+
 
 ### 3. AI Engine (`ai-engine/`)
 

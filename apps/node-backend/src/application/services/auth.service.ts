@@ -195,6 +195,6 @@ export class AuthService {
   private validateRegistrationData(dto: RegisterDTO): void {
     if (!dto.isEmail()) throw new AppError(ErrorCode.VALIDATION.INVALID_EMAIL);
     if (!dto.isPassword()) throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
-    if (!dto.isPasswordMapping()) throw new AppError(ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH);
+    // if (!dto.isPasswordMapping()) throw new AppError(ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH);
   }
 }
