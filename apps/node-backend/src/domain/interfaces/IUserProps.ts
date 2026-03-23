@@ -1,4 +1,4 @@
-import { UserStatus } from "@/domain/constants/userStatus";
+import { UserStatus } from "@/domain/constants/UserStatus";
 
 export interface IUserProps {
   id: string;

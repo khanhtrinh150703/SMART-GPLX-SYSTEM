@@ -2,7 +2,7 @@ import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from "../dtos/request/user.dto";
 import { AppError, ErrorCode } from "@/shared/errors";
 import bcrypt from 'bcrypt';
-import { UserStatus } from "@/domain/constants/userStatus";
+import { UserStatus } from "@/domain/constants/UserStatus";
 
 
 export class UserService {
