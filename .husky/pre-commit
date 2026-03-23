@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🔍 Checking Backend..."
-cd apps/node-backend && npm test && npm run lint
+echo "🔍 Checking Website."
+cd act

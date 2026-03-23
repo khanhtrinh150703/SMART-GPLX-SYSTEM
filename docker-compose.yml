@@ -1,16 +1,17 @@
+version: '3.8'
+
 services:
-  # --- NHÓM MONITORING ---
+  # --- NHÓM MONITORING (GIÁM SÁT) ---
   loki:
     image: grafana/loki:2.9.0
     ports:
       - "3100:3100"
-    volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
-      - ./loki-data:/loki # Gắn thư mục máy thật vào thư mục /loki của container
-    command: -config.file=/etc/loki/local-config.yaml
+    # volumes:
+    #   - ./loki-config.yaml:/etc/loki/local-config.yaml
+    #   - ./loki-data:/loki # Gắn thư mục máy thật vào thư mục /loki của container
+    # command: -config.file=/etc/loki/local-config.yaml
     networks:
       - smart-gplx-network
-    # restart: always
 
   grafana:
     image: grafana/grafana:latest
@@ -22,41 +23,46 @@ services:
       - smart-gplx-network
     depends_on:
       - loki
-    # restart: always
 
-  redis-cache: # Tên dịch vụ (Service name)
-    image: redis:alpine # Sử dụng phiên bản Alpine (phiên bản Linux siêu nhẹ, tiết kiệm RAM)
-    container_name: redis # Tên của thùng chứa (Container name)
-    restart: always # Tự động khởi động lại nếu bị lỗi hoặc khi bật máy tính (Auto restart)
+  # --- NHÓM CACHE & DATABASE (CƠ SỞ DỮ LIỆU) ---
+  redis-cache:
+    image: redis:alpine
+    container_name: redis
+    restart: always
     ports:
-      - "6379:6379" # Ánh xạ cổng (Port mapping): Cổng máy tính của cậu : Cổng bên trong Docker
+      - "6379:6379"
     volumes:
-      - redis_data:/data # Ánh xạ dữ liệu (Data volume): Giúp dữ liệu OTP không bị mất khi xóa container
-    command: redis-server --requirepass "root" # (Tùy chọn) Đặt mật khẩu cho Redis. Nếu test ở máy cá nhân (Localhost) có thể xóa dòng này đi cho nhanh.
+      - redis_data:/data
+    command: redis-server --requirepass "root"
+    networks:
+      - smart-gplx-network
 
-  # --- NHÓM APPS ---
-  # web:
-  #   build: ./apps/web
-  #   ports:
-  #     - "3000:3000" # Frontend chạy cổng 3000
-  #   networks:
-  #     - smart-gplx-network
+  mysql-db:
+    image: mysql:8
+    container_name: smart_gplx_mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=smart_gplx_test
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - smart-gplx-network
 
-  # backend:
-  #   build: ./apps/node-backend
-  #   ports:
-  #     - "3001:3000" # Backend chạy cổng 3001 (tránh trùng với Web)
-  #   environment:
-  #     - LOKI_HOST=http://loki:3100 # Gọi trực tiếp bằng tên dịch vụ "loki"
-  #     - DATABASE_URL=mysql://user:pass@mysql:3306/smart_gplx_db # (Nếu có DB)
-  #   networks:
-  #     - smart-gplx-network
-  #   depends_on:
-  #     - loki
-
+# --- KHAI BÁO MẠNG ---
 networks:
   smart-gplx-network:
     driver: bridge
 
+# --- KHAI BÁO KHỐI DỮ LIỆU (CHỖ BẠN BỊ THIẾU GÂY RA LỖI) ---
 volumes:
   redis_data:
+  mysql_data: # BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ MYSQL KHÔNG BÁO LỖI UNDEFINED
+  loki_data: # Thêm dòng này
