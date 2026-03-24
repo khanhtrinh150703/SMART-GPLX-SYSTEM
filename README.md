@@ -85,18 +85,23 @@ Dự án được tổ chức theo mô hình Monorepo hoặc tách biệt 3 Repo
 
 Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
 
-* `src/api`: Tầng giao tiếp (Controllers, Routes, Middlewares).
-* `src/application`: Xử lý nghiệp vụ (Services, DTOs).
-* `src/domain`: Tầng lõi (Constant, Entities, Interfaces).
-* `src/infrastructure`: Kết nối bên ngoài (Database, AI Client, Storage, Logging, Swagger, Repo).
+## 📂 Folder Structure
 
+* `src/api`: Tầng giao tiếp (Controllers, Routes, Middlewares).
+* `src/application`: Tầng điều phối nghiệp vụ (Services, DTOs).
+* `src/domain`: Tầng lõi business (Constants, Entities, Interfaces).
+* `src/infrastructure`: Kết nối bên ngoài (Database, Repositories, External Services, Security, Logging, Swagger).
+* `src/shared`: Thành phần dùng chung (Errors, Types, Utils).
+* `src/tests`: Kiểm thử tích hợp.
+* `src/app.ts`: Cấu hình Express và middlewares.
+* `src/server.ts`: Entry point khởi chạy server.
+* 
 ### 2. Frontend (`react-enterprise-boilerplate/`)
 
 Tổ chức theo tính năng (Feature-based):
 
-## Folder Structure
+## 📂 Folder Structure
 
-- `src/app/`          → Pages & Layouts (App Router)  
 - `src/api/`          → API services (feature-based: auth, exam, ...)  
 - `src/components/ui/` → Reusable UI atoms (Button, Input, ...)  
 - `src/components/layouts/` → Page layouts (Dashboard, Auth, ...)  

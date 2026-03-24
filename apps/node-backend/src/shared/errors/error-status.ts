@@ -17,7 +17,9 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.AUTH.UNAUTHORIZED]: 401,             // Unauthorized
     [ErrorCode.AUTH.FORBIDDEN]: 403,                // Forbidden
     [ErrorCode.AUTH.TOKEN_EXPIRED]: 401,             // Unauthorized
+    [ErrorCode.AUTH.INVALID_REFRESH_TOKEN]: 401,             // Unauthorized
     [ErrorCode.AUTH.INVALID_CREDENTIALS]: 401,      // Unauthorized
+    [ErrorCode.AUTH.REFRESH_FAILED]: 400,              // Bad Request
     [ErrorCode.AUTH.ACCOUNT_LOCKED]: 403,           // Forbidden (Tài khoản bị khóa)
     [ErrorCode.AUTH.NOT_ACTIVATED]: 403,            // Forbidden (Chưa kích hoạt)
     [ErrorCode.AUTH.OTP_INVALID]: 400,              // Bad Request
