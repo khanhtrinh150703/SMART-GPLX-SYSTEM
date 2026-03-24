@@ -1,87 +1,74 @@
 import crypto from 'crypto';
-import { IOtpRepository } from '../../domain/interfaces/IOtpRepository';
-import { IEmailService } from '../../domain/interfaces/IEmailService';
+import { IEmailService } from '@/domain/interfaces/services/i-email.service';
+import { IOtpRepository } from '@/domain/interfaces/repositories/i-otp.repository';
 import { AppError, ErrorCode } from '@/shared/errors';
-import { RegisterDTO } from '../dtos/request/auth.dto';
+import { TIME_CONSTANTS } from '@/domain/constants/time.constants'
 
-// Dịch vụ xử lý nghiệp vụ OTP (OTP Business Logic Service)
+/**
+ * Dịch vụ xử lý nghiệp vụ tạo, gửi và xác thực mã OTP.
+ */
 export class OtpService {
+
   constructor(
     private readonly otpRepo: IOtpRepository,
     private readonly emailService: IEmailService
-  ) { }
+  ) {}
 
-  // Tạo mật khẩu dùng một lần ngẫu nhiên (Generate random One-Time Password)
+  /**
+   * Tác dụng: Tạo mã OTP ngẫu nhiên gồm 6 chữ số.
+   * @returns {string} - Chuỗi mã OTP.
+   */
   private generateOTP(): string {
     return crypto.randomInt(100000, 999999).toString();
   }
 
-  // Luồng 1: Yêu cầu cấp mã (Request OTP Flow)
-  async requestOtp(userEmail: string, userData: RegisterDTO): Promise<void> {
+  /**
+   * Tác dụng: Xử lý luồng yêu cầu cấp mã OTP mới và gửi qua email.
+   * @param {string} userEmail - Email người dùng cần nhận OTP.
+   * @returns {Promise<void>}
+   */
+  public async requestOtp(userEmail: string): Promise<void> {
+    // // 1. Kiểm tra xem người dùng có đang bị khóa tính năng gửi lại không
+    // const isLocked = await this.otpRepo.checkResendLock(userEmail);
+    // if (isLocked) {
+    //   // Lưu ý: Cần thêm mã lỗi TOO_MANY_REQUESTS vào ErrorCode của bạn
+    //   throw new AppError(ErrorCode.AUTH.TOO_MANY_REQUESTS); 
+    // }
 
+    // 2. Xóa OTP cũ (nếu có) để đảm bảo chỉ có 1 OTP có hiệu lực
     await this.otpRepo.deleteOtp(userEmail);
-    
-    await this.otpRepo.savePendingData(userEmail, JSON.stringify(userData), 600);
-    // 1. Sinh mã (Generate code)
+
+    // 3. Sinh mã và lưu vào kho chứa
     const otpCode = this.generateOTP();
+    await this.otpRepo.saveOtp(userEmail, otpCode, TIME_CONSTANTS.OTP_TTL);
 
-    // 2. Lưu vào Redis thông qua Repository với thời gian sống 300 giây (Save to Redis via Repository with 300s TTL)
-    await this.otpRepo.saveOtp(userEmail, otpCode, 300);
+    // 4. Bật cờ khóa gửi lại (Resend Lock) trong 60 giây
+    // await this.otpRepo.setResendLock(userEmail, TIME_CONSTANTS.LOCK_TIME);
 
-    // 3. Gửi email (Send email)
+    // 5. Gửi email
     await this.emailService.sendOtpEmail(userEmail, otpCode);
   }
 
-  // Luồng 2: Xác thực mã (Verify OTP Flow)
-  async verifyOtp(userEmail: string, inputOtp: string): Promise<boolean> {
-    // 1. Lấy mã từ Redis ra (Retrieve code from Redis)
+  /**
+   * Tác dụng: Kiểm tra tính hợp lệ của mã OTP người dùng nhập vào.
+   * @param {string} userEmail - Email người dùng.
+   * @param {string} inputOtp - Mã OTP do người dùng nhập.
+   * @returns {Promise<boolean>} - Trả về true nếu hợp lệ. Sẽ ném lỗi nếu sai.
+   */
+  public async verifyOtp(userEmail: string, inputOtp: string): Promise<boolean> {
     const storedOtp = await this.otpRepo.getOtp(userEmail);
-    // 2. Kiểm tra tồn tại / Hết hạn (Check existence / Expired)
+
     if (!storedOtp) {
-      throw new AppError(ErrorCode.AUTH.OTP_EXPIRED); // Lỗi: OTP đã hết hạn (Error: OTP Expired)
+      throw new AppError(ErrorCode.AUTH.OTP_EXPIRED);
     }
 
-    // 3. So sánh mã không khớp (Mismatch comparison)
     if (storedOtp !== inputOtp) {
-      throw new AppError(ErrorCode.AUTH.OTP_INVALID); // Lỗi: OTP không hợp lệ (Error: Invalid OTP)
+      throw new AppError(ErrorCode.AUTH.OTP_INVALID);
     }
 
-    // 4. Nếu đúng, xóa mã luôn để tránh Tấn công phát lại (If correct, delete immediately to prevent Replay Attack)
+    // Xóa ngay lập tức để chống Tấn công phát lại (Replay Attack)
     await this.otpRepo.deleteOtp(userEmail);
 
-    return true; // Trả về thành công (Return success)
-  }
-
-  async getValidatedData(email: string): Promise<RegisterDTO> {
-    const rawData = await this.otpRepo.getPendingData(email);
-    if (!rawData) {
-      throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
-    }
-    return JSON.parse(rawData);
-  }
-
-  async deletePendingData(email: string): Promise<void> {
-    // 1. Kiểm tra đầu vào cơ bản
-    if (!email) {
-      throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
-    }
-
-    // 2. Thực hiện xóa từ Repository
-    await this.otpRepo.deletePendingData(email);
-
-    // 3. Nếu không có dòng nào bị xóa (Affected Rows = 0)
-
-  }
-
-  private readonly LOCK_TIME = 60; // Quy tắc 60 giây nằm ở đây
-
-  async isResendLocked(email: string): Promise<boolean> {
-    const key = `resend_lock:${email}`;
-    return await this.otpRepo.exists(key);
-  }
-
-  async setResendLock(email: string): Promise<void> {
-    const key = `resend_lock:${email}`;
-    await this.otpRepo.setWithExpiry(key, 'true', this.LOCK_TIME);
+    return true;
   }
 }

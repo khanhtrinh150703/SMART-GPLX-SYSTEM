@@ -1,11 +1,11 @@
 import { env } from 'node:process';
 import app from './app';
 import prisma from '../prisma/prisma';
-import { connectRedis } from './infrastructure/database/redis.config';
+import { connectRedis } from './infrastructure/database/redis/redis.client';
 
 // Import Redis connection ở đây...
 
-const PORT = env.PORT || 3000
+const PORT = env.PORT
 
 async function startServer() {
   try {

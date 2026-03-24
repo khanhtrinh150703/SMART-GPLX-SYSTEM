@@ -69,12 +69,7 @@ jobs:
 
       - name: Run Tests
         working-directory: apps/node-backend
-        run: npm test
-        env:
-          DATABASE_URL: "mysql://root:password@127.0.0.1:3306/smart_gplx_test"
-          REDIS_URL: "redis://:root@localhost:6379"
-          EMAIL_USER: gplx@dividesk.com
-          EMAIL_PASS: rhrkeoshkiuehtej
+        run: npm run testcicd
 
       # 4. DỌN DẸP SAU KHI TEST XONG (Tùy chọn)
       - name: Stop Docker Compose

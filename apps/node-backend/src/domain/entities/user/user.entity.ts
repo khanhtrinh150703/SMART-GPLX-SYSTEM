@@ -1,5 +1,5 @@
-import { UserStatus } from "../constants/UserStatus"
-import { IUserProps } from "../interfaces/IUserProps";
+import { UserStatus } from "./user.status"
+import { IUserProps } from "./user.props";
 
 export class User {
   // Để tất cả là private để bảo vệ tính đóng gói (Encapsulation)

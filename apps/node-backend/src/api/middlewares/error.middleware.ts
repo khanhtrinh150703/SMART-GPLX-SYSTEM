@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { Result } from '../../shared/utils/response';
 import { ErrorCode, AppError, ErrorStatus, ErrorMessages } from '@/shared/errors';
+import { Result } from '@/shared/responses/api-response';
 
 export const globalErrorHandler = (
   err: AppError,
