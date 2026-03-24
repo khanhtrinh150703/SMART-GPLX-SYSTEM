@@ -19,15 +19,17 @@ export const ErrorCode = {
      * Bảo mật, phiên làm việc và định danh.
      */
     AUTH: {
-        UNAUTHORIZED: 'AUTH_401',       // Chưa đăng nhập / Token sai
-        FORBIDDEN: 'AUTH_403',          // Không có quyền (Role)
-        TOKEN_EXPIRED: 'AUTH_402',      // Token hết hạn
-        ACCOUNT_LOCKED: 'AUTH_423',     // Tài khoản bị khóa (vi phạm)
-        NOT_ACTIVATED: 'AUTH_405',      // Chưa Verify (Email/OTP)
-        INVALID_CREDENTIALS: 'AUTH_001',// Sai tài khoản/mật khẩu
-        OTP_INVALID: 'AUTH_002',        // Mã OTP sai
-        OTP_EXPIRED: 'AUTH_003',        // Mã OTP hết hạn
-       REGISTRATION_EXPIRED: 'AUTH_004', // Link hoặc phiên đăng ký đã hết hạn
+        UNAUTHORIZED: 'AUTH_401',          // Chưa đăng nhập / Token thiếu hoặc sai
+        FORBIDDEN: 'AUTH_403',             // Không có quyền truy cập (Role không đủ)
+        TOKEN_EXPIRED: 'AUTH_402',         // Access Token đã hết hạn
+        ACCOUNT_LOCKED: 'AUTH_423',        // Tài khoản bị khóa (vi phạm chính sách)
+        NOT_ACTIVATED: 'AUTH_405',         // Chưa Verify (Email/OTP)
+        INVALID_CREDENTIALS: 'AUTH_001',   // Sai tài khoản / mật khẩu
+        OTP_INVALID: 'AUTH_002',           // Mã OTP sai
+        OTP_EXPIRED: 'AUTH_003',           // Mã OTP đã hết hạn
+        REGISTRATION_EXPIRED: 'AUTH_004',  // Link hoặc phiên đăng ký đã hết hạn
+        INVALID_REFRESH_TOKEN: 'AUTH_005', // Refresh token không hợp lệ (Đã đổi từ 001)
+        REFRESH_FAILED: 'AUTH_006',     // Token refresh failed
     },
 
     /** * --- USER & PROFILE (USER) --- 

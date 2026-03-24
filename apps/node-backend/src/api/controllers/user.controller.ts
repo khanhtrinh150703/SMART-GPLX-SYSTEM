@@ -1,95 +1,101 @@
+import { Request, Response } from 'express';
 import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from '@/application/dtos/request/user.dto';
 import { UserService } from '@/application/services/user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
-import { UserRepository } from '@/infrastructure/repositories/user/user.repository';
-import { Result } from '@/shared/utils/response';
-import { Request, Response, NextFunction } from 'express';
+import { Result } from '@/shared/responses/api-response';
 
-const userRepo = new UserRepository();
-const userService = new UserService(userRepo);
+// Import hàm bọc lỗi thần thánh
+import { catchAsync } from '@/shared/utils/catch-async';
+import { Message } from '@/shared/errors/messages/success-messages-vn';
+
 
 export class UserController {
+  
+  // Áp dụng DI: Tiêm UserService thông qua Constructor
+  constructor(private readonly userService: UserService) {}
 
-    // 1. Sửa thông tin cá nhân
-    static async updateProfile(req: Request, res: Response, next: NextFunction) {
-        try {
-            // Lấy userId từ URL params (ví dụ: /api/v1/users/:id/profile)
-            const userId = req.params.id as string;
+  /**
+   * Tác dụng: Sửa thông tin cá nhân của người dùng.
+   * @param {Request} req - Chứa userId trong params và UpdateProfileDTO trong body.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public updateProfile = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.params.id as string; // Lấy ID từ URL (VD: /api/v1/users/:id)
+    const dto = new UpdateProfileDTO(req.body);
 
-            // 1. Khởi tạo DTO từ body
-            const dto = new UpdateProfileDTO(req.body);
+    const updatedUser = await this.userService.updateProfile(userId, dto);
+    
+    // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
+    const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
 
-            // 2. Gọi Service xử lý logic cập nhật
-            const updatedUser = await userService.updateProfile(userId, dto);
+    Result.ok(
+      res, 
+      cleanUser, 
+      Message.USER.UPDATE_SUCCESS, 
+      'USER_UPDATE_SUCCESS'
+    );
+  });
 
-            // 3. Sử dụng Mapper để loại bỏ thông tin nhạy cảm
-            const cleanUser = UserMapper.toResponse(updatedUser);
+  /**
+   * Tác dụng: Thay đổi mật khẩu người dùng.
+   * @param {Request} req - Chứa ChangePasswordDTO trong body.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public changePassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.params.id as string;
+    const dto = new ChangePasswordDTO(req.body);
 
-            // 4. Trả về response chuẩn hóa
-            return Result.ok(res, {
-                user: cleanUser,
-                message: "Cập nhật thông tin thành công"
-            });
+    // Trả về kết quả thông báo từ Service
+    await this.userService.changePassword(userId, dto);
 
-        } catch (error) {
-            next(error);
-        }
-    }
+    // Không cần trả về user, chỉ cần báo thành công và truyền undefined cho data
+    Result.ok(
+      res, 
+      undefined, 
+      Message.USER.PASSWORD_CHANGED,
+      'USER_PASSWORD_CHANGED'
+    );
+  });
 
-    // 2. Đổi mật khẩu
-    static async changePassword(req: Request, res: Response, next: NextFunction) {
-        try {
-            const userId = req.params.id as string;
+  /**
+   * Tác dụng: Thay đổi trạng thái hoạt động của User (Dành cho Admin).
+   * @param {Request} req - Chứa ChangeStatusDTO trong body.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public updateStatus = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.params.id as string;
+    const dto = new ChangeStatusDTO(req.body);
 
-            // 1. Khởi tạo DTO từ body
-            const dto = new ChangePasswordDTO(req.body);
+    await this.userService.updateStatus(userId, dto);
 
-            // 2. Gọi Service xử lý logic đổi mật khẩu
-            // Service này chỉ trả về object { message: "..." }, không trả về user
-            const result = await userService.changePassword(userId, dto);
+    Result.ok(
+      res, 
+      undefined, 
+      Message.USER.STATUS_UPDATED, 
+      'USER_STATUS_UPDATED'
+    );
+  });
 
-            // 3 & 4. Trả về response chuẩn hóa trực tiếp (không cần Mapper vì không lộ data)
-            return Result.ok(res, result);
+  /**
+   * Tác dụng: Xóa tài khoản người dùng (Xóa mềm - Soft Delete).
+   * @param {Request} req - Chứa userId trong params.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public deleteUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.params.id as string;
 
-        } catch (error) {
-            next(error);
-        }
-    }
+    // Chức năng xóa thường không cần DTO body, chỉ cần ID
+    await this.userService.deleteUser(userId);
 
-    // 3. Đổi trạng thái (Dành cho Admin)
-    static async updateStatus(req: Request, res: Response, next: NextFunction) {
-        try {
-            const userId = req.params.id as string;
-
-            // 1. Khởi tạo DTO từ body
-            const dto = new ChangeStatusDTO(req.body);
-
-            // 2. Gọi Service xử lý logic cập nhật trạng thái
-            const result = await userService.updateStatus(userId, dto);
-
-            // 3 & 4. Trả về response
-            return Result.ok(res, result);
-
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    // 4. Xóa tài khoản (Soft Delete)
-    static async deleteUser(req: Request, res: Response, next: NextFunction) {
-        try {
-            const userId = req.params.id as string;
-
-            // 1. Chức năng xóa thường không cần DTO body, chỉ cần ID từ URL
-
-            // 2. Gọi Service xử lý logic xóa mềm
-            const result = await userService.deleteUser(userId);
-
-            // 3 & 4. Trả về response
-            return Result.ok(res, result);
-
-        } catch (error) {
-            next(error);
-        }
-    }
+    Result.ok(
+      res, 
+      undefined, 
+      Message.USER.DELETE_SUCCESS,
+      'USER_DELETED_SUCCESS'
+    );
+  });
 }

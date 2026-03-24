@@ -1,6 +1,6 @@
-import { connectRedis } from '@/infrastructure/database/redis.config';
+import { connectRedis } from '@/infrastructure/database/redis/redis.client';
 import prisma from '../prisma/prisma'; // Đường dẫn tới file prisma client của bạn
-import { redisClient } from '@/infrastructure/database/redis.config'
+import { redisClient } from '@/infrastructure/database/redis/redis.client'
 
 export const connectDB = async () => {
     console.log("🛠️ DATABASE TEST:", process.env.DATABASE_URL);

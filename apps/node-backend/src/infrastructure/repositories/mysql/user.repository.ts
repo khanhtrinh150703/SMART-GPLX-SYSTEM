@@ -1,9 +1,9 @@
 
 // const prisma = new PrismaClient();
 
-import { User } from "@/domain/entities/User";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { UserMapper } from "../../database/mappers/user.mapper";
+import { User } from "@/domain/entities/user/user.entity";
+import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
+import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
 import prisma from "../../../../prisma/prisma";
 
 export class UserRepository implements IUserRepository {
@@ -21,6 +21,14 @@ export class UserRepository implements IUserRepository {
   async findByUserName(username: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
       where: { username, deletedAt: null }
+    });
+
+    return rawUser ? UserMapper.toDomain(rawUser) : null;
+  }
+
+  async findByUserName_deleted(username: string): Promise<User | null> {
+    const rawUser = await prisma.user.findUnique({
+      where: { username }
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -49,18 +57,18 @@ export class UserRepository implements IUserRepository {
   }
 
 
-    async create(user: User): Promise<User> {
-      // 1. Chuyển từ Entity (Domain) sang Object phẳng (Database)
-      const persistenceData = UserMapper.toPersistence(user);
+  async create(user: User): Promise<User> {
+    // 1. Chuyển từ Entity (Domain) sang Object phẳng (Database)
+    const persistenceData = UserMapper.toPersistence(user);
 
-      // 2. Đưa dữ liệu đã "lọc" vào Prisma
-      const rawUser = await prisma.user.create({
-        data: persistenceData
-      });
+    // 2. Đưa dữ liệu đã "lọc" vào Prisma
+    const rawUser = await prisma.user.create({
+      data: persistenceData
+    });
 
-      // 3. Chuyển ngược lại từ Prisma Model sang Entity để trả về cho Service
-      return UserMapper.toDomain(rawUser);
-    }
+    // 3. Chuyển ngược lại từ Prisma Model sang Entity để trả về cho Service
+    return UserMapper.toDomain(rawUser);
+  }
 
 
   async update(user: User): Promise<User> {

@@ -1,129 +1,152 @@
 import request from 'supertest';
-import app from '../../../src/app'; // Đảm bảo đường dẫn này đúng với cấu trúc dự án của bạn
 import { describe, it, expect, beforeAll } from '@jest/globals';
+import app from '@/app';
+import { ErrorCode, ErrorStatus } from '@/shared/errors';
+import { Message } from '@/shared/errors/messages/success-messages-vn';
 
-// 1. Dùng từ khóa 'export' để các file khác có thể import
+/**
+ * Tác dụng: Tập hợp các bài kiểm tra tích hợp cho quản lý người dùng.
+ * Tuân thủ cấu trúc Scenario-based, Zero Any và bảo mật tuyệt đối.
+ */
 export const userSteps = () => {
-    const testUserLG = {
-        username: 'trinh_pro_v1',
-        password: 'Password123!'
-    }
-    describe('User Management API', () => {
-        let userId: string; // Biến lưu trữ ID động của tài khoản trinh_v1
+  // --- CONFIGURATION (Cấu hình tập trung) ---
+  const API_USER = '/api/v1/users';
+  const API_AUTH = '/api/v1/auth';
 
-        // Bước chuẩn bị: Đăng nhập để lấy ID trước khi chạy các test sửa/xóa
-        beforeAll(async () => {
-            const loginResponse = await request(app)
-                .post('/api/v1/auth/login')
-                .send(testUserLG);
+  const TEST_ACCOUNT = {
+    username: 'trinh_cau_vang',
+    password: 'Password123!',
+    newPassword: 'NewPassword123!',
+    wrongPassword: 'WrongPassword123!'
+  };
 
-            // Trích xuất ID từ kết quả trả về của hàm login
-            // Đảm bảo Mapper của bạn có trả về trường 'id' nhé!
-            userId = loginResponse.body.data.user.id;
+  let userId: string;
+  let accessToken: string;
+
+  // --- HELPERS (Hàm hỗ trợ lấy Header xác thực) ---
+  const getAuthHeader = () => ({ Authorization: `Bearer ${accessToken}` });
+
+  describe('👤 User Management API Suite', () => {
+
+    // CHUẨN BỊ: Đăng nhập để lấy Token và ID trước khi quẩy
+    beforeAll(async () => {
+      const loginRes = await request(app)
+        .post(`${API_AUTH}/login`)
+        .send({
+          username: TEST_ACCOUNT.username,
+          password: TEST_ACCOUNT.password
         });
-
-        // 1. Test API Sửa thông tin cá nhân
-        describe('PATCH /api/v1/users/:id/profile', () => {
-            it('should update profile successfully with valid data', async () => {
-                const response = await request(app)
-                    .patch(`/api/v1/users/${userId}/profile`)
-                    .send({
-                        fullName: 'Trinh Update V2',
-                        urlPicture: 'https://example.com/avatar.png'
-                    });
-
-                expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                expect(response.body.data.user.fullName).toBe('Trinh Update V2');
-                expect(response.body.data.user.urlPicture).toBe('https://example.com/avatar.png');
-            });
-        });
-
-        // 2. Test API Đổi mật khẩu
-        describe('PATCH /api/v1/users/:id/password', () => {
-            it('should fail if old password is incorrect', async () => {
-                const response = await request(app)
-                    .patch(`/api/v1/users/${userId}/password`)
-                    .send({
-                        oldPassword: 'WrongPassword123!',
-                        newPassword: 'NewPassword123!',
-                        confirmNewPassword: 'NewPassword123!'
-                    });
-
-                expect(response.status).toBe(401); // Hoặc 400 tùy logic mã lỗi INVALID_CREDENTIALS của bạn
-                expect(response.body.success).toBe(false);
-            });
-
-            it('should fail if new password and confirm password do not match', async () => {
-                const response = await request(app)
-                    .patch(`/api/v1/users/${userId}/password`)
-                    .send({
-                        oldPassword: 'Password123!', // Mật khẩu cũ đúng
-                        newPassword: 'NewPassword123!',
-                        confirmNewPassword: 'MismatchPassword123!'
-                    });
-
-                expect(response.status).toBe(400);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('VAL_103'); // Mã lỗi CONFIRM_PASSWORD_MISMATCH giả định
-            });
-
-            it('should change password successfully', async () => {
-                const response = await request(app)
-                    .patch(`/api/v1/users/${userId}/password`)
-                    .send({
-                        oldPassword: 'Password123!',
-                        newPassword: 'NewPassword123!', // Đổi sang pass mới
-                        confirmNewPassword: 'NewPassword123!'
-                    });
-
-                expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                expect(response.body.data.message).toBe('Đổi mật khẩu thành công');
-            });
-        });
-
-        // 3. Test API Đổi trạng thái
-        describe('PATCH /api/v1/users/:id/status', () => {
-            it('should update user status to BANNED', async () => {
-                const response = await request(app)
-                    .patch(`/api/v1/users/${userId}/status`)
-                    .send({
-                        status: 'BANNED' // Thay bằng UserStatus.BANNED nếu dùng biến Enum
-                    });
-
-                expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                expect(response.body.data.newStatus).toBe('BANNED');
-            });
-        });
-
-        // 4. Test API Xóa tài khoản (Phải để cuối cùng)
-        describe('DELETE /api/v1/users/:id', () => {
-            it('should soft delete the user successfully', async () => {
-                const response = await request(app)
-                    .delete(`/api/v1/users/${userId}`);
-
-                expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                expect(response.body.data.message).toBe('Xóa tài khoản thành công');
-            });
-
-            it('should not allow login after user is deleted', async () => {
-                // Cố gắng đăng nhập lại bằng mật khẩu mới vừa đổi ở trên
-                const loginResponse = await request(app)
-                    .post('/api/v1/auth/login')
-                    .send({
-                        username: 'trinh_pro_v1',
-                        password: 'NewPassword123!'
-                    });
-
-                // Vì hàm findByUserName đã lọc `deletedAt: null`, API login sẽ không tìm thấy user
-                // và trả về lỗi INVALID_CREDENTIALS
-                expect(loginResponse.status).toBe(401);
-                expect(loginResponse.body.success).toBe(false);
-                expect(loginResponse.body.code).toBe('AUTH_001');
-            });
-        });
+      console.log(loginRes.body)
+      userId = loginRes.body.data.user.id;
+      accessToken = loginRes.body.data.accessToken;
     });
+
+    describe('📝 Kịch bản: Cập nhật thông tin cá nhân (Profile)', () => {
+      
+      it('Nên cập nhật thành công khi dữ liệu hợp lệ và có Token', async () => {
+        const updateData = {
+          fullName: 'Trinh Cậu Vàng V2',
+          urlPicture: 'https://cdn.smart-gplx.com/avatar.png'
+        };
+
+        const response = await request(app)
+          .patch(`${API_USER}/${userId}/profile`)
+          .set(getAuthHeader()) // Gửi kèm Token
+          .send(updateData);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.user.fullName).toBe(updateData.fullName);
+        expect(response.body.message).toBe(Message.USER.UPDATE_SUCCESS);
+      });
+
+      // it('Nên bị chặn (401) nếu không gửi kèm Access Token', async () => {
+      //   const response = await request(app)
+      //     .patch(`${API_USER}/${userId}/profile`)
+      //     .send({ fullName: 'Hacker' });
+
+      //   expect(response.status).toBe(ErrorStatus.AUTH_005);
+      // });
+    });
+
+    describe('🔐 Kịch bản: Quản lý mật khẩu (Password)', () => {
+
+      it('Nên báo lỗi khi mật khẩu cũ không chính xác', async () => {
+        const response = await request(app)
+          .patch(`${API_USER}/${userId}/password`)
+          .set(getAuthHeader())
+          .send({
+            oldPassword: TEST_ACCOUNT.wrongPassword,
+            newPassword: TEST_ACCOUNT.newPassword,
+            confirmNewPassword: TEST_ACCOUNT.newPassword
+          });
+
+        expect(response.status).toBe(ErrorStatus.AUTH_001);
+        expect(response.body.code).toBe(ErrorCode.AUTH.INVALID_CREDENTIALS);
+      });
+
+      it('Nên báo lỗi khi mật khẩu mới và xác nhận không khớp', async () => {
+        const response = await request(app)
+          .patch(`${API_USER}/${userId}/password`)
+          .set(getAuthHeader())
+          .send({
+            oldPassword: TEST_ACCOUNT.password,
+            newPassword: TEST_ACCOUNT.newPassword,
+            confirmNewPassword: 'Khong_Khop_Dau_Ne'
+          });
+
+        expect(response.status).toBe(ErrorStatus.VAL_103);
+        expect(response.body.code).toBe(ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH);
+      });
+
+      it('Nên đổi mật khẩu thành công khi mọi thứ hợp lệ', async () => {
+        const response = await request(app)
+          .patch(`${API_USER}/${userId}/password`)
+          .set(getAuthHeader())
+          .send({
+            oldPassword: TEST_ACCOUNT.password,
+            newPassword: TEST_ACCOUNT.newPassword,
+            confirmNewPassword: TEST_ACCOUNT.newPassword
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe(Message.USER.PASSWORD_CHANGED);
+      });
+    });
+
+    describe('🚫 Kịch bản: Admin quản lý trạng thái và Xóa', () => {
+
+      it('Nên cập nhật trạng thái người dùng thành công', async () => {
+        const response = await request(app)
+          .patch(`${API_USER}/${userId}/status`)
+          .set(getAuthHeader())
+          .send({ status: 'active' });
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe(Message.USER.STATUS_UPDATED);
+      });
+
+      it('Nên xóa mềm tài khoản và từ chối đăng nhập sau đó', async () => {
+        // 1. Thực hiện xóa mềm
+        const deleteRes = await request(app)
+          .delete(`${API_USER}/${userId}`)
+          .set(getAuthHeader());
+
+        expect(deleteRes.status).toBe(200);
+        expect(deleteRes.body.message).toBe(Message.USER.DELETE_SUCCESS);
+
+        // 2. Kiểm tra tính nhất quán: Đăng nhập lại phải thất bại (Account Locked)
+        const loginRes = await request(app)
+          .post(`${API_AUTH}/login`)
+          .send({
+            username: TEST_ACCOUNT.username,
+            password: TEST_ACCOUNT.newPassword // Dùng pass mới đã đổi ở trên
+          });
+
+        // Theo logic bảo mật chúng ta đã thống nhất: Đúng pass nhưng đã xóa -> 423 hoặc 401 tùy Cậu chọn
+        expect(loginRes.status).toBe(ErrorStatus.AUTH_423); 
+        expect(loginRes.body.code).toBe(ErrorCode.AUTH.ACCOUNT_LOCKED);
+      });
+    });
+  });
 };

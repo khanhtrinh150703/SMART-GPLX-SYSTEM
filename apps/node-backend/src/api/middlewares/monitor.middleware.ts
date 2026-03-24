@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from '../../infrastructure/logging/logger';
+import logger from '../../infrastructure/logging/winston.logger';
 
 export const apiMonitor = (req: Request, res: Response, next: NextFunction): void => {
     const start = process.hrtime();
