@@ -17,6 +17,8 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.UNAUTHORIZED]: 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.',
     [ErrorCode.AUTH.FORBIDDEN]: 'Bạn không có quyền thực hiện hành động này.',
     [ErrorCode.AUTH.TOKEN_EXPIRED]: 'Phiên làm việc đã hết hạn, vui lòng đăng nhập lại.',
+    [ErrorCode.AUTH.INVALID_REFRESH_TOKEN]: 'Mã thông báo làm mới không hợp lệ.',
+    [ErrorCode.AUTH.REFRESH_FAILED]: 'Cập nhật mã thông báo thất bại.',
     [ErrorCode.AUTH.INVALID_CREDENTIALS]: 'Tài khoản hoặc mật khẩu không chính xác.',
     [ErrorCode.AUTH.ACCOUNT_LOCKED]: 'Tài khoản đã bị khóa do vi phạm chính sách hệ thống.',
     [ErrorCode.AUTH.NOT_ACTIVATED]: 'Tài khoản chưa được kích hoạt, vui lòng xác thực Email/OTP.',
