@@ -1,40 +1,42 @@
-import jwt, { SignOptions, JwtPayload, VerifyErrors } from 'jsonwebtoken';
-import { AppError, ErrorCode } from '@/shared/errors'; 
-
-const JWT_SECRET = process.env.JWT_SECRET || 'chuoi_khoa_bi_mat_cua_ban';
-
-export const generateAccessToken = (payload: object, expiresIn: string | number = '15m'): string => {
-  const options: SignOptions = {
-    expiresIn: expiresIn as SignOptions['expiresIn'],
-  };
-
-  return jwt.sign(payload, JWT_SECRET, options);
-};
+import jwt from 'jsonwebtoken';
+import { env } from 'node:process';
+import { TokenPayload } from '../types/auth.types';
 
 /**
- * Xác thực mã thông báo (Verify Token) sử dụng Promise & Callback
- * @param token Chuỗi token cần kiểm tra
- * @returns Promise chứa dữ liệu (payload) nếu thành công
+ * Tiện ích xử lý JSON Web Token.
+ * TUÂN THỦ: Không sử dụng try-catch, để lỗi bubble up lên Global Middleware.
  */
-export const verifyToken = (token: string): Promise<string | JwtPayload> => {
-  return new Promise((resolve, reject) => {
-    // Truyền thêm callback function làm tham số thứ 3
-    jwt.verify(token, JWT_SECRET, (error: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
-      
-      // Nếu có lỗi do thư viện trả về
-      if (error) {
-        if (error.name === 'TokenExpiredError') {
-          return reject(new AppError(ErrorCode.AUTH.TOKEN_EXPIRED));
-        } 
-        if (error.name === 'JsonWebTokenError') {
-          return reject(new AppError(ErrorCode.AUTH.UNAUTHORIZED));
-        }
-        
-        return reject(new AppError(ErrorCode.AUTH.FORBIDDEN));
-      }
-      
-      // Nếu hợp lệ, trả về payload (ép kiểu an toàn)
-      resolve(decoded as string | JwtPayload);
-    });
-  });
-};
+export class JwtUtil {
+  private static readonly ACCESS_SECRET = (env.JWT_SECRET as string) || 'access_secret';
+  private static readonly REFRESH_SECRET = (env.JWT_REFRESH_SECRET as string) || 'refresh_secret';
+
+  /**
+   * Giải mã Access Token. 
+   * Nếu token sai, thư viện sẽ tự throw JsonWebTokenError.
+   */
+  public static verifyAccessToken(token: string): TokenPayload {
+    return jwt.verify(token, this.ACCESS_SECRET) as unknown as TokenPayload;
+  }
+
+  /**
+   * Tạo chữ ký Access Token.
+   * Fix lỗi Overload: Đảm bảo payload là plain object.
+   */
+  public static signAccessToken(payload: TokenPayload, expiresIn: string | number): string {
+    return jwt.sign({ ...payload }, this.ACCESS_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
+  }
+
+  /**
+   * Giải mã Refresh Token.
+   */
+  public static verifyRefreshToken(token: string): TokenPayload {
+    return jwt.verify(token, this.REFRESH_SECRET) as unknown as TokenPayload;
+  }
+
+  /**
+   * Tạo chữ ký Refresh Token.
+   */
+  public static signRefreshToken(payload: TokenPayload, expiresIn: string | number): string {
+    return jwt.sign({ ...payload }, this.REFRESH_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
+  }
+}

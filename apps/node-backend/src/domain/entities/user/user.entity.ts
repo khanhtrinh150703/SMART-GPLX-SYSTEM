@@ -83,10 +83,12 @@ export class User {
     return this._deletedAt !== null; // Fix lỗi logic: Có ngày xóa nghĩa là đã xóa
   }
 
+  public restore(): void {
+    if (!this.isDeleted()) return; // Nếu chưa xóa thì không cần hồi sinh
 
-
-  public get displayName(): string {
-    return this._fullName || this._username;
+    this._deletedAt = null;   // Xóa bỏ timestamp ngày xóa
+    this._status = 'active';  // Đưa trạng thái về active (tùy nghiệp vụ của bạn)
+    this.touch();             // Cập nhật ngày thay đổi
   }
 
   // --- CẬP NHẬT TRẠNG THÁI (State Mutation) ---
@@ -125,4 +127,13 @@ export class User {
     this._deletedAt = new Date();
     this.touch();
   }
+
+  public isSuspended(): boolean {
+    return this._status === 'suspended';
+  }
+
+  public get displayName(): string {
+    return this._fullName || this._username;
+  }
+
 }

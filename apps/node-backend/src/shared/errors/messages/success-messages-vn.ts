@@ -22,6 +22,7 @@ export class Message {
     PASSWORD_CHANGED: 'Thay đổi mật khẩu thành công.',
     STATUS_UPDATED: 'Cập nhật trạng thái người dùng thành công.',
     DELETE_SUCCESS: 'Xóa tài khoản thành công.',
+    RESTORE_SUCCESS: 'Khôi phục tài khoản thành công',
   } as const;
 
   /**

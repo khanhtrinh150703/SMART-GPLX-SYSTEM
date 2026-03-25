@@ -9,9 +9,11 @@ export const REGEX = {
         
         /** Định dạng Gmail cụ thể (Yêu cầu ít nhất 6 ký tự trước @) */
         GMAIL_ONLY: /^[a-z0-9](\.?[a-z0-9]){5,}@gmail\.com$/,
-        
+
         /** Email giáo dục hoặc công ty (Ví dụ kết thúc bằng .edu.vn hoặc .gov) */
         ORGANIZATION: /^[^\s@]+@[^\s@]+\.(edu\.vn|gov|org|com\.vn)$/,
+
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
 
     /** * --- PASSWORD PATTERNS --- */
