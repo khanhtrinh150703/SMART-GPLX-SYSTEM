@@ -10,9 +10,9 @@ import { Message } from '@/shared/errors/messages/success-messages-vn';
 
 
 export class UserController {
-  
+
   // Áp dụng DI: Tiêm UserService thông qua Constructor
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   /**
    * Tác dụng: Sửa thông tin cá nhân của người dùng.
@@ -25,14 +25,14 @@ export class UserController {
     const dto = new UpdateProfileDTO(req.body);
 
     const updatedUser = await this.userService.updateProfile(userId, dto);
-    
+
     // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
     const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
 
     Result.ok(
-      res, 
-      cleanUser, 
-      Message.USER.UPDATE_SUCCESS, 
+      res,
+      cleanUser,
+      Message.USER.UPDATE_SUCCESS,
       'USER_UPDATE_SUCCESS'
     );
   });
@@ -52,8 +52,8 @@ export class UserController {
 
     // Không cần trả về user, chỉ cần báo thành công và truyền undefined cho data
     Result.ok(
-      res, 
-      undefined, 
+      res,
+      undefined,
       Message.USER.PASSWORD_CHANGED,
       'USER_PASSWORD_CHANGED'
     );
@@ -72,9 +72,9 @@ export class UserController {
     await this.userService.updateStatus(userId, dto);
 
     Result.ok(
-      res, 
-      undefined, 
-      Message.USER.STATUS_UPDATED, 
+      res,
+      undefined,
+      Message.USER.STATUS_UPDATED,
       'USER_STATUS_UPDATED'
     );
   });
@@ -92,10 +92,30 @@ export class UserController {
     await this.userService.deleteUser(userId);
 
     Result.ok(
-      res, 
-      undefined, 
+      res,
+      undefined,
       Message.USER.DELETE_SUCCESS,
       'USER_DELETED_SUCCESS'
+    );
+  });
+
+  /**
+   * Tác dụng: Khôi phục tài khoản người dùng (Hồi sinh - Restore).
+   * @param {Request} req - Chứa userId trong params.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public restoreUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.params.id as string;
+
+    // Gọi Service để xử lý logic "hồi sinh" (xóa bỏ timestamp deletedAt)
+    await this.userService.restoreUser(userId);
+
+    Result.ok(
+      res,
+      undefined,
+      Message.USER.RESTORE_SUCCESS, 
+      'USER_RESTORED_SUCCESS'
     );
   });
 }

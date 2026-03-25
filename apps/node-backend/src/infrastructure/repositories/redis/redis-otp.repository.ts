@@ -1,43 +1,56 @@
 import { REDIS_CONSTANTS } from '@/domain/constants/redis.constant';
 import { IOtpRepository } from '@/domain/interfaces/repositories/i-otp.repository';
-import { redisClient } from '@/infrastructure/database/redis/redis.client';
+// Giả sử bạn dùng thư viện ioredis hoặc node-redis v4+
+import { Redis } from 'ioredis'; 
 
 /**
  * Lớp thực thi giao tiếp với Redis để quản lý mã xác thực OTP.
  */
 export class RedisOtpRepository implements IOtpRepository {
   
+  // Sử dụng Dependency Injection thông qua constructor
+  constructor(private readonly redis: Redis) {}
+
   /**
-   * Tác dụng: Lưu mã OTP vào Redis kèm thời gian hết hạn (TTL).
-   * @param {string} email - Email của người dùng (dùng làm định danh).
-   * @param {string} otpCode - Mã OTP (ví dụ: '123456').
-   * @param {number} ttlSeconds - Thời gian sống của OTP (tính bằng giây).
-   * @returns {Promise<void>}
+   * Helper: Tạo key cho OTP
    */
+  private getOtpKey(email: string): string {
+    return `${REDIS_CONSTANTS.OTP_PREFIX}${email}`;
+  }
+
+  /**
+   * Helper: Tạo key cho Resend Lock
+   */
+  private getLockKey(email: string): string {
+    // Nên có thêm prefix LOCK trong constants, ví dụ: 'otp_lock:'
+    return `${REDIS_CONSTANTS.OTP_LOCK_PREFIX}${email}`;
+  }
+
   public async saveOtp(email: string, otpCode: string, ttlSeconds: number): Promise<void> {
-    const redisKey = `${REDIS_CONSTANTS.OTP_PREFIX}${email}`;
-    
-    // Lưu ý: setEx dùng cho redis v4, tự động hủy key sau ttlSeconds
-    await redisClient.setex(redisKey, ttlSeconds, otpCode);
+    const key = this.getOtpKey(email);
+    // Sử dụng set với tham số EX để thống nhất với các hàm khác
+    await this.redis.set(key, otpCode, 'EX', ttlSeconds);
   }
 
-  /**
-   * Tác dụng: Lấy mã OTP từ Redis để đối chiếu khi người dùng nhập vào.
-   * @param {string} email - Email của người dùng.
-   * @returns {Promise<string | null>} - Trả về mã OTP hoặc null nếu không tồn tại/đã hết hạn.
-   */
   public async getOtp(email: string): Promise<string | null> {
-    const redisKey = `${REDIS_CONSTANTS.OTP_PREFIX}${email}`;
-    return await redisClient.get(redisKey);
+    const key = this.getOtpKey(email);
+    return await this.redis.get(key);
   }
 
-  /**
-   * Tác dụng: Xóa mã OTP khỏi Redis (thường gọi ngay sau khi xác thực thành công để tránh dùng lại).
-   * @param {string} email - Email của người dùng.
-   * @returns {Promise<void>}
-   */
   public async deleteOtp(email: string): Promise<void> {
-    const redisKey = `${REDIS_CONSTANTS.OTP_PREFIX}${email}`;
-    await redisClient.del(redisKey);
+    const key = this.getOtpKey(email);
+    await this.redis.del(key);
+  }
+
+  public async setResendLock(email: string, ttlSeconds: number): Promise<void> {
+    const key = this.getLockKey(email);
+    // Giá trị '1' đại diện cho việc đang bị khóa
+    await this.redis.set(key, '1', 'EX', ttlSeconds);
+  }
+
+  public async isResendLocked(email: string): Promise<boolean> {
+    const key = this.getLockKey(email);
+    const exists = await this.redis.exists(key);
+    return exists === 1;
   }
 }

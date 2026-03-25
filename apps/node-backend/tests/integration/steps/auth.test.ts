@@ -41,11 +41,17 @@ export const authSteps = () => {
         await Promise.all(keys.map(key => redisClient.del(key)));
     };
 
+    const clearResendLock = async (email: string) => {
+        const lockKey = `otp_lock:${email}`; // Đảm bảo trùng với prefix trong Repo
+        await redisClient.del(lockKey);
+    };
+
     describe('🛡️ Auth API Integration Suite', () => {
 
         // Trước khi bắt đầu toàn bộ, dọn sạch sân chơi
         beforeAll(async () => {
             await clearUserData(TEST_DATA.validUser.email);
+            await clearResendLock(TEST_DATA.validUser.email);
         });
 
         describe('🚀 Kịch bản: Đăng ký người dùng mới', () => {
@@ -61,6 +67,10 @@ export const authSteps = () => {
             }, 10000);
 
             it('should successfully resennd OTP', async () => {
+                await clearResendLock(TEST_DATA.validUser.email);
+
+                // 2. PHÁ KHOÁ: Xoá cái lock 60s đi ngay lập tức
+
                 const response = await request(app)
                     .post(PATHS.RESEND_OTP)
                     .send({
@@ -110,7 +120,7 @@ export const authSteps = () => {
                     });
 
                 expect(response.status).toBe(ErrorStatus.USER_409);
-                expect(response.body.code).toBe(ErrorCode.USER.EMAIL_EXISTS);
+                expect(response.body.code).toBe(ErrorCode.USER.USERNAME_EXISTS);
             });
         });
 

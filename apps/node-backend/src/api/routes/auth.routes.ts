@@ -27,8 +27,8 @@ import { IPendingUserRepository } from '@/domain/interfaces/repositories/i-pendi
 import { IEmailService } from '@/domain/interfaces/services/i-email.service';
 import { ITokenRepository } from '@/domain/interfaces/repositories/i-token.repository';
 import { RedisTokenRepository } from '@/infrastructure/repositories/redis/redis-token.repository';
-// import { authMiddleware } from '../middlewares/auth.middleware';
-
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { redisClient } from '@/infrastructure/database/redis/redis.client';
 // ============================================================================
 // 2. KHỞI TẠO DEPENDENCIES (DI Container)
 // ============================================================================
@@ -36,7 +36,7 @@ const router = Router();
 
 // Tầng Infrastructure
 const userRepo: IUserRepository = new UserRepository();
-const otpRepo: IOtpRepository = new RedisOtpRepository();
+const otpRepo: IOtpRepository = new RedisOtpRepository(redisClient);
 const pendingUserRepo: IPendingUserRepository = new RedisPendingUserRepository(); // Thêm Repo này
 const mailerProvider: IEmailService = new NodemailerService();
 const tokenRepo: ITokenRepository = new RedisTokenRepository();
@@ -65,5 +65,5 @@ router.post('/register/init', authController.signUpInit.bind(authController));
 router.post('/register/verify', authController.signUpVerify.bind(authController));
 router.post('/login', authController.login.bind(authController));
 router.post('/resend-otp', authController.resendOtp.bind(authController));
-
+router.post('/logout', authMiddleware, authController.logout.bind(authController));
 export default router;

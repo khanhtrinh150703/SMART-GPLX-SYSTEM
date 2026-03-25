@@ -1,7 +1,7 @@
 import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
-import { LoginResponseDTO } from '@/application/dtos/respone/auth.dto';
-import { UserResponseDTO } from '@/application/dtos/respone/user.dto';
+import { LoginResponseDTO } from '@/application/dtos/response/auth.dto';
+import { UserResponseDTO } from '@/application/dtos/response/user.dto';
 
 /**
  * Interface mô tả cấu trúc dữ liệu thô trong bảng 'users' của MySQL.

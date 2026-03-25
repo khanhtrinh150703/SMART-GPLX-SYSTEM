@@ -38,4 +38,6 @@ router.patch('/:id/status', userController.updateStatus.bind(userController));
 // 4. Xóa tài khoản (Soft Delete)
 router.delete('/:id', userController.deleteUser.bind(userController));
 
+router.patch('/:id/restore', userController.restoreUser.bind(userController));
+
 export default router;

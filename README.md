@@ -95,7 +95,7 @@ Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
 * `src/tests`: Kiểm thử tích hợp.
 * `src/app.ts`: Cấu hình Express và middlewares.
 * `src/server.ts`: Entry point khởi chạy server.
-* 
+  
 ### 2. Frontend (`react-enterprise-boilerplate/`)
 
 Tổ chức theo tính năng (Feature-based):
