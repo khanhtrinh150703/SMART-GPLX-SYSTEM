@@ -8,7 +8,7 @@ import { specs } from './infrastructure/swagger/swagger.config';
 import { globalErrorHandler } from './api/middlewares/error.middleware';
 import { requestTimer } from "./api/middlewares/timer.middleware";
 import { apiMonitor } from "./api/middlewares/monitor.middleware";
-import logger from "./infrastructure/logging/logger";
+import logger from "./infrastructure/logging/winston.logger";
 
 const app = express();
 

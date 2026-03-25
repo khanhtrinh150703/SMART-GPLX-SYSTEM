@@ -1,105 +1,110 @@
-import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../../application/services/auth.service';
-import { OtpService } from '@/application/services/otp.service'; // Thêm mới (Newly added)
-import { UserRepository } from '@/infrastructure/repositories/user/user.repository';
-import { Result } from '../../shared/utils/response';
-import { RegisterDTO } from '@/application/dtos/request/auth.dto';
-import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
+import { Request, Response } from 'express';
+import { AuthService } from '@/application/services/auth.service';
+import { RegistrationService } from '@/application/services/registration.service';
+import { RegisterDTO, VerifyUserDTO } from '@/application/dtos/request/auth.dto';
 import { LoginInputDTO } from '@/application/dtos/request/loginInput.dto';
-import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis.repository.otp';
-import { NodemailerService } from '@/application/services/nodemailer.service';
-import { Message } from '@/shared/errors/messages/notify-messages-vn';
-import { VerifyUserDTO } from '@/application/dtos/request/user.dto';
+import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
+import { Message } from '@/shared/errors/messages/success-messages-vn';
+import { Result } from '@/shared/responses/api-response';
 
-const userRepo = new UserRepository();
-const otpRepo = new RedisOtpRepository();
-const emailService = new NodemailerService();
-const otpService = new OtpService(otpRepo, emailService);
+// IMPORT HÀM BỌC LỖI
+import { catchAsync } from '@/shared/utils/catch-async';
+import { AuthRequest } from '@/shared/types/auth.types';
 
-const authService = new AuthService(userRepo, otpService);
-
+/**
+ * Controller xử lý các luồng xác thực và đăng ký người dùng.
+ * Tuân thủ quy tắc: KHÔNG dùng try-catch, lỗi được chuyển tiếp cho Global Error Middleware
+ * thông qua hàm bọc catchAsync.
+ */
 export class AuthController {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly registrationService: RegistrationService
+  ) { }
 
   /**
-   * @route   POST /api/v1/auth/register/init
-   * @desc    Nhận thông tin, lưu tạm vào Redis, gửi OTP qua Email
-   * @access  Public
+   * Tác dụng: Tiếp nhận thông tin đăng ký ban đầu và yêu cầu gửi OTP.
+   * @param {Request} req - Chứa RegisterDTO trong body.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
    */
-  static async signUpInit(req: Request, res: Response, next: NextFunction) {
-    try {
-      // 1. Khởi tạo và kiểm tra dữ liệu đầu vào (Initialize and validate input data)
-      const dto = new RegisterDTO(req.body);
+  // SỬ DỤNG catchAsync BỌC TOÀN BỘ HÀM
+  public signUpInit = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const dto = new RegisterDTO(req.body);
 
-      // 2. LƯU TẠM DỮ LIỆU (TEMPORARILY SAVE DATA)
-      // Thay vì gọi authService.register(dto) để lưu vào DB ngay, 
-      await authService.initiateRegistration(dto)
+    // Nếu trong initiate có throw AppError, catchAsync sẽ tự động vớt và gọi next(err)
+    await this.registrationService.initiate(dto);
 
-      // 3. Gọi OtpService để sinh mã và gửi Email (Call OtpService to generate code and send Email)
-      // 4. Trả về thông báo cho Frontend biết để mở màn hình nhập OTP (Return message to Frontend to open OTP input screen)
-      return Result.ok(res, {
-        message: Message.AUTH.OTP_EMAIL
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
+    Result.ok(
+      res,
+      undefined,
+      Message.AUTH.OTP_EMAIL,
+      'AUTH_REGISTER_SUCCESS'
+    );
+  });
 
   /**
-   * @route   POST /api/v1/auth/register/verify
-   * @desc    Kiểm tra OTP, nếu đúng thì lấy dữ liệu tạm ra và lưu vào Database thật
-   * @access  Public
+   * Tác dụng: Xác thực mã OTP và hoàn tất quy trình tạo tài khoản.
    */
-  static async signUpVerify(req: Request, res: Response, next: NextFunction) {
-    try {
-      const dto = new VerifyUserDTO(req.body);
+  public signUpVerify = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const dto = new VerifyUserDTO(req.body);
+    const newUser = await this.registrationService.complete(dto.email, dto.otp);
+    const result = UserMapper.toResponse(newUser);
 
-      // 3. Đưa vào AuthService để tạo User thật trong DB
-      const userData = await authService.completeRegistration(dto.email, dto.otp);
-
-      return Result.ok(res, UserMapper.toResponse(userData));
-    } catch (error) { next(error); }
-  }
+    Result.created(
+      res,
+      result,
+      Message.AUTH.REGISTER_SUCCESS,
+      'CREATED_SUCCESS'
+    );
+  });
 
   /**
-   * @route   POST /api/v1/auth/login
-   * @desc    Xác thực người dùng & Trả về JWT Token (Authenticate user & Return JWT Token)
-   * @access  Public
+   * Tác dụng: Thực hiện đăng nhập và trả về cặp Token.
    */
-  static async login(req: Request, res: Response, next: NextFunction) {
-    // Đoạn này của cậu rất chuẩn rồi, KHÔNG CẦN THAY ĐỔI GÌ (NO CHANGES NEEDED)
-    try {
-      const dto = new LoginInputDTO(req.body);
-      const user = await authService.login(dto);
-      const cleanUser = UserMapper.toResponse(user);
+  public login = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const dto = new LoginInputDTO(req.body);
+    const result = await this.authService.login(dto);
 
-      return Result.ok(res, { user: cleanUser });
-    } catch (error) {
-      next(error);
-    }
-  }
+    Result.ok(
+      res,
+      result,
+      Message.AUTH.LOGIN_SUCCESS,
+      'AUTH_LOGIN_SUCCESS'
+    );
+  });
 
   /**
-   * @route   POST /api/v1/auth/resend-otp
-   * @desc    Gửi lại mã OTP xác thực (Resend verification OTP)
-   * @access  Public
-   */
-  static async resendOtp(req: Request, res: Response, next: NextFunction) {
-    try {
-      // 1. Khởi tạo DTO từ request body (chỉ cần email)
-      // Giả sử bạn có ResendOtpDTO để validate email
-      const { email } = req.body;
-      
-      // 2. Gọi Service để xử lý logic (Check tồn tại, Check cooldown, Gửi mail)
-      await authService.resendOtp(email);
+     * Endpoint Logout: Sử dụng TokenPayload linh hoạt.
+     */
+  public logout = async (req: AuthRequest, res: Response): Promise<void> => {
+    /**
+     * TRƯỚC ĐÂY: Bạn chỉ lấy userId (const userId = req.user!.id)
+     * BÂY GIỜ: Bạn truyền nguyên đối tượng Payload linh hoạt vào Service.
+     */
+    const payload = req.user!;
 
-      // 3. Trả về thông báo thành công
-      return Result.ok(res, { 
-        message: "Mã OTP mới đã được gửi vào email của bạn." 
-      });
-      
-    } catch (error) {
-      // Chuyển lỗi sang Middleware xử lý lỗi tập trung
-      next(error);
-    }
-  }
+    await this.authService.logout(payload);
+
+    Result.ok(
+      res,
+      undefined,
+      Message.AUTH.LOGOUT_SUCCESS,
+      'AUTH_LOGOUT_SUCCESS'
+    );
+  };
+  /**
+   * Tác dụng: Yêu cầu gửi lại mã OTP.
+   */
+  public resendOtp = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { email } = req.body;
+    await this.registrationService.resend(email);
+
+    Result.ok(
+      res,
+      undefined,
+      Message.AUTH.OTP_RESENT,
+      'AUTH_OTP_RESENT'
+    );
+  });
 }

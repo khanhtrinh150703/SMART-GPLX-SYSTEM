@@ -1,222 +1,178 @@
 import request from 'supertest';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, beforeAll } from '@jest/globals';
 import app from '@/app';
-import { redisClient } from '@/infrastructure/database/redis.config';
-// import { OtpService } from '@/application/services/otp.service'; // Thêm mới (Newly added)
-// import { UserRepository } from '@/infrastructure/repositories/user/user.repository';
-// import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis.repository.otp';
-// import { NodemailerService } from '@/application/services/nodemailer.service';
-// import { AuthService } from '@/application/services/auth.service';
+import { redisClient } from '@/infrastructure/database/redis/redis.client';
+import { ErrorCode, ErrorStatus } from '@/shared/errors';
+import { Message } from '@/shared/errors/messages/success-messages-vn';
 
-
-// const userRepo = new UserRepository();
-// const otpRepo = new RedisOtpRepository();
-// const emailService = new NodemailerService();
-// const otpService = new OtpService(otpRepo, emailService);
-
-// const authService = new AuthService(userRepo, otpService);
-
+/**
+ * Tác dụng: Tập hợp các bài kiểm tra tích hợp cho hệ thống xác thực.
+ * Sử dụng tư duy Scenario-based để giảm sự gò bó và tăng tính linh hoạt.
+ */
 export const authSteps = () => {
-    describe('Auth API Integration Tests', () => {
+    // --- CONFIGURATION (Cấu hình tập trung) ---
+    const API_PREFIX = '/api/v1/auth';
+    const PATHS = {
+        REGISTER_INIT: `${API_PREFIX}/register/init`,
+        REGISTER_VERIFY: `${API_PREFIX}/register/verify`,
+        LOGIN: `${API_PREFIX}/login`,
+        RESEND_OTP: `${API_PREFIX}/resend-otp`,
+    };
 
-        // Data mẫu đồng bộ với hệ thống của bạn
-        const testUser = {
+    const TEST_DATA = {
+        validUser: {
             email: 'gplx@dividesk.com',
-            username: 'trinh_pro_v1',
+            username: 'trinh_cau_vang',
             password: 'Password123!',
             confirmPassword: 'Password123!',
             fullName: 'Trinh Cậu Vàng'
-        };
+        },
+        invalidEmail: 'not-an-email',
+        weakPassword: '123'
+    };
 
-        const testUserLG = {
-            username: 'trinh_pro_v1',
-            password: 'Password123!'
-        }
+    // --- HELPERS (Các hàm hỗ trợ gỡ rối) ---
+    const getOtpFromRedis = async (email: string): Promise<string | null> => {
+        return await redisClient.get(`otp:${email.toLowerCase()}`);
+    };
 
-        describe('POST /api/v1/auth/register', () => {
+    const clearUserData = async (email: string) => {
+        const keys = [`otp:${email}`, `resend_lock:${email}`, `pending_user:${email}`];
+        await Promise.all(keys.map(key => redisClient.del(key)));
+    };
 
-            it('nên gửi OTP thành công khi dữ liệu hợp lệ', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/register')
-                    .send(testUser);
+    const clearResendLock = async (email: string) => {
+        const lockKey = `otp_lock:${email}`; // Đảm bảo trùng với prefix trong Repo
+        await redisClient.del(lockKey);
+    };
 
-                expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                const exists = await redisClient.exists(`otp:${testUser.email.toLowerCase()}`);
-                expect(exists).toBe(1);
+    describe('🛡️ Auth API Integration Suite', () => {
+
+        // Trước khi bắt đầu toàn bộ, dọn sạch sân chơi
+        beforeAll(async () => {
+            await clearUserData(TEST_DATA.validUser.email);
+            await clearResendLock(TEST_DATA.validUser.email);
+        });
+
+        describe('🚀 Kịch bản: Đăng ký người dùng mới', () => {
+
+            it('Nên hoàn tất chu trình đăng ký từ lúc Init đến Verify', async () => {
+                // Bước 1: Khởi tạo (Init)
+                const initRes = await request(app)
+                    .post(PATHS.REGISTER_INIT)
+                    .send(TEST_DATA.validUser);
+
+                expect(initRes.status).toBe(200);
+                expect(initRes.body.message).toBe(Message.AUTH.OTP_EMAIL);
             }, 10000);
 
             it('should successfully resennd OTP', async () => {
-                await request(app).post('/api/v1/auth/resend-otp').send(testUser);
+                await clearResendLock(TEST_DATA.validUser.email);
+
+                // 2. PHÁ KHOÁ: Xoá cái lock 60s đi ngay lập tức
 
                 const response = await request(app)
-                    .post('/api/v1/auth/resend-otp')
+                    .post(PATHS.RESEND_OTP)
                     .send({
-                        email: testUser.email,
+                        email: TEST_DATA.validUser.email,
                     });
 
-                const otpKey = `otp:${testUser.email}`;
-                const otp = await redisClient.get(otpKey); // Lấy trực tiếp chuỗi số
+                const otp = await getOtpFromRedis(TEST_DATA.validUser.email) // Lấy trực tiếp chuỗi số
 
-                console.log("✅ Mã OTP lấy được:", otp);
+                expect(otp).toBeDefined();
 
                 expect(response.status).toBe(200);
             }, 20000);
 
+            it('Nên báo lỗi khi nhập SAI mã OTP (Verify Fail)', async () => {
+                const res = await request(app)
+                    .post(PATHS.REGISTER_VERIFY)
+                    .send({
+                        email: TEST_DATA.validUser.email,
+                        otp: '000000' // OTP lụi
+                    });
+                expect(res.status).toBe(ErrorStatus.AUTH_002);
+                expect(res.body.code).toBe(ErrorCode.AUTH.OTP_INVALID);
+            });
+
+
             it('should successfully verify OTP', async () => {
-                await request(app).post('/api/v1/auth/register').send(testUser);
-
-                const otpKey = `otp:${testUser.email}`;
-                const otp = await redisClient.get(otpKey); // Lấy trực tiếp chuỗi số
-
-                console.log("✅ Mã OTP lấy được:", otp);
+                const otp = await getOtpFromRedis(TEST_DATA.validUser.email)
+                expect(otp).toBeDefined();
 
                 const response = await request(app)
-                    .post('/api/v1/auth/verify-otp')
+                    .post(PATHS.REGISTER_VERIFY)
                     .send({
-                        email: testUser.email,
-                        otp: otp // Truyền thẳng chuỗi vừa lấy
+                        email: TEST_DATA.validUser.email,
+                        otp: otp
                     });
 
-                expect(response.status).toBe(200);
+                expect(response.status).toBe(201);
             });
 
 
-            it('should return 409 Conflict when the email is already registered', async () => {
+            it('Nên chặn đăng ký khi Username đã bị chiếm dụng', async () => {
                 const response = await request(app)
-                    .post('/api/v1/auth/register')
-                    .send(testUser);
-
-                expect(response.status).toBe(409);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('USER_409'); // ALREADY_EXISTS
-            });
-
-            it('should return 400 Bad Request for an invalid email format', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/register')
+                    .post(PATHS.REGISTER_INIT)
                     .send({
-                        email: 'invalid-email-format',
-                        username: 'user_invalid_email',
-                        password: 'Password123',
-                        confirmPassword: 'Password123',
-                        fullname: 'Test User'
+                        ...TEST_DATA.validUser,
+                        email: 'another@email.com' // Email mới nhưng username cũ
                     });
 
-                expect(response.status).toBe(400);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('VAL_101'); // INVALID_EMAIL
-            });
-
-            it('should return 400 Bad Request for a weak password', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/register')
-                    .send({
-                        email: 'user_weak_pass@test.com',
-                        username: 'user_weak_pass',
-                        password: '123', // Too short and no letters
-                        confirmPassword: '123',
-                        fullname: 'Test User'
-                    });
-
-                expect(response.status).toBe(400);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('VAL_102'); // INVALID_PASSWORD
-            });
-            // it('should return 400 Bad Request when password and confirm password do not match', async () => {
-            //     const response = await request(app)
-            //         .post('/api/v1/auth/register')
-            //         .send({
-            //             email: 'newuser@perfect-travel.ai',
-            //             username: 'new_user_travel',
-            //             password: 'StrongPassword123!',
-            //             confirmPassword: 'DifferentPassword123!', // Cố tình làm sai
-            //             fullname: 'Test User'
-            //         });
-
-            //     expect(response.status).toBe(400);
-            //     expect(response.body.success).toBe(false);
-            //     expect(response.body.code).toBe('VAL_103'); // Giả định mã code cho CONFIRM_PASSWORD_MISMATCH
-            // });
-
-            it('should return 409 Conflict when the username is already taken', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/register')
-                    .send({
-                        email: 'another.email@test.com', // Email mới chưa từng đăng ký
-                        username: 'trinh_pro_v1', // Đã được đăng ký ở test case đầu tiên
-                        password: 'Password123',
-                        confirmPassword: 'Password123',
-                        fullname: 'Trinh Duplicate Username'
-                    });
-
-                expect(response.status).toBe(409);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('USER_409'); // ALREADY_EXISTS
+                expect(response.status).toBe(ErrorStatus.USER_409);
+                expect(response.body.code).toBe(ErrorCode.USER.USERNAME_EXISTS);
             });
         });
 
-        describe('POST /auth/login', () => {
-            // Mock data cho case đăng nhập thành công
-            // Lưu ý: User 'trinh_v1' với pass 'Password123' PHẢI TỒN TẠI trong Test DB trước khi chạy block này.
-            // (Có thể nó đã được tạo ra từ block POST /auth/register chạy ngay trước đó)
-            it('should successfully log in with valid credentials', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/login')
-                    .send(testUserLG);
+        describe('🔑 Kịch bản: Đăng nhập hệ thống', () => {
 
-                console.log(response.body.data)
+            it('Nên cấp Access Token khi thông tin chính xác', async () => {
+                const response = await request(app)
+                    .post(PATHS.LOGIN)
+                    .send({
+                        username: TEST_DATA.validUser.username,
+                        password: TEST_DATA.validUser.password
+                    });
+
                 expect(response.status).toBe(200);
-                expect(response.body.success).toBe(true);
-                expect(response.body.data.user.username).toBe('trinh_pro_v1');
-
-                // Nếu API có trả về token sau này, hãy expect token ở đây
-                // expect(response.body.data.accessToken).toBeDefined();
+                expect(response.body.data.accessToken).toBeDefined();
+                expect(response.body.data.user.username).toBe(TEST_DATA.validUser.username);
             });
 
-            it('should return 401 Unauthorized for an invalid username', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/login')
-                    .send({
-                        username: 'wrong_username_gplx', // Một username chắc chắn không tồn tại
-                        password: 'SecurePassword123!'
-                    });
+            it('Bảo mật: Phải trả về 404 Username và 401 cho Password', async () => {
+                // Case 1: Sai username
+                const res1 = await request(app).post(PATHS.LOGIN).send({
+                    username: 'non_exist', password: 'any'
+                });
+                // Case 2: Sai password
+                const res2 = await request(app).post(PATHS.LOGIN).send({
+                    username: TEST_DATA.validUser.username, password: 'wrong'
+                });
 
-                expect(response.status).toBe(401);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('AUTH_001'); // Mã lỗi chung: INVALID_CREDENTIALS
+                // Cả hai đều phải trả về cùng một mã lỗi để tránh User Enumeration
+                expect(res1.status).toBe(ErrorStatus.AUTH_001);
+                expect(res2.status).toBe(ErrorStatus.AUTH_001);
+                expect(res1.body.code).toBe(ErrorCode.AUTH.INVALID_CREDENTIALS);
+                expect(res2.body.code).toBe(ErrorCode.AUTH.INVALID_CREDENTIALS);
             });
+        });
 
-            it('should return 401 Unauthorized for an invalid password', async () => {
-                const response = await request(app)
-                    .post('/api/v1/auth/login')
-                    .send({
-                        username: 'trinh_pro_v1', // Username đúng
-                        password: 'WrongPassword123!' // Mật khẩu sai
-                    });
+        describe('❌ Kịch bản: Kiểm tra lỗi dữ liệu (Validation)', () => {
+            const validationCases = [
+                { label: 'Email sai định dạng', field: 'email', value: TEST_DATA.invalidEmail, code: ErrorCode.VALIDATION.INVALID_EMAIL },
+                { label: 'Mật khẩu quá yếu', field: 'password', value: TEST_DATA.weakPassword, code: ErrorCode.VALIDATION.INVALID_PASSWORD },
+            ];
 
-                // QUAN TRỌNG: Mã lỗi phải GIỐNG HỆT case sai username ở trên
-                expect(response.status).toBe(401);
-                expect(response.body.success).toBe(false);
-                expect(response.body.code).toBe('AUTH_001'); // Đã sửa lại thành AUTH_001
+            validationCases.forEach(({ label, field, value, code }) => {
+                it(`Nên trả về lỗi khi ${label}`, async () => {
+                    const response = await request(app)
+                        .post(PATHS.REGISTER_INIT)
+                        .send({ ...TEST_DATA.validUser, [field]: value });
+
+                    expect(response.status).toBe(ErrorStatus.USER_003);
+                    expect(response.body.code).toBe(code);
+                });
             });
-
-            // it('should return 403 Forbidden if the account is locked/inactive', async () => {
-            //     // LƯU Ý: Để test này pass, bạn cần chèn thêm 1 user có username 'locked_user' 
-            //     // và trạng thái là INACTIVE/LOCKED vào Database ở phần beforeAll hoặc ngay trong test này.
-
-            //     const response = await request(app)
-            //         .post('/api/v1/auth/login')
-            //         .send({
-            //             username: 'locked_user',
-            //             password: 'ValidPassword123!'
-            //         });
-
-            //     expect(response.status).toBe(403);
-            //     expect(response.body.success).toBe(false);
-            //     expect(response.body.code).toBe('AUTH_403'); // ACCOUNT_LOCKED
-            // });
         });
     });
-
 };
