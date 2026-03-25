@@ -17,7 +17,7 @@ export class RegistrationService {
     private readonly userService: UserService,
     private readonly otpService: OtpService,
     private readonly pendingRepo: IPendingUserRepository // Inject thêm Repo này
-  ) {}
+  ) { }
 
   /**
    * Tác dụng: Khởi tạo quy trình đăng ký, lưu dữ liệu tạm và ra lệnh gửi mã OTP.
@@ -30,15 +30,12 @@ export class RegistrationService {
     const normalizedUsername = dto.username.trim().toLowerCase();
 
     // 1. Kiểm tra tồn tại trong DB chính qua UserService
-    const exists = await this.userService.checkExisting(normalizedUsername, normalizedEmail);
-    if (exists) {
-      throw new AppError(ErrorCode.USER.EMAIL_EXISTS);
-    }
+    await this.userService.checkExisting(normalizedUsername, normalizedEmail);
 
     // 2. Lưu dữ liệu đăng ký vào Redis (Pending Data)
     await this.pendingRepo.savePendingData(
-      normalizedEmail, 
-      JSON.stringify(dto), 
+      normalizedEmail,
+      JSON.stringify(dto),
       TIME_CONSTANTS.PENDING_TTL
     );
 
@@ -54,7 +51,7 @@ export class RegistrationService {
    */
   public async complete(email: string, otp: string): Promise<User> {
     const normalizedEmail = email.trim().toLowerCase();
-    
+
     // 1. Lấy dữ liệu tạm từ PendingRepo để kiểm tra xem họ có thực sự đang đăng ký không
     const rawData = await this.pendingRepo.getPendingData(normalizedEmail);
     if (!rawData) {
@@ -91,13 +88,13 @@ export class RegistrationService {
    */
   public async resend(email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
-    
+
     // 1. Kiểm tra xem luồng đăng ký tạm của người này còn tồn tại không
     const isPending = await this.pendingRepo.getPendingData(normalizedEmail);
     if (!isPending) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }
-    
+
     // 2. Yêu cầu OtpService gửi lại mã (Logic chống spam 60s đã được bọc bên trong requestOtp)
     await this.otpService.requestOtp(normalizedEmail);
   }

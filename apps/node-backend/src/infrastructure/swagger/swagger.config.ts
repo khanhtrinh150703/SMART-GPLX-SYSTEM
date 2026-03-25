@@ -1,5 +1,311 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
+const API_BASE = '/api/v1';
+
+// ====================== PATHS (đưa ra ngoài) ======================
+const paths = {
+  // ====================== AUTHENTICATION ======================
+  [`${API_BASE}/auth/register/init`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Đăng ký thành viên mới',
+      description: 'Khởi tạo đăng ký và gửi OTP vào email',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/RegisterDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Đăng ký thành công, vui lòng kiểm tra OTP trong email',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '400': { $ref: '#/components/responses/ValidationError' },
+        '409': { $ref: '#/components/responses/ConflictError' },
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/resend-otp`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Gửi lại mã OTP',
+      description: 'Có cooldown 60 giây',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                email: { type: 'string', format: 'email', example: 'gasadas1234@gmail.com' },
+              },
+              required: ['email'],
+            },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Mã OTP mới đã được gửi',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '400': { description: 'Email không hợp lệ hoặc phiên đăng ký hết hạn' },
+        '429': { $ref: '#/components/responses/TooManyRequestsError' },
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/register/verify`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Xác thực OTP',
+      description: 'Xác thực OTP để hoàn tất tạo tài khoản',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/VerifyUserDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Xác thực thành công, tài khoản đã được tạo',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '400': { description: 'Mã OTP sai hoặc không hợp lệ' },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
+        '410': { description: 'Phiên đăng ký đã hết hạn (quá 10 phút)' },
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/login`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Đăng nhập',
+      description: 'Hỗ trợ đăng nhập bằng username hoặc email',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/LoginDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Đăng nhập thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/LoginResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/logout`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Đăng xuất',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': {
+          description: 'Đăng xuất thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
+      },
+    },
+  },
+
+  // ====================== USER MANAGEMENT ======================
+  [`${API_BASE}/users/{id}/profile`]: {
+    patch: {
+      tags: ['User Management'],
+      summary: 'Cập nhật thông tin cá nhân',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'User ID',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateProfileDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Cập nhật profile thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+      },
+    },
+  },
+
+  [`${API_BASE}/users/{id}/password`]: {
+    patch: {
+      tags: ['User Management'],
+      summary: 'Đổi mật khẩu',
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ChangePasswordDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Đổi mật khẩu thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '400': { description: 'Mật khẩu cũ sai hoặc mật khẩu mới không khớp' },
+        '401': { description: 'Unauthorized - Sai mật khẩu cũ' },
+      },
+    },
+  },
+
+  [`${API_BASE}/users/{id}/status`]: {
+    patch: {
+      tags: ['User Management'],
+      summary: 'Cập nhật trạng thái tài khoản (Admin)',
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ChangeStatusDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Cập nhật trạng thái thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+      },
+    },
+  },
+
+[`${API_BASE}/users/{id}`]: {
+    delete: {
+      tags: ['User Management'],
+      summary: 'Xóa mềm tài khoản người dùng',
+      description: 'Đánh dấu tài khoản đã xóa bằng cách gán timestamp vào trường deletedAt. Tài khoản sẽ không thể đăng nhập nhưng vẫn tồn tại trong DB.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { 
+          name: 'id', 
+          in: 'path', 
+          required: true, 
+          schema: { type: 'string' },
+          description: 'ID của người dùng cần xóa'
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'Xóa mềm thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
+        '404': { description: 'Không tìm thấy người dùng hoặc người dùng đã bị xóa trước đó' }
+      },
+    },
+  },
+
+  // --- Endpoint Hồi sinh (Restore) ---
+  [`${API_BASE}/users/{id}/restore`]: {
+    patch: {
+      tags: ['User Management'],
+      summary: 'Khôi phục tài khoản đã xóa mềm',
+      description: 'Gỡ bỏ đánh dấu xóa (set deletedAt = null) và kích hoạt lại tài khoản. Chỉ ADMIN mới có quyền thực hiện.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { 
+          name: 'id', 
+          in: 'path', 
+          required: true, 
+          schema: { type: 'string' },
+          description: 'ID của người dùng cần khôi phục'
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'Khôi phục tài khoản thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SuccessResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
+        '404': { description: 'Không tìm thấy bản ghi đã xóa để khôi phục' },
+        '409': { 
+          description: 'Xung đột dữ liệu: Username hoặc Email của tài khoản này đã bị một tài khoản khác đang hoạt động chiếm dụng.',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+            }
+          }
+        }
+      },
+    },
+  },
+};
+
+// ====================== SWAGGER CONFIG ======================
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -8,292 +314,66 @@ const options = {
       version: '1.0.0',
       description: 'API Documentation for Smart GPLX Management System',
     },
-    servers: [{ url: '/api/v1', description: 'Development Server' }],
-    paths: {
-      '/auth/register': {
-        post: {
-          tags: ['Authentication'],
-          summary: 'Register a new member',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/RegisterDTO' }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'User registered successfully, please check otp in your email',
-              content: {
-                'application/json': {
-                  schema: { $ref: '#/components/schemas/SuccessResponse' }
-                }
-              }
-            },
-            '400': { $ref: '#/components/responses/ValidationError' },
-            '409': { $ref: '#/components/responses/ConflictError' }
-          }
-        }
-      },
-      '/auth/resend-otp': {
-        post: {
-          tags: ['Authentication'],
-          summary: 'Resend OTP',
-          description: 'Gửi lại mã OTP mới vào email trong trường hợp mã cũ hết hạn hoặc không nhận được. Có cooldown 60s.',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    email: { type: 'string', example: 'khanhtrinh123oki@gmail.com' }
-                  },
-                  required: ['email']
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Mã OTP mới đã được gửi',
-              content: {
-                'application/json': {
-                  schema: { $ref: '#/components/schemas/SuccessResponse' }
-                }
-              }
-            },
-            '400': { description: 'Email không hợp lệ hoặc phiên đăng ký đã hết hạn' },
-            '429': { description: 'Thao tác quá nhanh, vui lòng đợi 60s' }
-          }
-        }
-      },
-      '/auth/verify': {
-        post: {
-          tags: ['Authentication'],
-          summary: 'Authencation OTP',
-          description: 'Kiểm tra mã OTP người dùng nhập vào. Nếu đúng, tài khoản chính thức được tạo trong hệ thống.',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    email: { type: 'string', example: 'khanhtrinh123oki@gmail.com' },
-                    otp: { type: 'string', example: '123456' }
-                  },
-                  required: ['email', 'otp']
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Xác thực thành công, tài khoản đã được tạo',
-              content: {
-                'application/json': {
-                  schema: { $ref: '#/components/schemas/SuccessResponse' }
-                }
-              }
-            },
-            '400': { description: 'Mã OTP sai hoặc không hợp lệ' },
-            '410': { description: 'Dữ liệu đăng ký đã hết hạn (quá 10 phút)' }
-          }
-        }
-      },
-      // BỔ SUNG THÊM LOGIN
-      '/auth/login': {
-        post: {
-          tags: ['Authentication'],
-          summary: 'User Login', // Nghĩa: Đăng nhập người dùng
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    username: { type: 'string', example: 'trinh_v1' },
-                    password: { type: 'string', example: 'Password123' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Login successful',
-              content: {
-                'application/json': {
-                  schema: {
-                    allOf: [
-                      { $ref: '#/components/schemas/SuccessResponse' },
-                      {
-                        type: 'object',
-                        properties: {
-                          data: {
-                            type: 'object',
-                            properties: {
-                              user: { type: 'object' },
-                              accessToken: { type: 'string', example: 'eyJhbGci...' }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            },
-            '401': {
-              description: 'Unauthorized', // Nghĩa: Không được phép/Sai thông tin
-              content: {
-                'application/json': {
-                  example: { success: false, code: 'AUTH_001', statusCode: 401, message: 'Tài khoản hoặc mật khẩu không chính xác' }
-                }
-              }
-            }
-          }
-        }
-      },
-      // --- USER MANAGEMENT (Bổ sung mới) ---
-      '/users/{id}/profile': {
-        patch: {
-          tags: ['User Management'],
-          summary: 'Update user profile',
-          description: 'Cập nhật thông tin cá nhân (fullName, urlPicture).',
-          parameters: [
-            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID người dùng' }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    fullName: { type: 'string', example: 'Trinh Update V2' },
-                    urlPicture: { type: 'string', example: 'https://example.com/avatar.png' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Profile updated successfully', // Nghĩa: Cập nhật hồ sơ thành công
-              content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } }
-            }
-          }
-        }
-      },
-
-      '/users/{id}/password': {
-        patch: {
-          tags: ['User Management'],
-          summary: 'Change password',
-          description: 'Thay đổi mật khẩu người dùng.',
-          parameters: [
-            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    oldPassword: { type: 'string', example: 'Password123' },
-                    newPassword: { type: 'string', example: 'NewPassword123!' },
-                    confirmNewPassword: { type: 'string', example: 'NewPassword123!' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': { description: 'Password changed successfully' },
-            '400': {
-              description: 'Bad Request - Password mismatch', // Nghĩa: Yêu cầu không hợp lệ - Mật khẩu không khớp
-              content: { 'application/json': { example: { success: false, code: 'VAL_103', message: 'Mật khẩu xác nhận không khớp' } } }
-            },
-            '401': { description: 'Unauthorized - Incorrect old password' } // Nghĩa: Sai mật khẩu cũ
-          }
-        }
-      },
-
-      '/users/{id}/status': {
-        patch: {
-          tags: ['User Management'],
-          summary: 'Update user status',
-          description: 'Cập nhật trạng thái tài khoản (ví dụ: ACTIVE, BANNED).',
-          parameters: [
-            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', enum: ['ACTIVE', 'BANNED', 'INACTIVE'], example: 'BANNED' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            '200': { description: 'Status updated successfully' }
-          }
-        }
-      },
-
-      '/users/{id}': {
-        delete: {
-          tags: ['User Management'],
-          summary: 'Soft delete user',
-          description: 'Xóa mềm tài khoản người dùng khỏi hệ thống.',
-          parameters: [
-            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
-          ],
-          responses: {
-            '200': {
-              description: 'User deleted successfully', // Nghĩa: Xóa người dùng thành công
-              content: { 'application/json': { example: { success: true, message: 'Xóa tài khoản thành công' } } }
-            }
-          }
-        }
-      }
-    },
-
+    servers: [{ url: API_BASE, description: 'Development Server' }],
 
     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+
       responses: {
         ValidationError: {
-          description: 'Validation Error',
+          description: 'Dữ liệu không hợp lệ',
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' },
-              examples: {
-                invalidEmail: { value: { success: false, code: 'VAL_101', statusCode: 400, message: 'Email không hợp lệ' } },
-                weakPassword: { value: { success: false, code: 'VAL_102', statusCode: 400, message: 'Mật khẩu quá yếu' } }
-              }
-            }
-          }
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        UnauthorizedError: {
+          description: 'Không có quyền truy cập hoặc sai thông tin',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
         },
         ConflictError: {
-          description: 'Conflict',
+          description: 'Dữ liệu đã tồn tại',
           content: {
-            'application/json': {
-              example: { success: false, code: 'USER_409', statusCode: 409, message: 'Email/Username đã tồn tại' }
-            }
-          }
-        }
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        TooManyRequestsError: {
+          description: 'Thao tác quá nhanh (cooldown)',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
       },
+
       schemas: {
+        SuccessResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            code: { type: 'string', example: 'SYS_000' },
+            statusCode: { type: 'number', example: 200 },
+            message: { type: 'string', example: 'Thao tác thực hiện thành công' },
+            data: { type: 'object' },
+          },
+        },
+
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            code: { type: 'string' },
+            statusCode: { type: 'number' },
+            message: { type: 'string' },
+          },
+        },
+
         RegisterDTO: {
           type: 'object',
           required: ['username', 'email', 'password', 'confirmPassword'],
@@ -306,36 +386,61 @@ const options = {
           },
         },
 
+        LoginDTO: {
+          type: 'object',
+          required: ['username', 'password'],
+          properties: {
+            username: { type: 'string', example: 'trinh_cau_vang hoặc email' },
+            password: { type: 'string', format: 'password', example: 'Password123' },
+          },
+        },
+
+        LoginResponse: {
+          allOf: [
+            { $ref: '#/components/schemas/SuccessResponse' },
+            {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'object',
+                  properties: {
+                    accessToken: { type: 'string' },
+                    refreshToken: { type: 'string' },
+                    user: { type: 'object' },
+                  },
+                },
+              },
+            },
+          ],
+        },
+
         VerifyUserDTO: {
           type: 'object',
           required: ['email', 'otp'],
           properties: {
-            email: { type: 'string', format: 'email', example: 'khanhtrinh123oki@gmail.com' },
-            otp: { type: 'string', minLength: 6, maxLength: 6, example: '448728' },
+            email: { type: 'string', format: 'email' },
+            otp: { type: 'string', minLength: 6, maxLength: 6, example: '123456' },
           },
         },
 
-        // 3. Cập nhật thông tin (Update Profile)
         UpdateProfileDTO: {
           type: 'object',
           properties: {
-            fullName: { type: 'string', example: 'Trinh Cậu Vàng' },
-            urlPicture: { type: 'string', format: 'uri', example: 'https://avatar.com/trinh.jpg' },
+            fullName: { type: 'string', example: 'Trinh Cậu Vàng V2' },
+            urlPicture: { type: 'string', format: 'uri', example: 'https://example.com/avatar.png' },
           },
         },
 
-        // 4. Đổi mật khẩu (Change Password)
         ChangePasswordDTO: {
           type: 'object',
           required: ['oldPassword', 'newPassword', 'confirmNewPassword'],
           properties: {
-            oldPassword: { type: 'string', format: 'password', example: 'OldPass123!' },
-            newPassword: { type: 'string', format: 'password', minLength: 8, example: 'NewPass123!' },
-            confirmNewPassword: { type: 'string', format: 'password', example: 'NewPass123!' },
+            oldPassword: { type: 'string', format: 'password' },
+            newPassword: { type: 'string', format: 'password', minLength: 8 },
+            confirmNewPassword: { type: 'string', format: 'password' },
           },
         },
 
-        // 5. Thay đổi trạng thái (Admin dùng)
         ChangeStatusDTO: {
           type: 'object',
           required: ['status'],
@@ -343,33 +448,16 @@ const options = {
             status: {
               type: 'string',
               enum: ['ACTIVE', 'INACTIVE', 'BANNED', 'PENDING'],
-              example: 'ACTIVE'
+              example: 'BANNED',
             },
           },
         },
-        SuccessResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            code: { type: 'string', example: 'SYS_000' },
-            statusCode: { type: 'number', example: 200 },
-            message: { type: 'string', example: 'Thao tác thực hiện thành công' },
-            data: { type: 'object' }
-          }
-        },
-        ErrorResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: false },
-            code: { type: 'string' },
-            statusCode: { type: 'number' },
-            message: { type: 'string' }
-          }
-        }
       },
     },
+
+    paths,   // ← Gọi biến paths ở đây
   },
-  apis: [], // Nếu đã viết paths ở trên thì nên để trống hoặc trỏ đúng chỗ
+  apis: [], // Nếu sau này dùng JSDoc comment thì thêm đường dẫn vào đây
 };
 
 export const specs = swaggerJsdoc(options);

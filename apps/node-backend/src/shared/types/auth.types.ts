@@ -1,7 +1,20 @@
+import { Request } from 'express';
+
+export class TokenPayload {
+  public readonly userId!: string;
+  public readonly role!: string;
+
+  // Index Signature: Cho phép chứa bất kỳ thông tin mở rộng nào (deviceId, sessionId,...)
+  [key: string]: unknown;
+
+  constructor(init?: Partial<TokenPayload>) {
+    if (init) Object.assign(this, init);
+  }
+}
+
 /**
- * Interface định nghĩa dữ liệu (payload) được mã hóa bên trong JWT.
+ * Request đã được xác thực, luôn chứa đối tượng TokenPayload linh hoạt.
  */
-export interface TokenPayload {
-  userId: string;
-  role: string;
+export interface AuthRequest extends Request {
+  user?: TokenPayload;
 }

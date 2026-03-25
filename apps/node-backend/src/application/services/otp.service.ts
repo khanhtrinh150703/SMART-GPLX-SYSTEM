@@ -28,12 +28,12 @@ export class OtpService {
    * @returns {Promise<void>}
    */
   public async requestOtp(userEmail: string): Promise<void> {
-    // // 1. Kiểm tra xem người dùng có đang bị khóa tính năng gửi lại không
-    // const isLocked = await this.otpRepo.checkResendLock(userEmail);
-    // if (isLocked) {
-    //   // Lưu ý: Cần thêm mã lỗi TOO_MANY_REQUESTS vào ErrorCode của bạn
-    //   throw new AppError(ErrorCode.AUTH.TOO_MANY_REQUESTS); 
-    // }
+    // 1. Kiểm tra xem người dùng có đang bị khóa tính năng gửi lại không
+    const isLocked = await this.otpRepo.isResendLocked(userEmail);
+    if (isLocked) {
+      // Lưu ý: Cần thêm mã lỗi TOO_MANY_REQUESTS vào ErrorCode của bạn
+      throw new AppError(ErrorCode.SYSTEM.TOO_MANY_REQUESTS); 
+    }
 
     // 2. Xóa OTP cũ (nếu có) để đảm bảo chỉ có 1 OTP có hiệu lực
     await this.otpRepo.deleteOtp(userEmail);
@@ -43,7 +43,7 @@ export class OtpService {
     await this.otpRepo.saveOtp(userEmail, otpCode, TIME_CONSTANTS.OTP_TTL);
 
     // 4. Bật cờ khóa gửi lại (Resend Lock) trong 60 giây
-    // await this.otpRepo.setResendLock(userEmail, TIME_CONSTANTS.LOCK_TIME);
+    await this.otpRepo.setResendLock(userEmail, TIME_CONSTANTS.LOCK_TIME);
 
     // 5. Gửi email
     await this.emailService.sendOtpEmail(userEmail, otpCode);
