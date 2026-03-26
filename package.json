@@ -3,6 +3,8 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@types/express": "^5.0.6",
     "husky": "^8.0.0"
   },
