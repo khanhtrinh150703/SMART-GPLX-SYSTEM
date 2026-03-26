@@ -7,6 +7,7 @@ import { Result } from '@/shared/responses/api-response';
 // Import hàm bọc lỗi thần thánh
 import { catchAsync } from '@/shared/utils/catch-async';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
+import { AuthRequest } from '@/shared/types/auth.types';
 
 
 export class UserController {
@@ -38,19 +39,20 @@ export class UserController {
   });
 
   /**
-   * Tác dụng: Thay đổi mật khẩu người dùng.
-   * @param {Request} req - Chứa ChangePasswordDTO trong body.
-   * @param {Response} res - Phản hồi tiêu chuẩn.
-   * @returns {Promise<void>}
-   */
-  public changePassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const userId = req.params.id as string;
-    const dto = new ChangePasswordDTO(req.body);
+     * Tác dụng: API endpoint thay đổi mật khẩu người dùng.
+     * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
+     */
+  public changePassword = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+    // 1. Lấy userId trực tiếp (Hết lỗi đỏ nhờ AuthRequest và Middleware)
+    const userId = req.user.userId;
 
-    // Trả về kết quả thông báo từ Service
+    // 2. Khởi tạo DTO từ body (Ép kiểu sang Record để tránh any)
+    const dto = new ChangePasswordDTO(req.body as Record<string, unknown>);
+
+    // 3. Gọi Service
     await this.userService.changePassword(userId, dto);
 
-    // Không cần trả về user, chỉ cần báo thành công và truyền undefined cho data
+    // 4. Trả về kết quả chuẩn
     Result.ok(
       res,
       undefined,
@@ -114,7 +116,7 @@ export class UserController {
     Result.ok(
       res,
       undefined,
-      Message.USER.RESTORE_SUCCESS, 
+      Message.USER.RESTORE_SUCCESS,
       'USER_RESTORED_SUCCESS'
     );
   });

@@ -1,5 +1,6 @@
 import { UserStatus } from "./user.status"
 import { IUserProps } from "./user.props";
+import { AppError, ErrorCode } from "@/shared/errors";
 
 export class User {
   // Để tất cả là private để bảo vệ tính đóng gói (Encapsulation)
@@ -104,10 +105,6 @@ export class User {
     this.touch();
   }
 
-  public updatePassword(newPasswordHash: string): void {
-    this._passwordHash = newPasswordHash;
-    this.touch();
-  }
   public updateStatus(newStatus: UserStatus): void {
     this._status = newStatus;
   }
@@ -136,4 +133,31 @@ export class User {
     return this._fullName || this._username;
   }
 
+  /**
+   * Kiểm tra tính hợp lệ của mật khẩu cũ và cập nhật mật khẩu mới.
+   * @param {string} oldPasswordRaw - Mật khẩu cũ chưa hash.
+   * @param {string} newPasswordHash - Mật khẩu mới đã được hash từ Infrastructure.
+   * @param {Function} compareFn - Hàm so sánh hash.
+   */
+  public async updatePassword(
+    oldPasswordRaw: string,
+    newPasswordHash: string,
+    compareFn: (raw: string, hashed: string) => Promise<boolean>
+  ): Promise<void> {
+    if (!this._passwordHash) throw new AppError(ErrorCode.USER.NOT_FOUND);
+
+    const isMatch = await compareFn(oldPasswordRaw, this._passwordHash);
+    if (!isMatch) {
+      throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
+    }
+
+    this._passwordHash = newPasswordHash;
+  }
+
+  /**
+   * Đặt lại mật khẩu (Dùng cho Forgot Password - không cần mật khẩu cũ).
+   */
+  public resetPassword(newPasswordHash: string): void {
+    this._passwordHash = newPasswordHash;
+  }
 }

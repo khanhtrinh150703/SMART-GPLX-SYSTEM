@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '@/application/services/auth.service';
 import { RegistrationService } from '@/application/services/registration.service';
-import { RegisterDTO, VerifyUserDTO } from '@/application/dtos/request/auth.dto';
+import { RegisterDTO, ResetPasswordDTO, VerifyUserDTO } from '@/application/dtos/request/auth.dto';
 import { LoginInputDTO } from '@/application/dtos/request/loginInput.dto';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
@@ -75,24 +75,27 @@ export class AuthController {
   });
 
   /**
-     * Endpoint Logout: Sử dụng TokenPayload linh hoạt.
-     */
-  public logout = async (req: AuthRequest, res: Response): Promise<void> => {
-    /**
-     * TRƯỚC ĐÂY: Bạn chỉ lấy userId (const userId = req.user!.id)
-     * BÂY GIỜ: Bạn truyền nguyên đối tượng Payload linh hoạt vào Service.
-     */
-    const payload = req.user!;
+   * Tác dụng: Xử lý đăng xuất người dùng bằng cách thu hồi token.
+   * @param {AuthRequest} req - Request đã qua xác thực, chứa TokenPayload.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @param {NextFunction} next - Hàm chuyển tiếp lỗi của Express.
+   */
+  public logout = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+    // 1. Không dùng '!', dùng trực tiếp từ AuthRequest (đã được middleware đảm bảo)
+    const payload = req.user;
 
+    // 2. Gọi Service xử lý (catchAsync sẽ lo việc bắt lỗi nếu có)
     await this.authService.logout(payload);
 
+    // 3. Trả về kết quả theo format chuẩn của dự án
     Result.ok(
       res,
       undefined,
       Message.AUTH.LOGOUT_SUCCESS,
       'AUTH_LOGOUT_SUCCESS'
     );
-  };
+  });
+
   /**
    * Tác dụng: Yêu cầu gửi lại mã OTP.
    */
@@ -105,6 +108,45 @@ export class AuthController {
       undefined,
       Message.AUTH.OTP_RESENT,
       'AUTH_OTP_RESENT'
+    );
+  });
+
+  /**
+     * BƯỚC 1: API Yêu cầu gửi mã OTP quên mật khẩu.
+     * Endpoint: POST /api/v1/auth/forgot-password
+     */
+  public forgotPassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { email } = req.body;
+
+    // Điều phối xuống Service xử lý (Check user + Sinh OTP + Gửi Mail)
+    await this.authService.requestForgotPassword(email as string);
+
+    // Trả về thành công (Message sẽ được map từ SuccessMessages-VN qua code)
+    Result.ok(
+      res,
+      undefined,
+      Message.AUTH.OTP_EMAIL,
+      'AUTH_OTP_SENT_SUCCESS'
+    );
+  });
+
+  /**
+   * BƯỚC 2: API Xác thực OTP và đặt lại mật khẩu mới.
+   * Endpoint: POST /api/v1/auth/reset-password
+   */
+  public resetPassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    // 1. Đưa dữ liệu vào DTO để chuẩn bị validate
+    const dto = new ResetPasswordDTO(req.body);
+
+    // 2. Gọi Service thực hiện nghiệp vụ "2 trong 1" (Verify OTP + Update Pass)
+    await this.authService.resetPassword(dto);
+
+    // 3. Trả về thành công
+    Result.ok(
+      res,
+      undefined,
+      Message.AUTH.PASSWORD_RESET,
+      'AUTH_PASSWORD_RESET_SUCCESS'
     );
   });
 }

@@ -1,42 +1,91 @@
-import jwt from 'jsonwebtoken';
-import { env } from 'node:process';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { TokenPayload } from '../types/auth.types';
+import { AppError } from '../errors/error-app';
+import { ErrorCode } from '../errors/error-codes';
+import { env } from 'node:process';
 
 /**
- * Tiện ích xử lý JSON Web Token.
- * TUÂN THỦ: Không sử dụng try-catch, để lỗi bubble up lên Global Middleware.
+ * Utility xử lý JSON Web Token.
+ * TUÂN THỦ: Zero Any, No Hardcoded Messages.
  */
-export class JwtUtil {
-  private static readonly ACCESS_SECRET = (env.JWT_SECRET as string) || 'access_secret';
-  private static readonly REFRESH_SECRET = (env.JWT_REFRESH_SECRET as string) || 'refresh_secret';
+export const jwtUtil = {
+  /**
+   * Tác dụng: Tạo chữ ký Access Token.
+   */
+  signAccessToken(payload: TokenPayload, expiresIn: string | number): string {
+    const secret = env.JWT_ACCESS_SECRET;
+    if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+
+    // Chuyển Class Instance thành Plain Object sạch để ký
+    const plainPayload: Record<string, unknown> = {
+      userId: payload.userId,
+      role: payload.role
+    };
+
+    return jwt.sign(plainPayload, secret, { 
+      expiresIn: expiresIn as SignOptions['expiresIn'] 
+    });
+  },
 
   /**
-   * Giải mã Access Token. 
-   * Nếu token sai, thư viện sẽ tự throw JsonWebTokenError.
+   * Tác dụng: Xác thực Access Token.
    */
-  public static verifyAccessToken(token: string): TokenPayload {
-    return jwt.verify(token, this.ACCESS_SECRET) as unknown as TokenPayload;
-  }
+  verifyAccessToken(token: string): TokenPayload {
+    const secret = env.JWT_ACCESS_SECRET;
+    if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+
+    // jwt.verify trả về string | JwtPayload
+    const decoded = jwt.verify(token, secret);
+
+    // Kiểm tra nếu decoded là string (không hợp lệ với cấu trúc ta cần)
+    if (typeof decoded === 'string') {
+      // throw new AppError(ErrorCode.AUTH.INVALID_TOKEN);
+    }
+
+    // Ép kiểu về JwtPayload (Interface của thư viện) để truy cập thuộc tính an toàn
+    const payload = decoded as JwtPayload;
+
+    return new TokenPayload({
+      userId: payload.userId as string,
+      role: payload.role as string
+    });
+  },
 
   /**
-   * Tạo chữ ký Access Token.
-   * Fix lỗi Overload: Đảm bảo payload là plain object.
+   * Tác dụng: Tạo chữ ký Refresh Token.
    */
-  public static signAccessToken(payload: TokenPayload, expiresIn: string | number): string {
-    return jwt.sign({ ...payload }, this.ACCESS_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
-  }
+  signRefreshToken(payload: TokenPayload, expiresIn: string | number): string {
+    const secret = env.JWT_REFRESH_SECRET;
+    if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+
+    const plainPayload: Record<string, unknown> = {
+      userId: payload.userId,
+      role: payload.role
+    };
+
+    return jwt.sign(plainPayload, secret, { 
+      expiresIn: expiresIn as SignOptions['expiresIn'] 
+    });
+  },
 
   /**
-   * Giải mã Refresh Token.
+   * Tác dụng: Xác thực Refresh Token.
    */
-  public static verifyRefreshToken(token: string): TokenPayload {
-    return jwt.verify(token, this.REFRESH_SECRET) as unknown as TokenPayload;
-  }
+  verifyRefreshToken(token: string): TokenPayload {
+    const secret = env.JWT_REFRESH_SECRET;
+    if (!secret) throw new AppError(ErrorCode.SYSTEM.CONFIG_ERROR);
 
-  /**
-   * Tạo chữ ký Refresh Token.
-   */
-  public static signRefreshToken(payload: TokenPayload, expiresIn: string | number): string {
-    return jwt.sign({ ...payload }, this.REFRESH_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
+    const decoded = jwt.verify(token, secret);
+
+    // if (typeof decoded === 'string') {
+    //   throw new AppError(ErrorCode.AUTH.INVALID_TOKEN);
+    // }
+
+    const payload = decoded as JwtPayload;
+
+    return new TokenPayload({
+      userId: payload.userId as string,
+      role: payload.role as string
+    });
   }
-}
+};

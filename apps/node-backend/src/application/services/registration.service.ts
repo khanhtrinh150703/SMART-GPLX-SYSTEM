@@ -33,7 +33,7 @@ export class RegistrationService {
     await this.userService.checkExisting(normalizedUsername, normalizedEmail);
 
     // 2. Lưu dữ liệu đăng ký vào Redis (Pending Data)
-    await this.pendingRepo.savePendingData(
+    await this.pendingRepo.save(
       normalizedEmail,
       JSON.stringify(dto),
       TIME_CONSTANTS.PENDING_TTL
@@ -53,7 +53,7 @@ export class RegistrationService {
     const normalizedEmail = email.trim().toLowerCase();
 
     // 1. Lấy dữ liệu tạm từ PendingRepo để kiểm tra xem họ có thực sự đang đăng ký không
-    const rawData = await this.pendingRepo.getPendingData(normalizedEmail);
+    const rawData = await this.pendingRepo.get(normalizedEmail);
     if (!rawData) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }
@@ -76,7 +76,7 @@ export class RegistrationService {
     });
 
     // 5. Dọn dẹp dữ liệu tạm trong Redis
-    await this.pendingRepo.deletePendingData(normalizedEmail);
+    await this.pendingRepo.delete(normalizedEmail);
 
     return newUser;
   }
@@ -90,7 +90,7 @@ export class RegistrationService {
     const normalizedEmail = email.trim().toLowerCase();
 
     // 1. Kiểm tra xem luồng đăng ký tạm của người này còn tồn tại không
-    const isPending = await this.pendingRepo.getPendingData(normalizedEmail);
+    const isPending = await this.pendingRepo.get(normalizedEmail);
     if (!isPending) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }

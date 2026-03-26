@@ -16,5 +16,14 @@ export class TokenPayload {
  * Request đã được xác thực, luôn chứa đối tượng TokenPayload linh hoạt.
  */
 export interface AuthRequest extends Request {
-  user?: TokenPayload;
+  user: TokenPayload;
+}
+
+export class Tokens {
+  public readonly accessToken!: string;
+  public readonly refreshToken!: string;
+
+  constructor(init?: Partial<Tokens>) {
+    if (init) Object.assign(this, init);
+  }
 }

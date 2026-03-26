@@ -4,10 +4,10 @@ import { LoginResponseDTO } from '../dtos/response/auth.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
 import { UserService } from './user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
-import { JWT_CONSTANTS } from '@/domain/constants/time.constants';
-import { ITokenRepository } from '@/domain/interfaces/repositories/i-token.repository';
-import { JwtUtil } from '@/shared/utils/jwt.util';
 import { TokenPayload } from '@/shared/types/auth.types';
+import { ITokenManager } from '@/domain/interfaces/services/i-token-manager';
+import { ResetPasswordDTO } from '../dtos/request/auth.dto';
+import { OtpService } from './otp.service';
 
 /**
  * Service xử lý nghiệp vụ xác thực người dùng.
@@ -15,7 +15,8 @@ import { TokenPayload } from '@/shared/types/auth.types';
 export class AuthService {
   constructor(
     private readonly userService: UserService, // Dùng Service thay vì Repo
-    private readonly tokenRepo: ITokenRepository
+    private readonly tokenManager: ITokenManager,
+    private readonly otpService: OtpService,
   ) { }
 
   /**
@@ -39,39 +40,71 @@ export class AuthService {
       throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
     }
 
-    const payload1 = new TokenPayload({ userId: user.id, role: 'USER' });
-    // 4. Sinh bộ đôi Token
-    // Sử dụng JwtUtil đã fix
-    const accessToken = JwtUtil.signAccessToken(
-      payload1,
-      JWT_CONSTANTS.ACCESS_TOKEN_EXPIRE
-    );
-    // Tạm thời để Role USER
-    const refreshToken = JwtUtil.signRefreshToken(
-      payload1,
-      JWT_CONSTANTS.REFRESH_TOKEN_EXPIRE
-    );
+    // 4. CHỐT: Manager sẽ làm hết việc Ký JWT + Lưu vào Redis
+    const payload = new TokenPayload({
+      userId: user.id,
+      role: 'USER', // Cậu có thể lấy role từ user entity
+      // deviceId: dto.deviceId // Nếu DTO có deviceId
+    });
 
-    // 5. Lưu Refresh Token vào Redis để quản lý phiên đăng nhập
-    await this.tokenRepo.saveToken(user.id, refreshToken, JWT_CONSTANTS.REFRESH_TOKEN_TTL);
+    // Manager trả về cặp token, AuthService không cần gọi jwtUtil thủ công nữa
+    const tokens = await this.tokenManager.generateAndStoreTokens(payload);
 
-    // 6. Trả về dữ liệu thông qua Mapper (Zero Any)
-    return UserMapper.toLoginResponse(user, accessToken, refreshToken);
+    // 5. Trả về thông qua Mapper
+    return UserMapper.toLoginResponse(user, tokens.accessToken, tokens.refreshToken);
   }
 
-  
   /**
-   * Đăng xuất người dùng.
-   * @param {TokenPayload} payload - Toàn bộ thông tin từ Token.
-   */
+     * Tác dụng: Đăng xuất người dùng.
+     */
   public async logout(payload: TokenPayload): Promise<void> {
-    // 1. Lấy userId (Bắt buộc)
-    const userId = payload.userId;
+    // CHỐT: Gọi thẳng Manager để thu hồi session
+    await this.tokenManager.revokeToken(payload.userId);
+  }
 
-    // 2. Lấy thêm các thông tin linh hoạt (nếu có) để xóa chính xác session đó
-    // Ví dụ: const sessionId = payload.sessionId as string;
+  /**
+     * BƯỚC 1: YÊU CẦU GỬI OTP
+     * Tác dụng: Kiểm tra email và gửi mã OTP qua MailService.
+     */
+  public async requestForgotPassword(email: string): Promise<void> {
+    // 1. Kiểm tra User có tồn tại không (Hỏi qua UserService)
+    const user = await this.userService.getUserByEmail(email);
+    if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
 
-    // Xóa Refresh Token trong Redis
-    await this.tokenRepo.deleteToken(userId);
+    // 2. Nhờ OtpService sinh mã, lưu vào Redis và gửi mail hộ
+    // Hàm requestOtp này cậu đã viết rất chuẩn ở turn trước rồi.
+    await this.otpService.requestOtp(email);
+  }
+
+  /**
+   * BƯỚC 2: XÁC THỰC OTP & ĐỔI MẬT KHẨU
+   * Tác dụng: Kiểm tra mã OTP, nếu đúng thì cập nhật mật khẩu mới vào DB.
+   */
+  public async resetPassword(dto: ResetPasswordDTO): Promise<void> {
+    // 1. Rule 8: DTO tự validate dữ liệu (Cheap Check)
+    dto.validateOrThrow();
+
+    // 2. Nhờ OtpService xác thực mã OTP (Nếu sai/hết hạn sẽ tự ném lỗi bên trong)
+    await this.otpService.verifyOtp(dto.email, dto.otp);
+
+    // 3. Tìm User để chuẩn bị cập nhật
+    const user = await this.userService.getUserByEmail(dto.email);
+    if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+
+    // 4. Hash mật khẩu mới
+    const hashedPass = await bcrypt.hash(dto.newPassword, 10);
+
+    // 5. Rule 6: Rich Domain Model - Entity tự cập nhật trạng thái
+    user.resetPassword(hashedPass);
+
+    // 6. Lưu vào MySQL thông qua UserService
+    await this.userService.update(user);
+
+    // 7. CHIẾN THUẬT BẢO MẬT (Logout All)
+    // Sau khi đổi pass thành công, đá hết các thiết bị đang dùng pass cũ ra
+    await this.tokenManager.revokeToken(user.id);
+
+    // Xóa nốt OTP vì đã dùng xong (Nếu OtpService chưa xóa trong verifyOtp)
+    await this.otpService.deleteOtp(dto.email);
   }
 }

@@ -14,7 +14,7 @@ export class RedisPendingUserRepository implements IPendingUserRepository {
    * @param {number} ttlSeconds - Thời gian sống của dữ liệu (tính bằng giây).
    * @returns {Promise<void>}
    */
-  public async savePendingData(key: string, data: string, ttlSeconds: number): Promise<void> {
+  public async save(key: string, data: string, ttlSeconds: number): Promise<void> {
     // SỬA LỖI: Đổi tên biến thành redisKey để tránh trùng lặp (shadowing) với tham số 'key'
     const redisKey = `${REDIS_CONSTANTS.PENDING_PREFIX}${key}`;
     
@@ -28,7 +28,7 @@ export class RedisPendingUserRepository implements IPendingUserRepository {
    * @param {string} key - Từ khóa nhận diện (email hoặc UUID).
    * @returns {Promise<string | null>} - Trả về chuỗi dữ liệu (JSON string) hoặc null nếu không tìm thấy/đã hết hạn.
    */
-  public async getPendingData(key: string): Promise<string | null> {
+  public async get(key: string): Promise<string | null> {
     // SỬA LỖI: Sử dụng đúng Prefix của Pending User thay vì hardcode 'otp:'
     const redisKey = `${REDIS_CONSTANTS.PENDING_PREFIX}${key}`;
     return await redisClient.get(redisKey);
@@ -39,7 +39,7 @@ export class RedisPendingUserRepository implements IPendingUserRepository {
    * @param {string} key - Từ khóa nhận diện (email hoặc UUID).
    * @returns {Promise<void>}
    */
-  public async deletePendingData(key: string): Promise<void> {
+  public async delete(key: string): Promise<void> {
     // SỬA LỖI: Sử dụng đúng Prefix của Pending User
     const redisKey = `${REDIS_CONSTANTS.PENDING_PREFIX}${key}`;
     await redisClient.del(redisKey);

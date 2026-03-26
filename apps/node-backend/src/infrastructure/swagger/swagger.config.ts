@@ -143,7 +143,7 @@ const paths = {
   },
 
   // ====================== USER MANAGEMENT ======================
-  [`${API_BASE}/users/{id}/profile`]: {
+  [`${API_BASE}/users/me/profile`]: {
     patch: {
       tags: ['User Management'],
       summary: 'Cập nhật thông tin cá nhân',
@@ -177,7 +177,7 @@ const paths = {
     },
   },
 
-  [`${API_BASE}/users/{id}/password`]: {
+  [`${API_BASE}/users/me/password`]: {
     patch: {
       tags: ['User Management'],
       summary: 'Đổi mật khẩu',
@@ -235,17 +235,17 @@ const paths = {
     },
   },
 
-[`${API_BASE}/users/{id}`]: {
+  [`${API_BASE}/users/{id}`]: {
     delete: {
       tags: ['User Management'],
       summary: 'Xóa mềm tài khoản người dùng',
       description: 'Đánh dấu tài khoản đã xóa bằng cách gán timestamp vào trường deletedAt. Tài khoản sẽ không thể đăng nhập nhưng vẫn tồn tại trong DB.',
       security: [{ bearerAuth: [] }],
       parameters: [
-        { 
-          name: 'id', 
-          in: 'path', 
-          required: true, 
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
           schema: { type: 'string' },
           description: 'ID của người dùng cần xóa'
         },
@@ -273,10 +273,10 @@ const paths = {
       description: 'Gỡ bỏ đánh dấu xóa (set deletedAt = null) và kích hoạt lại tài khoản. Chỉ ADMIN mới có quyền thực hiện.',
       security: [{ bearerAuth: [] }],
       parameters: [
-        { 
-          name: 'id', 
-          in: 'path', 
-          required: true, 
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
           schema: { type: 'string' },
           description: 'ID của người dùng cần khôi phục'
         },
@@ -292,7 +292,7 @@ const paths = {
         },
         '401': { $ref: '#/components/responses/UnauthorizedError' },
         '404': { description: 'Không tìm thấy bản ghi đã xóa để khôi phục' },
-        '409': { 
+        '409': {
           description: 'Xung đột dữ liệu: Username hoặc Email của tài khoản này đã bị một tài khoản khác đang hoạt động chiếm dụng.',
           content: {
             'application/json': {
@@ -300,6 +300,45 @@ const paths = {
             }
           }
         }
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/forgot-password`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Bước 1: Yêu cầu gửi mã OTP quên mật khẩu',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ForgotPasswordDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': { description: 'OTP đã được gửi qua email' },
+        '404': { description: 'Email không tồn tại trong hệ thống' },
+        '429': { description: 'Gửi quá nhanh, đang bị khóa (Resend Lock)' },
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/reset-password`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Bước 2: Xác thực OTP và đặt lại mật khẩu mới',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ResetPasswordDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': { description: 'Đặt lại mật khẩu thành công' },
+        '400': { description: 'Mã OTP sai hoặc đã hết hạn' },
       },
     },
   },
@@ -450,6 +489,29 @@ const options = {
               enum: ['ACTIVE', 'INACTIVE', 'BANNED', 'PENDING'],
               example: 'BANNED',
             },
+          },
+        },
+        // DTO Bước 1: Chỉ cần Email
+        ForgotPasswordDTO: {
+          type: 'object',
+          required: ['email'],
+          properties: {
+            email: {
+              type: 'string',
+              format: 'email',
+              example: 'user@example.com'
+            },
+          },
+        },
+
+        // DTO Bước 2: OTP + Pass mới
+        ResetPasswordDTO: {
+          type: 'object',
+          required: ['email', 'otp', 'newPassword'],
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            otp: { type: 'string', example: '123456', description: 'Mã 6 số từ Email' },
+            newPassword: { type: 'string', example: 'NewPass789!!!' },
           },
         },
       },

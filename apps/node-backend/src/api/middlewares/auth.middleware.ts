@@ -1,24 +1,26 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest, TokenPayload } from '../../shared/types/auth.types';
-import { JwtUtil } from '../../shared/utils/jwt.util';
-import { AppError, ErrorCode } from '@/shared/errors';
+import { catchAsync } from '@/shared/utils/catch-async';
+import { AuthRequest, TokenPayload } from '@/shared/types/auth.types';
+import { AppError } from '@/shared/errors/error-app';
+import { ErrorCode } from '@/shared/errors/error-codes';
+import { jwtUtil } from '@/shared/utils/jwt.util';
 
-export const authMiddleware = (req: AuthRequest, _: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-    console.log(authHeader)
-    console.log(token)
+/**
+ * Tác dụng: Xác thực Token và gán Payload vào Request.
+ */
+export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(' ')[1];
 
-    if (!token) throw new AppError(ErrorCode.AUTH.UNAUTHORIZED);
+  if (!token) throw new AppError(ErrorCode.AUTH.UNAUTHORIZED);
 
-    const decoded = JwtUtil.verifyAccessToken(token);
+  // Giả sử hàm verify trả về decoded data
+  const decoded = jwtUtil.verifyAccessToken(token);
 
-    // QUAN TRỌNG: Phải gán instance của TokenPayload vào đây
-    req.user = new TokenPayload(decoded); 
+  // Đúc dữ liệu vào class TokenPayload của bạn
+  req.user = new TokenPayload({
+    userId: decoded.userId,
+    role: decoded.role
+  });
 
-    next();
-  } catch (error) {
-    next(error); // Đẩy lỗi ra Error Middleware
-  }
-};
+  next();
+});

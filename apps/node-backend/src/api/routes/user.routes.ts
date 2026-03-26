@@ -1,43 +1,95 @@
 import { Router } from 'express';
 
+// ============================================================================
+// 1. IMPORTS
+// ============================================================================
 // Controllers
 import { UserController } from '../controllers/user.controller';
 
-// Services & Repositories
+// Services
 import { UserService } from '@/application/services/user.service';
+
+// Repositories
 import { UserRepository } from '@/infrastructure/repositories/mysql/user.repository';
 
 // Middlewares
-// import { authMiddleware } from '../middlewares/auth.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { ITokenRepository } from '@/domain/interfaces/repositories/i-token.repository';
+import { RedisTokenRepository } from '@/infrastructure/repositories/redis/redis-token.repository';
+import { IUserRepository } from '@/domain/interfaces/repositories/i-user.repository';
+import { ITokenManager } from '@/domain/interfaces/services/i-token-manager';
+import { JwtTokenManager } from '@/infrastructure/security/jwt-token.manager';
 
 // ============================================================================
-// 1. KHỞI TẠO DEPENDENCIES (DI Container nội bộ)
+// 2. KHỞI TẠO DEPENDENCIES (DI Container nội bộ)
 // ============================================================================
 const router = Router();
 
-// Khởi tạo các lớp theo đúng thứ tự từ dưới lên trên
-const userRepo = new UserRepository();
-const userService = new UserService(userRepo);
+// --- Tầng Infrastructure (Cái kho) ---
+const userRepo: IUserRepository = new UserRepository();
+const tokenRepo: ITokenRepository = new RedisTokenRepository();
+
+// --- Tầng Security/Service (Bộ não) ---
+// CHÍNH XÁC: Phải tạo Manager và truyền Repo vào đây
+const tokenManager: ITokenManager = new JwtTokenManager(tokenRepo);
+
+// --- Tầng Application (Nghiệp vụ) ---
+// Bây giờ truyền Manager (chứ không phải Repo) vào UserService
+const userService = new UserService(userRepo, tokenManager);
+
+// --- Tầng API (Giao tiếp) ---
 const userController = new UserController(userService);
 
 // ============================================================================
-// 2. ĐỊNH NGHĨA ROUTES (Tất cả đều được bảo vệ bởi authMiddleware)
+// 3. ĐỊNH NGHĨA ROUTES
 // ============================================================================
 
-// 1. Cập nhật thông tin cá nhân (Profile)
-// Sử dụng .bind(userController) để tránh lỗi undefined 'this'
-router.patch('/:id/profile',userController.updateProfile.bind(userController));
+/**
+ * NHÓM 1: CÁC ROUTE CÁ NHÂN (Dành cho chính chủ tài khoản)
+ * Tất cả đều bắt buộc qua authMiddleware.
+ * Controller sẽ lấy ID từ TokenPayload (req.user.userId) thay vì tin vào params.
+ */
 
-// 2. Đổi mật khẩu
-router.patch('/:id/password',userController.changePassword.bind(userController));
+// Cập nhật thông tin cá nhân
+router.patch(
+  '/me/profile',
+  authMiddleware,
+  userController.updateProfile
+);
 
-// 3. Đổi trạng thái (Khóa/Mở khóa tài khoản)
-// Lưu ý: Tạm thời dùng authMiddleware, sau này Cậu hãy thêm adminMiddleware vào đây nhé!
-router.patch('/:id/status', userController.updateStatus.bind(userController));
+// Đổi mật khẩu (Sử dụng route /me để khẳng định tính chính chủ)
+router.patch(
+  '/me/password',
+  authMiddleware,
+  userController.changePassword
+);
 
-// 4. Xóa tài khoản (Soft Delete)
-router.delete('/:id', userController.deleteUser.bind(userController));
+// ----------------------------------------------------------------------------
 
-router.patch('/:id/restore', userController.restoreUser.bind(userController));
+/**
+ * NHÓM 2: CÁC ROUTE QUẢN TRỊ (Dành cho Admin/Moderator)
+ * Cần authMiddleware và sau này là roleMiddleware (Admin).
+ */
+
+// Đổi trạng thái (Khóa/Mở khóa tài khoản bất kỳ qua ID)
+router.patch(
+  '/:id/status',
+  authMiddleware,
+  userController.updateStatus
+);
+
+// Xóa tài khoản (Soft Delete)
+router.delete(
+  '/:id',
+  authMiddleware,
+  userController.deleteUser
+);
+
+// Khôi phục tài khoản đã xóa
+router.patch(
+  '/:id/restore',
+  authMiddleware,
+  userController.restoreUser
+);
 
 export default router;

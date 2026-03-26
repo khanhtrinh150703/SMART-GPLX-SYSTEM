@@ -31,6 +31,9 @@ export const authSteps = () => {
         weakPassword: '123'
     };
 
+    const TEST_EMAIL = 'gplx@dividesk.com';
+    const NEW_PASSWORD = 'NewSecurePassword123@';
+
     // --- HELPERS (Các hàm hỗ trợ gỡ rối) ---
     const getOtpFromRedis = async (email: string): Promise<string | null> => {
         return await redisClient.get(`otp:${email.toLowerCase()}`);
@@ -45,6 +48,14 @@ export const authSteps = () => {
         const lockKey = `otp_lock:${email}`; // Đảm bảo trùng với prefix trong Repo
         await redisClient.del(lockKey);
     };
+
+    const delOTP = async (email: string) => {
+        const lockKey = `otp_lock:${email}`; // Đảm bảo trùng với prefix trong Repo
+        await redisClient.del(lockKey);
+
+        await redisClient.del(`otp:${email}`);
+    };
+
 
     describe('🛡️ Auth API Integration Suite', () => {
 
@@ -172,6 +183,110 @@ export const authSteps = () => {
                     expect(response.status).toBe(ErrorStatus.USER_003);
                     expect(response.body.code).toBe(code);
                 });
+            });
+        });
+    });
+
+    describe('🔑 Kịch bản: Quên mật khẩu (Forgot Password Flow)', () => {
+
+
+        /**
+         * GIAI ĐOẠN 1: YÊU CẦU GỬI OTP
+         */
+        describe('Step 1: Gửi yêu cầu OTP (Forgot Password Request)', () => {
+
+            it('Nên gửi OTP thành công khi Email tồn tại', async () => {
+                await clearResendLock(TEST_DATA.validUser.email);
+
+                const response = await request(app)
+                    .post('/api/v1/auth/forgot-password')
+                    .send({ email: TEST_DATA.validUser.email });
+
+                expect(response.status).toBe(200);
+                expect(response.body).toMatchObject({
+                    success: true,
+                    code: 'AUTH_OTP_SENT_SUCCESS'
+                });
+            }, 10000);
+
+            it('Nên báo lỗi khi Email không tồn tại trong hệ thống', async () => {
+                const response = await request(app)
+                    .post('/api/v1/auth/forgot-password')
+                    .send({ email: 'nonexistent@gmail.com' });
+
+                expect(response.body.code).toBe(ErrorCode.USER.NOT_FOUND);
+            });
+
+            it('Nên báo lỗi TOO_MANY_REQUESTS khi nhấn gửi lại quá nhanh (Spam)', async () => {
+                // Gửi lần 1
+                await request(app).post('/api/v1/auth/forgot-password').send({ email: TEST_EMAIL });
+
+                // Gửi lần 2 ngay lập tức
+                const response = await request(app)
+                    .post('/api/v1/auth/forgot-password')
+                    .send({ email: TEST_EMAIL });
+
+                expect(response.body.code).toBe(ErrorCode.SYSTEM.TOO_MANY_REQUESTS);
+            });
+        });
+
+        /**
+         * GIAI ĐOẠN 2: XÁC THỰC OTP VÀ RESET PASSWORD
+         */
+        describe('Step 2: Xác thực & Đặt lại mật khẩu (Reset Password)', () => {
+
+            it('Nên báo lỗi khi nhập sai mã OTP', async () => {
+                const response = await request(app)
+                    .post('/api/v1/auth/reset-password')
+                    .send({
+                        email: TEST_EMAIL,
+                        otp: '000000', // Mã sai
+                        newPassword: NEW_PASSWORD
+                    });
+
+                expect(response.body.code).toBe(ErrorCode.AUTH.OTP_INVALID);
+            });
+
+            it('Nên đặt lại mật khẩu thành công với OTP hợp lệ', async () => {
+                // 1. Lấy mã OTP từ Redis (Trong môi trường Test, cậu có quyền truy cập trực tiếp vào Redis để lấy mã)
+                const otpCode = await getOtpFromRedis(TEST_DATA.validUser.email)
+
+                const response = await request(app)
+                    .post('/api/v1/auth/reset-password')
+                    .send({
+                        email: TEST_EMAIL,
+                        otp: otpCode,
+                        newPassword: NEW_PASSWORD
+                    });
+
+
+                expect(response.status).toBe(200);
+                expect(response.body.code).toBe('AUTH_PASSWORD_RESET_SUCCESS');
+
+
+            });
+
+            it('Nên đăng nhập thành công', async () => {      // 2. Kiểm chứng thêm: Thử login bằng mật khẩu mới phải thành công
+                const loginResponse = await request(app)
+                    .post('/api/v1/auth/login')
+                    .send({ username: TEST_EMAIL, password: NEW_PASSWORD });
+
+                expect(loginResponse.status).toBe(200);
+            });
+
+            it('Nên báo lỗi khi mã OTP đã hết hạn hoặc không tồn tại', async () => {
+                // Xóa OTP trong Redis để giả lập hết hạn
+                await delOTP(TEST_DATA.validUser.email)
+
+                const response = await request(app)
+                    .post('/api/v1/auth/reset-password')
+                    .send({
+                        email: TEST_EMAIL,
+                        otp: '123456',
+                        newPassword: NEW_PASSWORD
+                    });
+
+                expect(response.body.code).toBe(ErrorCode.AUTH.OTP_EXPIRED);
             });
         });
     });

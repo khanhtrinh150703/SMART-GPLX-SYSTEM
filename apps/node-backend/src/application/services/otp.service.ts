@@ -12,7 +12,7 @@ export class OtpService {
   constructor(
     private readonly otpRepo: IOtpRepository,
     private readonly emailService: IEmailService
-  ) {}
+  ) { }
 
   /**
    * Tác dụng: Tạo mã OTP ngẫu nhiên gồm 6 chữ số.
@@ -32,7 +32,7 @@ export class OtpService {
     const isLocked = await this.otpRepo.isResendLocked(userEmail);
     if (isLocked) {
       // Lưu ý: Cần thêm mã lỗi TOO_MANY_REQUESTS vào ErrorCode của bạn
-      throw new AppError(ErrorCode.SYSTEM.TOO_MANY_REQUESTS); 
+      throw new AppError(ErrorCode.SYSTEM.TOO_MANY_REQUESTS);
     }
 
     // 2. Xóa OTP cũ (nếu có) để đảm bảo chỉ có 1 OTP có hiệu lực
@@ -71,4 +71,15 @@ export class OtpService {
 
     return true;
   }
+
+  /**
+   * Tác dụng: Xóa mã OTP của người dùng khỏi kho lưu trữ.
+   * Hàm này cho phép các Service khác chủ động dọn dẹp mã sau khi hoàn tất nghiệp vụ.
+   * @param {string} userEmail - Email của người dùng cần xóa OTP.
+   * @returns {Promise<void>}
+   */
+  public deleteOtp = async (userEmail: string): Promise<void> => {
+    // Service điều phối lệnh trực tiếp xuống Repository thực thi
+    await this.otpRepo.deleteOtp(userEmail);
+  };
 }
