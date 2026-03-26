@@ -87,29 +87,100 @@ Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
 
 ## 📂 Folder Structure
 
-* `src/api`: Tầng giao tiếp (Controllers, Routes, Middlewares).
-* `src/application`: Tầng điều phối nghiệp vụ (Services, DTOs).
-* `src/domain`: Tầng lõi business (Constants, Entities, Interfaces).
-* `src/infrastructure`: Kết nối bên ngoài (Database, Repositories, External Services, Security, Logging, Swagger).
-* `src/shared`: Thành phần dùng chung (Errors, Types, Utils).
-* `src/tests`: Kiểm thử tích hợp.
-* `src/app.ts`: Cấu hình Express và middlewares.
-* `src/server.ts`: Entry point khởi chạy server.
-* 
-### 2. Frontend (`react-enterprise-boilerplate/`)
+```bash
+src/
+├── api/                          # Tầng trình bày (Presentation Layer)
+│   ├── controllers/              # Xử lý request/response, gọi service
+│   ├── middlewares/              # Các middleware (auth, validation, error handling...)
+│   └── routes/                   # Định nghĩa các route API
+│
+├── application/                  # Tầng ứng dụng (Application Layer)
+│   ├── dtos/                     # Data Transfer Objects - Dữ liệu truyền giữa các tầng
+│   └── services/                 # Business logic chính (Use Cases)
+│
+├── domain/                       # Tầng Domain - Core của ứng dụng (Business Logic thuần)
+│   ├── constants/                # Các hằng số dùng chung trong domain
+│   ├── entities/                 # Các Entity chính (User, Exam, Question...)
+│   └── interfaces/               # Interface repository, service... (không phụ thuộc công nghệ)
+│
+├── infrastructure/               # Tầng hạ tầng (Infrastructure Layer)
+│   ├── database/                 # Kết nối và thao tác với Database
+│   │   ├── mappers/              # Chuyển đổi giữa Entity và Model DB
+│   │   └── redis/                # Logic liên quan đến Redis
+│   ├── external-services/        # Kết nối với các dịch vụ bên thứ 3
+│   │   └── mailer/
+│   │       └── mailer.service.ts # Ví dụ: Gửi email
+│   ├── logging/                  # Hệ thống logging
+│   │   └── winston.logger.ts
+│   ├── repositories/             # Implement các interface từ Domain
+│   │   ├── mysql/                # Repository cho MySQL
+│   │   └── redis/                # Repository cho Redis
+│   └── swagger/                  # Cấu hình Swagger/OpenAPI
+│
+├── shared/                       # Các module dùng chung cho toàn bộ dự án
+│
+├── app.ts                        # Cấu hình Express/Fastify app (middleware, routes...)
+├── server.ts                     # Khởi động server
+│
+├── tests/                        # Thư mục chứa test (unit, integration, e2e)
+├── .env                          # Biến môi trường
+├── Dockerfile                    # Docker configuration
+├── eslint.config.mjs
+├── jest.config.js
+├── package-lock.json
+├── package.json
+└── tsconfig.json
+```
+  
+### 2. Frontend (`nextjs-frontend/`)
 
 Tổ chức theo tính năng (Feature-based):
 
 ## 📂 Folder Structure
 
-- `src/api/`          → API services (feature-based: auth, exam, ...)  
-- `src/components/ui/` → Reusable UI atoms (Button, Input, ...)  
-- `src/components/layouts/` → Page layouts (Dashboard, Auth, ...)  
-- `src/constants/`    → Routes, API URLs, config  
-- `src/store/`        → Global state  
-- `src/utils/`        → Helpers, formatters, validators  
-- `src/middleware.ts` → Auth & route protection
+## Cấu trúc dự án (Project Structure)
 
+Dự án được xây dựng với **Next.js App Router**, tách biệt rõ ràng giữa routing và logic ứng dụng.
+
+```bash
+## Cấu trúc dự án (Project Structure)
+
+Dự án được xây dựng với **Next.js App Router**, tập trung vào việc phân tách rõ ràng giữa UI, logic và cấu hình.
+
+```bash
+src/
+├── api/                          # Cấu hình kết nối HTTP
+│   └── axios-client.ts           # Base Axios instance với interceptors
+│
+├── app/                          # Routing & Layouts theo chuẩn App Router
+│   ├── (auth)/                   # Route Group cho xác thực (login, register, verify-otp)
+│   ├── (dashboard)/              # Route Group cho giao diện quản trị
+│   ├── error.tsx                 # Trang hiển thị lỗi hệ thống
+│   ├── layout.tsx                # Root layout (Chứa Navbar, Footer dùng chung)
+│   └── page.tsx                  # Trang chủ (Homepage)
+│
+├── assets/                       # Chứa hình ảnh, fonts, icons, video tĩnh
+│
+├── components/                   # Các component tái sử dụng
+│   ├── ui/                       # Atomic Components (Button, Input, Badge - dùng Shadcn/UI)
+│   ├── layouts/                  # Các bộ khung bố cục (AuthLayout, DashLayout)
+│   ├── common/                   # Component dùng chung có logic (Header, Sidebar...)
+│   └── features/                 # Component riêng cho từng tính năng (ProfileCard, ExamList...)
+│
+├── constants/                    # Các giá trị cố định và cấu hình
+│   ├── config/                   # Cấu hình thông tin dự án
+│   ├── api-endpoints.ts          # Danh sách API endpoints
+│   └── auth.constants.ts         # Hằng số liên quan đến auth (roles, token...)
+│
+├── hooks/                        # Custom React Hooks (useAuth, useLocalStorage...)
+├── lib/                          # Cấu hình thư viện bên thứ 3
+├── middlewares/                  # Các middleware xử lý trung gian
+│   └── auth-middleware.ts
+├── services/                     # Business logic và các hàm gọi API
+│   ├── auth.service.ts
+│   └── user.service.ts
+└── types/                        # Định nghĩa TypeScript (Interfaces, Types, Enums)
+```
 
 ### 3. AI Engine (`ai-engine/`)
 

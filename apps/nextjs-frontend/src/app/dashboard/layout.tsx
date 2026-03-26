@@ -1,24 +1,29 @@
+import Sidebar from '@/src/components/common/Sidebar';
+import Header from '@/src/components/common/Header';
+
 export default function DashboardLayout({
-  children, // 'children' (các thành phần con) ở đây chính là nội dung của file page.tsx
+  children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Thanh menu bên trái (Sidebar) */}
-      <aside className="w-64 bg-white shadow-md p-4">
-        <h2 className="text-xl font-bold mb-6 text-blue-600">Hệ thống Quản trị</h2>
-        <ul>
-          <li className="mb-3 hover:text-blue-500 cursor-pointer font-medium">Tổng quan</li>
-          <li className="mb-3 hover:text-blue-500 cursor-pointer font-medium">Quản lý Dữ liệu</li>
-          <li className="mb-3 hover:text-blue-500 cursor-pointer font-medium">Cài đặt</li>
-        </ul>
-      </aside>
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
+      {/* Thanh Menu bên trái (Sidebar) */}
+      <Sidebar />
 
-      {/* Khu vực nội dung chính */}
-      <main className="flex-1 p-8">
-        {children} 
-      </main>
+      {/* Cột Nội dung bên phải (Main Content Column) */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Thanh Tiêu đề trên cùng (Header) */}
+        <Header />
+
+        {/* Vùng chứa nội dung chính (High Whitespace, Scrollable) */}
+        <main className="flex-1 overflow-y-auto p-8">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Nội dung của các file page.tsx sẽ được Render (Kết xuất) vào đây */}
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

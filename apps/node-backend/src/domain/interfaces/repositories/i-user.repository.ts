@@ -1,11 +1,82 @@
-import { User } from '@/domain/entities/user/user.entity'
+import { User } from '@/domain/entities/user/user.entity';
 
+/**
+ * Interface định nghĩa các quy ước giao tiếp với dữ liệu User.
+ * Tuân thủ nguyên tắc Dependency Inversion: Tầng Domain không phụ thuộc vào Database cụ thể.
+ */
 export interface IUserRepository {
-  findByEmail(email: string): Promise<User | null>;
-  findById(id: string): Promise<User | null>;
-  findByUserName(id: string): Promise<User | null>;
-  findByUserName_deleted(id: string): Promise<User | null>;
-  checkUserExists(email: string, username: string): Promise<User | null>;
-  create(data: User): Promise<User | null>;
+  /**
+   * Tìm kiếm người dùng đang hoạt động bằng Email.
+   * @param {string} email
+   * @returns {Promise<User | null>}
+   */
+  findActiveByEmail(email: string): Promise<User | null>;
+
+  /**
+   * Tìm kiếm người dùng đang hoạt động bằng Username.
+   * @param {string} username
+   * @returns {Promise<User | null>}
+   */
+  findActiveByUsername(username: string): Promise<User | null>;
+
+  /**
+   * Tìm kiếm người dùng đang hoạt động bằng ID (UUID).
+   * @param {string} id
+   * @returns {Promise<User | null>}
+   */
+  findActiveById(id: string): Promise<User | null>;
+
+  /**
+   * Tìm kiếm người dùng đang hoạt động bằng một trong hai: Email hoặc Username.
+   * Thường dùng cho chức năng Đăng nhập linh hoạt.
+   * @param {string} identifier - Có thể là Email hoặc Username.
+   * @returns {Promise<User | null>}
+   */
+  findActiveByIdentifier(identifier: string): Promise<User | null>;
+
+
+
+  /**
+   * Tìm kiếm đích danh bằng Username và Email trên toàn bộ Database (Bao gồm cả đã xóa).
+   * @param {string} username 
+   * @returns {Promise<User | null>}
+   */
+  findExistingInSystem(email: string, username: string): Promise<User[]>;
+
+
+  /**
+   * Tìm kiếm đích danh bằng Username trên toàn bộ Database (Bao gồm cả đã xóa).
+   * @param {string} username 
+   * @returns {Promise<User | null>}
+   */
+  findByUsernameInSystem(username: string): Promise<User | null>;
+
+  
+  /**
+   * Tìm kiếm người dùng đang hoạt động bằng một trong hai: Email hoặc Username.
+   * Thường dùng cho chức năng Đăng nhập linh hoạt.
+   * @param {string} identifier - Có thể là Email hoặc Username.
+   * @returns {Promise<User | null>}
+   */
+  findByIdInSystem(identifier: string): Promise<User | null>;
+
+  /**
+   * Tìm kiếm người dùng bằng Email trên toàn bộ Database (Bao gồm cả đã xóa).
+   * @param {string} email 
+   * @returns {Promise<User | null>}
+   */
+  findByEmailInSystem(email: string): Promise<User | null>;
+  /**
+   * Lưu một người dùng mới vào hệ thống.
+   * @param {User} user - Domain Entity của User.
+   * @returns {Promise<User>} - Trả về Entity sau khi tạo thành công.
+   */
+  create(user: User): Promise<User>;
+
+  /**
+   * Cập nhật thông tin người dùng hiện có.
+   * @param {User} user - Domain Entity chứa dữ liệu đã thay đổi.
+   * @returns {Promise<User>} - Trả về Entity sau khi cập nhật thành công.
+   */
   update(user: User): Promise<User>;
 }

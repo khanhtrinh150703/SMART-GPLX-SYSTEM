@@ -9,6 +9,7 @@ import { Result } from '@/shared/responses/api-response';
 
 // IMPORT HÀM BỌC LỖI
 import { catchAsync } from '@/shared/utils/catch-async';
+import { AuthRequest } from '@/shared/types/auth.types';
 
 /**
  * Controller xử lý các luồng xác thực và đăng ký người dùng.
@@ -30,7 +31,7 @@ export class AuthController {
   // SỬ DỤNG catchAsync BỌC TOÀN BỘ HÀM
   public signUpInit = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const dto = new RegisterDTO(req.body);
-    
+
     // Nếu trong initiate có throw AppError, catchAsync sẽ tự động vớt và gọi next(err)
     await this.registrationService.initiate(dto);
 
@@ -54,7 +55,7 @@ export class AuthController {
       res,
       result,
       Message.AUTH.REGISTER_SUCCESS,
-      'CREATED_SUCCESS' 
+      'CREATED_SUCCESS'
     );
   });
 
@@ -73,6 +74,25 @@ export class AuthController {
     );
   });
 
+  /**
+     * Endpoint Logout: Sử dụng TokenPayload linh hoạt.
+     */
+  public logout = async (req: AuthRequest, res: Response): Promise<void> => {
+    /**
+     * TRƯỚC ĐÂY: Bạn chỉ lấy userId (const userId = req.user!.id)
+     * BÂY GIỜ: Bạn truyền nguyên đối tượng Payload linh hoạt vào Service.
+     */
+    const payload = req.user!;
+
+    await this.authService.logout(payload);
+
+    Result.ok(
+      res,
+      undefined,
+      Message.AUTH.LOGOUT_SUCCESS,
+      'AUTH_LOGOUT_SUCCESS'
+    );
+  };
   /**
    * Tác dụng: Yêu cầu gửi lại mã OTP.
    */
