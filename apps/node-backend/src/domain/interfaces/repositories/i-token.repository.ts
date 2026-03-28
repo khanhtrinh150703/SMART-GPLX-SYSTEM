@@ -30,4 +30,6 @@ export interface ITokenRepository {
    * @param {string} pattern - Mẫu khóa (ví dụ: auth:token:userId:*).
    */
   deleteByPattern(pattern: string): Promise<void>;
+
+  exists(key: string): Promise<boolean>;
 }

@@ -32,6 +32,7 @@ export const ErrorCode = {
         INVALID_REFRESH_TOKEN: 'AUTH_005', // Refresh token không hợp lệ (Đã đổi từ 001)
         REFRESH_FAILED: 'AUTH_006',     // Token refresh failed
         MISSING_FIELDS: 'AUTH_400',
+        INVALID_TOKEN: 'AUTH_007', // Token không hợp lệ (Sai chữ ký, bị chỉnh sửa...)
     },
 
     /** * --- USER & PROFILE (USER) --- 

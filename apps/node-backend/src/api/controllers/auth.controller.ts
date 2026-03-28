@@ -10,6 +10,7 @@ import { Result } from '@/shared/responses/api-response';
 // IMPORT HÀM BỌC LỖI
 import { catchAsync } from '@/shared/utils/catch-async';
 import { AuthRequest } from '@/shared/types/auth.types';
+import { ICradle } from '@/shared/types/container.types';
 
 /**
  * Controller xử lý các luồng xác thực và đăng ký người dùng.
@@ -17,12 +18,17 @@ import { AuthRequest } from '@/shared/types/auth.types';
  * thông qua hàm bọc catchAsync.
  */
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly registrationService: RegistrationService
-  ) { }
 
-  /**
+  private readonly _authService: AuthService;
+  private readonly _registrationService: RegistrationService;
+
+  // CHỈ NHẬN NHỮNG THỨ ĐÃ ĐĂNG KÝ TRONG CONTAINER
+  constructor({ authService, registrationService }: ICradle) {
+    this._authService = authService;
+    this._registrationService = registrationService;
+  }
+  
+  /** 
    * Tác dụng: Tiếp nhận thông tin đăng ký ban đầu và yêu cầu gửi OTP.
    * @param {Request} req - Chứa RegisterDTO trong body.
    * @param {Response} res - Phản hồi tiêu chuẩn.
@@ -33,7 +39,7 @@ export class AuthController {
     const dto = new RegisterDTO(req.body);
 
     // Nếu trong initiate có throw AppError, catchAsync sẽ tự động vớt và gọi next(err)
-    await this.registrationService.initiate(dto);
+    await this._registrationService.initiate(dto);
 
     Result.ok(
       res,
@@ -48,7 +54,7 @@ export class AuthController {
    */
   public signUpVerify = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const dto = new VerifyUserDTO(req.body);
-    const newUser = await this.registrationService.complete(dto.email, dto.otp);
+    const newUser = await this._registrationService.complete(dto.email, dto.otp);
     const result = UserMapper.toResponse(newUser);
 
     Result.created(
@@ -64,7 +70,7 @@ export class AuthController {
    */
   public login = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const dto = new LoginInputDTO(req.body);
-    const result = await this.authService.login(dto);
+    const result = await this._authService.login(dto);
 
     Result.ok(
       res,
@@ -85,7 +91,7 @@ export class AuthController {
     const payload = req.user;
 
     // 2. Gọi Service xử lý (catchAsync sẽ lo việc bắt lỗi nếu có)
-    await this.authService.logout(payload);
+    await this._authService.logout(payload);
 
     // 3. Trả về kết quả theo format chuẩn của dự án
     Result.ok(
@@ -101,7 +107,7 @@ export class AuthController {
    */
   public resendOtp = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const { email } = req.body;
-    await this.registrationService.resend(email);
+    await this._registrationService.resend(email);
 
     Result.ok(
       res,
@@ -119,7 +125,7 @@ export class AuthController {
     const { email } = req.body;
 
     // Điều phối xuống Service xử lý (Check user + Sinh OTP + Gửi Mail)
-    await this.authService.requestForgotPassword(email as string);
+    await this._authService.requestForgotPassword(email as string);
 
     // Trả về thành công (Message sẽ được map từ SuccessMessages-VN qua code)
     Result.ok(
@@ -139,7 +145,7 @@ export class AuthController {
     const dto = new ResetPasswordDTO(req.body);
 
     // 2. Gọi Service thực hiện nghiệp vụ "2 trong 1" (Verify OTP + Update Pass)
-    await this.authService.resetPassword(dto);
+    await this._authService.resetPassword(dto);
 
     // 3. Trả về thành công
     Result.ok(
@@ -149,4 +155,5 @@ export class AuthController {
       'AUTH_PASSWORD_RESET_SUCCESS'
     );
   });
+
 }

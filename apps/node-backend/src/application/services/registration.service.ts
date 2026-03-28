@@ -7,17 +7,30 @@ import { User } from '@/domain/entities/user/user.entity';
 import { OtpService } from './otp.service';
 import { UserService } from './user.service';
 import { IPendingUserRepository } from '@/domain/interfaces/repositories/i-pending-user.repository';
+import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
+import { ICradle } from '@/shared/types/container.types';
 
 /**
  * Service quản lý quy trình đăng ký người dùng mới và điều phối xác thực OTP.
  */
-export class RegistrationService {
+export class RegistrationService implements IRegistrationService {
 
-  constructor(
-    private readonly userService: UserService,
-    private readonly otpService: OtpService,
-    private readonly pendingRepo: IPendingUserRepository // Inject thêm Repo này
-  ) { }
+  // 1. Khai báo các thuộc tính của class (biến private)
+  private readonly _userService: UserService;
+  private readonly _otpService: OtpService;
+  private readonly _pendingRepo: IPendingUserRepository;
+
+  /**
+   * @param {ICradle} cradle - Object chứa tất cả dependencies từ Container
+   */
+  constructor({ userService, otpService, pendingUserRepository }: ICradle) {
+    // 2. Gán các dependency từ object 'cradle' vào thuộc tính class
+    // LƯU Ý: 'userService', 'otpService', 'pendingUserRepository' 
+    // phải khớp 100% với tên (key) cậu đã register trong file container.ts
+    this._userService = userService;
+    this._otpService = otpService;
+    this._pendingRepo = pendingUserRepository;
+  }
 
   /**
    * Tác dụng: Khởi tạo quy trình đăng ký, lưu dữ liệu tạm và ra lệnh gửi mã OTP.
@@ -30,17 +43,17 @@ export class RegistrationService {
     const normalizedUsername = dto.username.trim().toLowerCase();
 
     // 1. Kiểm tra tồn tại trong DB chính qua UserService
-    await this.userService.checkExisting(normalizedUsername, normalizedEmail);
+    await this._userService.checkExisting(normalizedUsername, normalizedEmail);
 
     // 2. Lưu dữ liệu đăng ký vào Redis (Pending Data)
-    await this.pendingRepo.save(
+    await this._pendingRepo.save(
       normalizedEmail,
       JSON.stringify(dto),
       TIME_CONSTANTS.PENDING_TTL
     );
 
     // 3. Ra lệnh cho OtpService sinh và gửi mã (OtpService giờ chỉ nhận mỗi email)
-    await this.otpService.requestOtp(normalizedEmail);
+    await this._otpService.requestOtp(normalizedEmail);
   }
 
   /**
@@ -51,23 +64,22 @@ export class RegistrationService {
    */
   public async complete(email: string, otp: string): Promise<User> {
     const normalizedEmail = email.trim().toLowerCase();
-
     // 1. Lấy dữ liệu tạm từ PendingRepo để kiểm tra xem họ có thực sự đang đăng ký không
-    const rawData = await this.pendingRepo.get(normalizedEmail);
+    const rawData = await this._pendingRepo.get(normalizedEmail);
     if (!rawData) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }
     const userData: RegisterDTO = JSON.parse(rawData);
-
     // 2. Xác thực mã OTP thông qua OtpService
     // Nếu sai, hàm verifyOtp sẽ tự động throw AppError
-    await this.otpService.verifyOtp(normalizedEmail, otp);
+
+    await this._otpService.verifyOtp(normalizedEmail, otp);
 
     // 3. Hash mật khẩu
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     // 4. Gọi UserService để tạo User chính thức vào MySQL
-    const newUser = await this.userService.createUser({
+    const newUser = await this._userService.createUser({
       id: crypto.randomUUID(),
       username: userData.username.trim().toLowerCase(),
       email: normalizedEmail,
@@ -76,7 +88,8 @@ export class RegistrationService {
     });
 
     // 5. Dọn dẹp dữ liệu tạm trong Redis
-    await this.pendingRepo.delete(normalizedEmail);
+    await this._pendingRepo.delete(normalizedEmail);
+    await this._otpService.deleteOtp(email);
 
     return newUser;
   }
@@ -90,13 +103,13 @@ export class RegistrationService {
     const normalizedEmail = email.trim().toLowerCase();
 
     // 1. Kiểm tra xem luồng đăng ký tạm của người này còn tồn tại không
-    const isPending = await this.pendingRepo.get(normalizedEmail);
+    const isPending = await this._pendingRepo.get(normalizedEmail);
     if (!isPending) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }
 
     // 2. Yêu cầu OtpService gửi lại mã (Logic chống spam 60s đã được bọc bên trong requestOtp)
-    await this.otpService.requestOtp(normalizedEmail);
+    await this._otpService.requestOtp(normalizedEmail);
   }
 
   /**

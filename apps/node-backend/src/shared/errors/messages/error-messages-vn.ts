@@ -28,6 +28,8 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.OTP_EXPIRED]: 'Mã xác thực đã hết hiệu lực, vui lòng lấy mã mới.',
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 'Liên kết đăng ký đã hết hạn hoặc không còn tồn tại, vui lòng thực hiện lại quy trình đăng ký.',
     [ErrorCode.AUTH.MISSING_FIELDS]: "Vui lòng nhập đầy đủ các thông tin bắt buộc.",
+    [ErrorCode.AUTH.INVALID_TOKEN]: "Mã xác thực không hợp lệ",
+
 
 
     // === USER & PROFILE (USER) ===

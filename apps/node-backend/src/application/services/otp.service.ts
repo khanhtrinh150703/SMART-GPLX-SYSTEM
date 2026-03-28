@@ -1,18 +1,29 @@
 import crypto from 'crypto';
-import { IEmailService } from '@/domain/interfaces/services/i-email.service';
+import { IEmailService } from '@/domain/interfaces/external/i-email.service';
 import { IOtpRepository } from '@/domain/interfaces/repositories/i-otp.repository';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { TIME_CONSTANTS } from '@/domain/constants/time.constants'
+import { IOtpService } from '@/domain/interfaces/services/i-otp.service';
+import { ICradle } from '@/shared/types/container.types';
 
 /**
  * Dịch vụ xử lý nghiệp vụ tạo, gửi và xác thực mã OTP.
  */
-export class OtpService {
+export class OtpService implements IOtpService {
+  // 1. Khai báo các thuộc tính (properties) của class
+  private readonly _otpRepo: IOtpRepository;
+  private readonly _emailService: IEmailService;
 
-  constructor(
-    private readonly otpRepo: IOtpRepository,
-    private readonly emailService: IEmailService
-  ) { }
+  /**
+   * @param {ICradle} cradle - Object chứa các dependencies từ DI Container
+   */
+  constructor({ otpRepository, emailService }: ICradle) {
+    // 2. Gán các dependency từ object vào thuộc tính class
+    // LƯU Ý: 'otpRepository' và 'emailService' phải khớp chính xác 
+    // với Key cậu đã đăng ký (register) trong container.ts
+    this._otpRepo = otpRepository;
+    this._emailService = emailService;
+  }
 
   /**
    * Tác dụng: Tạo mã OTP ngẫu nhiên gồm 6 chữ số.
@@ -29,24 +40,24 @@ export class OtpService {
    */
   public async requestOtp(userEmail: string): Promise<void> {
     // 1. Kiểm tra xem người dùng có đang bị khóa tính năng gửi lại không
-    const isLocked = await this.otpRepo.isResendLocked(userEmail);
+    const isLocked = await this._otpRepo.isResendLocked(userEmail);
     if (isLocked) {
       // Lưu ý: Cần thêm mã lỗi TOO_MANY_REQUESTS vào ErrorCode của bạn
       throw new AppError(ErrorCode.SYSTEM.TOO_MANY_REQUESTS);
     }
 
     // 2. Xóa OTP cũ (nếu có) để đảm bảo chỉ có 1 OTP có hiệu lực
-    await this.otpRepo.deleteOtp(userEmail);
+    await this._otpRepo.deleteOtp(userEmail);
 
     // 3. Sinh mã và lưu vào kho chứa
     const otpCode = this.generateOTP();
-    await this.otpRepo.saveOtp(userEmail, otpCode, TIME_CONSTANTS.OTP_TTL);
+    await this._otpRepo.saveOtp(userEmail, otpCode, TIME_CONSTANTS.OTP_TTL);
 
     // 4. Bật cờ khóa gửi lại (Resend Lock) trong 60 giây
-    await this.otpRepo.setResendLock(userEmail, TIME_CONSTANTS.LOCK_TIME);
+    await this._otpRepo.setResendLock(userEmail, TIME_CONSTANTS.LOCK_TIME);
 
     // 5. Gửi email
-    await this.emailService.sendOtpEmail(userEmail, otpCode);
+    await this._emailService.sendOtpEmail(userEmail, otpCode);
   }
 
   /**
@@ -56,7 +67,7 @@ export class OtpService {
    * @returns {Promise<boolean>} - Trả về true nếu hợp lệ. Sẽ ném lỗi nếu sai.
    */
   public async verifyOtp(userEmail: string, inputOtp: string): Promise<boolean> {
-    const storedOtp = await this.otpRepo.getOtp(userEmail);
+    const storedOtp = await this._otpRepo.getOtp(userEmail);
 
     if (!storedOtp) {
       throw new AppError(ErrorCode.AUTH.OTP_EXPIRED);
@@ -65,9 +76,6 @@ export class OtpService {
     if (storedOtp !== inputOtp) {
       throw new AppError(ErrorCode.AUTH.OTP_INVALID);
     }
-
-    // Xóa ngay lập tức để chống Tấn công phát lại (Replay Attack)
-    await this.otpRepo.deleteOtp(userEmail);
 
     return true;
   }
@@ -80,6 +88,6 @@ export class OtpService {
    */
   public deleteOtp = async (userEmail: string): Promise<void> => {
     // Service điều phối lệnh trực tiếp xuống Repository thực thi
-    await this.otpRepo.deleteOtp(userEmail);
+    await this._otpRepo.deleteOtp(userEmail);
   };
 }

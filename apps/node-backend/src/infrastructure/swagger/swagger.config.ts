@@ -2,8 +2,10 @@ import swaggerJsdoc from 'swagger-jsdoc';
 
 const API_BASE = '/api/v1';
 
-// ====================== PATHS (đưa ra ngoài) ======================
-const paths = {
+/**
+ * ====================== OPENAPI PATHS ======================
+ */
+const paths: any = {
   // ====================== AUTHENTICATION ======================
   [`${API_BASE}/auth/register/init`]: {
     post: {
@@ -70,8 +72,8 @@ const paths = {
   [`${API_BASE}/auth/register/verify`]: {
     post: {
       tags: ['Authentication'],
-      summary: 'Xác thực OTP',
-      description: 'Xác thực OTP để hoàn tất tạo tài khoản',
+      summary: 'Xác thực OTP để hoàn tất đăng ký',
+      description: 'Xác thực OTP để tạo tài khoản',
       requestBody: {
         required: true,
         content: {
@@ -147,15 +149,7 @@ const paths = {
     patch: {
       tags: ['User Management'],
       summary: 'Cập nhật thông tin cá nhân',
-      parameters: [
-        {
-          name: 'id',
-          in: 'path',
-          required: true,
-          schema: { type: 'string' },
-          description: 'User ID',
-        },
-      ],
+      security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,
         content: {
@@ -173,6 +167,7 @@ const paths = {
             },
           },
         },
+        '400': { $ref: '#/components/responses/ValidationError' },
       },
     },
   },
@@ -181,9 +176,7 @@ const paths = {
     patch: {
       tags: ['User Management'],
       summary: 'Đổi mật khẩu',
-      parameters: [
-        { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
-      ],
+      security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,
         content: {
@@ -202,7 +195,7 @@ const paths = {
           },
         },
         '400': { description: 'Mật khẩu cũ sai hoặc mật khẩu mới không khớp' },
-        '401': { description: 'Unauthorized - Sai mật khẩu cũ' },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
       },
     },
   },
@@ -210,9 +203,16 @@ const paths = {
   [`${API_BASE}/users/{id}/status`]: {
     patch: {
       tags: ['User Management'],
-      summary: 'Cập nhật trạng thái tài khoản (Admin)',
+      summary: 'Cập nhật trạng thái tài khoản (Admin only)',
+      security: [{ bearerAuth: [] }],
       parameters: [
-        { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'User ID',
+        },
       ],
       requestBody: {
         required: true,
@@ -231,6 +231,7 @@ const paths = {
             },
           },
         },
+        '403': { description: 'Không có quyền ADMIN' },
       },
     },
   },
@@ -239,7 +240,7 @@ const paths = {
     delete: {
       tags: ['User Management'],
       summary: 'Xóa mềm tài khoản người dùng',
-      description: 'Đánh dấu tài khoản đã xóa bằng cách gán timestamp vào trường deletedAt. Tài khoản sẽ không thể đăng nhập nhưng vẫn tồn tại trong DB.',
+      description: 'Soft delete - Đánh dấu deletedAt',
       security: [{ bearerAuth: [] }],
       parameters: [
         {
@@ -247,7 +248,7 @@ const paths = {
           in: 'path',
           required: true,
           schema: { type: 'string' },
-          description: 'ID của người dùng cần xóa'
+          description: 'ID của người dùng cần xóa',
         },
       ],
       responses: {
@@ -260,17 +261,16 @@ const paths = {
           },
         },
         '401': { $ref: '#/components/responses/UnauthorizedError' },
-        '404': { description: 'Không tìm thấy người dùng hoặc người dùng đã bị xóa trước đó' }
+        '404': { description: 'Không tìm thấy người dùng' },
       },
     },
   },
 
-  // --- Endpoint Hồi sinh (Restore) ---
   [`${API_BASE}/users/{id}/restore`]: {
     patch: {
       tags: ['User Management'],
       summary: 'Khôi phục tài khoản đã xóa mềm',
-      description: 'Gỡ bỏ đánh dấu xóa (set deletedAt = null) và kích hoạt lại tài khoản. Chỉ ADMIN mới có quyền thực hiện.',
+      description: 'Chỉ ADMIN mới có quyền thực hiện',
       security: [{ bearerAuth: [] }],
       parameters: [
         {
@@ -278,7 +278,7 @@ const paths = {
           in: 'path',
           required: true,
           schema: { type: 'string' },
-          description: 'ID của người dùng cần khôi phục'
+          description: 'ID của người dùng cần khôi phục',
         },
       ],
       responses: {
@@ -291,23 +291,24 @@ const paths = {
           },
         },
         '401': { $ref: '#/components/responses/UnauthorizedError' },
-        '404': { description: 'Không tìm thấy bản ghi đã xóa để khôi phục' },
+        '404': { description: 'Không tìm thấy bản ghi đã xóa' },
         '409': {
-          description: 'Xung đột dữ liệu: Username hoặc Email của tài khoản này đã bị một tài khoản khác đang hoạt động chiếm dụng.',
+          description: 'Xung đột dữ liệu: Username hoặc Email đã bị chiếm dụng',
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-            }
-          }
-        }
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
+          },
+        },
       },
     },
   },
 
+  // Forgot & Reset Password
   [`${API_BASE}/auth/forgot-password`]: {
     post: {
       tags: ['Authentication'],
-      summary: 'Bước 1: Yêu cầu gửi mã OTP quên mật khẩu',
+      summary: 'Yêu cầu gửi OTP quên mật khẩu',
       requestBody: {
         required: true,
         content: {
@@ -319,7 +320,7 @@ const paths = {
       responses: {
         '200': { description: 'OTP đã được gửi qua email' },
         '404': { description: 'Email không tồn tại trong hệ thống' },
-        '429': { description: 'Gửi quá nhanh, đang bị khóa (Resend Lock)' },
+        '429': { description: 'Gửi quá nhanh, đang bị khóa' },
       },
     },
   },
@@ -327,7 +328,7 @@ const paths = {
   [`${API_BASE}/auth/reset-password`]: {
     post: {
       tags: ['Authentication'],
-      summary: 'Bước 2: Xác thực OTP và đặt lại mật khẩu mới',
+      summary: 'Xác thực OTP và đặt lại mật khẩu mới',
       requestBody: {
         required: true,
         content: {
@@ -342,9 +343,53 @@ const paths = {
       },
     },
   },
+
+  // Get all users (Admin)
+  [`${API_BASE}/users`]: {
+    get: {
+      tags: ['User Management'],
+      summary: 'Lấy danh sách người dùng có phân trang (Admin)',
+      description: 'Yêu cầu quyền ADMIN. Hỗ trợ tìm kiếm và phân trang.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'page',
+          in: 'query',
+          description: 'Trang hiện tại (Mặc định: 1)',
+          schema: { type: 'integer', default: 1 },
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          description: 'Số lượng mỗi trang (Mặc định: 10)',
+          schema: { type: 'integer', default: 10 },
+        },
+        {
+          name: 'search',
+          in: 'query',
+          description: 'Tìm kiếm theo tên hoặc email',
+          schema: { type: 'string' },
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'Lấy danh sách thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UserListResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/UnauthorizedError' },
+        '403': { description: 'Không có quyền ADMIN' },
+      },
+    },
+  },
 };
 
-// ====================== SWAGGER CONFIG ======================
+/**
+ * ====================== SWAGGER CONFIG ======================
+ */
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -353,7 +398,12 @@ const options = {
       version: '1.0.0',
       description: 'API Documentation for Smart GPLX Management System',
     },
-    servers: [{ url: API_BASE, description: 'Development Server' }],
+    servers: [
+      {
+        url: API_BASE,
+        description: 'Development Server',
+      },
+    ],
 
     components: {
       securitySchemes: {
@@ -368,25 +418,33 @@ const options = {
         ValidationError: {
           description: 'Dữ liệu không hợp lệ',
           content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
           },
         },
         UnauthorizedError: {
-          description: 'Không có quyền truy cập hoặc sai thông tin',
+          description: 'Chưa xác thực hoặc token không hợp lệ',
           content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
           },
         },
         ConflictError: {
           description: 'Dữ liệu đã tồn tại',
           content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
           },
         },
         TooManyRequestsError: {
           description: 'Thao tác quá nhanh (cooldown)',
           content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
           },
         },
       },
@@ -399,7 +457,7 @@ const options = {
             code: { type: 'string', example: 'SYS_000' },
             statusCode: { type: 'number', example: 200 },
             message: { type: 'string', example: 'Thao tác thực hiện thành công' },
-            data: { type: 'object' },
+            data: { type: 'object', nullable: true },
           },
         },
 
@@ -407,12 +465,13 @@ const options = {
           type: 'object',
           properties: {
             success: { type: 'boolean', example: false },
-            code: { type: 'string' },
-            statusCode: { type: 'number' },
-            message: { type: 'string' },
+            code: { type: 'string', example: 'ERR_001' },
+            statusCode: { type: 'number', example: 400 },
+            message: { type: 'string', example: 'Lỗi xảy ra' },
           },
         },
 
+        // DTOs
         RegisterDTO: {
           type: 'object',
           required: ['username', 'email', 'password', 'confirmPassword'],
@@ -429,7 +488,7 @@ const options = {
           type: 'object',
           required: ['username', 'password'],
           properties: {
-            username: { type: 'string', example: 'trinh_cau_vang hoặc email' },
+            username: { type: 'string', example: 'trinh_cau_vang' },
             password: { type: 'string', format: 'password', example: 'Password123' },
           },
         },
@@ -445,7 +504,7 @@ const options = {
                   properties: {
                     accessToken: { type: 'string' },
                     refreshToken: { type: 'string' },
-                    user: { type: 'object' },
+                    user: { $ref: '#/components/schemas/UserResponseDTO' },
                   },
                 },
               },
@@ -491,35 +550,66 @@ const options = {
             },
           },
         },
-        // DTO Bước 1: Chỉ cần Email
+
         ForgotPasswordDTO: {
           type: 'object',
           required: ['email'],
           properties: {
-            email: {
-              type: 'string',
-              format: 'email',
-              example: 'user@example.com'
-            },
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
           },
         },
 
-        // DTO Bước 2: OTP + Pass mới
         ResetPasswordDTO: {
           type: 'object',
           required: ['email', 'otp', 'newPassword'],
           properties: {
-            email: { type: 'string', format: 'email', example: 'user@example.com' },
-            otp: { type: 'string', example: '123456', description: 'Mã 6 số từ Email' },
-            newPassword: { type: 'string', example: 'NewPass789!!!' },
+            email: { type: 'string', format: 'email' },
+            otp: { type: 'string', example: '123456' },
+            newPassword: { type: 'string', minLength: 8, example: 'NewPass789!!!' },
+          },
+        },
+
+        // User schemas
+        UserResponseDTO: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            username: { type: 'string' },
+            email: { type: 'string' },
+            fullName: { type: 'string' },
+            urlPicture: { type: 'string' },
+            status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'BANNED', 'PENDING'] },
+            role: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+
+        UserListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/UserResponseDTO' },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'integer', example: 100 },
+                page: { type: 'integer', example: 1 },
+                limit: { type: 'integer', example: 10 },
+                totalPages: { type: 'integer', example: 10 },
+              },
+            },
           },
         },
       },
     },
 
-    paths,   // ← Gọi biến paths ở đây
+    paths, // ← Sử dụng biến paths đã định nghĩa ở trên
   },
-  apis: [], // Nếu sau này dùng JSDoc comment thì thêm đường dẫn vào đây
+  apis: [], // Nếu sau này dùng JSDoc thì thêm đường dẫn file vào đây
 };
 
 export const specs = swaggerJsdoc(options);

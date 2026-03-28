@@ -5,52 +5,58 @@ import { ErrorCode, AppError } from '@/shared/errors';
 import { UserService } from './user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { TokenPayload } from '@/shared/types/auth.types';
-import { ITokenManager } from '@/domain/interfaces/services/i-token-manager';
+import { ITokenManager } from '@/domain/interfaces/external/i-token-manager';
 import { ResetPasswordDTO } from '../dtos/request/auth.dto';
 import { OtpService } from './otp.service';
+import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
+import { ICradle } from '@/shared/types/container.types';
 
 /**
  * Service xử lý nghiệp vụ xác thực người dùng.
  */
-export class AuthService {
-  constructor(
-    private readonly userService: UserService, // Dùng Service thay vì Repo
-    private readonly tokenManager: ITokenManager,
-    private readonly otpService: OtpService,
-  ) { }
+export class AuthService implements IAuthService {
+
+  private readonly _userService: UserService; // Dùng Service thay vì Repo
+  private readonly _tokenManager: ITokenManager;
+  private readonly _otpService: OtpService;
+  
+  constructor({ userService, tokenManager, otpService }: ICradle) {
+    this._userService = userService;
+    this._tokenManager = tokenManager;
+    this._otpService = otpService;
+  }
 
   /**
-     * Tác dụng: Xử lý đăng nhập, kiểm tra mật khẩu và cấp phát bộ đôi Token.
-     * @param {LoginInputDTO} dto - Dữ liệu đăng nhập.
-     * @returns {Promise<LoginResponseDTO>}
-     */
+   * @description Xử lý đăng nhập, kiểm tra mật khẩu và cấp phát bộ đôi Token.
+   * @param {LoginInputDTO} dto - Dữ liệu đăng nhập.
+   * @returns {Promise<LoginResponseDTO>}
+   */
   public async login(dto: LoginInputDTO): Promise<LoginResponseDTO> {
-    // 1. Kiểm tra DTO (Đảm bảo không rỗng)
+    // 1. Rule 8: Cheap Check - Validate dữ liệu đầu vào cơ bản
     if (!dto.isValid()) {
       throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
     }
 
-    // 2. Tìm User trong DB thông qua UserService
-    // Giả sử getUserByUsername trả về Entity User
-    const user = await this.userService.getUserByIdentifier(dto.username);
+    // 2. Tìm User thông qua Service (Đã bao gồm include Roles & Permissions từ Repo)
+    // UserService.getUserByIdentifier đã được viết để check email/username linh hoạt
+    const user = await this._userService.getUserByIdentifier(dto.username);
 
-    // 3. So sánh mật khẩu (Bcrypt)
+    // 3. Kiểm tra mật khẩu (Sử dụng bcrypt)
+    // Chúng ta dùng dấu !isPasswordMatch để ném lỗi chung cho bảo mật
     const isPasswordMatch = await bcrypt.compare(dto.password, user.passwordHash ?? '');
     if (!isPasswordMatch) {
       throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
     }
 
-    // 4. CHỐT: Manager sẽ làm hết việc Ký JWT + Lưu vào Redis
-    const payload = new TokenPayload({
-      userId: user.id,
-      role: 'USER', // Cậu có thể lấy role từ user entity
-      // deviceId: dto.deviceId // Nếu DTO có deviceId
-    });
+    // 4. KIỂM TRA TRẠNG THÁI (Nếu UserService chưa check thì ở đây check cho chắc)
+    // 5. TRÍCH XUẤT ROLE (Không gán cứng 'USER' nữa)
+    // Lấy Role đầu tiên hoặc Role cao nhất của User để đưa vào Token
 
-    // Manager trả về cặp token, AuthService không cần gọi jwtUtil thủ công nữa
-    const tokens = await this.tokenManager.generateAndStoreTokens(payload);
-
-    // 5. Trả về thông qua Mapper
+    // Manager lo việc ký JWT và whitelist/blacklist trong Redis
+    const tokens = await this._tokenManager.generateAndStoreTokens(user);
+    
+    // 7. MAPPING KẾT QUẢ TRẢ VỀ
+    // Giấu đi passwordHash, chỉ trả về profile sạch và bộ đôi token
     return UserMapper.toLoginResponse(user, tokens.accessToken, tokens.refreshToken);
   }
 
@@ -58,8 +64,10 @@ export class AuthService {
      * Tác dụng: Đăng xuất người dùng.
      */
   public async logout(payload: TokenPayload): Promise<void> {
+    await this._tokenManager.revokeTokenByPattern(payload.userId);
+
     // CHỐT: Gọi thẳng Manager để thu hồi session
-    await this.tokenManager.revokeToken(payload.userId);
+    // await this._tokenManager.revokeTokenByPayLoad(payload);
   }
 
   /**
@@ -68,12 +76,12 @@ export class AuthService {
      */
   public async requestForgotPassword(email: string): Promise<void> {
     // 1. Kiểm tra User có tồn tại không (Hỏi qua UserService)
-    const user = await this.userService.getUserByEmail(email);
+    const user = await this._userService.getUserByEmail(email);
     if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
 
     // 2. Nhờ OtpService sinh mã, lưu vào Redis và gửi mail hộ
     // Hàm requestOtp này cậu đã viết rất chuẩn ở turn trước rồi.
-    await this.otpService.requestOtp(email);
+    await this._otpService.requestOtp(email);
   }
 
   /**
@@ -85,10 +93,10 @@ export class AuthService {
     dto.validateOrThrow();
 
     // 2. Nhờ OtpService xác thực mã OTP (Nếu sai/hết hạn sẽ tự ném lỗi bên trong)
-    await this.otpService.verifyOtp(dto.email, dto.otp);
+    await this._otpService.verifyOtp(dto.email, dto.otp);
 
     // 3. Tìm User để chuẩn bị cập nhật
-    const user = await this.userService.getUserByEmail(dto.email);
+    const user = await this._userService.getUserByEmail(dto.email);
     if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
 
     // 4. Hash mật khẩu mới
@@ -98,13 +106,13 @@ export class AuthService {
     user.resetPassword(hashedPass);
 
     // 6. Lưu vào MySQL thông qua UserService
-    await this.userService.update(user);
+    await this._userService.update(user);
 
     // 7. CHIẾN THUẬT BẢO MẬT (Logout All)
     // Sau khi đổi pass thành công, đá hết các thiết bị đang dùng pass cũ ra
-    await this.tokenManager.revokeToken(user.id);
+    await this._tokenManager.revokeTokenByPattern(user.id);
 
     // Xóa nốt OTP vì đã dùng xong (Nếu OtpService chưa xóa trong verifyOtp)
-    await this.otpService.deleteOtp(dto.email);
+    await this._otpService.deleteOtp(dto.email);
   }
 }

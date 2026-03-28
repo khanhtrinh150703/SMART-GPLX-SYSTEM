@@ -24,6 +24,7 @@ export class Message {
     STATUS_UPDATED: 'Cập nhật trạng thái người dùng thành công.',
     DELETE_SUCCESS: 'Xóa tài khoản thành công.',
     RESTORE_SUCCESS: 'Khôi phục tài khoản thành công',
+    FETCH_USER: 'Lấy danh sách người dùng thành công',
   } as const;
 
   /**

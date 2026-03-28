@@ -1,6 +1,7 @@
 import { UserStatus } from "./user.status"
 import { IUserProps } from "./user.props";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { Role } from "@/domain/entities/role/role.entity";
 
 export class User {
   // Để tất cả là private để bảo vệ tính đóng gói (Encapsulation)
@@ -15,6 +16,7 @@ export class User {
     private readonly _createdAt: Date,
     private _updatedAt: Date, // Bỏ readonly để cập nhật khi thay đổi data
     private _passwordHash?: string,
+    private _roles: Role[] = []
   ) { }
 
   // --- GETTERS ---
@@ -28,7 +30,7 @@ export class User {
   public get updatedAt(): Date { return this._updatedAt; }
   public get deletedAt(): Date | null { return this._deletedAt; }
   public get passwordHash(): string | undefined { return this._passwordHash; }
-
+  public get roles(): Role[] { return [...this._roles]; }
   // --- STATIC FACTORY METHODS ---
 
   /** Tạo mới một User (Dùng cho logic Register) */
@@ -54,12 +56,12 @@ export class User {
       null,
       now,
       now,
-      data.passwordHash
+      data.passwordHash,
     );
   }
 
   /** Tái tạo object từ DB (Dùng cho Repository/Mapper) */
-  public static reconstitute(props: IUserProps): User {
+  public static reconstitute(props: IUserProps & { roles?: Role[] }): User {
     return new User(
       props.id,
       props.username,
@@ -70,7 +72,8 @@ export class User {
       props.deletedAt,
       props.createdAt,
       props.updatedAt,
-      props.passwordHash
+      props.passwordHash ?? "",
+      props.roles || []
     );
   }
 
@@ -159,5 +162,45 @@ export class User {
    */
   public resetPassword(newPasswordHash: string): void {
     this._passwordHash = newPasswordHash;
+  }
+
+  /**
+   * @description Gán một vai trò mới cho người dùng
+   * @param role Thực thể Role cần gán
+   */
+  public assignRole(role: Role): void {
+    const exists = this._roles.find(r => r.id === role.id);
+    if (!exists) {
+      this._roles.push(role);
+      this.touch();
+    }
+  }
+
+  /**
+   * @description Gỡ bỏ một vai trò khỏi người dùng
+   * @param roleId ID của vai trò cần gỡ
+   */
+  public removeRole(roleId: string): void {
+    this._roles = this._roles.filter(r => r.id !== roleId);
+    this.touch();
+  }
+
+  /**
+   * @description Kiểm tra người dùng có một quyền cụ thể nào đó không (vét cạn qua tất cả roles)
+   * @param permissionName Tên quyền cần kiểm tra
+   */
+  public hasPermission(permissionName: string): boolean {
+    return this._roles.some(role => role.hasPermission(permissionName));
+  }
+
+  /**
+   * @description Lấy danh sách tất cả mã quyền duy nhất của User
+   * @returns string[] ví dụ: ['user:create', 'post:delete']
+   */
+  public getAllPermissionNames(): string[] {
+    const names = this._roles.flatMap(role =>
+      role.permissions.map(p => p.name)
+    );
+    return [...new Set(names)]; // Loại bỏ trùng lặp
   }
 }

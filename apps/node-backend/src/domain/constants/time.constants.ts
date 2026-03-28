@@ -5,6 +5,7 @@ export const TIME_CONSTANTS = {
   OTP_TTL: 300,
   LOCK_TIME: 60,
   PENDING_TTL: 600,
+  ACCESS_TOKEN_EXPIRE: 900,
 } as const;
 
 

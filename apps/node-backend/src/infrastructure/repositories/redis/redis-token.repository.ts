@@ -18,4 +18,9 @@ export class RedisTokenRepository implements ITokenRepository {
     const keys = await redisClient.keys(pattern);
     if (keys.length > 0) await redisClient.del(...keys);
   }
+
+  public async exists(key: string): Promise<boolean> {
+    const result = await redisClient.exists(key);
+    return result === 1; // Redis trả về 1 nếu tồn tại, 0 nếu không
+  }
 }
