@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import { IEmailService } from '@/domain/interfaces/services/i-email.service';
+import { IEmailService } from '@/domain/interfaces/external/i-email.service';
 
 export class NodemailerService implements IEmailService {
     private transporter: nodemailer.Transporter;

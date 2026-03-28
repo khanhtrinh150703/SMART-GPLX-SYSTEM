@@ -1,4 +1,6 @@
+import { REGEX } from "@/domain/constants/regex.constant";
 import { UserStatus } from "@/domain/entities/user/user.status";
+import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
  * DTO cập nhật thông tin cá nhân.
@@ -15,25 +17,29 @@ export class UpdateProfileDTO {
 /**
  * DTO đổi mật khẩu.
  */
+
 export class ChangePasswordDTO {
-  readonly oldPassword!: string;
-  readonly newPassword!: string;
-  readonly confirmNewPassword!: string;
+  public readonly oldPassword: string;
+  public readonly newPassword: string;
 
-  constructor(data: Partial<ChangePasswordDTO>) {
-    Object.assign(this, data);
+  constructor(data: Record<string, unknown>) {
+    this.oldPassword = typeof data.oldPassword === 'string' ? data.oldPassword : '';
+    this.newPassword = typeof data.newPassword === 'string' ? data.newPassword : '';
   }
 
-  public isPasswordMapping(): boolean {
-    return !!this.newPassword && this.newPassword === this.confirmNewPassword;
-  }
-
-  public isNewPasswordDifferent(): boolean {
-    return this.oldPassword !== this.newPassword;
-  }
-
-  public isPassword(): boolean {
-    return !!this.newPassword && this.newPassword.length >= 8;
+  /**
+   * Tác dụng: Tự kiểm tra tính hợp lệ của dữ liệu đầu vào.
+   */
+  public validateOrThrow(): void {
+    if (!this.oldPassword || !this.newPassword) {
+      throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
+    }
+    if (this.oldPassword === this.newPassword) {
+      throw new AppError(ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT);
+    }
+    if (!REGEX.PASSWORD.STRONG.test(this.newPassword)) {
+      throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
+    }
   }
 }
 

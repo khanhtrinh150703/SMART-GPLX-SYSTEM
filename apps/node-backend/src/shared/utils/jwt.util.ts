@@ -1,42 +1,64 @@
-import jwt from 'jsonwebtoken';
-import { env } from 'node:process';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { TokenPayload } from '../types/auth.types';
+import { AppError } from '../errors/error-app';
+import { ErrorCode } from '../errors/error-codes';
+import { env } from 'node:process';
 
-/**
- * Tiện ích xử lý JSON Web Token.
- * TUÂN THỦ: Không sử dụng try-catch, để lỗi bubble up lên Global Middleware.
- */
-export class JwtUtil {
-  private static readonly ACCESS_SECRET = (env.JWT_SECRET as string) || 'access_secret';
-  private static readonly REFRESH_SECRET = (env.JWT_REFRESH_SECRET as string) || 'refresh_secret';
-
-  /**
-   * Giải mã Access Token. 
-   * Nếu token sai, thư viện sẽ tự throw JsonWebTokenError.
-   */
-  public static verifyAccessToken(token: string): TokenPayload {
-    return jwt.verify(token, this.ACCESS_SECRET) as unknown as TokenPayload;
+// 1. TẬP TRUNG CẤU HÌNH: Muốn đổi Secret hay Thời gian thì sửa ở đây
+const JWT_CONFIG = {
+  ACCESS: {
+    getSecret: () => env.JWT_ACCESS_SECRET,
+    errorCode: ErrorCode.AUTH.INVALID_TOKEN, // Lỗi mặc định nếu verify hỏng
+  },
+  REFRESH: {
+    getSecret: () => env.JWT_REFRESH_SECRET,
+    errorCode: ErrorCode.AUTH.INVALID_TOKEN,
   }
+} as const;
 
-  /**
-   * Tạo chữ ký Access Token.
-   * Fix lỗi Overload: Đảm bảo payload là plain object.
-   */
-  public static signAccessToken(payload: TokenPayload, expiresIn: string | number): string {
-    return jwt.sign({ ...payload }, this.ACCESS_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
-  }
+type TokenType = keyof typeof JWT_CONFIG;
 
-  /**
-   * Giải mã Refresh Token.
+export const jwtUtil = {
+  /** * 🛠️ HÀM LÕI DUY NHẤT ĐỂ KÝ (SIGN)
+   * Không còn lặp lại logic tạo Plain Object
    */
-  public static verifyRefreshToken(token: string): TokenPayload {
-    return jwt.verify(token, this.REFRESH_SECRET) as unknown as TokenPayload;
-  }
+  private_sign(type: TokenType, payload: TokenPayload, expiresIn: string | number): string {
+    const secret = JWT_CONFIG[type].getSecret();
+    if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
 
-  /**
-   * Tạo chữ ký Refresh Token.
+    return jwt.sign({ ...payload }, secret, {
+      expiresIn: expiresIn as SignOptions['expiresIn']
+    });
+  },
+
+  /** * 🛡️ HÀM LÕI DUY NHẤT ĐỂ CHECK LỖI (VERIFY)
+   * Đây là chỗ duy nhất có try-catch để cậu chỉnh sửa!
    */
-  public static signRefreshToken(payload: TokenPayload, expiresIn: string | number): string {
-    return jwt.sign({ ...payload }, this.REFRESH_SECRET, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
-  }
-}
+  private_verify(type: TokenType, token: string): TokenPayload {
+    const secret = JWT_CONFIG[type].getSecret();
+    if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+
+    const decoded = jwt.verify(token, secret) as JwtPayload;
+    
+    // Đúc dữ liệu vào class duy nhất tại đây
+    return new TokenPayload({
+      userId: decoded.userId,
+      role: decoded.role,
+      jti: decoded.jti,
+      deviceId: decoded.deviceId,
+      exp: decoded.exp,
+      iat: decoded.iat
+    });
+
+  },
+
+  // ============================================================
+  // CÁC HÀM PUBLIC: Bây giờ chỉ là "vỏ bọc" 1 dòng
+  // ============================================================
+
+  signAccessToken: (p: TokenPayload, exp: string | number) => jwtUtil.private_sign('ACCESS', p, exp),
+  signRefreshToken: (p: TokenPayload, exp: string | number) => jwtUtil.private_sign('REFRESH', p, exp),
+
+  verifyAccessToken: (token: string) => jwtUtil.private_verify('ACCESS', token),
+  verifyRefreshToken: (token: string) => jwtUtil.private_verify('REFRESH', token)
+};

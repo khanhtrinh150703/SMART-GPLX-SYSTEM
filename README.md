@@ -35,6 +35,7 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 
 ### **Backend (Node.js/Express)**
 
+* **Framework:**: Awilix, Redis, Nodemailer, JWT, Winston-Loki
 * **Language:** TypeScript
 * **ORM:** Prisma / TypeORM
 * **Architecture:** Clean Architecture (Domain-Driven Design focus)
@@ -115,13 +116,17 @@ src/
 │   ├── repositories/             # Implement các interface từ Domain
 │   │   ├── mysql/                # Repository cho MySQL
 │   │   └── redis/                # Repository cho Redis
+│   ├── security/                 # Quản lý bảo mật (JWT token manger)
 │   └── swagger/                  # Cấu hình Swagger/OpenAPI
-│
-├── shared/                       # Các module dùng chung cho toàn bộ dự án
-│
+│  
+├── shared/                       # Các module dùng chung toàn dự án
+│   ├── errors/                   # Quản lý lỗi tập trung
+│   ├── responses/                # Chuẩn hóa Response API
+│   ├── types/                    # Định nghĩa Types/Interfaces dùng chung
+│   └── utils/                    # Các hàm tiện ích bổ trợ
+│ 
 ├── app.ts                        # Cấu hình Express/Fastify app (middleware, routes...)
 ├── server.ts                     # Khởi động server
-│
 ├── tests/                        # Thư mục chứa test (unit, integration, e2e)
 ├── .env                          # Biến môi trường
 ├── Dockerfile                    # Docker configuration
@@ -143,11 +148,7 @@ Tổ chức theo tính năng (Feature-based):
 Dự án được xây dựng với **Next.js App Router**, tách biệt rõ ràng giữa routing và logic ứng dụng.
 
 ```bash
-## Cấu trúc dự án (Project Structure)
 
-Dự án được xây dựng với **Next.js App Router**, tập trung vào việc phân tách rõ ràng giữa UI, logic và cấu hình.
-
-```bash
 src/
 ├── api/                          # Cấu hình kết nối HTTP
 │   └── axios-client.ts           # Base Axios instance với interceptors

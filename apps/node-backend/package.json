@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "awilix": "^13.0.3",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
@@ -12,6 +13,7 @@
     "reflect-metadata": "^0.2.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0",
     "winston": "^3.19.0",
     "winston-loki": "^6.1.4"
   },
@@ -29,6 +31,7 @@
     "@types/supertest": "^7.2.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "dotenv-cli": "^11.0.0",
@@ -47,14 +50,21 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
-    "test": "npx dotenv -e .env.local -- jest tests/integration/main.test.ts --runInBand --verbose ",
-    "testcicd": "npx dotenv -e .env.test -- jest tests/integration/main.test.ts --runInBand --verbose ",
+    "test": "npm run db:push:test && npm run db:seed:test && npx dotenv -e .env.local -- jest tests/integration/main.test.ts --runInBand --verbose",
+    "testcicd": "npm run db:push:cicd && npm run db:seed:cicd && npx dotenv -e .env.test -- jest tests/integration/main.test.ts --runInBand --verbose",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:push": "prisma db push",
-    "db:push:test": "dotenv -e .env.test -- prisma db push",
+    "db:push:test": "dotenv -e .env.local -- prisma db push",
+    "db:push:cicd": "dotenv -e .env.test -- prisma db push",
     "db:pull": "prisma db pull",
-    "db:pull:test": "dotenv -e .env.test -- prisma db pull",
-    "db:gen": "prisma generate"
+    "db:pull:test": "dotenv -e .env.local -- prisma db pull",
+    "db:gen": "prisma generate",
+    "db:seed": "prisma db seed",
+    "db:seed:test": "dotenv -e .env.local -- prisma db seed",
+    "db:seed:cicd": "dotenv -e .env.test -- prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

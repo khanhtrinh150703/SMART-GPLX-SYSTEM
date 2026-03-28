@@ -76,3 +76,31 @@ export class VerifyUserDTO {
     this.otp = data.otp;
   }
 }
+
+import { AppError } from '@/shared/errors/error-app';
+import { ErrorCode } from '@/shared/errors/error-codes';
+
+export class ResetPasswordDTO {
+  public email: string;
+  public otp: string;
+  public newPassword: string;
+
+  constructor(data: ResetPasswordDTO) {
+    this.email = data.email;
+    this.otp = data.otp;
+    this.newPassword = data.newPassword;
+  }
+
+  /**
+   * Tác dụng: Kiểm tra tính hợp lệ của dữ liệu đầu vào.
+   */
+  public validateOrThrow(): void {
+    if (!this.email || !this.otp || !this.newPassword) {
+      throw new AppError(ErrorCode.AUTH.MISSING_FIELDS);
+    }
+    if (this.otp.length !== 6) {
+      throw new AppError(ErrorCode.AUTH.OTP_INVALID);
+    }
+    // Thêm logic check độ mạnh mật khẩu ở đây nếu cần
+  }
+}
