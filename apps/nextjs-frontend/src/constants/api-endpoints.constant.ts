@@ -6,8 +6,9 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 export const ENDPOINTS = {
   AUTH: {
     LOGIN: `${API_BASE_URL}/auth/login`,
-    REGISTER: `${API_BASE_URL}/auth/register`,
-    VERIFY_OTP: `${API_BASE_URL}/auth/verify-otp`,
+    REGISTER: `${API_BASE_URL}/auth/register/init`,
+    VERIFY_OTP: `${API_BASE_URL}/auth/register/verify`,
+    RESEND_OTP:  `${API_BASE_URL}/auth/resend-otp`,
   },
   // Thêm các tính năng khác sau này: EXAM, USER_PROFILE...
 };

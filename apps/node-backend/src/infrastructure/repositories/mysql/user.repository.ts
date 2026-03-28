@@ -2,12 +2,33 @@ import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
 import prisma from "../../../../prisma/prisma";
+import { UserWithRolesPayload } from "@/shared/types/user-payload.type";
+import { UserQueryDTO } from "@/application/dtos/request/user-query.dto";
+import { Prisma } from "@prisma/client";
+
 
 /**
  * Triển khai truy vấn dữ liệu User bằng Prisma cho cơ sở dữ liệu MySQL.
  * Tuân thủ nguyên tắc Clean Architecture: Chuyển đổi linh hoạt giữa Persistence Model và Domain Entity qua UserMapper.
  */
-export class UserRepository implements IUserRepository {
+export class MySQLUserRepository implements IUserRepository {
+
+  // Trong MySQLUserRepository
+  private readonly _userInclude = {
+    userRoles: {
+      include: {
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true
+              }
+            }
+          }
+        }
+      }
+    }
+  };
 
   /**
    * Tìm kiếm người dùng đang hoạt động bằng Email.
@@ -20,7 +41,8 @@ export class UserRepository implements IUserRepository {
       where: {
         email,
         deletedAt: null
-      }
+      },
+      include: this._userInclude
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -36,7 +58,8 @@ export class UserRepository implements IUserRepository {
       where: {
         username,
         deletedAt: null
-      }
+      },
+      include: this._userInclude
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -52,7 +75,8 @@ export class UserRepository implements IUserRepository {
       where: {
         id,
         deletedAt: null
-      }
+      },
+      include: this._userInclude
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -71,8 +95,9 @@ export class UserRepository implements IUserRepository {
           { email: identifier },
           { username: identifier }
         ],
-        deletedAt: null
-      }
+        deletedAt: null,
+      },
+      include: this._userInclude
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -93,7 +118,8 @@ export class UserRepository implements IUserRepository {
           { email: email },
           { username: username }
         ]
-      }
+      },
+      include: this._userInclude
     });
 
     // Map danh sách từ Database sang Entity
@@ -107,7 +133,9 @@ export class UserRepository implements IUserRepository {
    */
   async findByEmailInSystem(email: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
-      where: { email } // Không có deletedAt ở đây -> Tìm tất cả
+      where: { email },
+      include: this._userInclude
+      // Không có deletedAt ở đây -> Tìm tất cả
     });
     return rawUser ? UserMapper.toDomain(rawUser) : null;
   }
@@ -119,57 +147,157 @@ export class UserRepository implements IUserRepository {
    */
   async findByUsernameInSystem(username: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
-      where: { username } // Không có deletedAt ở đây -> Tìm tất cả
+      where: { username },
+      include: this._userInclude
+      // Không có deletedAt ở đây -> Tìm tất cả
     });
     return rawUser ? UserMapper.toDomain(rawUser) : null;
   }
 
 
   /**
- * Tìm kiếm người dùng đang hoạt động bằng ID.
- * @param {string} id - UUID của người dùng.
- * @returns {Promise<User | null>} - Trả về Entity User hoặc null.
- */
+   * Tìm kiếm người dùng đang hoạt động bằng ID.
+   * @param {string} id - UUID của người dùng.
+   * @returns {Promise<User | null>} - Trả về Entity User hoặc null.
+   */
   async findByIdInSystem(id: string): Promise<User | null> {
     const rawUser = await prisma.user.findUnique({
       where: {
         id,
-      }
+      },
+      include: this._userInclude
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
   }
 
   /**
-   * Lưu người dùng mới vào database.
-   * @param {User} user - Domain Entity chứa thông tin user mới.
-   * @returns {Promise<User>} - Entity User sau khi đã lưu thành công.
-   */
+     * Lưu người dùng mới kèm theo các quyền hạn đã gán ở Entity.
+     * (Save a new user along with the permissions assigned in the Entity).
+     * * * Sử dụng `UserMapper` để chuyển đổi từ Domain Entity sang Persistence Model.
+     * * Thực hiện tạo bản ghi trong bảng trung gian `userRoles` (quan hệ N-N).
+     * * @param user - Thực thể người dùng (User Domain Entity).
+     * @returns Thực thể User sau khi đã được lưu vào cơ sở dữ liệu.
+     */
   async create(user: User): Promise<User> {
-    // Chuyển từ Domain Entity sang Persistence Model để Prisma có thể hiểu
     const persistenceData = UserMapper.toPersistence(user);
 
     const rawUser = await prisma.user.create({
-      data: persistenceData
+      data: {
+        ...persistenceData,
+        // ĐÂY LÀ CHỖ QUAN TRỌNG: Lưu quan hệ N-N vào bảng user_roles
+        userRoles: {
+          create: user.roles.map(role => ({
+            roleId: role.id
+          }))
+        }
+      },
+      include: this._userInclude
     });
 
-    // Chuyển ngược lại sang Domain Entity để duy trì tính đóng gói
-    return UserMapper.toDomain(rawUser);
+    return UserMapper.toDomain(rawUser as UserWithRolesPayload);
   }
 
   /**
-   * Cập nhật thông tin người dùng.
-   * @param {User} user - Domain Entity đã được thay đổi dữ liệu.
-   * @returns {Promise<User>} - Entity User sau khi cập nhật.
+   * Cập nhật thông tin người dùng và ĐỒNG BỘ lại danh sách quyền.
+   * (Update user information and SYNCHRONIZE the role list).
+   * * * Logic đồng bộ Roles: Xóa tất cả các quan hệ cũ trong bảng trung gian và tạo mới dựa trên Entity hiện tại.
+   * * Đảm bảo tính nhất quán giữa trạng thái của Entity và dữ liệu thực tế trong DB.
+   * * @param user - Thực thể người dùng chứa các thông tin đã thay đổi.
+   * @returns Thực thể User sau khi cập nhật thành công.
    */
   async update(user: User): Promise<User> {
     const persistenceData = UserMapper.toPersistence(user);
 
     const rawUser = await prisma.user.update({
       where: { id: user.id },
-      data: persistenceData
+      data: {
+        ...persistenceData,
+        // Logic đồng bộ Roles: Xóa cũ, thêm mới những gì đang có ở Entity
+        userRoles: {
+          deleteMany: {}, // Xóa hết các quan hệ cũ trong bảng trung gian
+          create: user.roles.map(role => ({
+            roleId: role.id
+          }))
+        }
+      },
+      include: this._userInclude,
     });
 
-    return UserMapper.toDomain(rawUser);
+    return UserMapper.toDomain(rawUser as UserWithRolesPayload);
+  }
+
+  /**
+   * Lưu hoặc cập nhật (Upsert) - Đảm bảo tính nhất quán trong mô hình DDD.
+   * (Save or Update (Upsert) - Commonly used in DDD to ensure consistency).
+   * * * Kiểm tra sự tồn tại của người dùng dựa trên ID:
+   * - Nếu đã tồn tại: Gọi phương thức `update`.
+   * - Nếu chưa tồn tại: Gọi phương thức `create`.
+   * * @param user - Thực thể người dùng cần được bền vững hóa (persist).
+   * @returns Thực thể User đã được lưu/cập nhật.
+   */
+  async save(user: User): Promise<User> {
+    const existing = await this.findActiveById(user.id);
+    if (existing) {
+      return await this.update(user);
+    }
+    return await this.create(user);
+  }
+  /**
+   * @description Lấy danh sách user kèm phân trang.
+   * Chuyển đổi từ UserQueryDTO sang định dạng Prisma.whereInput.
+   */
+  async findAndCount(
+    filter: UserQueryDTO,
+    skip: number,
+    take: number
+  ): Promise<[User[], number]> {
+
+    // 1. Khởi tạo object where chuẩn cho Prisma
+    // Chúng ta không dùng {...filter} trực tiếp vì nó dính page/limit
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null,
+    };
+
+    // 2. Chỉ nhặt ra các trường dùng để query DB
+    if (filter.status) {
+      where.status = filter.status;
+    }
+
+    if (filter.role) {
+      // Truy vấn sâu vào bảng trung gian thông qua quan hệ N-N
+      where.userRoles = {
+        some: {
+          role: { name: filter.role }
+        }
+      };
+    }
+
+    if (filter.search) {
+      where.OR = [
+        { fullName: { contains: filter.search } },
+        { email: { contains: filter.search } },
+        { username: { contains: filter.search } }
+      ];
+    }
+
+    // 3. Thực thi Transaction để lấy Data và Count cùng lúc
+    const [rawUsers, total] = await prisma.$transaction([
+      prisma.user.findMany({
+        where,
+        include: this._userInclude,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.user.count({ where })
+    ]);
+
+    // 4. Map kết quả về Domain Entity
+    const domainUsers = (rawUsers as UserWithRolesPayload[]).map(raw =>
+      UserMapper.toDomain(raw)
+    );
+
+    return [domainUsers, total];
   }
 }

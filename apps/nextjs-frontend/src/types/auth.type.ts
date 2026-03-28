@@ -1,5 +1,6 @@
 // src/types/auth.type.ts
 
+
 // 1. Request Payloads (Dữ liệu gửi lên BE)
 export interface RegisterPayload {
   username: string;
@@ -23,4 +24,12 @@ export interface RegisterResponse {
   userId: string;
 }
 
-// ... Bạn có thể thêm LoginResponse vào đây sau
+// Định nghĩa kiểu dữ liệu nhận về (Response Data Type)
+export interface LoginResponseData {
+  accessToken: string; // Mã thông báo truy cập
+  refreshToken: string; // Mã thông báo làm mới
+}
+
+export interface ResendOtpPayload {
+  email: string;
+}

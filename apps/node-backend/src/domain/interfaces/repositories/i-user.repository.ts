@@ -1,3 +1,4 @@
+import { UserQueryDTO } from '@/application/dtos/request/user-query.dto';
 import { User } from '@/domain/entities/user/user.entity';
 
 /**
@@ -5,6 +6,13 @@ import { User } from '@/domain/entities/user/user.entity';
  * Tuân thủ nguyên tắc Dependency Inversion: Tầng Domain không phụ thuộc vào Database cụ thể.
  */
 export interface IUserRepository {
+  /**
+   * @description Lấy danh sách user có phân trang và lọc
+   * @param filter Các tiêu chí lọc (role, status, search keyword)
+   * @param skip Số bản ghi bỏ qua
+   * @param take Số bản ghi lấy ra
+   */
+  findAndCount(filter: UserQueryDTO, skip: number, take: number): Promise<[User[], number]>;
   /**
    * Tìm kiếm người dùng đang hoạt động bằng Email.
    * @param {string} email
