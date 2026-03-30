@@ -1,5 +1,7 @@
 // src/types/auth.type.ts
 
+import { FieldValues, UseFormRegister } from "react-hook-form";
+
 
 // 1. Request Payloads (Dữ liệu gửi lên BE)
 export interface RegisterPayload {
@@ -24,12 +26,54 @@ export interface RegisterResponse {
   userId: string;
 }
 
-// Định nghĩa kiểu dữ liệu nhận về (Response Data Type)
-export interface LoginResponseData {
-  accessToken: string; // Mã thông báo truy cập
-  refreshToken: string; // Mã thông báo làm mới
-}
-
 export interface ResendOtpPayload {
   email: string;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  otp: string,
+  newPassword: string;
+  email: string;
+}
+
+
+export interface InputFieldProps {
+  label: string;
+  type?: string;
+  placeholder?: string;
+  name: string;
+  // Thay <any> bằng <FieldValues>
+  register: UseFormRegister<FieldValues>;
+  error?: {
+    message?: string;
+  };
+}
+
+interface UserRole {
+  id: string;
+  name: string;
+  displayName: string;
+}
+
+interface UserData {
+  id: string;
+  email: string;
+  username: string;
+  fullName: string;
+  urlPicture: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  roles: UserRole[];
+}
+
+// 2. Định nghĩa Data trả về từ API Login
+export interface LoginResponseData {
+  user: UserData;
+  accessToken: string;
+  refreshToken: string;
 }
