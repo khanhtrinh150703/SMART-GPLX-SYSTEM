@@ -25,6 +25,7 @@ export class UserController {
     // LƯU Ý: Tên 'userService' phải khớp 100% với Key trong file container.ts
     this._userService = userService;
   }
+
   /**
    * Tác dụng: Sửa thông tin cá nhân của người dùng.
    * @param {Request} req - Chứa userId trong params và UpdateProfileDTO trong body.
@@ -32,8 +33,13 @@ export class UserController {
    * @returns {Promise<void>}
    */
   public updateProfile = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
-    const userId = req.params.id as string; // Lấy ID từ URL (VD: /api/v1/users/:id)
-    const dto = new UpdateProfileDTO(req.body);
+    const userId = req.user.userId; // Hoặc req.user.id tùy theo Payload cậu đặt
+
+    // 3. Đóng gói dữ liệu vào một Object duy nhất cho DTO
+    const dto = new UpdateProfileDTO({
+      ...req.body,      // Lấy fullName, username, ...
+      pictureFile: req.file // Lấy file từ multer
+    });
 
     const updatedUser = await this._userService.updateProfile(userId, dto);
 

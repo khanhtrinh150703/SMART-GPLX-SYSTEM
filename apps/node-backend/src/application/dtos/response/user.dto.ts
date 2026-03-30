@@ -25,11 +25,11 @@ export interface UserResponseDTO {
 
   /** * Họ và tên đầy đủ 
    */
-  readonly fullName: string;
+  readonly fullName: string ;
 
   /** * Đường dẫn ảnh đại diện (Nếu có) 
    */
-  readonly urlPicture: string;
+  readonly urlPicture: string ;
 
   /** * Trạng thái tài khoản (active, suspend, v.v.) 
    */
@@ -41,3 +41,12 @@ export interface UserResponseDTO {
   // Thêm dòng này để khớp với Mapper
   readonly roles: RoleDTO[];
 }
+
+// export class UpdateProfileResDTO {
+//   readonly fullName?: string;
+//   readonly urlPicture?: string;
+
+//   constructor(data: Partial<UpdateProfileDTO>) {
+//     Object.assign(this, data);
+//   }
+// }

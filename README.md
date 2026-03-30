@@ -30,16 +30,28 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 5. **AI & Analytics:** "Bộ não" của hệ thống với khả năng giải thích luật (LLM) và học tập thích ứng (Adaptive Learning).
 
 ---
+## 📑 Mục lục
+- [🚀 Quick Start](#-quick-start)
+- [🏗️ Kiến trúc hệ thống](#️-kiến-trúc-hệ-thống-core-modules)
+- [🛠️ Công nghệ sử dụng](#️-công-nghệ-sử-dụng)
+- [⚙️ CI/CD Pipeline](#-cicd-pipeline-github-actions)
+- [📁 Cấu trúc thư mục](#-cấu-trúc-thư-mục)
+- [🌟 Tính năng nổi bật](#-tính-năng-nổi-bật)
+- [💻 Cài đặt chi tiết](#-cài-đặt-chi-tiết)
+- [📝 Giấy phép](#-giấy-phép)
+---
+
 
 ## 🛠️ Công Nghệ Sử Dụng
 
 ### **Backend (Node.js/Express)**
 
-* **Framework:**: Awilix, Redis, Nodemailer, JWT, Winston-Loki
+* **Framework & Tools:** Express/Fastify, Awilix (Dependency Injection)
 * **Language:** TypeScript
 * **ORM:** Prisma / TypeORM
-* **Architecture:** Clean Architecture (Domain-Driven Design focus)
-* **Database:** PostgreSQL / MySQL
+* **Architecture:** Clean Architecture & Domain-Driven Design (DDD)
+* **Database:** MySQL/PostgreSQL, Redis, Prisma / TypeORM
+* **Security & Auth:** JWT, Nodemailer
 * **API Documentation:** Swagger (OpenAPI 3.0)
 
 
@@ -47,8 +59,8 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 
 * **Framework:** Nextjs
 * **Language:** TypeScript
-* **State Management:** Zustand / Redux Toolkit
-* **Styling:** Tailwind CSS / SCSS
+* **State Management:** Zustand
+* **Styling:** Tailwind CSS, Shadcn/UI
 
 ### **AI Engine (Python/FastAPI)**
 
@@ -57,10 +69,10 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **Logic:** Pydantic, OpenCV, PyTorch/TensorFlow
 
 ### **DevOps & Monitoring**
-* **Containerization** Docker & Docker Compose (Quản lý đa dịch vụ).
-* **Logging: Grafana Loki:** tích hợp với Winston để quản lý nhật ký hệ thống tập trung.
-* **Metrics:** Prometheus & Grafana Dashboard (Theo dõi sức khỏe hệ thống real-time).
-* **Error Tracking:** Sentry (Giám sát lỗi trên cả Frontend và Backend).
+* **Containerization** Docker & Docker Compose .
+* **Logging:** Grafana Loki .
+* **Metrics:** Prometheus & Grafana Dashboard.
+* **Error Tracking:** Sentry.
 
 
 ## 🚀 CI/CD Pipeline (GitHub Actions)
@@ -68,11 +80,15 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 Dự án sử dụng **GitHub Actions** để tự động hóa quy trình phát triển và deploy, đảm bảo code luôn chất lượng cao trước khi merge.
 
 ### Tính năng chính của pipeline
-- Lint code (ESLint + Prettier cho JS/TS, Ruff/Black cho Python)
-- Chạy unit & integration tests (Jest/Vitest cho frontend & backend, pytest cho AI Engine)
-- Build Docker images cho toàn bộ hệ thống
-- Scan lỗ hổng bảo mật (npm audit, pip-audit, Trivy cho container)
-- Deploy preview (Vercel/Netlify cho frontend, Railway/Render/Fly.io cho backend nếu cấu hình)
+* Linting: ESLint + Prettier (JS/TS), Ruff/Black (Python).
+
+* Testing: Unit & Integration tests (Jest/Vitest cho Frontend/Backend, pytest cho AI).
+
+* Build: Tự động build Docker images cho toàn bộ hệ thống.
+
+* Security Scan: Quét lỗ hổng (npm audit, pip-audit, Trivy).
+
+* Preview Deploy: Vercel (Frontend), Railway/Render (Backend).
 
 ### Workflow chính
 - **`ci.yml`** — Chạy trên mọi **push** và **pull_request** (lint + test + build + scan)
@@ -148,39 +164,28 @@ Tổ chức theo tính năng (Feature-based):
 Dự án được xây dựng với **Next.js App Router**, tách biệt rõ ràng giữa routing và logic ứng dụng.
 
 ```bash
-
 src/
-├── api/                          # Cấu hình kết nối HTTP
-│   └── axios-client.ts           # Base Axios instance với interceptors
-│
-├── app/                          # Routing & Layouts theo chuẩn App Router
-│   ├── (auth)/                   # Route Group cho xác thực (login, register, verify-otp)
-│   ├── (dashboard)/              # Route Group cho giao diện quản trị
-│   ├── error.tsx                 # Trang hiển thị lỗi hệ thống
-│   ├── layout.tsx                # Root layout (Chứa Navbar, Footer dùng chung)
-│   └── page.tsx                  # Trang chủ (Homepage)
-│
-├── assets/                       # Chứa hình ảnh, fonts, icons, video tĩnh
-│
-├── components/                   # Các component tái sử dụng
-│   ├── ui/                       # Atomic Components (Button, Input, Badge - dùng Shadcn/UI)
-│   ├── layouts/                  # Các bộ khung bố cục (AuthLayout, DashLayout)
-│   ├── common/                   # Component dùng chung có logic (Header, Sidebar...)
-│   └── features/                 # Component riêng cho từng tính năng (ProfileCard, ExamList...)
-│
-├── constants/                    # Các giá trị cố định và cấu hình
-│   ├── config/                   # Cấu hình thông tin dự án
-│   ├── api-endpoints.ts          # Danh sách API endpoints
-│   └── auth.constants.ts         # Hằng số liên quan đến auth (roles, token...)
-│
-├── hooks/                        # Custom React Hooks (useAuth, useLocalStorage...)
-├── lib/                          # Cấu hình thư viện bên thứ 3
-├── middlewares/                  # Các middleware xử lý trung gian
-│   └── auth-middleware.ts
-├── services/                     # Business logic và các hàm gọi API
-│   ├── auth.service.ts
-│   └── user.service.ts
-└── types/                        # Định nghĩa TypeScript (Interfaces, Types, Enums)
+├── api/                          # Tầng gọi API và cấu hình HTTP Client
+│ 
+├── app/                          # Tầng Routing & Layouts (Next.js App Router)
+│   ├── (auth)/                   # Route Group cho phần xác thực
+│   └── (dashboard)/              # Route Group cho giao diện quản trị
+│ 
+├── assets/                       # Tài nguyên tĩnh (hình ảnh, fonts, icons)
+│ 
+├── components/                   # Các thành phần giao diện
+│   ├── ui/                       # Atomic components (Button, Input...)
+│   ├── common/                   # Components dùng chung có logic
+│   ├── layouts/                  # Các layout chính (AuthLayout, DashboardLayout)
+│   └── features/                 # Components theo từng tính năng
+│ 
+├── constants/                    # Hằng số toàn cục (endpoints, regex, theme...)
+├── context/                      # React Context Providers
+├── hooks/                        # Custom React Hooks
+├── lib/                          # Cấu hình thư viện bên thứ 3 và utilities
+├── services/                     # Business logic và state management
+├── types/                        # Định nghĩa TypeScript interfaces và types
+└── middleware.ts                 # Next.js Middleware                  # Định nghĩa TypeScript (Interfaces, Types, Enums)
 ```
 
 ### 3. AI Engine (`ai-engine/`)
@@ -207,7 +212,7 @@ Thiết kế theo chuẩn MLOps:
 Hệ thống không xóa vĩnh viễn dữ liệu ngay lập tức để bảo toàn lịch sử thi:
 
 1. **Soft Delete:** Đánh dấu `deleted_at`.
-2. **Cron Job:** Tác vụ chạy ngầm 2 giờ sáng hàng ngày để quét và chuyển dữ liệu cũ vào **Archive** nếu không còn ràng buộc.
+<!-- 2. **Cron Job:** Tác vụ chạy ngầm 2 giờ sáng hàng ngày để quét và chuyển dữ liệu cũ vào **Archive** nếu không còn ràng buộc. -->
 
 ---
 
@@ -223,13 +228,13 @@ Hệ thống không xóa vĩnh viễn dữ liệu ngay lập tức để bảo t
 
 1. **Clone dự án:**
 ```bash
-git clone https://github.com/your-username/smart-gplx.git
+git clone https://github.com/khanhtrinh150703/SMART-GPLX-SYSTEM
 ```
 
 
 2. **Cài đặt Backend:**
 ```bash
-cd smart-gplx-backend
+cd apps/node-backend
 npm install
 npx prisma migrate dev
 npm run dev
@@ -238,7 +243,7 @@ npm run dev
 
 3. **Cài đặt Frontend:**
 ```bash
-cd react-enterprise-boilerplate
+cd apps/nextjs-frontend
 npm install
 npm run dev
 ```
@@ -246,7 +251,7 @@ npm run dev
 
 4. **Cài đặt AI Engine:**
 ```bash
-cd ai-engine
+cd apps/ai-engine
 pip install -r requirements.txt
 python src/main.py
 ```
@@ -256,17 +261,6 @@ python src/main.py
 ---
 
 ## 📝 Giấy Phép
-MIT
+Dự án được phân phối dưới giấy phép MIT License.
 ---
 
----
-## Mục lục
-- [Quick Start](#-quick-start)
-- [Kiến trúc hệ thống](#️-kiến-trúc-hệ-thống)
-- [Công nghệ sử dụng](#️-công-nghệ-sử-dụng)
-- [CI/CD Pipeline](#-cicd-pipeline-github-actions)
-- [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
-- [Tính năng nổi bật](#-tính-năng-nổi-bật)
-- [Cài đặt](#-cài-đặt)
-- [Giấy phép](#-giấy-phép)
----

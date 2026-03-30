@@ -102,12 +102,19 @@ export class User {
     this._updatedAt = new Date();
   }
 
-  public updateProfile(fullName: string, urlPicture: string): void {
-    this._fullName = fullName;
-    this._urlPicture = urlPicture;
-    this.touch();
-  }
+  /**
+     * Logic cập nhật thông tin cá nhân
+     * @param {string} fullName - Họ tên mới
+     * @param {string} urlPicture - Đường dẫn ảnh mới
+     */
+  public updateProfile(fullName?: string, urlPicture?: string): void {
 
+    this._fullName = fullName ?? "";
+
+    if (urlPicture !== undefined) {
+      this._urlPicture = urlPicture;
+    }
+  }
   public updateStatus(newStatus: UserStatus): void {
     this._status = newStatus;
   }
@@ -202,5 +209,22 @@ export class User {
       role.permissions.map(p => p.name)
     );
     return [...new Set(names)]; // Loại bỏ trùng lặp
+  }
+
+  public updateAvatar(newPath: string): void {
+    if (this._urlPicture === newPath) return;
+    this._urlPicture = newPath;
+    this.touch();
+  }
+
+
+  /**
+   * Cập nhật riêng lẻ họ tên
+   */
+  public updateFullName(newName: string): void {
+    const trimmedName = newName.trim();
+    if (this._fullName === trimmedName) return;
+    this._fullName = trimmedName;
+    this.touch();
   }
 }

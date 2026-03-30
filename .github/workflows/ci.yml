@@ -53,12 +53,6 @@ jobs:
         working-directory: apps/node-backend
         run: npm install --ignore-scripts
 
-      - name: Sync Database Schema
-        working-directory: apps/node-backend
-        run: npx prisma db push 
-        env:
-          DATABASE_URL: "mysql://root:password@127.0.0.1:3306/smart_gplx_test"
-
       - name: Generate Prisma Client
         working-directory: apps/node-backend
         run: npx prisma generate

@@ -5,19 +5,5 @@ import { Prisma } from "@prisma/client";
  * Bao gồm: User -> UserRole -> Role -> RolePermission -> Permission.
  */
 export type UserWithRolesPayload = Prisma.UserGetPayload<{
-  include: {
-    userRoles: {
-      include: {
-        role: {
-          include: {
-            rolePermissions: {
-              include: {
-                permission: true;
-              };
-            };
-          };
-        };
-      };
-    };
-  };
+  include: { userRoles: { select: { roleId: true } } }
 }>;

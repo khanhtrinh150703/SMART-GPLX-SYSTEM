@@ -1,4 +1,4 @@
-import { siteConfig } from '@/src/constants/config/site';
+import { siteConfig } from '@/constants/config/site';
 
 interface AuthLayoutProps {
   children: React.ReactNode; // Phần form sẽ được nhúng vào đây

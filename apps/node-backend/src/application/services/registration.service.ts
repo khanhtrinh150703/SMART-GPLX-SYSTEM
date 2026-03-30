@@ -89,7 +89,7 @@ export class RegistrationService implements IRegistrationService {
 
     // 5. Dọn dẹp dữ liệu tạm trong Redis
     await this._pendingRepo.delete(normalizedEmail);
-    await this._otpService.deleteOtp(email);
+    await this._otpService.deleteOtp(normalizedEmail);
 
     return newUser;
   }

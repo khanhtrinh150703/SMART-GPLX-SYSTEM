@@ -7,7 +7,6 @@ import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from "../dtos/re
 import { REGEX } from "@/domain/constants/regex.constant";
 import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
 import { SystemRoles } from "@/domain/constants/roles.constant";
-import { IRoleService } from "@/domain/interfaces/services/i-role.service";
 import { IUserService } from "@/domain/interfaces/services/i-user.service";
 import { UserQueryDTO } from "../dtos/request/user-query.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
@@ -15,6 +14,9 @@ import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
 import { UserResponseDTO } from "../dtos/response/user.dto";
 import { ICradle } from "@/shared/types/container.types";
+import { RoleCacheService } from "@/infrastructure/security/role-cache.service";
+import { Role } from "@/domain/entities/role/role.entity";
+import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
 
 /**
  * Service quản lý các nghiệp vụ lõi liên quan đến Người dùng.
@@ -24,18 +26,15 @@ export class UserService implements IUserService {
     // 1. Khai báo các thuộc tính của class ở đây
     private readonly _userRepo: IUserRepository;
     private readonly _tokenManager: ITokenManager;
-    private readonly _roleService: IRoleService;
+    private readonly _fileStorageService: IFileStorageService;
 
     /**
      * @param {ICradle} cradle - Object chứa tất cả dependencies từ Container
      */
-    constructor({ userRepository, tokenManager, roleService }: ICradle) {
-        // 2. Gán các dependency từ object vào thuộc tính class
-        // LƯU Ý: Tên 'userRepository', 'tokenManager', 'roleService' 
-        // phải khớp 100% với Key cậu đã register trong container.ts
+    constructor({ userRepository, tokenManager, fileStorageService }: ICradle) {
+        this._fileStorageService = fileStorageService;
         this._userRepo = userRepository;
         this._tokenManager = tokenManager;
-        this._roleService = roleService;
     }
     // ============================================================
     // PRIVATE HELPERS (Các hàm bổ trợ để tái sử dụng)
@@ -69,18 +68,27 @@ export class UserService implements IUserService {
     // ============================================================
 
     /**
-     * Tác dụng: Cập nhật thông tin cá nhân của người dùng.
-     * @param {string} userId - ID của người dùng.
-     * @param {UpdateProfileDTO} dto - Dữ liệu cần cập nhật.
-     * @returns {Promise<User>}
+     * Thực hiện cập nhật hồ sơ người dùng
+     * @param {string} userId - ID của người dùng
+     * @param {UpdateProfileDTO} dto - Dữ liệu cần cập nhật
+     * @returns {Promise<User>} Entity User sau khi đã cập nhật
      */
     public async updateProfile(userId: string, dto: UpdateProfileDTO): Promise<User> {
+        // 1. Kiểm tra sự tồn tại của User (Sử dụng helper nội bộ)
         const user = await this.getActiveUserOrThrow(userId);
 
-        if (dto.fullName !== undefined && dto.urlPicture !== undefined) {
-            user.updateProfile(dto.fullName, dto.urlPicture);
+        let newUrlPicture: string | undefined;
+        // 2. Nếu có file upload, thực hiện lưu vật lý và lấy path
+        if (dto.pictureFile) {
+            // Lưu vào thư mục 'avatars'
+            newUrlPicture = await this._fileStorageService.saveFile(dto.pictureFile, 'avatars');
         }
 
+        // 3. Thực hiện cập nhật logic thông qua Domain Entity (Rich Logic)
+        // Nếu dto.fullName undefined, Entity sẽ tự bỏ qua không update field đó
+        user.updateProfile(dto.fullName, newUrlPicture);
+
+        // 4. Lưu lại sự thay đổi vào Database thông qua Repository
         return await this._userRepo.update(user);
     }
 
@@ -289,7 +297,20 @@ export class UserService implements IUserService {
         fullName: string;
         passwordHash: string;
     }): Promise<User> {
-        const defaultRole = await this._roleService.getRoleByName(SystemRoles.STUDENT);
+        const roleData = RoleCacheService.getByName(SystemRoles.STUDENT);
+
+        if (!roleData) {
+            // Nếu không thấy trong cache, có thể hệ thống chưa init hoặc sai tên Role
+            throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+        }
+
+        // 2. Biến dữ liệu thô từ Cache thành Entity Role xịn (Để hết lỗi TypeScript)
+        const defaultRole = Role.reconstitute({
+            id: roleData.id,
+            name: roleData.name,
+            description: roleData.description,
+            permissions: [] // Khi tạo mới, ta có thể để trống permissions hoặc hydrate từ cache nếu cần
+        });
         const userEntity = User.create({
             id: data.id,
             username: data.username,
