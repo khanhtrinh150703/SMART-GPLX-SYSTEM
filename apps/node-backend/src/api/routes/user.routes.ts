@@ -1,43 +1,27 @@
 import { Router } from 'express';
-
-// Controllers
+import { container } from '@/shared/utils/container';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import { UserController } from '../controllers/user.controller';
+import { upload } from '../middlewares/upload.middleware';
 
-// Services & Repositories
-import { UserService } from '@/application/services/user.service';
-import { UserRepository } from '@/infrastructure/repositories/mysql/user.repository';
-
-// Middlewares
-// import { authMiddleware } from '../middlewares/auth.middleware';
-
-// ============================================================================
-// 1. KHỞI TẠO DEPENDENCIES (DI Container nội bộ)
-// ============================================================================
 const router = Router();
 
-// Khởi tạo các lớp theo đúng thứ tự từ dưới lên trên
-const userRepo = new UserRepository();
-const userService = new UserService(userRepo);
-const userController = new UserController(userService);
+// 💡 PHÉP MÀU Ở ĐÂY: Cậu chỉ cần gọi đúng cái "ngọn" là UserController
+// Container sẽ tự động đi tìm UserService -> TokenManager -> Repo... để tự 'new' cho cậu.
+const userController = container.resolve('userController') as UserController;
 
 // ============================================================================
-// 2. ĐỊNH NGHĨA ROUTES (Tất cả đều được bảo vệ bởi authMiddleware)
+// ĐỊNH NGHĨA ROUTES (Gọn gàng như một bức tranh)
 // ============================================================================
 
-// 1. Cập nhật thông tin cá nhân (Profile)
-// Sử dụng .bind(userController) để tránh lỗi undefined 'this'
-router.patch('/:id/profile',userController.updateProfile.bind(userController));
+// Nhóm 1: Cá nhân
+router.patch('/me/profile', authMiddleware, upload.single('pictureFile'),  userController.updateProfile);
+router.patch('/me/password', authMiddleware, userController.changePassword);
 
-// 2. Đổi mật khẩu
-router.patch('/:id/password',userController.changePassword.bind(userController));
-
-// 3. Đổi trạng thái (Khóa/Mở khóa tài khoản)
-// Lưu ý: Tạm thời dùng authMiddleware, sau này Cậu hãy thêm adminMiddleware vào đây nhé!
-router.patch('/:id/status', userController.updateStatus.bind(userController));
-
-// 4. Xóa tài khoản (Soft Delete)
-router.delete('/:id', userController.deleteUser.bind(userController));
-
-router.patch('/:id/restore', userController.restoreUser.bind(userController));
+// Nhóm 2: Quản trị
+router.get('', authMiddleware, userController.getUsers);
+router.patch('/:id/status', authMiddleware, userController.updateStatus);
+router.delete('/:id', authMiddleware, userController.deleteUser);
+router.patch('/:id/restore', authMiddleware, userController.restoreUser);
 
 export default router;

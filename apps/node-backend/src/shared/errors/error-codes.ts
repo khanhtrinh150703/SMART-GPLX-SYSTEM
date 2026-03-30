@@ -13,6 +13,7 @@ export const ErrorCode = {
         DATABASE_ERROR: 'SYS_504',      // Lỗi truy vấn DB
         TOO_MANY_REQUESTS: 'SYS_429',   // Spam / Rate limit
         REQUEST_TIMEOUT: 'SYS_408',     // Hết thời gian chờ
+        CONFIG_ERROR: 'SYS_505',
     },
 
     /** * --- AUTHENTICATION & AUTHORIZATION (AUTH) --- 
@@ -30,6 +31,8 @@ export const ErrorCode = {
         REGISTRATION_EXPIRED: 'AUTH_004',  // Link hoặc phiên đăng ký đã hết hạn
         INVALID_REFRESH_TOKEN: 'AUTH_005', // Refresh token không hợp lệ (Đã đổi từ 001)
         REFRESH_FAILED: 'AUTH_006',     // Token refresh failed
+        MISSING_FIELDS: 'AUTH_400',
+        INVALID_TOKEN: 'AUTH_007', // Token không hợp lệ (Sai chữ ký, bị chỉnh sửa...)
     },
 
     /** * --- USER & PROFILE (USER) --- 

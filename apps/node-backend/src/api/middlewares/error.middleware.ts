@@ -17,7 +17,7 @@ export const globalErrorHandler = (
   // 2. Trường hợp lỗi chưa biết (Ví dụ: Lỗi code, lỗi DB, lỗi Logic Runtime)
   // Luôn log lỗi ra console để dev dễ debug
   console.error('ERROR 💥:', err);
-
+  
   // Lấy thông tin mặc định cho lỗi hệ thống từ các file Map
   const systemErrorCode = ErrorCode.SYSTEM.INTERNAL_ERROR;
   const systemStatus = ErrorStatus[systemErrorCode] || 500;

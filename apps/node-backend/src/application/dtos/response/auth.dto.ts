@@ -1,3 +1,5 @@
+import { RoleDTO } from "./user.dto";
+
 /**
  * DTO định nghĩa dữ liệu trả về sau khi Đăng nhập thành công.
  */
@@ -9,7 +11,10 @@ export interface LoginResponseDTO {
     fullName: string;
     urlPicture: string;
     status: string;
-    role: string;
+    createdAt: Date;
+    updatedAt: Date;
+    // Thêm dòng này để khớp với Mapper
+    roles: RoleDTO[];
   };
   accessToken: string;
   refreshToken: string;

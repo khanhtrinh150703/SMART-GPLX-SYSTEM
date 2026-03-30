@@ -1,6 +1,7 @@
 import { connectRedis } from '@/infrastructure/database/redis/redis.client';
 import prisma from '../prisma/prisma'; // Đường dẫn tới file prisma client của bạn
 import { redisClient } from '@/infrastructure/database/redis/redis.client'
+import { RoleCacheService } from '@/infrastructure/security/role-cache.service';
 
 export const connectDB = async () => {
     console.log("🛠️ DATABASE TEST:", process.env.DATABASE_URL);
@@ -9,6 +10,10 @@ export const connectDB = async () => {
             prisma.$connect(),
             connectRedis()
         ]);
+
+        await RoleCacheService.initialize();
+        console.log('✅ [System] Role Cache warmed up successfully');
+
         await prisma.user.count(); // Warm up
 
         console.log('✅ Database & Redis connected successfully');
