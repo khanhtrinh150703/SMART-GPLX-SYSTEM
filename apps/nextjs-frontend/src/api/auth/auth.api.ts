@@ -1,7 +1,7 @@
 // src/api/auth/auth.api.ts
 import axiosClient from '../axios-client';
-import { ENDPOINTS } from '@/src/constants/api-endpoints.constant';
-import type { StandardResponse } from '@/src/types/common.type';
+import { ENDPOINTS } from '@/constants/api-endpoints.constant';
+import type { StandardResponse } from '@/types/common.type';
 
 // Import (Nhập) thêm các Payload (Dữ liệu gửi lên) mới
 import type {
@@ -12,10 +12,10 @@ import type {
   ResendOtpPayload,
   ForgotPasswordPayload,
   ResetPasswordPayload,
-  LoginResponseData,       // Dữ liệu gửi lên khi yêu cầu gửi lại OTP
+  LoginResponseData,
   // ForgotPasswordPayload,  // Dữ liệu gửi lên khi yêu cầu quên mật khẩu
   // ResetPasswordPayload    // Dữ liệu gửi lên khi đặt lại mật khẩu mới
-} from '@/src/types/auth.type';
+} from '@/types/auth.type';
 
 export const authApi = {
   // Bọc RegisterResponse bên trong StandardResponse (Phản hồi tiêu chuẩn)
@@ -76,5 +76,6 @@ export const authApi = {
       data
     );
     return response.data;
-  }
+  },
+
 };

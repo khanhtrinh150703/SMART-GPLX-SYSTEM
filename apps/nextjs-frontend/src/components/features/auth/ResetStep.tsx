@@ -5,23 +5,19 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useCountdown } from "@/hooks/use-countdown";
+import { resetPasswordSchema, ResetPasswordSchemaType } from "@/lib/validations/auth.schema";
+import { authService } from "@/services/auth/auth.service";
+import { ProgressBar } from "@/components/ui/Progress-Bar";
+import { OtpHeader, OtpInput, ResendOtpButton } from "@/components/ui/Otp";
+import { Badge } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Alert";
+import { Label } from "@/components/ui/Label";
+import { ErrorMessage } from "@/components/ui/ErrorMessages";
+import Input from "@/components/ui/Input/Input";
+import Button from "@/components/ui/Button/Button";
 
-// --- IMPORT ATOMIC COMPONENTS ---
-import { ProgressBar } from "../../ui/Progress-Bar";
-import { Badge } from "../../ui/Badge";
-import { Alert } from "../../ui/Alert";
-import Button from "../../ui/Button";
-import { OtpInput } from "../../ui/Otp-Input";
-import Input from "../../ui/Input"; // Sử dụng đúng component Input của bạn
 
-// --- IMPORT LOGIC & TYPES ---
-import { useCountdown } from "@/src/hooks/use-countdown";
-import { authService } from "@/src/services/auth/auth.service";
-import {
-  resetPasswordSchema,
-  ResetPasswordSchemaType,
-} from "@/src/lib/validations/auth.schema";
-import { ResendOtpButton } from "../../ui/Resend-Otp-Button";
 
 interface ResetStepProps {
   email: string;
@@ -113,33 +109,38 @@ export const ResetStep = ({ email, onBack }: ResetStepProps) => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-6">
         {/* HEADER */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">
+          {/* <h2 className="text-2xl font-bold text-slate-800">
             Đặt lại mật khẩu
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Mã OTP đã được gửi đến{" "}
-            <span className="font-semibold text-slate-700">{email}</span>
-          </p>
-
-          <div className="mt-4 flex justify-center">
-            <Badge variant={expiryTimer.seconds < 30 ? "danger" : "default"}>
-              <span
-                className={`mr-2 w-2 h-2 rounded-full ${expiryTimer.isActive ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}
-              />
-              {expiryTimer.isActive
-                ? `Mã hết hạn trong: ${expiryTimer.formatTime()}`
-                : "Mã đã hết hạn"}
-            </Badge>
+          </h2> */}
+          <div className="text-center">
+            <OtpHeader email={email} />
+            <div className="mt-4 flex justify-center">
+              <Badge
+                // 💡 Tự động đổi màu dựa trên thời gian
+                intent={expiryTimer.seconds < 30 ? "danger" : "default"}
+                showDot
+                pulse={expiryTimer.isActive} // 💡 Chỉ nháy khi timer đang chạy
+              >
+                {expiryTimer.isActive
+                  ? `Mã hết hạn trong: ${expiryTimer.formatTime()}`
+                  : "Mã đã hết hạn"}
+              </Badge>
+            </div>
           </div>
         </div>
 
-        {serverError && <Alert type="error" message={serverError} />}
+        {/* 🚀 Cách sửa mới: Gọn, sạch và chuyên nghiệp */}
+        {serverError && (
+          <Alert
+            intent="error"
+            message={serverError}
+            className="mb-8" // 💡 Đẩy margin vào đây, không cần div bọc ngoài nữa
+          />
+        )}
 
         {/* OTP INPUT */}
         <div>
-          <label className="block text-sm font-semibold text-gray-800 mb-3 text-center">
-            Mã xác thực OTP
-          </label>
+          <Label className="text-center">Mã xác thực OTP</Label>
 
           <Controller
             name="otp"
@@ -155,12 +156,8 @@ export const ResetStep = ({ email, onBack }: ResetStepProps) => {
               />
             )}
           />
-
-          {errors.otp && (
-            <p className="text-rose-600 text-sm mt-4 text-center font-semibold animate-pulse">
-              {errors.otp.message}
-            </p>
-          )}
+          {/* 🚀 Phiên bản "Senior" - Cực kỳ chuyên nghiệp */}
+          <ErrorMessage message={errors.otp?.message} intent="pulse" />
         </div>
 
         {/* PHẦN MẬT KHẨU - SỬ DỤNG COMPONENT INPUT CỦA BẠN */}
@@ -188,12 +185,12 @@ export const ResetStep = ({ email, onBack }: ResetStepProps) => {
         {/* ACTION BUTTONS */}
         <Button
           type="submit"
+          variant="primary" // 💡 Đã bao gồm màu emerald, hover, shadow và transition
+          size="lg" // 💡 Đã bao gồm w-full, py-4 (hoặc h-14), rounded-xl và font-bold
           isLoading={isLoading}
-          disabled={!expiryTimer.isActive || isLoading}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold transition-colors"
-        >
-          {expiryTimer.isActive ? "Xác nhận thay đổi" : "Mã đã hết hạn"}
-        </Button>
+          disabled={!expiryTimer.isActive} // 💡 Chỉ cần truyền điều kiện hết hạn (isLoading nút tự xử lý rồi)
+          text={expiryTimer.isActive ? "Xác nhận thay đổi" : "Mã đã hết hạn"}
+        />
 
         <ResendOtpButton
           onClick={handleResendOtp}
@@ -202,13 +199,15 @@ export const ResetStep = ({ email, onBack }: ResetStepProps) => {
           isLoading={isLoading}
         />
 
-        <button
+        <Button
           type="button"
-          onClick={onBack}
-          className="w-full text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors"
+          variant="ghost" // 💡 Đã có sẵn màu slate, hiệu ứng hover và transition
+          size="md" // 💡 Kích thước vừa phải cho nút phụ
+          onClick={() => router.back()}
+          className="w-full font-bold" // 💡 Chỉ thêm w-full để dàn hàng ngang nếu cần
         >
-          Quay lại
-        </button>
+          Quay lại trang trước
+        </Button>
       </form>
     </div>
   );

@@ -1,19 +1,27 @@
 import { REGEX } from "@/domain/constants/regex.constant";
 import { UserStatus } from "@/domain/entities/user/user.status";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { IUpdateProfileInput, IUploadedFile } from "@/shared/types/file.type";
 
 /**
  * DTO cập nhật thông tin cá nhân.
  */
 export class UpdateProfileDTO {
   readonly fullName?: string;
-  readonly urlPicture?: string;
+  readonly pictureFile?: IUploadedFile;
 
-  constructor(data: Partial<UpdateProfileDTO>) {
-    Object.assign(this, data);
+  constructor(data: IUpdateProfileInput) {
+    this.fullName = data.fullName;
+    this.pictureFile = data.pictureFile;
+  }
+
+  /**
+   * Kiểm tra tính hợp lệ của dữ liệu đầu vào
+   */
+  public isValid(): boolean {
+    return !!(this.fullName || this.pictureFile);
   }
 }
-
 /**
  * DTO đổi mật khẩu.
  */

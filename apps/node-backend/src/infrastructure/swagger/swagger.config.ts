@@ -5,7 +5,7 @@ const API_BASE = '/api/v1';
 /**
  * ====================== OPENAPI PATHS ======================
  */
-const paths: any = {
+const paths = {
   // ====================== AUTHENTICATION ======================
   [`${API_BASE}/auth/register/init`]: {
     post: {
@@ -525,7 +525,7 @@ const options = {
           type: 'object',
           properties: {
             fullName: { type: 'string', example: 'Trinh Cậu Vàng V2' },
-            urlPicture: { type: 'string', format: 'uri', example: 'https://example.com/avatar.png' },
+            urlPicture: { type: 'string | File ', format: 'uri', example: 'https://example.com/avatar.png' },
           },
         },
 

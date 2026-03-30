@@ -1,7 +1,7 @@
 'use client';
 
-import { EmailStep } from '@/src/components/features/auth/EmailStep';
-import { ResetStep } from '@/src/components/features/auth/ResetStep';
+import { EmailStep } from '@/components/features/auth/EmailStep';
+import { ResetStep } from '@/components/features/auth/ResetStep';
 import { useState } from 'react';
 
 export default function ForgotPasswordPage() {

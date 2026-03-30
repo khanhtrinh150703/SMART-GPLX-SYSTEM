@@ -14,19 +14,9 @@ import { Prisma } from "@prisma/client";
 export class MySQLUserRepository implements IUserRepository {
 
   // Trong MySQLUserRepository
-  private readonly _userInclude = {
+  private readonly _userIncludeMinimal = {
     userRoles: {
-      include: {
-        role: {
-          include: {
-            rolePermissions: {
-              include: {
-                permission: true
-              }
-            }
-          }
-        }
-      }
+      select: { roleId: true }
     }
   };
 
@@ -42,7 +32,7 @@ export class MySQLUserRepository implements IUserRepository {
         email,
         deletedAt: null
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -59,7 +49,7 @@ export class MySQLUserRepository implements IUserRepository {
         username,
         deletedAt: null
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -76,7 +66,7 @@ export class MySQLUserRepository implements IUserRepository {
         id,
         deletedAt: null
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -97,7 +87,7 @@ export class MySQLUserRepository implements IUserRepository {
         ],
         deletedAt: null,
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -119,7 +109,7 @@ export class MySQLUserRepository implements IUserRepository {
           { username: username }
         ]
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
     // Map danh sách từ Database sang Entity
@@ -134,7 +124,7 @@ export class MySQLUserRepository implements IUserRepository {
   async findByEmailInSystem(email: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
       where: { email },
-      include: this._userInclude
+      include: this._userIncludeMinimal
       // Không có deletedAt ở đây -> Tìm tất cả
     });
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -148,7 +138,7 @@ export class MySQLUserRepository implements IUserRepository {
   async findByUsernameInSystem(username: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
       where: { username },
-      include: this._userInclude
+      include: this._userIncludeMinimal
       // Không có deletedAt ở đây -> Tìm tất cả
     });
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -165,7 +155,7 @@ export class MySQLUserRepository implements IUserRepository {
       where: {
         id,
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
     return rawUser ? UserMapper.toDomain(rawUser) : null;
@@ -181,21 +171,21 @@ export class MySQLUserRepository implements IUserRepository {
      */
   async create(user: User): Promise<User> {
     const persistenceData = UserMapper.toPersistence(user);
-
+    // Đây là nơi Prisma thực hiện Transaction ngầm để tạo User + Roles
     const rawUser = await prisma.user.create({
       data: {
         ...persistenceData,
-        // ĐÂY LÀ CHỖ QUAN TRỌNG: Lưu quan hệ N-N vào bảng user_roles
         userRoles: {
           create: user.roles.map(role => ({
             roleId: role.id
           }))
         }
       },
-      include: this._userInclude
+      include: this._userIncludeMinimal
     });
 
-    return UserMapper.toDomain(rawUser as UserWithRolesPayload);
+    const domainUser = UserMapper.toDomain(rawUser as UserWithRolesPayload);
+    return domainUser;
   }
 
   /**
@@ -221,7 +211,7 @@ export class MySQLUserRepository implements IUserRepository {
           }))
         }
       },
-      include: this._userInclude,
+      include: this._userIncludeMinimal,
     });
 
     return UserMapper.toDomain(rawUser as UserWithRolesPayload);
@@ -285,7 +275,7 @@ export class MySQLUserRepository implements IUserRepository {
     const [rawUsers, total] = await prisma.$transaction([
       prisma.user.findMany({
         where,
-        include: this._userInclude,
+        include: this._userIncludeMinimal,
         skip,
         take,
         orderBy: { createdAt: 'desc' }

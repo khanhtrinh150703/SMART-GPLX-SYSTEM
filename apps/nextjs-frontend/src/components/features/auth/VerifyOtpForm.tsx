@@ -3,19 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useCountdown } from "@/hooks/use-countdown";
+import { authService } from "@/services/auth/auth.service";
+import { OtpHeader, OtpInput, ResendOtpButton } from "@/components/ui/Otp";
+import { ProgressBar } from "@/components/ui/Progress-Bar";
+import { Badge } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Alert";
+import { Label } from "@/components/ui/Label";
+import Button from "@/components/ui/Button/Button";
 
-// --- IMPORT ATOMIC COMPONENTS ---
-import { ProgressBar } from "../../ui/Progress-Bar";
-import { OtpHeader } from "../../ui/Otp-Header";
-import { Badge } from "../../ui/Badge";
-import { Alert } from "../../ui/Alert";
-import Button from "../../ui/Button";
-import { OtpInput } from "../../ui/Otp-Input";
 
-// --- IMPORT LOGIC & TYPES ---
-import { useCountdown } from "@/src/hooks/use-countdown";
-import { authService } from "@/src/services/auth/auth.service";
-import { ResendOtpButton } from "../../ui/Resend-Otp-Button";
 
 export default function VerifyOtpForm() {
   const router = useRouter();
@@ -137,10 +134,12 @@ export default function VerifyOtpForm() {
         <div className="text-center">
           <OtpHeader email={email} />
           <div className="mt-4 flex justify-center">
-            <Badge variant={expiryTimer.seconds < 30 ? "danger" : "default"}>
-              <span
-                className={`mr-2 w-2 h-2 rounded-full ${expiryTimer.isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}
-              />
+            <Badge
+              // 💡 Tự động đổi màu dựa trên thời gian
+              intent={expiryTimer.seconds < 30 ? "danger" : "default"}
+              showDot
+              pulse={expiryTimer.isActive} // 💡 Chỉ nháy khi timer đang chạy
+            >
               {expiryTimer.isActive
                 ? `Mã hết hạn trong: ${expiryTimer.formatTime()}`
                 : "Mã đã hết hạn"}
@@ -149,15 +148,17 @@ export default function VerifyOtpForm() {
         </div>
 
         {/* THÔNG BÁO THÀNH CÔNG (Error giờ hiện dưới OTP) */}
-        <div className="space-y-3">
-          {successMsg && <Alert type="success" message={successMsg} />}
-        </div>
+        {successMsg && (
+          <Alert
+            intent="success"
+            message="Xác thực mã thành công"
+            className="mb-6"
+          />
+        )}
 
         {/* Ô NHẬP OTP */}
         <div className="flex flex-col">
-          <label className="block text-sm font-bold text-slate-800 mb-3 text-center">
-            Mã xác thực OTP
-          </label>
+          <Label className="text-center">Mã xác thực OTP</Label>
 
           <OtpInput
             value={otp}
@@ -165,23 +166,24 @@ export default function VerifyOtpForm() {
             disabled={isLoading || !expiryTimer.isActive}
           />
 
-          {/* HIỂN THỊ LỖI REAL-TIME: Đỏ rực, đậm, không xám */}
-          {errorMsg && (
-            <p className="text-rose-600 text-sm mt-4 text-center font-semibold animate-pulse">
-              {errorMsg}
-            </p>
-          )}
+          {/* 🚀 Cách sửa dùng Alert đã có: Gọn và đồng bộ */}
+          <Alert
+            intent="error"
+            layout="centered"
+            message={errorMsg}
+            className="mt-4"
+          />
         </div>
 
         {/* NÚT XÁC NHẬN */}
         <Button
           type="submit"
+          variant="primary" // 💡 Đã có emerald-600, shadow, active:scale...
+          size="lg" // 💡 Đã có w-full, py-4, rounded-xl
           isLoading={isLoading}
-          disabled={!expiryTimer.isActive || isLoading}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold transition-all shadow-lg active:scale-[0.98]"
-        >
-          {expiryTimer.isActive ? "Xác nhận mã OTP" : "Mã đã hết hạn"}
-        </Button>
+          disabled={!expiryTimer.isActive} // 💡 Chỉ cần truyền điều kiện hết hạn (isLoading nút tự xử)
+          text={expiryTimer.isActive ? "Xác nhận mã OTP" : "Mã đã hết hạn"}
+        />
 
         {/* NÚT GỬI LẠI */}
         <ResendOtpButton
@@ -192,13 +194,16 @@ export default function VerifyOtpForm() {
         />
 
         {/* NÚT QUAY LẠI */}
-        <button
+        {/* 🚀 Phiên bản đã "thuần hóa" theo chuẩn Design System */}
+        <Button
           type="button"
+          variant="ghost" // 💡 Đã có sẵn màu slate, hiệu ứng hover và transition
+          size="md" // 💡 Kích thước vừa phải cho nút phụ
           onClick={() => router.back()}
-          className="w-full text-slate-500 text-sm font-bold hover:text-slate-800 transition-colors"
+          className="w-full font-bold" // 💡 Chỉ thêm w-full để dàn hàng ngang nếu cần
         >
           Quay lại trang trước
-        </button>
+        </Button>
       </form>
     </div>
   );

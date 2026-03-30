@@ -12,6 +12,7 @@ import { IPendingUserRepository } from "@/domain/interfaces/repositories/i-pendi
 import { IRoleRepository } from "@/domain/interfaces/repositories/i-role.repository";
 import { ITokenRepository } from "@/domain/interfaces/repositories/i-token.repository";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
+import { IFileStorageService } from "@/infrastructure/external-services/file-storage.service";
 import { PrismaClient } from "@prisma/client";
 import { Redis } from 'ioredis';
 // Định nghĩa tất cả những thứ sẽ nằm trong Container
@@ -25,6 +26,7 @@ export interface ICradle {
     roleRepository: IRoleRepository;
     emailService: IEmailService;
     pendingUserRepository: IPendingUserRepository,
+    
     // Managers
     tokenManager: ITokenManager;
 
@@ -34,7 +36,8 @@ export interface ICradle {
     authService: AuthService;
     registrationService: RegistrationService;
     roleService: RoleService,
-
+    fileStorageService: IFileStorageService;
+    
     // Controllers
     authController: AuthController;
     userController: UserController;

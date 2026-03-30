@@ -1,5 +1,4 @@
-// src/services/auth.service.ts
-import { authApi } from '@/src/api/auth/auth.api';
+import { authApi } from '@/api/auth/auth.api';
 import type {
   LoginPayload,
   RegisterPayload,
@@ -7,36 +6,42 @@ import type {
   ForgotPasswordPayload,
   ResetPasswordPayload,
   ResendOtpPayload
-} from '@/src/types/auth.type';
-import { useUserStore } from '../user/user.service';
+} from '@/types/auth.type';
+import { useUserStore } from '../../store/user/user.store';
 
 /**
- * Auth Service: Xử lý Logic nghiệp vụ (Business Logic)
- * Đóng vai trò cầu nối (Bridge) giữa Giao diện (UI) và Tầng truy cập dữ liệu (API/Data Access Layer).
- * Quy tắc: KHÔNG dùng try/catch tại đây (để UI chủ động bắt lỗi).
+ * Auth Service: Lớp xử lý nghiệp vụ xác thực (Authentication Business Logic).
+ * Đóng vai trò cầu nối (Bridge) giữa Giao diện (UI) và Tầng truy cập dữ liệu (API Layer).
+ * Quy tắc: Tuyệt đối KHÔNG dùng try/catch tại đây (để UI chủ động bắt lỗi).
  */
 export const authService = {
 
   /**
    * 1. Xử lý Đăng nhập (Login Business Logic)
-   * Thực hiện: Gọi API -> Lưu Token -> Cập nhật Cache người dùng.
+   * Luồng: Gọi API -> Cập nhật Store (Zustand tự động sync xuống LocalStorage).
    */
   async login(data: LoginPayload) {
     const response = await authApi.login(data);
     const authData = response.data; // Cấu trúc: { user, accessToken, refreshToken }
 
-    // KIỂM TRA & LƯU TRỮ TOKEN (Authentication Tokens)
-    // Sửa lỗi: Phải lấy từ authData thay vì authApi
-    if (authData && authData.accessToken) {
-      localStorage.setItem('accessToken', authData.accessToken);
-      localStorage.setItem('refreshToken', authData.refreshToken);
-    }
+    if (authData) {
+      const { setUser, setToken } = useUserStore.getState();
 
-    // CẬP NHẬT TRẠNG THÁI TOÀN CỤC (Global State Management)
-    // Lưu thông tin người dùng vào Zustand Store để dùng cho trang Profile/Header mà không cần gọi lại DB
-    // Kiểm tra authData tồn tại VÀ authData.user tồn tại
-    if (authData && authData.user) {
-      useUserStore.getState().setUser(authData.user);
+      // CẬP NHẬT TRẠNG THÁI TOÀN CỤC (Global State Management)
+      // Khi gọi setToken, Zustand Persist sẽ tự động lưu vào LocalStorage cho bạn.
+      if (authData.accessToken) {
+        setToken(authData.accessToken);
+        console.log(authData.accessToken)
+      }
+
+      if (authData.user) {
+        setUser(authData.user);
+      }
+      
+      // Lưu các token phụ hoặc refresh token nếu cần (Nếu store chưa quản lý)
+      if (authData.refreshToken) {
+        localStorage.setItem('refreshToken', authData.refreshToken);
+      }
     }
 
     return authData;
@@ -60,7 +65,6 @@ export const authService = {
 
   /**
    * 4. Xác thực mã OTP (OTP Verification)
-   * Thường dùng sau khi đăng ký hoặc trong luồng đặt lại mật khẩu.
    */
   async verifyOtp(data: VerifyOtpPayload) {
     const response = await authApi.verifyOtp(data);
@@ -77,7 +81,6 @@ export const authService = {
 
   /**
    * 6. Gửi lại mã OTP (Resend OTP)
-   * Hỗ trợ trải nghiệm người dùng khi mã OTP bị hết hạn hoặc không nhận được.
    */
   async resendOtp(data: ResendOtpPayload) {
     const response = await authApi.resendOtp(data);
@@ -86,21 +89,20 @@ export const authService = {
 
   /**
    * 7. Đăng xuất (Sign Out)
-   * Xóa sạch dấu vết định danh (Cleaning Identifiers) và đưa người dùng về trang đăng nhập.
+   * Thực hiện dọn dẹp bộ nhớ (Cleaning Cache) và đưa người dùng về trạng thái ban đầu.
    */
   logout() {
-    // 1. Xóa các Token bảo mật
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    // 1. Dọn dẹp Store (Hàm clear này đã xóa sạch user và accessToken trong cả RAM và LocalStorage)
+    useUserStore.getState().clear();
 
-    // 2. Dọn dẹp các dữ liệu tạm (Temporary Email)
-    localStorage.removeItem('register_email');
-    localStorage.removeItem('reset_email');
-
-    // 3. Reset Store (Xóa Cache người dùng)
-    useUserStore.getState().clearUser();
-
-    // 4. Điều hướng cứng về Login (Hard Redirect)
-    window.location.href = '/login';
+    // 2. Xóa các dữ liệu rác ngoài Store (Manual Cleanup)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('register_email');
+      localStorage.removeItem('reset_email');
+      
+      // 3. Điều hướng cứng (Hard Redirect) để reset hoàn toàn ứng dụng
+      window.location.href = '/login';
+    }
   }
 };

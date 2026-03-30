@@ -1,16 +1,17 @@
 "use client"; // Đánh dấu đây là Component phía máy khách (Client Component) để dùng Hooks
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation"; // Bộ điều hướng (Router)
 import axios from "axios"; // Thư viện gọi HTTP (HTTP Client)
 import { useForm } from "react-hook-form"; // Thư viện quản lý biểu mẫu (Form Library)
 import { zodResolver } from "@hookform/resolvers/zod"; // Trình giải quyết Zod (Zod Resolver)
 import * as z from "zod"; // Thư viện kiểm tra dữ liệu (Validation library)
-import { GoogleButton, Divider } from "@/src/components/ui/SocialLogin";
-import Input from "@/src/components/ui/Input";
-import Button from "@/src/components/ui/Button";
-import { authService } from "@/src/services/auth/auth.service";
+import { GoogleButton, Divider } from "@/components/ui/SocailLogin/SocialLogin";
+import Input from "@/components/ui/Input/Input";
+import Button from "@/components/ui/Button/Button";
+import { authService } from "@/services/auth/auth.service";
+import TextLink from "../../ui/TextLink/TextLink";
+import { Alert } from "../../ui/Alert/Alert";
 
 // 1. Định nghĩa Lược đồ kiểm tra (Validation Schema) ngay tại đây hoặc import từ thư mục lib/validations
 const loginSchema = z.object({
@@ -92,9 +93,11 @@ export default function LoginForm() {
 
       {/* Khung hiển thị lỗi từ Server (Server Error Alert) */}
       {errorMsg && (
-        <div className="mb-6 bg-rose-50 border border-rose-400 text-rose-700 px-4 py-3 rounded-lg text-sm text-center">
-          {errorMsg}
-        </div>
+        <Alert
+          intent="error"
+          message={errorMsg}
+          className="mb-6" // Thêm margin nếu cần
+        />
       )}
 
       {/* Form đăng nhập */}
@@ -105,14 +108,9 @@ export default function LoginForm() {
             type="text"
             placeholder="Nhập tên đăng nhập của bạn"
             disabled={isLoading}
-            {...register("username")} // Kết nối input với Hook Form
+            {...register("username")} 
+            error={errors.username?.message}// Kết nối input với Hook Form
           />
-          {/* Lỗi hiển thị nội tuyến (Inline-error) từ Zod */}
-          {errors.username && (
-            <p className="text-rose-500 text-sm mt-1">
-              {errors.username.message}
-            </p>
-          )}
         </div>
 
         <div>
@@ -130,33 +128,28 @@ export default function LoginForm() {
           )}
 
           <div className="flex justify-end mt-2">
-            <Link
-              href="/forgot-password"
-              className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline transition-colors"
-            >
+            <TextLink href="/forgot-password" intent="primary">
               Quên mật khẩu?
-            </Link>
+            </TextLink>
           </div>
         </div>
 
         <div className="pt-2">
           <Button
-            text={isLoading ? "Đang xác thực..." : "Đăng nhập"}
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-semibold transition-all shadow-soft disabled:opacity-70 disabled:cursor-not-allowed"
+            variant="primary" // 🟢 Đã bao gồm màu emerald-600, hover, text-white
+            size="lg" // 🟢 Đã bao gồm w-full, py-3, rounded-xl
+            isLoading={isLoading}
+            text={isLoading ? "Đang xác thực..." : "Đăng nhập"}
           />
         </div>
       </form>
 
-      <div className="mt-8 text-center text-sm text-gray-600">
+      <div className="mt-8 text-center text-sm text-slate-600">
         Chưa có tài khoản?{" "}
-        <Link
-          href="/register"
-          className="text-emerald-600 font-semibold hover:text-emerald-700 hover:underline transition-colors"
-        >
+        <TextLink href="/register" intent="primary">
           Đăng ký ngay
-        </Link>
+        </TextLink>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
+import { REGEX } from '@/constants/regex.constants';
 import { z } from 'zod';
-import { REGEX } from '@/src/constants/regex.constants';
 
 // --- CÁC TRƯỜNG DÙNG CHUNG (Shared Fields) ---
 const emailField = z
@@ -46,14 +46,22 @@ export const resetPasswordSchema = z.object({
 });
 
 export const profileSchema = z.object({
-  fullName: z.string().min(1, 'Họ tên không được để trống (Required)'),
-  nickname: z.string().optional(),
-  email: z.string().email('Email không đúng định dạng (Invalid Email)'),
-  roles: z.array(z.string()).min(1, 'Phải có ít nhất một vai trò (Role required)'),
+  fullName: z.string().min(2, "Họ và tên phải có ít nhất 2 ký tự"),
+  username: z.string().min(2, "Biệt danh không được để trống"),
+  email: z.string().email("Email không hợp lệ"),
+  urlPicture: z.union([z.string(), z.instanceof(File)]).optional(),
+  roles: z.array(z.string()),
 });
 
+export const emailSchema = z.object({
+  email: z
+    .string()
+    .email("Địa chỉ Email không hợp lệ")
+    .min(1, "Vui lòng nhập Email"),
+});
 
 // --- EXPORT TYPES (Trích xuất kiểu dữ liệu) ---
+export type EmailFormValues = z.infer<typeof emailSchema>;
 export type LoginSchemaType = z.infer<typeof loginSchema>;
 export type RegisterSchemaType = z.infer<typeof registerSchema>;
 export type ForgotPasswordSchemaType = z.infer<typeof forgotPasswordSchema>;

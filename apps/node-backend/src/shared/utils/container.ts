@@ -17,6 +17,7 @@ import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis-ot
 import prisma from '../../../prisma/prisma';
 import { redisClient } from '@/infrastructure/database/redis/redis.client';
 import { OtpService } from '@/application/services/otp.service';
+import { FileStorageService } from '@/infrastructure/external-services/file-storage.service';
 
 // 1. Khởi tạo container
 export const container = createContainer({
@@ -45,6 +46,7 @@ container.register({
     otpService: asClass(OtpService).singleton(),
     roleService: asClass(RoleService).singleton(),
     emailService: asClass(NodemailerService).singleton(),
+    fileStorageService: asClass(FileStorageService).singleton(),
 
     // 4. Tầng API (UserController cần UserService)
     userController: asClass(UserController).singleton(),
