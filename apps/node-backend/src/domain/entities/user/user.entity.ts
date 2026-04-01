@@ -27,7 +27,7 @@ export class User {
   public get createdAt(): Date { return this._props.createdAt; }
   public get updatedAt(): Date { return this._props.updatedAt; }
   public get deletedAt(): Date | null { return this._props.deletedAt; }
-  public get passwordHash(): string | undefined { return this._props.passwordHash; }
+  public get passwordHash(): string { return this._props.passwordHash; }
   public get roles(): Role[] { return [...this._props.roles]; }
 
   // --- STATIC FACTORY METHODS ---
@@ -41,10 +41,6 @@ export class User {
     phoneNumber?: string;
     passwordHash: string;
   }): User {
-    // Validation cơ bản (Nghiệp vụ Domain)
-    if (!data.email.includes('@')) throw new Error("Email không hợp lệ");
-    if (data.username.length < 3) throw new Error("Username quá ngắn");
-
     const now = new Date();
     
     return new User({

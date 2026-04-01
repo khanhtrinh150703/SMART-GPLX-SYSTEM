@@ -7,6 +7,7 @@ import { Role } from '@/domain/entities/role/role.entity';
 import { Permission } from '@/domain/entities/permission/permission.entity';
 import { UserWithRolesPayload } from '@/shared/types/user-payload.type';
 import { AppError, ErrorCode } from '@/shared/errors';
+import { Prisma } from '@prisma/client';
 
 export class UserMapper {
   /**
@@ -54,19 +55,18 @@ export class UserMapper {
   /**
    * @description Trích xuất dữ liệu từ Entity để lưu vào DB (Prisma).
    */
-  public static toPersistence(user: User) {
+  public static toPersistence(user: User): Prisma.UserCreateInput {
     return {
-      id: user.id,
       username: user.username,
       email: user.email,
       fullName: user.fullName,
       phoneNumber: user.phoneNumber ?? "",
       passwordHash: user.passwordHash,
       status: user.status,
-      urlPicture: user.urlPicture,
+      urlPicture: user.urlPicture ?? "",
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      deletedAt: user.deletedAt,
+      deletedAt: user.deletedAt ,
     };
   }
 
