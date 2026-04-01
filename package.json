@@ -10,7 +10,8 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
     "husky": "^8.0.0",
-    "prisma": "6.4.1"
+    "prisma": "6.4.1",
+    "tsx": "^4.21.0"
   },
   "name": "smart-gplx-system",
   "private": true,

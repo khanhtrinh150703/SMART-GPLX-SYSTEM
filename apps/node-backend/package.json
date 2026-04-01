@@ -57,8 +57,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint .",
-    "test": "npm run db:push:test && npx dotenv -e .env.local -- jest tests/integration/main.test.ts --runInBand --verbose",
-    "testcicd": "npm run db:push:cicd && npx dotenv -e .env.test -- jest tests/integration/main.test.ts --runInBand --verbose",
+    "test": "npm run db:push:test &&  npm run db:seed:test && npx dotenv -e .env.local -- jest tests/integration/main.test.ts --runInBand --verbose",
+    "testcicd": "npm run db:push:cicd && npm run db:seed:cicd && npx dotenv -e .env.test -- jest tests/integration/main.test.ts --runInBand --verbose",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:push": "prisma db push --accept-data-loss",
@@ -66,9 +66,11 @@
     "db:push:cicd": "dotenv -e .env.test -- prisma db push --accept-data-loss",
     "db:pull": "prisma db pull",
     "db:pull:test": "dotenv -e .env.local -- prisma db pull",
-    "db:gen": "npx prisma generate"
+    "db:gen": "npx prisma generate",
+    "db:seed:test": "dotenv -e .env.local -- prisma db seed",
+    "db:seed:cicd": "dotenv -e .env.test -- prisma db seed"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "npx tsx -r tsconfig-paths/register prisma/seed.ts"
   }
 }
