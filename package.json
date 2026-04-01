@@ -1,14 +1,40 @@
 {
   "dependencies": {
-    "express": "^5.2.1"
+    "@prisma/client": "^6.4.1",
+    "express": "^5.2.1",
+    "l": "^0.6.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@types/express": "^5.0.6",
-    "husky": "^8.0.0"
+    "@types/node": "^25.5.0",
+    "husky": "^8.0.0",
+    "prisma": "6.4.1",
+    "tsx": "^4.21.0"
   },
+  "name": "smart-gplx-system",
+  "private": true,
+  "workspaces": [
+    "apps/nextjs-frontend",
+    "apps/node-backend"
+  ],
   "scripts": {
-    "prepare": "husky install"
+    "dev:be": "npm run dev -w node-backend",
+    "dev:fe": "npm run dev -w nextjs-frontend",
+    "db:gen": "npm run db:gen -w node-backend",
+    "db:push": "npm run db:push -w node-backend",
+    "db:push:test": "npm run db:push:test -w node-backend",
+    "db:push:cicd": "npm run db:push:cicd -w node-backend",
+    "db:seed": "npm run db:seed -w node-backend",
+    "db:pull": "npm run db:pull -w node-backend",
+    "test:be": "npm run test -w node-backend",
+    "test:be:cicd": "npm run testcicd -w node-backend",
+    "lint:be": "npm run lint -w node-backend",
+    "lint:fe": "npm run lint -w nextjs-frontend"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2",
+    "lightningcss-linux-x64-gnu": "^1.32.0"
   }
 }

@@ -4,6 +4,7 @@ import { User } from "./user.type";
 export interface RegisterPayload {
   username: string;
   email: string;
+  fullName: string;
   password: string;
 }
 

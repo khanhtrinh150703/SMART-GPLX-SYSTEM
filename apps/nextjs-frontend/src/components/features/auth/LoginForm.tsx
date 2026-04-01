@@ -5,22 +5,17 @@ import { useRouter } from "next/navigation"; // Bộ điều hướng (Router)
 import axios from "axios"; // Thư viện gọi HTTP (HTTP Client)
 import { useForm } from "react-hook-form"; // Thư viện quản lý biểu mẫu (Form Library)
 import { zodResolver } from "@hookform/resolvers/zod"; // Trình giải quyết Zod (Zod Resolver)
-import * as z from "zod"; // Thư viện kiểm tra dữ liệu (Validation library)
-import { GoogleButton, Divider } from "@/components/ui/SocailLogin/SocialLogin";
+import { GoogleButton, Divider } from "@/components/features/auth/SocialLogin/SocialLogin";
 import Input from "@/components/ui/Input/Input";
 import Button from "@/components/ui/Button/Button";
 import { authService } from "@/services/auth/auth.service";
 import TextLink from "../../ui/TextLink/TextLink";
 import { Alert } from "../../ui/Alert/Alert";
+import { LoginSchemaType } from "@/lib/validations/auth.schema";
+import { loginSchema } from "@/lib/validations/common";
 
 // 1. Định nghĩa Lược đồ kiểm tra (Validation Schema) ngay tại đây hoặc import từ thư mục lib/validations
-const loginSchema = z.object({
-  username: z.string().min(1, { message: "Vui lòng nhập tên đăng nhập." }),
-  password: z.string().min(1, { message: "Vui lòng nhập mật khẩu." }),
-});
 
-// Nội suy kiểu dữ liệu (Type Inference) từ Lược đồ
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
@@ -34,7 +29,7 @@ export default function LoginForm() {
     register, // Hàm đăng ký input (Register function)
     handleSubmit, // Hàm xử lý gửi form (Submit handler)
     formState: { errors }, // Trạng thái lỗi của form (Form errors)
-  } = useForm<LoginFormData>({
+  } = useForm<LoginSchemaType>({
     resolver: zodResolver(loginSchema),
   });
 
@@ -43,7 +38,7 @@ export default function LoginForm() {
    * Hàm xử lý Gửi Form (Submit Handler)
    * Đã được tinh chỉnh để tuân thủ tính Đóng gói (Encapsulation)
    */
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: LoginSchemaType) => {
     // 1. Khởi tạo trạng thái (Reset States)
     setErrorMsg(null);
     setIsLoading(true);
@@ -61,7 +56,7 @@ export default function LoginForm() {
       // 2. Nếu đăng nhập thành công, điều hướng về trang Dashboard
       // Dùng '/' hoặc '/dashboard' tùy vào cấu hình Route Group của bạn
       if (authData) {
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (error: unknown) {
       /**

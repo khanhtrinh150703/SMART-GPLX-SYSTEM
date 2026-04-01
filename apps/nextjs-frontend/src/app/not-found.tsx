@@ -1,5 +1,5 @@
 // src/app/not-found.tsx
-'use client';
+"use client";
 
 import { NotFoundView } from "@/components/common/Errors/NotFoundView";
 

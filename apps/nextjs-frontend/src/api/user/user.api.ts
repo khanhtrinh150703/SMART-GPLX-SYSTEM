@@ -1,7 +1,7 @@
-import axiosClient from '../axios-client';
+import axiosClient from '../../services/axios-client';
 import { ENDPOINTS } from '@/constants/api-endpoints.constant';
 import type { StandardResponse } from '@/types/common.type';
-import { IUpdateProfileResponse } from '@/types/user.type';
+import { IUpdateProfileResponse, UserChangePassword } from '@/types/user.type';
 
 
 export const userApi = {
@@ -16,6 +16,14 @@ export const userApi = {
         },
         transformRequest: (data) => data,
       }
+    );
+    return response.data;
+  },
+
+   changePassword: async (data: UserChangePassword): Promise<StandardResponse<null>> => {
+    const response = await axiosClient.patch<StandardResponse<null>>(
+      ENDPOINTS.USER.CHANGEPASSWORD,
+      data
     );
     return response.data;
   },

@@ -1,9 +1,10 @@
 // eslint.config.mjs
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import globals from 'globals'; // 1. Import thêm thư viện này
 
 export default tseslint.config(
-    // 1. KHỐI IGNORES: Đặt riêng ở đây để bỏ qua hoàn toàn các file này
+    // 1. KHỐI IGNORES
     {
         ignores: [
             "**/jest.config.js", 
@@ -17,20 +18,28 @@ export default tseslint.config(
     eslint.configs.recommended,
     ...tseslint.configs.recommended,
     
-    // 3. KHỐI RULES: Tùy chỉnh luật chơi cho Smart-GPLX-System
+    // 3. KHỐI RULES CHO TYPESCRIPT
     {
-        files: ["**/*.ts"], // Áp dụng các luật này cho file TypeScript
+        files: ["**/*.ts"],
         rules: {
-            "no-console": "off", // Cho phép dùng console.log thoải mái ở Backend
-            "@typescript-eslint/no-explicit-any": "warn", // Chỉ cảnh báo khi dùng 'any'
-            
-            // Cấu hình quan trọng nhất để xử lý lỗi 'next' hay 'urlPicture'
+            "no-console": "off",
+            "@typescript-eslint/no-explicit-any": "warn",
             "@typescript-eslint/no-unused-vars": ["error", {
                 "args": "all",
-                "argsIgnorePattern": "^_", // Bỏ qua nếu biến bắt đầu bằng dấu _
-                "varsIgnorePattern": "^_", // Bỏ qua nếu biến bắt đầu bằng dấu _
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
                 "caughtErrorsIgnorePattern": "^_"
             }]
+        }
+    },
+
+    // 4. FIX LỖI 'module' CHO TAILWIND (VÀ CÁC FILE JS KHÁC)
+    {
+        files: ["**/*.js", "**/*.cjs"], // Áp dụng cho các file .js và .cjs
+        languageOptions: {
+            globals: {
+                ...globals.node // Khai báo các biến của Node.js (như module, exports, process)
+            }
         }
     }
 );

@@ -301,7 +301,7 @@ export class UserService implements IUserService {
 
         if (!roleData) {
             // Nếu không thấy trong cache, có thể hệ thống chưa init hoặc sai tên Role
-            throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+            throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);
         }
 
         // 2. Biến dữ liệu thô từ Cache thành Entity Role xịn (Để hết lỗi TypeScript)
