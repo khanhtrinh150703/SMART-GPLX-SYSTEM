@@ -1,5 +1,11 @@
 import { UserStatus } from "@/domain/entities/user/user.status";
 
+export interface RoleDTO {
+  id: string;
+  name: string;
+  displayName?: string; // Tên hiển thị tiếng Việt
+}
+
 /**
  * Data Transfer Object dùng để trả về thông tin người dùng cho Client.
  * Đảm bảo tính bảo mật bằng cách loại bỏ các trường nhạy cảm (password, v.v.).
@@ -19,15 +25,30 @@ export interface UserResponseDTO {
 
   /** * Họ và tên đầy đủ 
    */
-  readonly fullName: string;
+  readonly fullName: string ;
 
   /** * Đường dẫn ảnh đại diện (Nếu có) 
    */
-  readonly urlPicture: string;
+  readonly urlPicture: string ;
+  readonly phoneNumber: string ;
+
 
   /** * Trạng thái tài khoản (active, suspend, v.v.) 
    */
   readonly status: UserStatus;
 
-  readonly role: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+
+  // Thêm dòng này để khớp với Mapper
+  readonly roles: RoleDTO[];
 }
+
+// export class UpdateProfileResDTO {
+//   readonly fullName?: string;
+//   readonly urlPicture?: string;
+
+//   constructor(data: Partial<UpdateProfileDTO>) {
+//     Object.assign(this, data);
+//   }
+// }

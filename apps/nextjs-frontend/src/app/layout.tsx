@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google"; // Import font Inter (hoặc Roboto tùy bạn)
 import "./globals.css";
+import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 
 // Cấu hình font chữ có hỗ trợ tiếng Việt
 const inter = Inter({ 
@@ -25,7 +26,9 @@ export default function RootLayout({
         Dùng màu nền `bg-surface-background` và màu chữ `text-text-main` đã định nghĩa ở Bước 1
       */}
       <body className={`${inter.className} bg-surface-background text-text-main antialiased`}>
-        {children}
+        <SmoothScrollProvider>
+          {children}
+        </SmoothScrollProvider>
       </body>
     </html>
   );

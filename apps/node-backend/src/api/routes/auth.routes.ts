@@ -1,69 +1,19 @@
 import { Router } from 'express';
-
-// ============================================================================
-// 1. IMPORTS
-// ============================================================================
-// Controllers
+import { container } from '@/shared/utils/container';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import { AuthController } from '../controllers/auth.controller';
 
-// Services
-import { AuthService } from '@/application/services/auth.service';
-import { RegistrationService } from '@/application/services/registration.service';
-import { UserService } from '@/application/services/user.service';
-import { OtpService } from '@/application/services/otp.service';
-
-// Repositories & External Services (Các class thực thi)
-import { UserRepository } from '@/infrastructure/repositories/mysql/user.repository';
-// SỬA LỖI: Nhập đúng 2 kho lưu trữ Redis đã được chia tách
-import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis-otp.repository';
-import { RedisPendingUserRepository } from '@/infrastructure/repositories/redis/redis-pending-user.repository';
-import { NodemailerService } from '@/infrastructure/external-services/mailer/mailer.service';
-
-// Interfaces (Dùng để ép kiểu)
-import { IUserRepository } from '@/domain/interfaces/repositories/i-user.repository';
-// SỬA LỖI: Nhập đúng 2 Interface tương ứng
-import { IOtpRepository } from '@/domain/interfaces/repositories/i-otp.repository';
-import { IPendingUserRepository } from '@/domain/interfaces/repositories/i-pending-user.repository';
-import { IEmailService } from '@/domain/interfaces/services/i-email.service';
-import { ITokenRepository } from '@/domain/interfaces/repositories/i-token.repository';
-import { RedisTokenRepository } from '@/infrastructure/repositories/redis/redis-token.repository';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { redisClient } from '@/infrastructure/database/redis/redis.client';
-// ============================================================================
-// 2. KHỞI TẠO DEPENDENCIES (DI Container)
-// ============================================================================
 const router = Router();
 
-// Tầng Infrastructure
-const userRepo: IUserRepository = new UserRepository();
-const otpRepo: IOtpRepository = new RedisOtpRepository(redisClient);
-const pendingUserRepo: IPendingUserRepository = new RedisPendingUserRepository(); // Thêm Repo này
-const mailerProvider: IEmailService = new NodemailerService();
-const tokenRepo: ITokenRepository = new RedisTokenRepository();
+// Lấy Controller ra từ kho (Đã có sẵn kiểu dữ liệu nhờ ICradle)
+const authController = container.resolve('authController') as AuthController;
 
-// Tầng Service (Cơ sở)
-const userService = new UserService(userRepo);
-const otpService = new OtpService(otpRepo, mailerProvider);
+router.post('/register/init', authController.signUpInit);
+router.post('/register/verify', authController.signUpVerify);
+router.post('/login', authController.login);
+router.post('/resend-otp', authController.resendOtp);
+router.post('/logout', authMiddleware, authController.logout);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
-// Tầng Service (Nghiệp vụ chính)
-const authService = new AuthService(userService, tokenRepo);
-
-// SỬA LỖI: Truyền thêm pendingUserRepo vào RegistrationService theo đúng thiết kế mới
-const registrationService = new RegistrationService(
-  userService,
-  otpService,
-  pendingUserRepo
-);
-
-// Tầng Controller
-const authController = new AuthController(authService, registrationService);
-
-// ============================================================================
-// 3. ĐỊNH NGHĨA ROUTES
-// ============================================================================
-router.post('/register/init', authController.signUpInit.bind(authController));
-router.post('/register/verify', authController.signUpVerify.bind(authController));
-router.post('/login', authController.login.bind(authController));
-router.post('/resend-otp', authController.resendOtp.bind(authController));
-router.post('/logout', authMiddleware, authController.logout.bind(authController));
 export default router;

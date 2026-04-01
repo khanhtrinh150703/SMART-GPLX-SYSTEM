@@ -12,6 +12,8 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.SYSTEM.DATABASE_ERROR]: 'Lỗi kết nối cơ sở dữ liệu, vui lòng thử lại.',
     [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 'Bạn thao tác quá nhanh, vui lòng đợi một lát.',
     [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 'Yêu cầu xử lý quá thời gian quy định, vui lòng thử lại.',
+    [ErrorCode.SYSTEM.CONFIG_ERROR]: "Hệ thống gặp sự cố về cấu hình kỹ thuật. Vui lòng liên hệ bộ phận kỹ thuật.",
+
 
     // === AUTHENTICATION & AUTHORIZATION (AUTH) ===
     [ErrorCode.AUTH.UNAUTHORIZED]: 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.',
@@ -25,6 +27,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.OTP_INVALID]: 'Mã xác thực (OTP) không chính xác.',
     [ErrorCode.AUTH.OTP_EXPIRED]: 'Mã xác thực đã hết hiệu lực, vui lòng lấy mã mới.',
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 'Liên kết đăng ký đã hết hạn hoặc không còn tồn tại, vui lòng thực hiện lại quy trình đăng ký.',
+    [ErrorCode.AUTH.MISSING_FIELDS]: "Vui lòng nhập đầy đủ các thông tin bắt buộc.",
+    [ErrorCode.AUTH.INVALID_TOKEN]: "Mã xác thực không hợp lệ",
+
+
 
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',
@@ -33,6 +39,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.PHONE_EXISTS]: 'Số điện thoại này đã được đăng ký.',
     [ErrorCode.USER.REGISTER_FAILED]: 'Quá trình đăng ký gặp lỗi, vui lòng kiểm tra lại.',
     [ErrorCode.USER.UPDATE_FAILED]: 'Cập nhật thông tin không thành công.',
+    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
 
     // === SMART-GPLX (EXAM & AI) ===
     [ErrorCode.EXAM.NOT_FOUND]: 'Đề thi không tồn tại hoặc đã bị gỡ bỏ.',
@@ -54,4 +61,5 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 'Dữ liệu không đúng định dạng yêu cầu.',
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu nhập vào không hợp lệ.',
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được giống mật khẩu cũ.',
+    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 'Mật khẩu cũ không chính xác.',
 };

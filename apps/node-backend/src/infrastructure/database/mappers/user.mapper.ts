@@ -2,90 +2,112 @@ import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
 import { LoginResponseDTO } from '@/application/dtos/response/auth.dto';
 import { UserResponseDTO } from '@/application/dtos/response/user.dto';
-
-/**
- * Interface mô tả cấu trúc dữ liệu thô trong bảng 'users' của MySQL.
- * Giúp loại bỏ hoàn toàn 'any' khi mapping.
- */
-export interface IUserPersistence {
-  id: string;
-  username: string;
-  email: string;
-  fullName: string | null;
-  passwordHash: string;
-  status: string;
-  urlPicture: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
+import { RoleCacheService } from '@/infrastructure/security/role-cache.service';
+import { Role } from '@/domain/entities/role/role.entity';
+import { Permission } from '@/domain/entities/permission/permission.entity';
+import { UserWithRolesPayload } from '@/shared/types/user-payload.type';
+import { AppError, ErrorCode } from '@/shared/errors';
+import { Prisma } from '@prisma/client';
 
 export class UserMapper {
   /**
-   * Tác dụng: Chuyển dữ liệu thô từ Database thành Entity User.
-   * @param {IUserPersistence} raw - Dữ liệu thô từ MySQL.
+   * @description Chuyển dữ liệu từ Prisma sang Entity User.
    */
-  static toDomain(raw: IUserPersistence): User {
+  public static toDomain(raw: UserWithRolesPayload): User {
+    // 1. Hydrate Roles từ Cache
+    const roleEntities: Role[] = (raw.userRoles || []).map((ur) => {
+      const cached = RoleCacheService.getRole(ur.roleId);
+
+      if (!cached) {
+        throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+      }
+
+      const permissionEntities: Permission[] = cached.permissions.map(pName =>
+        Permission.reconstitute({ id: "N/A", name: pName, description: "" })
+      );
+
+      return Role.reconstitute({
+        id: cached.id,
+        name: cached.name,
+        description: cached.description,
+        permissions: permissionEntities
+      });
+    });
+
+    // 2. Tái tạo User chuẩn DDD
+    // Lưu ý: Chuyển "" thành null nếu Entity yêu cầu string | null
     return User.reconstitute({
       id: raw.id,
       username: raw.username,
       email: raw.email,
-      fullName: raw.fullName ?? "",
-      passwordHash: raw.passwordHash,
-      urlPicture: raw.urlPicture ,
+      fullName: raw.fullName || null,
+      passwordHash: raw.passwordHash ,
+      phoneNumber: raw.phoneNumber ?? "",
+      urlPicture: raw.urlPicture || null,
       status: raw.status as UserStatus,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
-      deletedAt: raw.deletedAt ,
+      deletedAt: raw.deletedAt || null,
+      roles: roleEntities,
     });
   }
 
   /**
-   * Tác dụng: Chuyển Entity User thành object để lưu vào MySQL.
-   * @param {User} user - Entity từ tầng Domain.
+   * @description Trích xuất dữ liệu từ Entity để lưu vào DB (Prisma).
    */
-  static toPersistence(user: User): IUserPersistence {
+  public static toPersistence(user: User): Prisma.UserCreateInput {
     return {
-      id: user.id,
       username: user.username,
       email: user.email,
-      fullName: user.fullName, 
-      passwordHash: user.passwordHash ?? "",
+      fullName: user.fullName,
+      phoneNumber: user.phoneNumber ?? "",
+      passwordHash: user.passwordHash,
       status: user.status,
-      urlPicture: user.urlPicture ?? null,
+      urlPicture: user.urlPicture ?? "",
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      deletedAt: user.deletedAt ?? null,
+      deletedAt: user.deletedAt ,
     };
   }
 
   /**
-   * Tác dụng: Trả về thông tin User cơ bản cho Client.
+   * @description Chuyển đổi sang Response DTO trả về Client.
    */
-  static toResponse(user: User): UserResponseDTO {
+  public static toResponse(user: User): UserResponseDTO {
+    const baseUrl = process.env.APP_URL || '';
+
     return {
       id: user.id,
       email: user.email,
       username: user.username,
       fullName: user.fullName ?? "",
-      urlPicture: user.urlPicture ?? "",
-      role: "USER",
+      phoneNumber: user.phoneNumber ?? "",
+      urlPicture: user.urlPicture
+        ? `${baseUrl}/${user.urlPicture.replace(/\\/g, '/')}`
+        : "",
       status: user.status,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      roles: user.roles.map(r => ({
+        id: r.id,
+        name: r.name,
+        displayName: r.description
+      })),
     };
   }
 
   /**
-   * Tác dụng: Ánh xạ dữ liệu cho phản hồi đăng nhập thành công.
+   * @description Ánh xạ dữ liệu cho phản hồi đăng nhập.
    */
-  static toLoginResponse(
+  public static toLoginResponse(
     user: User,
     accessToken: string,
     refreshToken: string
   ): LoginResponseDTO {
     return {
       user: this.toResponse(user),
-      accessToken: accessToken,
-      refreshToken: refreshToken,
+      accessToken,
+      refreshToken,
     };
   }
 }

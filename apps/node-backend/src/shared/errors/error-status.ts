@@ -12,6 +12,8 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.SYSTEM.DATABASE_ERROR]: 500,         // Internal Server Error
     [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 429,      // Too Many Requests
     [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 408,        // Request Timeout
+    [ErrorCode.SYSTEM.CONFIG_ERROR]: 500,        // Request Timeout
+
 
     // --- AUTHENTICATION & AUTHORIZATION ---
     [ErrorCode.AUTH.UNAUTHORIZED]: 401,             // Unauthorized
@@ -25,6 +27,10 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.AUTH.OTP_INVALID]: 400,              // Bad Request
     [ErrorCode.AUTH.OTP_EXPIRED]: 400,              // Bad Request
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 400,              // Bad Request
+    [ErrorCode.AUTH.MISSING_FIELDS]: 400, // Bad Request
+    [ErrorCode.AUTH.INVALID_TOKEN]: 401, // Bad Request
+    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 401, // Bad Request
+
 
     // --- USER & PROFILE ---
     [ErrorCode.USER.NOT_FOUND]: 404,                // Not Found
@@ -54,4 +60,5 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 400,
 };

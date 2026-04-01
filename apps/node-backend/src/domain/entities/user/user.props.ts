@@ -4,12 +4,12 @@ export interface IUserProps {
   id: string;
   username: string;
   email: string;
-  fullName: string;
+  fullName: string | null;  
+  phoneNumber: string | null;      // Phải có | null
+  passwordHash: string ;  // Phải có | null
   status: UserStatus;
-  urlPicture: string | null; // Dấu ? nghĩa là có thể có hoặc không
-  deletedAt: Date | null;
+  urlPicture: string | null;    // Phải có | null
   createdAt: Date;
   updatedAt: Date;
-  passwordHash: string;
+  deletedAt: Date | null;       // Phải có | null
 }
-
