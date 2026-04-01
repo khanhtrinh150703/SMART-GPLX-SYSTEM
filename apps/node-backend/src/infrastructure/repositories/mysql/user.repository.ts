@@ -237,25 +237,52 @@ export class MySQLUserRepository implements IUserRepository {
    * @description Lấy danh sách user kèm phân trang.
    * Chuyển đổi từ UserQueryDTO sang định dạng Prisma.whereInput.
    */
+  // src/repositories/user.repository.ts
+
   async findAndCount(
     filter: UserQueryDTO,
     skip: number,
     take: number
   ): Promise<[User[], number]> {
 
-    // 1. Khởi tạo object where chuẩn cho Prisma
-    // Chúng ta không dùng {...filter} trực tiếp vì nó dính page/limit
-    const where: Prisma.UserWhereInput = {
-      deletedAt: null,
-    };
+    // 1. Khởi tạo object where (Initialize where object)
+    const where: Prisma.UserWhereInput = {};
 
-    // 2. Chỉ nhặt ra các trường dùng để query DB
-    if (filter.status) {
-      where.status = filter.status;
+    /**
+     * 2. Xử lý logic trạng thái (Status Logic Handling)
+     * Phân tách dựa trên 3 trạng thái: Active, Locked, và Deleted (Soft-delete).
+     */
+    switch (filter.status) {
+      case 'active':
+        // Người dùng đang hoạt động: status là active và CHƯA bị xóa
+        where.status = 'active';
+        where.deletedAt = null; // IS NULL
+        break;
+
+      case 'locked':
+        // Người dùng bị khóa: CHƯA bị xóa nhưng có status locked
+        where.status = 'locked';
+        where.deletedAt = null; // IS NULL
+        break;
+
+      case 'deleted':
+        // Thùng rác: Chỉ lấy những bản ghi ĐÃ bị xóa (Soft-deleted records)
+        where.deletedAt = { not: null }; // IS NOT NULL
+        break;
+
+      case 'all':
+        // Lấy tất cả, không lọc theo deletedAt (Show everything)
+        where.deletedAt = null;
+        break;
+
+      default:
+        // Mặc định thường là chỉ lấy những người dùng chưa bị xóa
+        where.deletedAt = null;
+        break;
     }
 
+    // 3. Lọc theo vai trò (Role filtering) - Truy vấn quan hệ N-N
     if (filter.role) {
-      // Truy vấn sâu vào bảng trung gian thông qua quan hệ N-N
       where.userRoles = {
         some: {
           role: { name: filter.role }
@@ -263,15 +290,16 @@ export class MySQLUserRepository implements IUserRepository {
       };
     }
 
+    // 4. Tìm kiếm từ khóa (Search/Keyword matching)
     if (filter.search) {
       where.OR = [
-        { fullName: { contains: filter.search } },
-        { email: { contains: filter.search } },
-        { username: { contains: filter.search } }
+        { fullName: { contains: filter.search, } },
+        { email: { contains: filter.search, } },
+        { username: { contains: filter.search, } }
       ];
     }
 
-    // 3. Thực thi Transaction để lấy Data và Count cùng lúc
+    // 5. Thực thi Database Transaction (Execute Transaction)
     const [rawUsers, total] = await prisma.$transaction([
       prisma.user.findMany({
         where,
@@ -283,7 +311,7 @@ export class MySQLUserRepository implements IUserRepository {
       prisma.user.count({ where })
     ]);
 
-    // 4. Map kết quả về Domain Entity
+    // 6. Chuyển đổi về Domain Entity qua Mapper
     const domainUsers = (rawUsers as UserWithRolesPayload[]).map(raw =>
       UserMapper.toDomain(raw)
     );

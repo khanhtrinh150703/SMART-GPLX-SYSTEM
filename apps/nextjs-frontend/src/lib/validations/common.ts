@@ -15,6 +15,10 @@ export const passwordField = z
   .min(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
   .regex(REGEX.PASSWORD, { message: 'Mật khẩu yếu! Cần chữ hoa, chữ thường, số và ký tự đặc biệt.' });
 
+export const phoneField = z
+  .string()
+  .regex(REGEX.PHONE_VN, { message: 'Số điện thoại không hợp lệ.' });
+
 export const userNameField = z
   .string()
   .regex(REGEX.USERNAME, { message: "Tên tài khoản không đúng định dạng" });

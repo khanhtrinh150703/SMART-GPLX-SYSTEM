@@ -31,7 +31,6 @@ export const authService = {
       // Khi gọi setToken, Zustand Persist sẽ tự động lưu vào LocalStorage cho bạn.
       if (authData.accessToken) {
         setToken(authData.accessToken);
-        console.log(authData.accessToken)
       }
 
       if (authData.user) {
