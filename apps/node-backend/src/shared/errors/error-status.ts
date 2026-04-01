@@ -59,4 +59,5 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 400,
 };

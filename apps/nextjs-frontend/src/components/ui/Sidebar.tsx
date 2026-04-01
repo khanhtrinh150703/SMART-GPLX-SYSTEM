@@ -2,11 +2,11 @@
 "use client";
 
 import React from "react";
-import SidebarLogo from "./Sidebar/SidebarLogo";
-import SidebarItem from "./Sidebar/SidebarItem";
-import { sidebarVariants } from "@/components/ui/SideBar/sidebar.variants";
+import SidebarLogo from "../layouts/SideBar/SidebarLogo";
+import { sidebarVariants } from "@/components/layouts/SideBar/sidebar.variants";
 import { cn } from "@/lib/utils/utils";
-import { NAV_ITEMS } from "@/components/ui/SideBar/sidebar.constants";
+import { NAV_ITEMS } from "@/components/layouts/SideBar/sidebar.constants";
+import SidebarItem from "../layouts/SideBar/SidebarItem";
 
 interface SidebarProps {
   className?: string;

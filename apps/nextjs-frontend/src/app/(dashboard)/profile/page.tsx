@@ -1,6 +1,6 @@
 'use client';
 
-import ProfileForm from '@/components/features/profile/ProfileForm';
+import ProfileForm from '@/components/features/profile/components/ProfileForm';
 
 export default function ProfilePage() {
   return (

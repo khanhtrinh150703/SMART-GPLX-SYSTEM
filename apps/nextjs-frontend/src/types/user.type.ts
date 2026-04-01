@@ -5,6 +5,11 @@ export interface UserRole {
   displayName: string;
 }
 
+export interface UserChangePassword {
+  oldPassword: string;
+  newPassword: string;
+}
+
 // User - Thực thể người dùng chuẩn
 export interface User {
   id: string;
@@ -18,16 +23,15 @@ export interface User {
   roles: UserRole[];
 }
 
+export interface IUpdateProfileResponse {
+  user: User;           // Thực thể người dùng
+  accessToken: string;  // Vé thông hành mới
+  refreshToken: string; // Vé làm mới mới
+}
+
 // UserState - Trạng thái lưu trữ trong Store (Zustand)
 export interface UserState {
   user: User | null;
   setUser: (user: User) => void;
   clearUser: () => void;
-}
-
-
-export interface IUpdateProfileResponse {
-  user: User;           // Thực thể người dùng
-  accessToken: string;  // Vé thông hành mới
-  refreshToken: string; // Vé làm mới mới
 }

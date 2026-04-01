@@ -14,7 +14,7 @@ export const ENDPOINTS = {
   },
   USER: {
     UPDATE_PROFILE: `${API_BASE_URL}/users/me/profile`,
-
+    CHANGEPASSWORD: `${API_BASE_URL}/users/me/password`,
   }
   // Thêm các tính năng khác sau này: EXAM, USER_PROFILE...
 };

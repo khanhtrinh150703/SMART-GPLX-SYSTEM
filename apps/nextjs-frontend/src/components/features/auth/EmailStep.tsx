@@ -11,7 +11,7 @@ import { AuthHeader } from "@/components/ui/AuthHeader";
 import { Alert } from "@/components/ui/Alert";
 import Input from "@/components/ui/Input/Input";
 import Button from "@/components/ui/Button/Button";
-import { EmailFormValues, emailSchema } from "@/lib/validations/auth.schema";
+import { EmailFormValues, emailSchema } from "@/lib/validations/user.schema";
 
 
 interface EmailStepProps {

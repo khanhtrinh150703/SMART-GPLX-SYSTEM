@@ -52,7 +52,7 @@ export const GlobalErrorView = ({ error, reset }: GlobalErrorViewProps) => {
           className="px-10 py-4 rounded-2xl gap-2"
         >
           <Home className="w-4 h-4" />
-          Về trang chủ (Home)
+          Về trang chủ (Home) 
         </Button>
       </div>
 

@@ -77,7 +77,8 @@ export const ErrorCode = {
         MISSING_FIELD: 'VAL_201',
         INVALID_FORMAT: 'VAL_202',
         INVALID_LENGTH: 'VAL_203',
-        PASSWORD_MUST_BE_DIFFERENT: "VAL_204"
+        PASSWORD_MUST_BE_DIFFERENT: "VAL_204",
+        PASSWORD_DIFFERENT: "VAL_205",
     }
 } as const;
 
