@@ -37,7 +37,6 @@ export const useUserStore = create<UserState>()(
             // 💡 Hàm logout dùng để "quét sạch" cả RAM và LocalStorage
             logout: () => {
                 set({ user: null, accessToken: null });
-                // ✅ Đây là cách xóa LocalStorage đúng kỹ thuật của Zustand
                 useUserStore.persist.clearStorage();
             },
         }),

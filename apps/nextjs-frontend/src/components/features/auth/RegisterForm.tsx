@@ -5,15 +5,16 @@ import { useRouter } from "next/navigation"; // Bộ điều hướng (Router)
 import axios from "axios";
 import { useForm } from "react-hook-form"; // Thư viện quản lý biểu mẫu
 import { zodResolver } from "@hookform/resolvers/zod"; // Trình giải quyết Zod
-import { registerSchema, RegisterSchemaType } from "@/lib/validations/auth.schema";
+import {
+  registerSchema,
+  RegisterSchemaType,
+} from "@/lib/validations/auth.schema";
 import { authApi } from "@/api/auth/auth.api";
-import { Divider, GoogleButton } from "@/components/ui/SocailLogin";
+import { Divider, GoogleButton } from "@/components/features/auth/SocialLogin";
 import { Alert } from "@/components/ui/Alert";
 import Input from "@/components/ui/Input/Input";
 import Button from "@/components/ui/Button/Button";
 import TextLink from "@/components/ui/TextLink/TextLink";
-
-
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function RegisterForm() {
       const response = await authApi.register({
         username: data.username.trim(),
         email: data.email.trim(),
+        fullName: data.fullName,
         password: data.password,
       });
 
@@ -89,7 +91,7 @@ export default function RegisterForm() {
         <div>
           <Input
             label="Tên đăng nhập"
-            placeholder="VD: trinh_cau_vang"
+            placeholder="VD: wangwu"
             disabled={isLoading}
             {...register("username")}
           />
@@ -108,6 +110,19 @@ export default function RegisterForm() {
             placeholder="nguyenvana@gmail.com"
             disabled={isLoading}
             {...register("email")}
+          />
+          {errors.email && (
+            <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Input
+            label="Họ Tên"
+            type="fullName"
+            placeholder="Wang Wu"
+            disabled={isLoading}
+            {...register("fullName")}
           />
           {errors.email && (
             <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>

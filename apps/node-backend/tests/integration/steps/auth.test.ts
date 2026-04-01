@@ -96,7 +96,6 @@ export const authSteps = () => {
             email: TEST_ACCOUNT.email,
             otp: otp,
           });
-
         expect(response.status).toBe(201);
       }, 10000);
 

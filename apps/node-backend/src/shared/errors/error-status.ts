@@ -29,6 +29,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 400,              // Bad Request
     [ErrorCode.AUTH.MISSING_FIELDS]: 400, // Bad Request
     [ErrorCode.AUTH.INVALID_TOKEN]: 401, // Bad Request
+    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 401, // Bad Request
 
 
     // --- USER & PROFILE ---
@@ -59,4 +60,5 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 400,
 };

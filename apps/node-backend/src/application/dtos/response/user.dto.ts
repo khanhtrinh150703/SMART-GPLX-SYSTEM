@@ -30,6 +30,8 @@ export interface UserResponseDTO {
   /** * Đường dẫn ảnh đại diện (Nếu có) 
    */
   readonly urlPicture: string ;
+  readonly phoneNumber: string ;
+
 
   /** * Trạng thái tài khoản (active, suspend, v.v.) 
    */

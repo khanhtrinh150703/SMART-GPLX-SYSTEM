@@ -6,66 +6,77 @@ on:
   pull_request:
     branches: [main, develop, back-end, front-end, ai]
 
+# Tự động hủy các bản build cũ nếu có push mới (Tiết kiệm tài nguyên)
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
+
 jobs:
+  # ==========================================
+  # 1. NEXTJS FRONTEND JOB
+  # ==========================================
   nextjs-frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/nextjs-frontend
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: apps/nextjs-frontend/package-lock.json
+      - name: 🛰️ Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Install & Build
-        run: |
-          npm install
-          npm run build
-
-  node-backend:
-    runs-on: ubuntu-latest
-    # KHÔNG DÙNG services CỦA GITHUB NỮA, CHÚNG TA SẼ DÙNG DOCKER COMPOSE
-    
-    steps:
-      - uses: actions/checkout@v4
-
-      # 1. KHỞI ĐỘNG DỊCH VỤ BẰNG DOCKER COMPOSE
-      - name: Start Database & Redis with Docker Compose
-        # Giả sử file docker-compose.yml của bạn nằm ở thư mục gốc (root)
-        run: docker compose up -d
-        
-      # 2. CHỜ DATABASE KHỞI ĐỘNG XONG (Rất quan trọng)
-      # MySQL thường mất khoảng 10-15 giây để sẵn sàng nhận kết nối
-
-      # 3. TIẾP TỤC SETUP NODE VÀ CHẠY TEST NHƯ BÌNH THƯỜNG
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: apps/node-backend/package-lock.json
+          # Trỏ về file lock ở gốc dự án
+          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        working-directory: apps/node-backend
-        run: npm install --ignore-scripts
+      - name: 📥 Install Dependencies (Cài đặt từ Gốc)
+        run: npm ci --include=optional
 
-      - name: Generate Prisma Client
-        working-directory: apps/node-backend
-        run: npx prisma generate
+      - name: 🔍 Lint Check
+        # Chạy lint riêng cho frontend từ thư mục gốc
+        run: npm run lint:fe
 
-      - name: Run Lint
-        working-directory: apps/node-backend
-        run: npm run lint
+      - name: 🏗️ Build App (Xây dựng ứng dụng)
+        run: npm run build -w nextjs-frontend
 
-      - name: Run Tests
-        working-directory: apps/node-backend
-        run: npm run testcicd
+  # ==========================================
+  # 2. NODE BACKEND JOB
+  # ==========================================
+  node-backend-ci:
+    runs-on: ubuntu-latest
 
-      # 4. DỌN DẸP SAU KHI TEST XONG (Tùy chọn)
-      - name: Stop Docker Compose
-        if: always() # Luôn chạy dù test pass hay fail
+    steps:
+      - name: 🛰️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 🐳 Start Database (Docker)
+        # Chạy Docker Compose từ gốc để khởi động Postgres/MySQL
+        run: docker compose up -d
+
+      - name: 📥 Install Dependencies
+        # Cài đặt toàn bộ dự án từ thư mục gốc
+        run: npm ci
+
+      - name: 🔍 Lint Check
+        # Kiểm tra code style của backend
+        run: npm run lint:be
+
+      - name: 💎 Setup Database Schema (Prisma)
+        # Sử dụng lệnh db:push:cicd bạn đã định nghĩa
+        # Lệnh này sẽ chạy Prisma Gen và Push Schema vào Docker DB
+        run: npm run db:push:cicd
+
+      - name: 🧪 Run Integration Tests
+        # Chạy bộ test Jest tích hợp
+        run: npm run test:be:cicd
+
+      - name: 🧹 Stop Services
+        if: always() # Luôn chạy bước này kể cả khi test fail để dọn dẹp
         run: docker compose down

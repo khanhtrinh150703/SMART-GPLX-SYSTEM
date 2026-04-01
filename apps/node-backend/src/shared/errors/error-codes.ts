@@ -33,6 +33,7 @@ export const ErrorCode = {
         REFRESH_FAILED: 'AUTH_006',     // Token refresh failed
         MISSING_FIELDS: 'AUTH_400',
         INVALID_TOKEN: 'AUTH_007', // Token không hợp lệ (Sai chữ ký, bị chỉnh sửa...)
+        ROLES_NOT_INITIALIZED: 'AUTH_406',
     },
 
     /** * --- USER & PROFILE (USER) --- 
@@ -77,7 +78,8 @@ export const ErrorCode = {
         MISSING_FIELD: 'VAL_201',
         INVALID_FORMAT: 'VAL_202',
         INVALID_LENGTH: 'VAL_203',
-        PASSWORD_MUST_BE_DIFFERENT: "VAL_204"
+        PASSWORD_MUST_BE_DIFFERENT: "VAL_204",
+        PASSWORD_DIFFERENT: "VAL_205",
     }
 } as const;
 
