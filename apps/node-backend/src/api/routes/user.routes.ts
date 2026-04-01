@@ -23,5 +23,7 @@ router.get('', authMiddleware, userController.getUsers);
 router.patch('/:id/status', authMiddleware, userController.updateStatus);
 router.delete('/:id', authMiddleware, userController.deleteUser);
 router.patch('/:id/restore', authMiddleware, userController.restoreUser);
+router.patch('/admin/:id', authMiddleware, upload.single('pictureFile') , userController.updateProfileAdmin);
+
 
 export default router;

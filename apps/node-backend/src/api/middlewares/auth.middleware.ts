@@ -43,7 +43,7 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
 
     // 4. Mọi thứ OK, gán Payload vào Request để các Controller/Service sử dụng
     req.user = payload;
-
+    
     next();
   } catch (err: unknown) {
     // 🛡️ Xử lý lỗi Token cụ thể để trả về mã lỗi chính xác cho Frontend

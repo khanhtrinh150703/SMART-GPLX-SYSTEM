@@ -125,6 +125,7 @@ export class User {
   }
 
   public softDelete(): void {
+    this._props.status = 'locked';
     this._props.deletedAt = new Date();
     this.touch();
   }

@@ -55,6 +55,34 @@ export class UserController {
   });
 
   /**
+   * Tác dụng: Sửa thông tin cá nhân của người dùng.
+   * @param {Request} req - Chứa userId trong params và UpdateProfileDTO trong body.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public updateProfileAdmin = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+    console.log(req.body)
+    const userId = req.params.id as string; // Hoặc req.user.id tùy theo Payload cậu đặt
+
+    // 3. Đóng gói dữ liệu vào một Object duy nhất cho DTO
+    const dto = new UpdateProfileDTO({
+      ...req.body,      // Lấy fullName, username, ...
+    });
+
+    const updatedUser = await this._userService.updateProfile(userId, dto);
+
+    // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
+    const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
+
+    Result.ok(
+      res,
+      cleanUser,
+      Message.USER.UPDATE_SUCCESS,
+      'USER_UPDATE_SUCCESS'
+    );
+  });
+
+  /**
      * Tác dụng: API endpoint thay đổi mật khẩu người dùng.
      * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
      */
@@ -158,6 +186,8 @@ export class UserController {
       'USER_FETCH_SUCCESS'
     );
   });
+
+
 
   // /**
   //  * @route GET /api/v1/users/:id
