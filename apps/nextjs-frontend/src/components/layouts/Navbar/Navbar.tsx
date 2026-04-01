@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { NAV_LINKS } from "./nav.constants";
 import { cn } from "@/lib/utils/utils";
 import Button from "@/components/ui/Button/Button";
-import router from "next/router";
 import { Logo } from "@/components/ui/Logo/Logo";
 
 export const Navbar = () => {

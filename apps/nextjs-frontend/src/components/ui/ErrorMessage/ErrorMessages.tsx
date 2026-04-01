@@ -1,8 +1,8 @@
 // src/components/ui/ErrorMessage.tsx
 import React from 'react';
 import { VariantProps } from 'class-variance-authority';
-import { errorVariants } from '@/components/ui/ErrorMessages/error-message.variants';
 import { cn } from '@/lib/utils/utils';
+import { errorVariants } from './error-message.variants';
 
 interface ErrorMessageProps 
   extends React.HTMLAttributes<HTMLParagraphElement>, 

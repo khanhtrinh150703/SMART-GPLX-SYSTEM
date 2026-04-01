@@ -1,4 +1,3 @@
-import { cva } from "class-variance-authority";
 
 export const footerVariants = {
   container: "bg-white border-t border-slate-200 py-10 relative z-10",

@@ -3,7 +3,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils/utils";
-import { profileSidebarVariants } from "@/components/ui/Profile/profile.variants";
+import { profileSidebarVariants } from "../profile.variants";
 
 interface ProfileSidebarProps {
   children: React.ReactNode;

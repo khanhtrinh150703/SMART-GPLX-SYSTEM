@@ -49,6 +49,7 @@ export const NotFoundView = () => {
         router.back();
       }
     } catch (e) {
+      console.log(e)
       // Nếu có lỗi parse URL thì cứ Back cho an toàn
       router.back();
     }

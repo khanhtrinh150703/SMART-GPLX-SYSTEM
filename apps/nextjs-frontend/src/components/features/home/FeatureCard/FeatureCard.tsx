@@ -4,8 +4,8 @@ import React from "react";
 import { LucideIcon, ChevronRight } from "lucide-react";
 import { Reveal } from "@/components/ui/Reveal";
 import { SpotlightCard } from "@/components/ui/Spotlight";
-import { featureCardVariants, type FeatureCardVariantProps } from "./FeatureCard/feature-card.variants";
 import { cn } from "@/lib/utils/utils";
+import { FeatureCardVariantProps, featureCardVariants } from "./feature-card.variants";
 
 interface FeatureCardProps extends FeatureCardVariantProps {
   title: string;

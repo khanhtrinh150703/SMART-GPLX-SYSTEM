@@ -1,7 +1,7 @@
 // src/components/ui/AuthHeader.tsx
 
-import { headingVariants, textVariants } from "@/components/ui/AuthHeader/authheader.variants";
 import { cn } from "@/lib/utils/utils";
+import { headingVariants, textVariants } from "./authheader.variants";
 
 interface AuthHeaderProps {
   title: string;

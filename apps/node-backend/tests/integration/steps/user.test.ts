@@ -125,7 +125,7 @@ export const userSteps = () => {
 
         expect(response.body).toMatchObject({
           success: false,
-          code: ErrorCode.AUTH.INVALID_CREDENTIALS,
+          code: ErrorCode.VALIDATION.PASSWORD_DIFFERENT,
         });
         expect(response.body.message).toBeDefined();
       });

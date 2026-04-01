@@ -1,4 +1,3 @@
-import { cva } from "class-variance-authority";
 
 // Định nghĩa các chuỗi Tailwind (Style Isolation)
 export const heroVariants = {

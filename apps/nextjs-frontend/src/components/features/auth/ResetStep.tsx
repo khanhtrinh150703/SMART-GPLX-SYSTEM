@@ -13,9 +13,9 @@ import { OtpHeader, OtpInput, ResendOtpButton } from "@/components/features/auth
 import { Badge } from "@/components/ui/Badge";
 import { Alert } from "@/components/ui/Alert";
 import { Label } from "@/components/ui/Label";
-import { ErrorMessage } from "@/components/ui/ErrorMessages";
 import Input from "@/components/ui/Input/Input";
 import Button from "@/components/ui/Button/Button";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
 
 
 
@@ -28,7 +28,7 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-export const ResetStep = ({ email, onBack }: ResetStepProps) => {
+export const ResetStep = ({ email }: ResetStepProps) => {
   const router = useRouter();
 
   // 1. QUẢN LÝ TRẠNG THÁI
@@ -66,7 +66,8 @@ export const ResetStep = ({ email, onBack }: ResetStepProps) => {
       resendTimer.reset(RESEND_TIME);
       expiryTimer.reset(EXPIRY_TIME);
     } catch (error) {
-      setServerError("Không thể gửi lại mã, vui lòng thử lại sau.");
+      setServerError("Không thể gửi lại mã, vui lòng thử lại sau." );
+      console.log(error)
     } finally {
       setIsLoading(false);
     }

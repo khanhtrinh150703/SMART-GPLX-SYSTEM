@@ -58,12 +58,12 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
           <div className="relative p-[1px] w-full bg-gradient-to-b from-emerald-400/20 to-transparent rounded-[32px] overflow-hidden group shadow-2xl">
             <div className="bg-[#011a13]/60 backdrop-blur-3xl rounded-[31px] p-8 h-[340px] flex items-center justify-center relative overflow-hidden">
                {/* Ảnh AI System (Giảm độ chói) */}
-               <img 
+               {/* <img 
                  src="/images/ai-traffic-showcase.png" 
                  alt="AI System"
                  className="w-full h-full object-cover opacity-30 rounded-2xl grayscale-[0.5] group-hover:grayscale-0 group-hover:opacity-50 transition-all duration-700"
                />
-               
+                */}
                {/* Hiệu ứng Quét Xanh Lục mảnh */}
                <div className="absolute inset-x-0 top-0 h-[1.5px] bg-emerald-400/50 shadow-[0_0_10px_#34d399] animate-[scan_4s_linear_infinite]" />
                

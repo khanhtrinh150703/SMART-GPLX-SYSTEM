@@ -3,15 +3,14 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth/auth.service";
-import { AuthHeader } from "@/components/ui/AuthHeader";
 import { Alert } from "@/components/ui/Alert";
 import Input from "@/components/ui/Input/Input";
 import Button from "@/components/ui/Button/Button";
 import { EmailFormValues, emailSchema } from "@/lib/validations/user.schema";
+import { AuthHeader } from "@/components/layouts/AuthHeader";
 
 
 interface EmailStepProps {
