@@ -300,6 +300,7 @@ export class UserService implements IUserService {
         const roleData = RoleCacheService.getByName(SystemRoles.STUDENT);
 
         if (!roleData) {
+            console.log("LOI O DAY")
             // Nếu không thấy trong cache, có thể hệ thống chưa init hoặc sai tên Role
             throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
         }
