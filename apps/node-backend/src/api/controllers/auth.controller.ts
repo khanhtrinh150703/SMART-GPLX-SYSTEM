@@ -1,6 +1,4 @@
 import { Request, Response } from 'express';
-import { AuthService } from '@/application/services/auth.service';
-import { RegistrationService } from '@/application/services/registration.service';
 import { RegisterDTO, ResetPasswordDTO, VerifyUserDTO } from '@/application/dtos/request/auth.dto';
 import { LoginInputDTO } from '@/application/dtos/request/loginInput.dto';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
@@ -11,6 +9,8 @@ import { Result } from '@/shared/responses/api-response';
 import { catchAsync } from '@/shared/utils/catch-async';
 import { AuthRequest } from '@/shared/types/auth.types';
 import { ICradle } from '@/shared/types/container.types';
+import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
+import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
 
 /**
  * Controller xử lý các luồng xác thực và đăng ký người dùng.
@@ -19,15 +19,15 @@ import { ICradle } from '@/shared/types/container.types';
  */
 export class AuthController {
 
-  private readonly _authService: AuthService;
-  private readonly _registrationService: RegistrationService;
+  private readonly _authService: IAuthService;
+  private readonly _registrationService: IRegistrationService;
 
   // CHỈ NHẬN NHỮNG THỨ ĐÃ ĐĂNG KÝ TRONG CONTAINER
   constructor({ authService, registrationService }: ICradle) {
     this._authService = authService;
     this._registrationService = registrationService;
   }
-  
+
   /** 
    * Tác dụng: Tiếp nhận thông tin đăng ký ban đầu và yêu cầu gửi OTP.
    * @param {Request} req - Chứa RegisterDTO trong body.
@@ -50,34 +50,32 @@ export class AuthController {
   });
 
   /**
-   * Tác dụng: Xác thực mã OTP và hoàn tất quy trình tạo tài khoản.
+   * API Xác thực OTP và hoàn tất đăng ký tài khoản.
+   * @route POST /api/v1/auth/signup-verify
+   * @param {Request} req - Chứa email và mã otp trong body.
+   * @param {Response} res - Đối tượng Response của Express.
+   * @returns {Promise<void>}
    */
   public signUpVerify = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const dto = new VerifyUserDTO(req.body);
     const newUser = await this._registrationService.complete(dto.email, dto.otp);
     const result = UserMapper.toResponse(newUser);
 
-    Result.created(
-      res,
-      result,
-      Message.AUTH.REGISTER_SUCCESS,
-      'CREATED_SUCCESS'
-    );
+    Result.created(res, result, Message.AUTH.REGISTER_SUCCESS, 'CREATED_SUCCESS');
   });
 
   /**
-   * Tác dụng: Thực hiện đăng nhập và trả về cặp Token.
+   * API Đăng nhập và trả về cặp Access/Refresh Token.
+   * @route POST /api/v1/auth/login
+   * @param {Request} req - Chứa thông tin đăng nhập trong body.
+   * @param {Response} res - Đối tượng Response của Express.
+   * @returns {Promise<void>}
    */
   public login = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const dto = new LoginInputDTO(req.body);
     const result = await this._authService.login(dto);
 
-    Result.ok(
-      res,
-      result,
-      Message.AUTH.LOGIN_SUCCESS,
-      'AUTH_LOGIN_SUCCESS'
-    );
+    Result.ok(res, result, Message.AUTH.LOGIN_SUCCESS, 'AUTH_LOGIN_SUCCESS');
   });
 
   /**
@@ -103,57 +101,44 @@ export class AuthController {
   });
 
   /**
-   * Tác dụng: Yêu cầu gửi lại mã OTP.
+   * API Yêu cầu gửi lại mã OTP xác thực.
+   * @route POST /api/v1/auth/resend-otp
+   * @param {Request} req - Chứa email trong body.
+   * @param {Response} res - Đối tượng Response của Express.
+   * @returns {Promise<void>}
    */
   public resendOtp = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const { email } = req.body;
     await this._registrationService.resend(email);
 
-    Result.ok(
-      res,
-      undefined,
-      Message.AUTH.OTP_RESENT,
-      'AUTH_OTP_RESENT'
-    );
+    Result.ok(res, undefined, Message.AUTH.OTP_RESENT, 'AUTH_OTP_RESENT');
   });
 
   /**
-     * BƯỚC 1: API Yêu cầu gửi mã OTP quên mật khẩu.
-     * Endpoint: POST /api/v1/auth/forgot-password
-     */
+   * API Yêu cầu gửi mã OTP để đặt lại mật khẩu.
+   * @route POST /api/v1/auth/forgot-password
+   * @param {Request} req - Chứa email người dùng trong body.
+   * @param {Response} res - Đối tượng Response của Express.
+   * @returns {Promise<void>}
+   */
   public forgotPassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const { email } = req.body;
-
-    // Điều phối xuống Service xử lý (Check user + Sinh OTP + Gửi Mail)
     await this._authService.requestForgotPassword(email as string);
 
-    // Trả về thành công (Message sẽ được map từ SuccessMessages-VN qua code)
-    Result.ok(
-      res,
-      undefined,
-      Message.AUTH.OTP_EMAIL,
-      'AUTH_OTP_SENT_SUCCESS'
-    );
+    Result.ok(res, undefined, Message.AUTH.OTP_EMAIL, 'AUTH_OTP_SENT_SUCCESS');
   });
 
   /**
-   * BƯỚC 2: API Xác thực OTP và đặt lại mật khẩu mới.
-   * Endpoint: POST /api/v1/auth/reset-password
+   * API Xác thực OTP và cập nhật mật khẩu mới.
+   * @route POST /api/v1/auth/reset-password
+   * @param {Request} req - Chứa ResetPasswordDTO (otp, newPassword) trong body.
+   * @param {Response} res - Đối tượng Response của Express.
+   * @returns {Promise<void>}
    */
   public resetPassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    // 1. Đưa dữ liệu vào DTO để chuẩn bị validate
     const dto = new ResetPasswordDTO(req.body);
-
-    // 2. Gọi Service thực hiện nghiệp vụ "2 trong 1" (Verify OTP + Update Pass)
     await this._authService.resetPassword(dto);
 
-    // 3. Trả về thành công
-    Result.ok(
-      res,
-      undefined,
-      Message.AUTH.PASSWORD_RESET,
-      'AUTH_PASSWORD_RESET_SUCCESS'
-    );
+    Result.ok(res, undefined, Message.AUTH.PASSWORD_RESET, 'AUTH_PASSWORD_RESET_SUCCESS');
   });
-
 }

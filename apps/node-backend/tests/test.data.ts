@@ -1,14 +1,14 @@
 // user-test.config.ts
 
 /**
- * CONFIGURATION CHUNG CHO USER & AUTH INTEGRATION TESTS
- * 
- * File này chứa tất cả các config, endpoint, test data dùng chung cho các test liên quan đến User và Auth.
+ * CONFIGURATION CHUNG CHO INTEGRATION TESTS
+ * File này chứa các config, endpoint, test data dùng chung cho User, Auth và License.
  */
 
 export const API_BASE = {
   AUTH: '/api/v1/auth',
   USER: '/api/v1/users',
+  LICENSE: '/api/v1/license-categories', // Tên đồng bộ
 } as const;
 
 // ==================== AUTH ENDPOINTS ====================
@@ -29,7 +29,18 @@ export const USER_ENDPOINTS = {
   USER_STATUS: (userId: string) => `${API_BASE.USER}/${userId}/status`,
   USER_DELETE: (userId: string) => `${API_BASE.USER}/${userId}`,
   USER_RESTORE: (userId: string) => `${API_BASE.USER}/${userId}/restore`,
-  USERS_LIST: API_BASE.USER, // GET danh sách users
+  USERS_LIST: API_BASE.USER,
+} as const;
+
+// ==================== LICENSE ENDPOINTS ====================
+export const LICENSE_ENDPOINTS = {
+  BASE: API_BASE.LICENSE,
+  CREATE: API_BASE.LICENSE,
+  FETCH_ALL: API_BASE.LICENSE,
+  // Dùng function để khi test gọi: LICENSE_ENDPOINTS.UPDATE(testCategoryId)
+  UPDATE: (id: string) => `${API_BASE.LICENSE}/${id}`,
+  DELETE: (id: string) => `${API_BASE.LICENSE}/${id}`,
+  RESTORE: (id: string) => `${API_BASE.LICENSE}/${id}/restore`,
 } as const;
 
 // ==================== TEST ACCOUNT DATA ====================
@@ -37,7 +48,7 @@ export const TEST_ACCOUNT = {
   username: 'trinh_cau_vang',
   email: 'gplx@dividesk.com',
   fullName: 'Trinh Cậu Vàng',
-  password: 'Password123!',                    // mật khẩu gốc dùng cho register & login
+  password: 'Password123!',
   newPassword: 'NewSecurePassword123@',
   newPassword_2: 'NewSecurePassword123@z',
   confirmPassword: 'Password123!',
@@ -50,7 +61,7 @@ export const TEST_UPDATE_DATA = {
   urlPicture: 'https://cdn.smart-gplx.com/avatar.png',
 } as const;
 
-// ==================== INVALID TEST DATA (cho validation tests) ====================
+// ==================== INVALID TEST DATA ====================
 export const INVALID_TEST_DATA = {
   invalidEmail: 'not-an-email',
   weakPassword: '123',
@@ -68,5 +79,6 @@ export const REDIS_KEYS = {
 } as const;
 
 // ==================== RE-EXPORT SHARED CONSTANTS ====================
+// Đảm bảo các export này khớp với cấu trúc thư mục lỗi của cậu
 export { ErrorCode, ErrorStatus } from '@/shared/errors';
 export { Message } from '@/shared/errors/messages/success-messages-vn';

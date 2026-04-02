@@ -6,14 +6,13 @@ import { UserWithRolesPayload } from "@/shared/types/user-payload.type";
 import { UserQueryDTO } from "@/application/dtos/request/user-query.dto";
 import { Prisma } from "@prisma/client";
 
-
 /**
- * Triển khai truy vấn dữ liệu User bằng Prisma cho cơ sở dữ liệu MySQL.
- * Tuân thủ nguyên tắc Clean Architecture: Chuyển đổi linh hoạt giữa Persistence Model và Domain Entity qua UserMapper.
+ * @description Triển khai Repository cho người dùng sử dụng MySQL và Prisma ORM.
+ * Đảm bảo việc chuyển đổi linh hoạt giữa Persistence Model và Domain Entity thông qua UserMapper.
  */
 export class MySQLUserRepository implements IUserRepository {
 
-  // Trong MySQLUserRepository
+  /** @description Cấu hình truy vấn tối giản để lấy thông tin vai trò từ bảng trung gian. */
   private readonly _userIncludeMinimal = {
     userRoles: {
       select: { roleId: true }
@@ -21,10 +20,9 @@ export class MySQLUserRepository implements IUserRepository {
   };
 
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng Email.
-   * Dùng cho các luồng đăng nhập, quên mật khẩu.
-   * @param {string} email - Email của người dùng.
-   * @returns {Promise<User | null>} - Trả về Entity User hoặc null nếu không tìm thấy/đã bị xóa.
+   * @description Tìm kiếm người dùng đang hoạt động (chưa bị xóa mềm) thông qua địa chỉ Email.
+   * @param {string} email - Địa chỉ email cần truy vấn.
+   * @returns {Promise<User | null>} Thực thể Domain User hoặc null nếu không tồn tại.
    */
   async findActiveByEmail(email: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
@@ -39,9 +37,9 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng Username.
-   * @param {string} username - Tên đăng nhập.
-   * @returns {Promise<User | null>} - Trả về Entity User hoặc null.
+   * @description Tìm kiếm người dùng đang hoạt động thông qua tên đăng nhập.
+   * @param {string} username - Tên đăng nhập cần truy vấn.
+   * @returns {Promise<User | null>} Thực thể Domain User hoặc null nếu không tồn tại.
    */
   async findActiveByUsername(username: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
@@ -56,9 +54,9 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng ID.
+   * @description Truy vấn người dùng đang hoạt động dựa trên mã định danh duy nhất (ID).
    * @param {string} id - UUID của người dùng.
-   * @returns {Promise<User | null>} - Trả về Entity User hoặc null.
+   * @returns {Promise<User | null>} Thực thể Domain User hoặc null nếu không tồn tại.
    */
   async findActiveById(id: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
@@ -73,10 +71,9 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Tìm kiếm người dùng bằng một định danh bất kỳ (Email hoặc Username) và phải còn hoạt động.
-   * Thường dùng cho form đăng nhập cho phép nhập cả 2 loại.
-   * @param {string} identifier - Email hoặc Username.
-   * @returns {Promise<User | null>}
+   * @description Tìm kiếm linh hoạt người dùng đang hoạt động bằng Email hoặc Tên đăng nhập.
+   * @param {string} identifier - Chuỗi định danh (Email/Username).
+   * @returns {Promise<User | null>} Thực thể Domain User hoặc null nếu không tồn tại.
    */
   async findActiveByIdentifier(identifier: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
@@ -94,12 +91,10 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Kiểm tra sự tồn tại của định danh (Email hoặc Username) trên toàn hệ thống.
-   * LƯU Ý: Hàm này tìm kiếm CẢ những bản ghi đã bị xóa mềm (deletedAt != null).
-   * Dùng để chặn trùng lặp khi Đăng ký mới.
+   * @description Kiểm tra sự tồn tại của Email hoặc Tên đăng nhập trên toàn hệ thống (bao gồm bản ghi đã xóa mềm).
    * @param {string} email - Email cần kiểm tra.
-   * @param {string} username - Username cần kiểm tra.
-   * @returns {Promise<User | null>} - Trả về Entity User nếu đã tồn tại trong DB, ngược lại null.
+   * @param {string} username - Tên đăng nhập cần kiểm tra.
+   * @returns {Promise<User[]>} Danh sách các thực thể Domain User trùng lặp tìm thấy.
    */
   async findExistingInSystem(email: string, username: string): Promise<User[]> {
     const rawUsers = await prisma.user.findMany({
@@ -112,49 +107,43 @@ export class MySQLUserRepository implements IUserRepository {
       include: this._userIncludeMinimal
     });
 
-    // Map danh sách từ Database sang Entity
     return rawUsers.map(raw => UserMapper.toDomain(raw));
   }
 
   /**
-   * Tìm kiếm người dùng bằng Email trên toàn bộ Database (Bao gồm cả đã xóa).
-   * @param {string} email 
+   * @description Truy vấn người dùng theo Email trên toàn bộ cơ sở dữ liệu mà không lọc trạng thái xóa.
+   * @param {string} email - Email cần truy vấn.
    * @returns {Promise<User | null>}
    */
   async findByEmailInSystem(email: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
       where: { email },
       include: this._userIncludeMinimal
-      // Không có deletedAt ở đây -> Tìm tất cả
     });
     return rawUser ? UserMapper.toDomain(rawUser) : null;
   }
 
   /**
-   * Tìm kiếm người dùng bằng Username trên toàn bộ Database (Bao gồm cả đã xóa).
-   * @param {string} username 
+   * @description Truy vấn người dùng theo Tên đăng nhập trên toàn bộ cơ sở dữ liệu mà không lọc trạng thái xóa.
+   * @param {string} username - Tên đăng nhập cần truy vấn.
    * @returns {Promise<User | null>}
    */
   async findByUsernameInSystem(username: string): Promise<User | null> {
     const rawUser = await prisma.user.findFirst({
       where: { username },
       include: this._userIncludeMinimal
-      // Không có deletedAt ở đây -> Tìm tất cả
     });
     return rawUser ? UserMapper.toDomain(rawUser) : null;
   }
 
-
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng ID.
+   * @description Truy vấn người dùng theo ID trên toàn bộ cơ sở dữ liệu mà không lọc trạng thái xóa.
    * @param {string} id - UUID của người dùng.
-   * @returns {Promise<User | null>} - Trả về Entity User hoặc null.
+   * @returns {Promise<User | null>}
    */
   async findByIdInSystem(id: string): Promise<User | null> {
     const rawUser = await prisma.user.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
       include: this._userIncludeMinimal
     });
 
@@ -162,16 +151,12 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-     * Lưu người dùng mới kèm theo các quyền hạn đã gán ở Entity.
-     * (Save a new user along with the permissions assigned in the Entity).
-     * * * Sử dụng `UserMapper` để chuyển đổi từ Domain Entity sang Persistence Model.
-     * * Thực hiện tạo bản ghi trong bảng trung gian `userRoles` (quan hệ N-N).
-     * * @param user - Thực thể người dùng (User Domain Entity).
-     * @returns Thực thể User sau khi đã được lưu vào cơ sở dữ liệu.
-     */
+   * @description Khởi tạo bản ghi người dùng mới và thiết lập các quan hệ vai trò (Roles) trong bảng trung gian.
+   * @param {User} user - Thực thể Domain User chứa đầy đủ thông tin khởi tạo.
+   * @returns {Promise<User>} Thực thể Domain User sau khi đã lưu trữ thành công.
+   */
   async create(user: User): Promise<User> {
     const persistenceData = UserMapper.toPersistence(user);
-    // Đây là nơi Prisma thực hiện Transaction ngầm để tạo User + Roles
     const rawUser = await prisma.user.create({
       data: {
         ...persistenceData,
@@ -184,17 +169,13 @@ export class MySQLUserRepository implements IUserRepository {
       include: this._userIncludeMinimal
     });
 
-    const domainUser = UserMapper.toDomain(rawUser as UserWithRolesPayload);
-    return domainUser;
+    return UserMapper.toDomain(rawUser as UserWithRolesPayload);
   }
 
   /**
-   * Cập nhật thông tin người dùng và ĐỒNG BỘ lại danh sách quyền.
-   * (Update user information and SYNCHRONIZE the role list).
-   * * * Logic đồng bộ Roles: Xóa tất cả các quan hệ cũ trong bảng trung gian và tạo mới dựa trên Entity hiện tại.
-   * * Đảm bảo tính nhất quán giữa trạng thái của Entity và dữ liệu thực tế trong DB.
-   * * @param user - Thực thể người dùng chứa các thông tin đã thay đổi.
-   * @returns Thực thể User sau khi cập nhật thành công.
+   * @description Cập nhật thông tin người dùng và đồng bộ hóa lại danh sách vai trò (Xóa cũ - Thêm mới).
+   * @param {User} user - Thực thể Domain User chứa thông tin thay đổi.
+   * @returns {Promise<User>} Thực thể Domain User sau khi cập nhật thành công.
    */
   async update(user: User): Promise<User> {
     const persistenceData = UserMapper.toPersistence(user);
@@ -203,9 +184,8 @@ export class MySQLUserRepository implements IUserRepository {
       where: { id: user.id },
       data: {
         ...persistenceData,
-        // Logic đồng bộ Roles: Xóa cũ, thêm mới những gì đang có ở Entity
         userRoles: {
-          deleteMany: {}, // Xóa hết các quan hệ cũ trong bảng trung gian
+          deleteMany: {}, 
           create: user.roles.map(role => ({
             roleId: role.id
           }))
@@ -218,13 +198,9 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Lưu hoặc cập nhật (Upsert) - Đảm bảo tính nhất quán trong mô hình DDD.
-   * (Save or Update (Upsert) - Commonly used in DDD to ensure consistency).
-   * * * Kiểm tra sự tồn tại của người dùng dựa trên ID:
-   * - Nếu đã tồn tại: Gọi phương thức `update`.
-   * - Nếu chưa tồn tại: Gọi phương thức `create`.
-   * * @param user - Thực thể người dùng cần được bền vững hóa (persist).
-   * @returns Thực thể User đã được lưu/cập nhật.
+   * @description Thực hiện lưu mới hoặc cập nhật (Upsert) dựa trên sự tồn tại của người dùng trong hệ thống.
+   * @param {User} user - Thực thể Domain User cần bền vững hóa dữ liệu.
+   * @returns {Promise<User>}
    */
   async save(user: User): Promise<User> {
     const existing = await this.findActiveById(user.id);
@@ -233,55 +209,44 @@ export class MySQLUserRepository implements IUserRepository {
     }
     return await this.create(user);
   }
-  /**
-   * @description Lấy danh sách user kèm phân trang.
-   * Chuyển đổi từ UserQueryDTO sang định dạng Prisma.whereInput.
-   */
-  // src/repositories/user.repository.ts
 
+  /**
+   * @description Truy vấn danh sách người dùng có hỗ trợ phân trang, lọc theo trạng thái, vai trò và từ khóa.
+   * @param {UserQueryDTO} filter - Đối tượng chứa các tham số lọc và truy vấn.
+   * @param {number} skip - Số lượng bản ghi cần bỏ qua.
+   * @param {number} take - Số lượng bản ghi cần lấy.
+   * @returns {Promise<[User[], number]>} Cặp giá trị gồm danh sách thực thể Domain và tổng số bản ghi thỏa mãn.
+   */
   async findAndCount(
     filter: UserQueryDTO,
     skip: number,
     take: number
   ): Promise<[User[], number]> {
 
-    // 1. Khởi tạo object where (Initialize where object)
     const where: Prisma.UserWhereInput = {};
 
-    /**
-     * 2. Xử lý logic trạng thái (Status Logic Handling)
-     * Phân tách dựa trên 3 trạng thái: Active, Locked, và Deleted (Soft-delete).
-     */
+    // Xử lý logic lọc theo trạng thái tài khoản
     switch (filter.status) {
       case 'active':
-        // Người dùng đang hoạt động: status là active và CHƯA bị xóa
         where.status = 'active';
-        where.deletedAt = null; // IS NULL
-        break;
-
-      case 'locked':
-        // Người dùng bị khóa: CHƯA bị xóa nhưng có status locked
-        where.status = 'locked';
-        where.deletedAt = null; // IS NULL
-        break;
-
-      case 'deleted':
-        // Thùng rác: Chỉ lấy những bản ghi ĐÃ bị xóa (Soft-deleted records)
-        where.deletedAt = { not: null }; // IS NOT NULL
-        break;
-
-      case 'all':
-        // Lấy tất cả, không lọc theo deletedAt (Show everything)
         where.deletedAt = null;
         break;
-
+      case 'locked':
+        where.status = 'locked';
+        where.deletedAt = null;
+        break;
+      case 'deleted':
+        where.deletedAt = { not: null };
+        break;
+      case 'all':
+        where.deletedAt = null;
+        break;
       default:
-        // Mặc định thường là chỉ lấy những người dùng chưa bị xóa
         where.deletedAt = null;
         break;
     }
 
-    // 3. Lọc theo vai trò (Role filtering) - Truy vấn quan hệ N-N
+    // Lọc theo tên vai trò (Relation filtering)
     if (filter.role) {
       where.userRoles = {
         some: {
@@ -290,16 +255,16 @@ export class MySQLUserRepository implements IUserRepository {
       };
     }
 
-    // 4. Tìm kiếm từ khóa (Search/Keyword matching)
+    // Tìm kiếm theo từ khóa (Full-name, Email, Username)
     if (filter.search) {
       where.OR = [
-        { fullName: { contains: filter.search, } },
-        { email: { contains: filter.search, } },
-        { username: { contains: filter.search, } }
+        { fullName: { contains: filter.search } },
+        { email: { contains: filter.search } },
+        { username: { contains: filter.search } }
       ];
     }
 
-    // 5. Thực thi Database Transaction (Execute Transaction)
+    // Thực thi truy vấn song song để lấy dữ liệu và tổng số lượng
     const [rawUsers, total] = await prisma.$transaction([
       prisma.user.findMany({
         where,
@@ -311,7 +276,6 @@ export class MySQLUserRepository implements IUserRepository {
       prisma.user.count({ where })
     ]);
 
-    // 6. Chuyển đổi về Domain Entity qua Mapper
     const domainUsers = (rawUsers as UserWithRolesPayload[]).map(raw =>
       UserMapper.toDomain(raw)
     );

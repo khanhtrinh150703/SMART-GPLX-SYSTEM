@@ -2,6 +2,7 @@ import { beforeAll, afterAll, describe } from '@jest/globals';
 import { connectDB, cleanupDB } from '../db.setup';
 import { authSteps } from './steps/auth.test';
 import { userSteps } from './steps/user.test';
+import { licenseSteps } from './steps/license.test';
 
 
 describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
@@ -19,6 +20,11 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
 
     describe('Phase 2: User Operations', () => {
         userSteps();
+    });
+
+    
+    describe('Phase 3: License Operations', () => {
+        licenseSteps();
     });
 
     // Dọn dẹp DB sau khi tất cả đã xong

@@ -32,7 +32,8 @@
     "test:be": "npm run test -w node-backend",
     "test:be:cicd": "npm run testcicd -w node-backend",
     "lint:be": "npm run lint -w node-backend",
-    "lint:fe": "npm run lint -w nextjs-frontend"
+    "lint:fe": "npm run lint -w nextjs-frontend",
+    "see:db:be": "npm run db:see -w node-backend"
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2",

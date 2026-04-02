@@ -105,6 +105,7 @@ redis-data/
 mongo-data/
 postgres-data/
 loki-data/
+uploads/
 
 # =====================================
 #          Docker / DevOps

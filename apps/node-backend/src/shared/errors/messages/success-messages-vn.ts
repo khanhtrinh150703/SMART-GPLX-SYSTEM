@@ -12,7 +12,7 @@ export class Message {
     LOGIN_SUCCESS: 'Đăng nhập thành công.',
     OTP_RESENT: 'Mã OTP mới đã được gửi vào email của bạn.',
     LOGOUT_SUCCESS: 'Đăng xuất thành công.',
-    PASSWORD_RESET :'Mật khẩu của bạn đã được thay đổi thành công. Vui lòng đăng nhập lại.',
+    PASSWORD_RESET: 'Mật khẩu của bạn đã được thay đổi thành công. Vui lòng đăng nhập lại.',
   } as const;
 
   /**
@@ -33,5 +33,13 @@ export class Message {
   static readonly SYSTEM = {
     ACTION_SUCCESS: 'Thao tác thực hiện thành công.',
     DATA_RETRIEVED: 'Lấy dữ liệu thành công.',
+  } as const;
+
+  static readonly LICENSE = {
+    CREATE_SUCCESS: 'Thêm mới hạng bằng lái thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin hạng bằng lái thành công.',
+    DELETE_SUCCESS: 'Xóa hạng bằng lái thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách hạng bằng lái thành công.',
+    RESTORE_SUCCESS: 'Khôi phục bằng lái bằng lái thành công.',
   } as const;
 }
