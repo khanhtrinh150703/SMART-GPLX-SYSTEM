@@ -77,11 +77,10 @@ export class JwtTokenManager implements ITokenManager {
 
   }
   /**
- * Tác dụng: Thu hồi toàn bộ Token của một người dùng trên mọi thiết bị.
- * @param {string} userId - ID của người dùng.
- * @returns {Promise<void>}
- */
-  // Trong TokenManager hoặc AuthService
+   * Tác dụng: Thu hồi toàn bộ Token của một người dùng trên mọi thiết bị.
+   * @param {string} userId - ID của người dùng.
+   * @returns {Promise<void>}
+   */
   public async revokeTokenByPayLoad(payload: TokenPayload): Promise<void> {
     // Phải dựng lại đúng cấu trúc Key lúc nãy
     const deviceId = payload.deviceId || 'default';

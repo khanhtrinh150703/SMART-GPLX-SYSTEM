@@ -75,4 +75,12 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.LICENSE.NOT_FOUND]: 404,
     [ErrorCode.LICENSE.IS_IN_USE]: 403,
     [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 409,
+
+    // --- CHAPTER DOMAIN ---
+    [ErrorCode.CHAPTER.NOT_FOUND]: 404,              // Not Found
+    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 409,         // Conflict
+    [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 403,  // Forbidden (Ràng buộc dữ liệu)
+    [ErrorCode.CHAPTER.CREATE_FAILED]: 400,          // Bad Request
+    [ErrorCode.CHAPTER.UPDATE_FAILED]: 400,          // Bad Request
+    [ErrorCode.CHAPTER.INVALID_ORDER]: 400,          // Bad Request
 };

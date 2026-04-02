@@ -18,6 +18,9 @@ import { IUserRepository } from "@/domain/interfaces/repositories/i-user.reposit
 import { ILicenseCategoryRepository } from "@/domain/interfaces/repositories/i-license-category-repository";
 import { PrismaClient } from "@prisma/client";
 import { Redis } from 'ioredis';
+import { IChapterRepository } from "@/domain/interfaces/repositories/i-chapter.repository";
+import { ChapterService } from "@/application/services/chapter.service";
+import { ChapterController } from "@/api/controllers/chapter.controller";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -25,7 +28,7 @@ import { Redis } from 'ioredis';
  */
 export interface ICradle {
     // --- HẠ TẦNG & CƠ SỞ DỮ LIỆU (INFRASTRUCTURE) ---
-    
+
     /** @description Client ORM Prisma để tương tác với cơ sở dữ liệu MySQL. */
     prisma: PrismaClient;
 
@@ -46,6 +49,9 @@ export interface ICradle {
 
     /** @description Repository quản lý danh mục hạng bằng lái (MySQL). */
     licenseCategoryRepository: ILicenseCategoryRepository;
+
+    /** @description Repository quản lý chapter hạng bằng lái (MySQL). */
+    chapterRepository: IChapterRepository;
 
     /** @description Dịch vụ gửi Email (Nodemailer/External API). */
     emailService: IEmailService;
@@ -72,6 +78,9 @@ export interface ICradle {
     /** @description Quản lý nghiệp vụ cho các loại hạng bằng lái. */
     licenseCategoryService: LicenseCategoryService;
 
+    /** @description Quản lý nghiệp vụ cho các loại hạng bằng lái. */
+    chapterService: ChapterService;
+
     /** @description Điều phối quy trình đăng ký tài khoản người dùng mới. */
     registrationService: RegistrationService;
 
@@ -91,4 +100,7 @@ export interface ICradle {
 
     /** @description Xử lý các yêu cầu HTTP liên quan đến hạng bằng lái. */
     licenseCategoryController: LicenseCategoryController;
+
+    /** @description Xử lý các yêu cầu HTTP liên quan đến hạng bằng lái. */
+    chapterController: ChapterController;
 }

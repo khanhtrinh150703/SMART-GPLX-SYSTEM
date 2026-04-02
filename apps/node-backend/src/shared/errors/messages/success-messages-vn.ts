@@ -42,4 +42,12 @@ export class Message {
     FETCH_SUCCESS: 'Lấy danh sách hạng bằng lái thành công.',
     RESTORE_SUCCESS: 'Khôi phục bằng lái bằng lái thành công.',
   } as const;
+
+  static readonly CHAPTER = {
+    CREATE_SUCCESS: 'Thêm mới chương lý thuyết thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin chương lý thuyết thành công.',
+    DELETE_SUCCESS: 'Xóa chương lý thuyết thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách chương lý thuyết thành công.',
+    RESTORE_SUCCESS: 'Khôi phục chương lý thuyết thành công.',
+  } as const
 }

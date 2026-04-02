@@ -9,6 +9,7 @@ export const API_BASE = {
   AUTH: '/api/v1/auth',
   USER: '/api/v1/users',
   LICENSE: '/api/v1/license-categories', // Tên đồng bộ
+  CHAPTER: '/api/v1/chapters',
 } as const;
 
 // ==================== AUTH ENDPOINTS ====================
@@ -43,6 +44,16 @@ export const LICENSE_ENDPOINTS = {
   RESTORE: (id: string) => `${API_BASE.LICENSE}/${id}/restore`,
 } as const;
 
+// ==================== CHAPTER ENDPOINTS ====================
+// ==================== CHAPTER ENDPOINTS ====================
+export const CHAPTER_ENDPOINTS = {
+  BASE: API_BASE.CHAPTER,
+  CREATE: API_BASE.CHAPTER,
+  FETCH_ALL: API_BASE.CHAPTER,
+  UPDATE: (id: string) => `${API_BASE.CHAPTER}/${id}`,
+  DELETE: (id: string) => `${API_BASE.CHAPTER}/${id}`,
+  RESTORE: (id: string) => `${API_BASE.CHAPTER}/${id}/restore`,
+} as const;
 // ==================== TEST ACCOUNT DATA ====================
 export const TEST_ACCOUNT = {
   username: 'trinh_cau_vang',

@@ -94,6 +94,15 @@ export const ErrorCode = {
         NOT_FOUND: 'LIC_002',
         IS_IN_USE: 'LIC_003',
     },
+
+    CHAPTER: {
+        NOT_FOUND: 'CHPT_404',               // Không tìm thấy chương
+        ALREADY_EXISTS: 'CHPT_409',          // Trùng tên chương
+        HAS_RELATED_QUESTIONS: 'CHPT_403',   // Vi phạm ràng buộc (có câu hỏi)
+        CREATE_FAILED: 'CHPT_001',           // Lỗi khi tạo mới
+        UPDATE_FAILED: 'CHPT_002',           // Lỗi khi cập nhật
+        INVALID_ORDER: 'CHPT_003',           // Thứ tự hiển thị không hợp lệ
+    },
 } as const;
 
 export type ErrorCodeType = {

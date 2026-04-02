@@ -7,5 +7,5 @@ module.exports = {
     // Nếu bạn có dùng alias trong tsconfig (như @domain), hãy map ở đây
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/tests/db.setup.ts'], // Nếu cần setup DB trước khi test
+  setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'], // Nếu cần setup DB trước khi test
 };

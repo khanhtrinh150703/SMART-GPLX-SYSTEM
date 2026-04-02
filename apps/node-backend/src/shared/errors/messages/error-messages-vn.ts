@@ -75,4 +75,12 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.LICENSE.NOT_FOUND]: 'Không tìm thấy hạng bằng lái yêu cầu.',
     [ErrorCode.LICENSE.IS_IN_USE]: 'Không thể xóa: Đang có câu hỏi hoặc đề thi thuộc hạng bằng này.',
     [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
+
+    // === CHAPTER (CHƯƠNG LÝ THUYẾT) ===
+    [ErrorCode.CHAPTER.NOT_FOUND]: 'Không tìm thấy chương lý thuyết yêu cầu.',
+    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 'Tên chương lý thuyết này đã tồn tại trong hệ thống.',
+    [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 'Không thể xóa chương này vì đang có dữ liệu câu hỏi liên quan.',
+    [ErrorCode.CHAPTER.CREATE_FAILED]: 'Quá trình tạo mới chương lý thuyết thất bại.',
+    [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
+    [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
 };
