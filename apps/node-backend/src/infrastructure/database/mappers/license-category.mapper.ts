@@ -1,4 +1,4 @@
-import { LicenseCategoryResponse } from "@/application/dtos/response/license-category/res-license-category.dto";
+import { LicenseCategoryResponse } from "@/application/dtos/response/license-category/license-category.respone.dto";
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 import { ILicenseCategoryRecord } from "@/infrastructure/persistence/license-category.record";
 

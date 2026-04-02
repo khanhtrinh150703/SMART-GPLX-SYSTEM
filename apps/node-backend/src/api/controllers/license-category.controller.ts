@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '@/shared/utils/catch-async';
-import { CreateLicenseCategoryDTO } from '@/application/dtos/request/license-category/create-license-category.dto';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
-import { UpdateLicenseCategoryDTO } from '@/application/dtos/request/license-category/update-license-category.dto';
 import { ICradle } from '@/shared/types/container.types';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
-
+import { CreateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
+import { UpdateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
 
 /**
  * Controller điều phối các yêu cầu HTTP liên quan đến Danh mục hạng bằng lái.
@@ -52,7 +51,7 @@ export class LicenseCategoryController {
     const { name, description } = req.body;
 
     // Khởi tạo và thực thi tự kiểm tra dữ liệu (Self-Validating DTO)
-    const dto = new CreateLicenseCategoryDTO({ name, description });
+    const dto = new CreateLicenseCategoryRequestDTO({ name, description });
     dto.isValid();
 
     const result = await this._licenseService.createCategory(dto);
@@ -77,7 +76,7 @@ export class LicenseCategoryController {
     const { name, description } = req.body;
 
     // Sử dụng DTO để validate dữ liệu cập nhật
-    const dto = new UpdateLicenseCategoryDTO({ id, name, description });
+    const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description });
     dto.isValid();
 
     const result = await this._licenseService.updateCategory(dto);

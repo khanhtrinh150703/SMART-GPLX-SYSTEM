@@ -3,129 +3,110 @@ import { IChapterRepository } from '@/domain/interfaces/repositories/i-chapter.r
 import { Chapter } from '@/domain/entities/chapter/chapter.entity';
 import { ChapterMapper } from '@/infrastructure/database/mappers/chapter.mapper';
 import { ICradle } from '@/shared/types/container.types';
-import { IChapterRecord } from '@/infrastructure/persistence/chapter.record';
+import { IChapterRecord, PrismaChapter } from '@/infrastructure/persistence/chapter.record';
 
 /**
  * @description Triển khai Repository cho Chương lý thuyết sử dụng MySQL và Prisma ORM.
- * Thực hiện các thao tác truy vấn dữ liệu thô và ánh xạ về Domain Entity để xử lý nghiệp vụ.
  */
 export class MySQLChapterRepository implements IChapterRepository {
-    private readonly _prisma: PrismaClient;
+  private readonly _prisma: PrismaClient;
 
-    /**
-     * @description Khởi tạo Repository với instance Prisma từ DI Container.
-     */
-    constructor({ prisma }: ICradle) {
-        this._prisma = prisma;
-    }
-
-    /**
-     * @description Truy vấn toàn bộ danh sách chương lý thuyết chưa bị xóa, sắp xếp theo thứ tự hiển thị.
-     * @returns {Promise<Chapter[]>}
-     */
-    public async findAll(): Promise<Chapter[]> {
-        const records = await this._prisma.chapter.findMany({
-            where: { deletedAt: null },
-            orderBy: { orderIndex: 'asc' }
-        }) as unknown as IChapterRecord[];
-
-        return records.map(ChapterMapper.toDomain);
+  constructor({ prisma }: ICradle) {
+    this._prisma = prisma;
   }
 
-    /**
-     * @description Tìm kiếm một chương lý thuyết đang hoạt động dựa trên ID.
-     * @param {string} id - UUID của chương.
-     * @returns {Promise<Chapter | null>}
-     */
-    public async findById(id: string): Promise<Chapter | null> {
-        const record = await this._prisma.chapter.findFirst({
-            where: { id, deletedAt: null }
-        }) as unknown as IChapterRecord | null;
+  /**
+   * Helper: "Thông dịch viên" từ Prisma sang Domain thông qua Record.
+   */
+  private _toDomain(raw: PrismaChapter | null): Chapter | null {
+    if (!raw) return null;
 
-        return record ? ChapterMapper.toDomain(record) : null;
-    }
+    // Mapping từ CamelCase của Prisma sang SnakeCase của IChapterRecord
+    const record: IChapterRecord = {
+      id: raw.id,
+      name: raw.name,
+      description: raw.description,
+      orderIndex: raw.orderIndex, // Giả định Prisma dùng orderIndex
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+      deletedAt: raw.deletedAt,
+    };
 
-    /**
-     * @description Truy vấn thông tin chương bao gồm cả các bản ghi đã bị xóa mềm (phục vụ Restore/History).
-     * @param {string} id - UUID của chương.
-     * @returns {Promise<Chapter | null>}
-     */
-    public async findByIdIncludingDeleted(id: string): Promise<Chapter | null> {
-        const record = await this._prisma.chapter.findFirst({
-            where: { id }
-        }) as unknown as IChapterRecord | null;
+    return ChapterMapper.toDomain(record);
+  }
 
-        return record ? ChapterMapper.toDomain(record) : null;
-    }
+  public async findAll(): Promise<Chapter[]> {
+    const records = await this._prisma.chapter.findMany({
+      where: { deletedAt: null },
+      orderBy: { orderIndex: 'asc' }
+    });
 
-    /**
-     * @description Tìm kiếm chương lý thuyết theo tên (để kiểm tra tính duy nhất khi tạo/cập nhật).
-     * @param {string} name - Tên chương cần tìm.
-     * @returns {Promise<Chapter | null>}
-     */
-    public async findByName(name: string): Promise<Chapter | null> {
-        const record = await this._prisma.chapter.findFirst({
-            where: { name, deletedAt: null }
-        }) as unknown as IChapterRecord | null;
+    return records
+      .map((rec) => this._toDomain(rec as PrismaChapter))
+      .filter((item): item is Chapter => item !== null);
+  }
 
-        return record ? ChapterMapper.toDomain(record) : null;
-    }
+  public async findById(id: string): Promise<Chapter | null> {
+    const record = await this._prisma.chapter.findFirst({
+      where: { id, deletedAt: null }
+    });
+    return this._toDomain(record as PrismaChapter);
+  }
 
-    /**
-     * @description Lưu trữ một chương lý thuyết mới vào cơ sở dữ liệu.
-     * @param {Chapter} chapter - Thực thể Domain cần bền vững hóa.
-     * @returns {Promise<void>}
-     */
-    public async save(chapter: Chapter): Promise<void> {
-        const data = ChapterMapper.toPersistence(chapter);
+  public async findByIdIncludingDeleted(id: string): Promise<Chapter | null> {
+    const record = await this._prisma.chapter.findFirst({
+      where: { id }
+    });
+    return this._toDomain(record as PrismaChapter);
+  }
 
-        await this._prisma.chapter.create({
-            data: {
-                ...data,
-                id: data.id || undefined
-            }
-        });
-    }
+  public async findByName(name: string): Promise<Chapter | null> {
+    const record = await this._prisma.chapter.findFirst({
+      where: { name, deletedAt: null }
+    });
+    return this._toDomain(record as PrismaChapter);
+  }
 
-    /**
-     * @description Cập nhật thông tin chi tiết của một chương lý thuyết hiện có.
-     * @param {Chapter} chapter - Thực thể chứa dữ liệu đã thay đổi.
-     * @returns {Promise<void>}
-     */
-    public async update(chapter: Chapter): Promise<void> {
-        if (!chapter.id) return;
+  public async save(chapter: Chapter): Promise<void> {
+    const data = ChapterMapper.toPersistence(chapter);
 
-        const data = ChapterMapper.toPersistence(chapter);
+    await this._prisma.chapter.create({
+      data: {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        orderIndex: data.orderIndex, // Trả lại CamelCase cho Prisma
+      }
+    });
+  }
 
-        await this._prisma.chapter.update({
-            where: { id: chapter.id },
-            data: {
-                ...data,
-                updatedAt: new Date()
-            }
-        });
-    }
+  public async update(chapter: Chapter): Promise<void> {
+    if (!chapter.id) return;
 
-    /**
-     * @description Đếm số lượng câu hỏi thuộc về chương này để kiểm tra ràng buộc toàn vẹn trước khi xóa.
-     * @param {string} id - ID của chương lý thuyết.
-     * @returns {Promise<number>}
-     */
-    public async countQuestions(id: string): Promise<number> {
-        return await this._prisma.question.count({
-            where: { chapterId: id } // Fix: Phải tìm theo chapterId thay vì id câu hỏi
-        });
-    }
+    const data = ChapterMapper.toPersistence(chapter);
 
-    /**
-     * @description Khôi phục chương lý thuyết đã bị xóa mềm bằng cách đặt deletedAt về null.
-     * @param {string} id - UUID của chương cần khôi phục.
-     * @returns {Promise<void>}
-     */
-    public async restore(id: string): Promise<void> {
-        await this._prisma.chapter.update({
-            where: { id },
-            data: { deletedAt: null }
-        });
-    }
+    await this._prisma.chapter.update({
+      where: { id: chapter.id },
+      data: {
+        name: data.name,
+        description: data.description,
+        orderIndex: data.orderIndex,
+        updatedAt: new Date(),
+        deletedAt: data.deletedAt
+      }
+    });
+  }
+
+  public async countQuestions(id: string): Promise<number> {
+    return await this._prisma.question.count({
+      where: { chapterId: id }
+    });
+  }
+
+  public async restore(id: string): Promise<void> {
+    await this._prisma.chapter.update({
+      where: { id },
+      data: { deletedAt: null }
+    });
+  }
 }

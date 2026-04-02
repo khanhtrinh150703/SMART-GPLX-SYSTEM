@@ -3,7 +3,7 @@ import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
 import { LICENSE_ENDPOINTS } from '../../test.data'; // Đảm bảo đường dẫn import đúng
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/res-license-category.dto';
+import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
 
 // Giả định helper cho Auth
 // const getAuthHeader = () => ({ Authorization: `Bearer test-admin-token` });

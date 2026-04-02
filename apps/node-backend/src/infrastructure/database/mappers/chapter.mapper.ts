@@ -1,4 +1,4 @@
-import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto";
+import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto.respone";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterRecord } from "@/infrastructure/persistence/chapter.record";
 

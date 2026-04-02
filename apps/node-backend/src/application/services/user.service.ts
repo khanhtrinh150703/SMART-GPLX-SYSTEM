@@ -2,21 +2,23 @@ import { AppError, ErrorCode } from "@/shared/errors";
 import { UserStatus } from "@/domain/entities/user/user.status";
 import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
-import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from "../dtos/request/user.dto";
 import { REGEX } from "@/domain/constants/regex.constant";
 import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
 import { SystemRoles } from "@/domain/constants/roles.constant";
 import { IUserService } from "@/domain/interfaces/services/i-user.service";
-import { UserQueryDTO } from "../dtos/request/user-query.dto";
+import { UserQueryDTO } from "../dtos/request/user/user-query.request.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
-import { UserResponseDTO } from "../dtos/response/user/user.dto";
+import { UserResponseDTO } from "../dtos/response/user/user.respone.dto";
 import { ICradle } from "@/shared/types/container.types";
 import { RoleCacheService } from "@/infrastructure/security/role-cache.service";
 import { Role } from "@/domain/entities/role/role.entity";
 import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
 import bcrypt from 'bcrypt';
+import { UpdateProfileRequestDTO } from "../dtos/request/user/update-profile.request.dto";
+import { ChangePasswordRequestDTO } from "../dtos/request/user/update-password.request.dto";
+import { ChangeStatusRequestDTO } from "../dtos/request/user/update-status.request.dto";
 
 /**
  * Service quản lý các nghiệp vụ lõi liên quan đến Người dùng.
@@ -70,10 +72,10 @@ export class UserService implements IUserService {
     /**
      * Thực hiện cập nhật hồ sơ người dùng
      * @param {string} userId - ID của người dùng
-     * @param {UpdateProfileDTO} dto - Dữ liệu cần cập nhật
+     * @param {UpdateProfileRequestDTO} dto - Dữ liệu cần cập nhật
      * @returns {Promise<User>} Entity User sau khi đã cập nhật
      */
-    public async updateProfile(userId: string, dto: UpdateProfileDTO): Promise<User> {
+    public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<User> {
         // 1. Kiểm tra sự tồn tại của User (Sử dụng helper nội bộ)
         const user = await this.getActiveUserOrThrow(userId);
 
@@ -107,9 +109,9 @@ export class UserService implements IUserService {
     /**
      * Tác dụng: Thực hiện nghiệp vụ đổi mật khẩu và thu hồi toàn bộ phiên đăng nhập cũ.
      * @param {string} userId - ID người dùng lấy từ Token xác thực.
-     * @param {ChangePasswordDTO} dto - Dữ liệu mật khẩu cũ và mới.
+     * @param {ChangePasswordRequestDTO} dto - Dữ liệu mật khẩu cũ và mới.
      */
-    public async changePassword(userId: string, dto: ChangePasswordDTO): Promise<void> {
+    public async changePassword(userId: string, dto: ChangePasswordRequestDTO): Promise<void> {
         // 1. Rule 8: DTO tự validate dữ liệu đầu vào (Cheap Check)
         dto.validateOrThrow();
 
@@ -142,10 +144,10 @@ export class UserService implements IUserService {
     /**
      * Cập nhật trạng thái hoạt động của tài khoản (Dành cho quản trị viên).
      * @param {string} userId - ID của người dùng cần cập nhật.
-     * @param {ChangeStatusDTO} dto - Dữ liệu trạng thái mới.
+     * @param {ChangeStatusRequestDTO} dto - Dữ liệu trạng thái mới.
      * @returns {Promise<void>}
      */
-    public async updateStatus(userId: string, dto: ChangeStatusDTO): Promise<void> {
+    public async updateStatus(userId: string, dto: ChangeStatusRequestDTO): Promise<void> {
         const user = await this.getActiveUserOrThrow(userId);
         user.updateStatus(dto.status as UserStatus);
         await this._userRepo.update(user);

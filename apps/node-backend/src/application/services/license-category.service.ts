@@ -2,12 +2,12 @@
 import { LicenseCategory } from '@/domain/entities/license-category/license-category.entity';
 import { ILicenseCategoryRepository } from '@/domain/interfaces/repositories/i-license-category-repository';
 import { AppError, ErrorCode } from '@/shared/errors';
-import { CreateLicenseCategoryDTO } from '../dtos/request/license-category/create-license-category.dto';
-import { UpdateLicenseCategoryDTO } from '../dtos/request/license-category/update-license-category.dto';
-import { LicenseCategoryResponse } from '../dtos/response/license-category/res-license-category.dto';
+import { LicenseCategoryResponse } from '../dtos/response/license-category/license-category.respone.dto';
 import { LicenseCategoryMapper } from '@/infrastructure/database/mappers/license-category.mapper';
 import { ICradle } from '@/shared/types/container.types';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
+import { CreateLicenseCategoryRequestDTO } from '../dtos/request/license-category/create-license-category.request.dto';
+import { UpdateLicenseCategoryRequestDTO } from '../dtos/request/license-category/update-license-category.request.dto';
 
 /**
  * Service xử lý logic nghiệp vụ cho Hạng bằng lái.
@@ -31,9 +31,9 @@ export class LicenseCategoryService implements ILicenseCategoryService {
 
     /**
      * Tạo hạng bằng lái mới.
-     * @param {CreateLicenseCategoryDTO} dto - Dữ liệu đầu vào.
+     * @param {CreateLicenseCategoryRequestDTO} dto - Dữ liệu đầu vào.
      */
-    public async createCategory(dto: CreateLicenseCategoryDTO): Promise<LicenseCategoryResponse> {
+    public async createCategory(dto: CreateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse> {
         dto.isValid();
 
         const existing = await this._repo.findByName(dto.name);
@@ -77,10 +77,10 @@ export class LicenseCategoryService implements ILicenseCategoryService {
 
     /**
      * Cập nhật thông tin hạng bằng lái.
-     * @param {UpdateLicenseCategoryDTO} dto - Dữ liệu cập nhật từ Client.
+     * @param {UpdateLicenseCategoryRequestDTO} dto - Dữ liệu cập nhật từ Client.
      * @returns {Promise<void>}
      */
-    public async updateCategory(dto: UpdateLicenseCategoryDTO): Promise<LicenseCategoryResponse> {
+    public async updateCategory(dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse> {
         // 1. Tự kiểm tra định dạng dữ liệu
         dto.isValid();
 
@@ -120,7 +120,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
         // 2. Kiểm tra xem có đang thực sự bị xóa không
         // (Lưu ý: Domain Entity LicenseCategory cần có getter cho deletedAt hoặc prop tương đương)
         // Nếu bản ghi chưa xóa thì không cần restore
-        if (category.isDeleted()) {
+        if (!category.isDeleted()) {
             throw new AppError(ErrorCode.LICENSE.ALREADY_EXISTS);
         }
 

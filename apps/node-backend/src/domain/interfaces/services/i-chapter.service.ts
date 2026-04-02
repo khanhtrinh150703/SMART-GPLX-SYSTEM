@@ -1,5 +1,6 @@
-import { CreateChapterDTO, UpdateChapterDTO } from "@/application/dtos/request/chapter/chapter.dto";
-import { ChapterResponseDTO} from "@/application/dtos/response/chapter/chapter.dto";
+import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
+import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
+import { ChapterResponseDTO} from "@/application/dtos/response/chapter/chapter.dto.respone";
 
 /**
  * @description Interface điều phối các nghiệp vụ quản lý Chương lý thuyết (Chapter Domain).
@@ -21,17 +22,17 @@ export interface IChapterService {
 
   /**
    * @description Khởi tạo và lưu trữ một chương lý thuyết mới vào hệ thống.
-   * @param {CreateChapterDTO} dto - Dữ liệu khởi tạo chương.
+   * @param {CreateChapterRequestDTO} dto - Dữ liệu khởi tạo chương.
    * @returns {Promise<void>}
    */
-  createChapter(dto: CreateChapterDTO): Promise<ChapterResponseDTO>;
+  createChapter(dto: CreateChapterRequestDTO): Promise<ChapterResponseDTO>;
 
   /**
    * @description Cập nhật thông tin chi tiết hoặc thay đổi thứ tự hiển thị của chương.
-   * @param {UpdateChapterDTO} dto - Dữ liệu cập nhật kèm ID định danh.
+   * @param {UpdateChapterRequestDTO} dto - Dữ liệu cập nhật kèm ID định danh.
    * @returns {Promise<void>}
    */
-  updateChapter(dto: UpdateChapterDTO): Promise<ChapterResponseDTO>;
+  updateChapter(dto: UpdateChapterRequestDTO): Promise<ChapterResponseDTO>;
 
   /**
    * @description Xóa mềm chương lý thuyết khỏi hệ thống (Chỉ thực hiện khi không có câu hỏi liên quan).

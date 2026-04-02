@@ -1,4 +1,4 @@
-import { RoleDTO } from "../user/user.dto";
+import { RoleResponseDTO } from "../role/role.respone.dto";
 
 /**
  * @description DTO phản hồi sau khi đăng nhập thành công, bao gồm thông tin hồ sơ và bộ đôi mã thông báo bảo mật (Tokens).
@@ -30,8 +30,8 @@ export interface LoginResponseDTO {
     /** @property {Date} updatedAt - Thời điểm cập nhật thông tin gần nhất. */
     updatedAt: Date;
 
-    /** @property {RoleDTO[]} roles - Danh sách vai trò và quyền hạn được gán cho người dùng. */
-    roles: RoleDTO[];
+    /** @property {RoleResponseDTO[]} roles - Danh sách vai trò và quyền hạn được gán cho người dùng. */
+    roles: RoleResponseDTO[];
   };
 
   /** @description Mã thông báo truy cập ngắn hạn dùng để gọi các API bảo mật (JWT Access Token). */

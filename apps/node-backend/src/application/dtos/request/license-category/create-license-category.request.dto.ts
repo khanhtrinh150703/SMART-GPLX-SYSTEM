@@ -6,7 +6,7 @@ import { ErrorCode } from "@/shared/errors/error-codes";
  * Data Transfer Object cho việc tạo mới Hạng bằng lái.
  * Sử dụng cho việc nhận và kiểm tra dữ liệu từ Request Body.
  */
-export class CreateLicenseCategoryDTO {
+export class CreateLicenseCategoryRequestDTO {
   public readonly id?: string; // ID thường là optional khi tạo mới (DB tự gen)
   public readonly name: string;
   public readonly description: string;
@@ -15,7 +15,7 @@ export class CreateLicenseCategoryDTO {
    * Constructor nhận vào dữ liệu thô để khởi tạo object.
    * Thực hiện trim() dữ liệu ngay từ đầu để tránh lỗi khoảng trắng.
    */
-  constructor(data: Partial<CreateLicenseCategoryDTO>) {
+  constructor(data: Partial<CreateLicenseCategoryRequestDTO>) {
     this.id = data.id;
     this.name = data.name?.trim() || "";
     this.description = data.description?.trim() || "";

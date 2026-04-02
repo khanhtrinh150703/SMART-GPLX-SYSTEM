@@ -1,15 +1,15 @@
 import bcrypt from 'bcrypt';
-import { LoginInputDTO } from '../dtos/request/loginInput.dto';
-import { LoginResponseDTO } from '../dtos/response/auth/auth.dto';
+import { LoginResponseDTO } from '../dtos/response/auth/auth.respone.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
 import { UserService } from './user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { TokenPayload } from '@/shared/types/auth.types';
 import { ITokenManager } from '@/domain/interfaces/external/i-token-manager';
-import { ResetPasswordDTO } from '../dtos/request/auth.dto';
 import { OtpService } from './otp.service';
 import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
 import { ICradle } from '@/shared/types/container.types';
+import { ResetPasswordRequestDTO } from '../dtos/request/auth/reset-password.request.dto';
+import { LoginRequestDTO } from '../dtos/request/auth/login.request.dto';
 
 /**
  * Service xử lý logic nghiệp vụ liên quan đến xác thực và bảo mật tài khoản.
@@ -32,10 +32,10 @@ export class AuthService implements IAuthService {
 
   /**
    * Xử lý đăng nhập, kiểm tra thông tin định danh và cấp phát bộ đôi Token.
-   * @param {LoginInputDTO} dto - Dữ liệu đăng nhập (username/password).
+   * @param {LoginRequestDTO} dto - Dữ liệu đăng nhập (username/password).
    * @returns {Promise<LoginResponseDTO>} Thông tin profile sạch và cặp JWT.
    */
-  public async login(dto: LoginInputDTO): Promise<LoginResponseDTO> {
+  public async login(dto: LoginRequestDTO): Promise<LoginResponseDTO> {
     // 1. Rule 8: Cheap Check - Validate dữ liệu đầu vào cơ bản
     if (!dto.isValid()) {
       throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
@@ -83,10 +83,10 @@ export class AuthService implements IAuthService {
 
   /**
    * Xác thực mã OTP và tiến hành thiết lập mật khẩu mới.
-   * @param {ResetPasswordDTO} dto - Dữ liệu gồm email, mã otp và mật khẩu mới.
+   * @param {ResetPasswordRequestDTO} dto - Dữ liệu gồm email, mã otp và mật khẩu mới.
    * @returns {Promise<void>}
    */
-  public async resetPassword(dto: ResetPasswordDTO): Promise<void> {
+  public async resetPassword(dto: ResetPasswordRequestDTO): Promise<void> {
     // 1. DTO tự kiểm tra định dạng dữ liệu
     dto.validateOrThrow();
 

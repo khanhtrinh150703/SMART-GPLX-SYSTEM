@@ -3,7 +3,7 @@ import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
 import { CHAPTER_ENDPOINTS } from '../../test.data'; // Giả định cậu đã định nghĩa CHAPTER_ENDPOINTS
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { ChapterResponseDTO } from '@/application/dtos/response/chapter/chapter.dto';
+import { ChapterResponseDTO } from '@/application/dtos/response/chapter/chapter.dto.respone';
 
 /**
  * @description Bộ suite kiểm thử tích hợp (Integration Test) cho quy trình quản lý Chương lý thuyết.

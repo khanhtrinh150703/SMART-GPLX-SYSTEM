@@ -1,5 +1,4 @@
 import { Response } from 'express';
-import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from '@/application/dtos/request/user.dto';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Result } from '@/shared/responses/api-response';
 
@@ -7,9 +6,12 @@ import { Result } from '@/shared/responses/api-response';
 import { catchAsync } from '@/shared/utils/catch-async';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { AuthRequest } from '@/shared/types/auth.types';
-import { UserQueryDTO } from '@/application/dtos/request/user-query.dto';
+import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
 import { ICradle } from '@/shared/types/container.types';
 import { IUserService } from '@/domain/interfaces/services/i-user.service';
+import { UpdateProfileDTO } from '@/application/dtos/request/user/update-profile.request.dto';
+import { ChangePasswordRequestDTO } from '@/application/dtos/request/user/update-password.request.dto';
+import { ChangeStatusRequestDTO } from '@/application/dtos/request/user/update-status.request.dto';
 
 
 export class UserController {
@@ -93,7 +95,7 @@ export class UserController {
     const userId = req.user.userId;
 
     // 2. Khởi tạo DTO từ body (Ép kiểu sang Record để tránh any)
-    const dto = new ChangePasswordDTO(req.body as Record<string, unknown>);
+    const dto = new ChangePasswordRequestDTO(req.body as Record<string, unknown>);
 
     // 3. Gọi Service
     await this._userService.changePassword(userId, dto);
@@ -115,7 +117,7 @@ export class UserController {
    */
   public updateStatus = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.params.id as string;
-    const dto = new ChangeStatusDTO(req.body);
+    const dto = new ChangeStatusRequestDTO(req.body);
 
     await this._userService.updateStatus(userId, dto);
 

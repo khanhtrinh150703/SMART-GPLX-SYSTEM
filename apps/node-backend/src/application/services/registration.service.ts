@@ -1,4 +1,3 @@
-import { RegisterDTO } from '../dtos/request/auth.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
 import { TIME_CONSTANTS } from '@/domain/constants/time.constants'
 import { User } from '@/domain/entities/user/user.entity';
@@ -9,6 +8,7 @@ import { IRegistrationService } from '@/domain/interfaces/services/i-registratio
 import { ICradle } from '@/shared/types/container.types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { RegisterRequestDTO } from '../dtos/request/auth/register.request.dto';
 
 /**
  * Service quản lý quy trình đăng ký người dùng mới và điều phối xác thực OTP.
@@ -34,10 +34,10 @@ export class RegistrationService implements IRegistrationService {
 
   /**
    * Tác dụng: Khởi tạo quy trình đăng ký, lưu dữ liệu tạm và ra lệnh gửi mã OTP.
-   * @param {RegisterDTO} dto - Dữ liệu đăng ký từ client.
+   * @param {RegisterRequestDTO} dto - Dữ liệu đăng ký từ client.
    * @returns {Promise<void>}
    */
-  public async initiate(dto: RegisterDTO): Promise<void> {
+  public async initiate(dto: RegisterRequestDTO): Promise<void> {
     this.validate(dto);
     const normalizedEmail = dto.email.trim().toLowerCase();
     const normalizedUsername = dto.username.trim().toLowerCase();
@@ -69,7 +69,7 @@ export class RegistrationService implements IRegistrationService {
     if (!rawData) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }
-    const userData: RegisterDTO = JSON.parse(rawData);
+    const userData: RegisterRequestDTO = JSON.parse(rawData);
     // 2. Xác thực mã OTP thông qua OtpService
     // Nếu sai, hàm verifyOtp sẽ tự động throw AppError
 
@@ -117,7 +117,7 @@ export class RegistrationService implements IRegistrationService {
    * nhưng nếu bạn muốn double-check ở tầng Service thì viết tại đây).
    * @param {RegisterDTO} dto - Dữ liệu cần kiểm tra.
    */
-  private validate(dto: RegisterDTO): void {
+  private validate(dto: RegisterRequestDTO): void {
     if (!dto.isEmail()) throw new AppError(ErrorCode.VALIDATION.INVALID_EMAIL);
     if (!dto.isPassword()) throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
   }

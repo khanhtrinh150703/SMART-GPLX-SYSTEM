@@ -1,6 +1,6 @@
-import { LoginInputDTO } from "@/application/dtos/request/loginInput.dto";
-import { LoginResponseDTO } from "@/application/dtos/response/auth/auth.dto";
-import { ResetPasswordDTO } from "@/application/dtos/request/auth.dto";
+import { LoginRequestDTO } from "@/application/dtos/request/auth/login.request.dto";
+import { ResetPasswordRequestDTO } from "@/application/dtos/request/auth/reset-password.request.dto";
+import { LoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
 import { TokenPayload } from "@/shared/types/auth.types";
 
 /**
@@ -11,10 +11,10 @@ export interface IAuthService {
 
   /**
    * @description Thực hiện đăng nhập, xác thực danh tính và cấp phát bộ đôi Access/Refresh Token.
-   * @param {LoginInputDTO} dto - Thông tin định danh (Username/Email) và mật khẩu từ phía Client.
+   * @param {LoginRequestDTO} dto - Thông tin định danh (Username/Email) và mật khẩu từ phía Client.
    * @returns {Promise<LoginResponseDTO>} Đối tượng chứa thông tin hồ sơ người dùng và các mã thông báo truy cập.
    */
-  login(dto: LoginInputDTO): Promise<LoginResponseDTO>;
+  login(dto: LoginRequestDTO): Promise<LoginResponseDTO>;
 
   /**
    * @description Đăng xuất khỏi hệ thống và thu hồi quyền truy cập của phiên làm việc hiện tại.
@@ -32,8 +32,8 @@ export interface IAuthService {
 
   /**
    * @description Xác thực mã OTP và tiến hành thiết lập mật khẩu mới cho tài khoản người dùng.
-   * @param {ResetPasswordDTO} dto - Dữ liệu bao gồm Email, mã OTP và mật khẩu mới cần cập nhật.
+   * @param {ResetPasswordRequestDTO} dto - Dữ liệu bao gồm Email, mã OTP và mật khẩu mới cần cập nhật.
    * @returns {Promise<void>}
    */
-  resetPassword(dto: ResetPasswordDTO): Promise<void>;
+  resetPassword(dto: ResetPasswordRequestDTO): Promise<void>;
 }

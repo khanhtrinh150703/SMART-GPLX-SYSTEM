@@ -1,4 +1,4 @@
-import { RegisterDTO } from "@/application/dtos/request/auth.dto";
+import { RegisterRequestDTO } from "@/application/dtos/request/auth/register.request.dto";
 import { User } from "@/domain/entities/user/user.entity";
 
 /**
@@ -8,10 +8,10 @@ export interface IRegistrationService {
   
   /**
    * @description Khởi tạo quy trình đăng ký, lưu thông tin tạm thời và gửi mã OTP.
-   * @param {RegisterDTO} dto - Dữ liệu đăng ký đầu vào.
+   * @param {RegisterRequestDTO} dto - Dữ liệu đăng ký đầu vào.
    * @returns {Promise<void>}
    */
-  initiate(dto: RegisterDTO): Promise<void>;
+  initiate(dto: RegisterRequestDTO): Promise<void>;
 
   /**
    * @description Xác thực mã OTP và chính thức tạo tài khoản người dùng trong cơ sở dữ liệu.

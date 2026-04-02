@@ -20,7 +20,7 @@ export class ChapterController {
      * @route GET /api/v1/chapters
      * @returns {Promise<void>} Phản hồi danh sách ChapterResponseDTO.
      */
-    public getAll = async (_: Request, res: Response) => {
+    public getAll = async (_req: Request, res: Response) => {
         const response = await this._chapterService.getAllChapters();
 
         Result.ok(

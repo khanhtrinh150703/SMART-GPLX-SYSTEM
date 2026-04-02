@@ -1,6 +1,6 @@
-import { CreateLicenseCategoryDTO } from '@/application/dtos/request/license-category/create-license-category.dto';
-import { UpdateLicenseCategoryDTO } from '@/application/dtos/request/license-category/update-license-category.dto';
-import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/res-license-category.dto';
+import { CreateLicenseCategoryDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
+import { UpdateLicenseCategoryDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
+import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
 
 /**
  * Interface định nghĩa các nghiệp vụ (Use Cases) cho Hạng bằng lái.

@@ -4,9 +4,10 @@ import { ErrorCode } from "@/shared/errors/error-codes";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterService } from "@/domain/interfaces/services/i-chapter.service";
 import { AppError } from "@/shared/errors/error-app";
-import { ChapterResponseDTO } from "../dtos/response/chapter/chapter.dto";
+import { ChapterResponseDTO } from "../dtos/response/chapter/chapter.dto.respone";
 import { ChapterMapper } from "@/infrastructure/database/mappers/chapter.mapper";
-import { CreateChapterDTO, UpdateChapterDTO } from "../dtos/request/chapter/chapter.dto";
+import { CreateChapterRequestDTO} from "../dtos/request/chapter/create-chapter.request.dto";
+import { UpdateChapterRequestDTO } from "../dtos/request/chapter/update-chapter.request.dto";
 
 /**
  * @description Dịch vụ điều phối nghiệp vụ quản lý các chương lý thuyết (Chapter Domain).
@@ -39,10 +40,10 @@ export class ChapterService implements IChapterService {
 
   /**
    * @description Khởi tạo chương mới và trả về thông tin chương vừa tạo (DTO).
-   * @param {CreateChapterDTO} dto - Dữ liệu khởi tạo chương.
+   * @param {CreateChapterRequestDTO} dto - Dữ liệu khởi tạo chương.
    * @returns {Promise<ChapterResponseDTO>}
    */
-  public async createChapter(dto: CreateChapterDTO): Promise<ChapterResponseDTO> {
+  public async createChapter(dto: CreateChapterRequestDTO): Promise<ChapterResponseDTO> {
     // 1. Kiểm tra trùng tên (Cheap Check)
     const existing = await this._chapterRepo.findByName(dto.name.trim());
     if (existing) {
@@ -70,7 +71,7 @@ export class ChapterService implements IChapterService {
    * @param {UpdateChapterDTO} dto - Dữ liệu cập nhật.
    * @returns {Promise<ChapterResponseDTO>}
    */
-  public async updateChapter(dto: UpdateChapterDTO): Promise<ChapterResponseDTO> {
+  public async updateChapter(dto: UpdateChapterRequestDTO): Promise<ChapterResponseDTO> {
     // Lấy Entity để thực hiện logic nghiệp vụ
     const chapter = await this._getChapterEntityOrThrow(dto.id);
 
@@ -96,8 +97,8 @@ export class ChapterService implements IChapterService {
    * @returns {Promise<void>}
    */
   public async deleteChapter(id: string): Promise<void> {
+    console.log(id)
     const chapter = await this._getChapterEntityOrThrow(id);
-
     // Kiểm tra ràng buộc dữ liệu
     const questionCount = await this._chapterRepo.countQuestions(id);
     if (questionCount > 0) {

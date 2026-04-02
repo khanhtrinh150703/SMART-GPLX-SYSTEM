@@ -4,7 +4,7 @@ import { AppError, ErrorCode } from '@/shared/errors';
 /**
  * Data Transfer Object cho việc cập nhật Hạng bằng lái.
  */
-export class UpdateLicenseCategoryDTO {
+export class UpdateLicenseCategoryRequestDTO {
   public readonly id: string;
   public readonly name: string;
   public readonly description: string;

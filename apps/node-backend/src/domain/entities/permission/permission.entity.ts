@@ -1,22 +1,35 @@
+import { IPermissionProps } from "./permission.props";
+
 /**
- * @description Thực thể Quyền hạn (Permission) trong hệ thống
+ * Thực thể Quyền hạn (Permission) trong hệ thống.
  */
 export class Permission {
-  private constructor(
-    private readonly _id: string,
-    private readonly _name: string,
-    private readonly _description: string | null
-  ) {}
+  /**
+   * Private constructor để ép việc khởi tạo qua phương thức static (Factory/Reconstitute).
+   */
+  private constructor(private _props: IPermissionProps) {}
 
-  public get id(): string { return this._id; }
-  public get name(): string { return this._name; }
-  public get description(): string | null { return this._description; }
+  // --- Getters: Truy xuất từ _props ---
+  public get id(): string { return this._props.id; }
+  public get name(): string { return this._props.name; }
+  public get description(): string | null { return this._props.description; }
 
   /**
-   * @description Tái tạo thực thể Permission từ dữ liệu thô
-   * @param props Dữ liệu thô từ Database
+   * Tái tạo thực thể Permission từ dữ liệu thô (thường dùng trong Mapper).
+   * @param props Dữ liệu thô từ Database hoặc API.
    */
-  public static reconstitute(props: { id: string; name: string; description?: string | null }): Permission {
-    return new Permission(props.id, props.name, props.description || null);
+  public static reconstitute(props: IPermissionProps): Permission {
+    return new Permission({
+      id: props.id,
+      name: props.name,
+      description: props.description ?? null,
+    });
+  }
+
+  /**
+   * Helper để lấy ra object dữ liệu phẳng (nếu cần).
+   */
+  public toProps(): IPermissionProps {
+    return { ...this._props };
   }
 }
