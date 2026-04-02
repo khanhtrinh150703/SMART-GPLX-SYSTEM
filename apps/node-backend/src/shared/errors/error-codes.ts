@@ -72,6 +72,7 @@ export const ErrorCode = {
      * Kiểm tra format đầu vào (Dùng cho Class Validator).
      */
     VALIDATION: {
+        ID_REQUIRED: 'VAL_000',
         INVALID_EMAIL: 'VAL_101',
         INVALID_PASSWORD: 'VAL_102',
         CONFIRM_PASSWORD_MISMATCH: 'VAL_103',
@@ -80,7 +81,19 @@ export const ErrorCode = {
         INVALID_LENGTH: 'VAL_203',
         PASSWORD_MUST_BE_DIFFERENT: "VAL_204",
         PASSWORD_DIFFERENT: "VAL_205",
-    }
+        NAME_REQUIRED: 'VAL_001',
+        NAME_INVALID_LENGTH: 'VAL_002',
+        NAME_FORMAT_INVALID: 'VAL_003',
+        DESCRIPTION_REQUIRED: 'VAL_004',
+        DESCRIPTION_TOO_LONG: 'VAL_005',
+    },
+
+    LICENSE: {
+        NAME_ALREADY_EXISTS: 'LIC_409',
+        ALREADY_EXISTS: 'LIC_001',
+        NOT_FOUND: 'LIC_002',
+        IS_IN_USE: 'LIC_003',
+    },
 } as const;
 
 export type ErrorCodeType = {

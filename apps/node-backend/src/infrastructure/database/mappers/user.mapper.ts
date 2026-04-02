@@ -1,7 +1,7 @@
 import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
-import { LoginResponseDTO } from '@/application/dtos/response/auth.dto';
-import { UserResponseDTO } from '@/application/dtos/response/user.dto';
+import { LoginResponseDTO } from '@/application/dtos/response/auth/auth.dto';
+import { UserResponseDTO } from '@/application/dtos/response/user/user.dto';
 import { RoleCacheService } from '@/infrastructure/security/role-cache.service';
 import { Role } from '@/domain/entities/role/role.entity';
 import { Permission } from '@/domain/entities/permission/permission.entity';

@@ -127,6 +127,7 @@ src/
 │   ├── external-services/        # Kết nối với các dịch vụ bên thứ 3
 │   │   └── mailer/
 │   │       └── mailer.service.ts # Ví dụ: Gửi email
+│   ├── persistence
 │   ├── logging/                  # Hệ thống logging
 │   │   └── winston.logger.ts
 │   ├── repositories/             # Implement các interface từ Domain

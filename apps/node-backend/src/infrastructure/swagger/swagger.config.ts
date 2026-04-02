@@ -144,6 +144,46 @@ const paths = {
     },
   },
 
+  // Forgot & Reset Password
+  [`${API_BASE}/auth/forgot-password`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Yêu cầu gửi OTP quên mật khẩu',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ForgotPasswordDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': { description: 'OTP đã được gửi qua email' },
+        '404': { description: 'Email không tồn tại trong hệ thống' },
+        '429': { description: 'Gửi quá nhanh, đang bị khóa' },
+      },
+    },
+  },
+
+  [`${API_BASE}/auth/reset-password`]: {
+    post: {
+      tags: ['Authentication'],
+      summary: 'Xác thực OTP và đặt lại mật khẩu mới',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ResetPasswordDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': { description: 'Đặt lại mật khẩu thành công' },
+        '400': { description: 'Mã OTP sai hoặc đã hết hạn' },
+      },
+    },
+  },
+
   // ====================== USER MANAGEMENT ======================
   [`${API_BASE}/users/me/profile`]: {
     patch: {
@@ -304,47 +344,6 @@ const paths = {
     },
   },
 
-  // Forgot & Reset Password
-  [`${API_BASE}/auth/forgot-password`]: {
-    post: {
-      tags: ['Authentication'],
-      summary: 'Yêu cầu gửi OTP quên mật khẩu',
-      requestBody: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: { $ref: '#/components/schemas/ForgotPasswordDTO' },
-          },
-        },
-      },
-      responses: {
-        '200': { description: 'OTP đã được gửi qua email' },
-        '404': { description: 'Email không tồn tại trong hệ thống' },
-        '429': { description: 'Gửi quá nhanh, đang bị khóa' },
-      },
-    },
-  },
-
-  [`${API_BASE}/auth/reset-password`]: {
-    post: {
-      tags: ['Authentication'],
-      summary: 'Xác thực OTP và đặt lại mật khẩu mới',
-      requestBody: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: { $ref: '#/components/schemas/ResetPasswordDTO' },
-          },
-        },
-      },
-      responses: {
-        '200': { description: 'Đặt lại mật khẩu thành công' },
-        '400': { description: 'Mã OTP sai hoặc đã hết hạn' },
-      },
-    },
-  },
-
-  // Get all users (Admin)
   [`${API_BASE}/users`]: {
     get: {
       tags: ['User Management'],
@@ -352,24 +351,9 @@ const paths = {
       description: 'Yêu cầu quyền ADMIN. Hỗ trợ tìm kiếm và phân trang.',
       security: [{ bearerAuth: [] }],
       parameters: [
-        {
-          name: 'page',
-          in: 'query',
-          description: 'Trang hiện tại (Mặc định: 1)',
-          schema: { type: 'integer', default: 1 },
-        },
-        {
-          name: 'limit',
-          in: 'query',
-          description: 'Số lượng mỗi trang (Mặc định: 10)',
-          schema: { type: 'integer', default: 10 },
-        },
-        {
-          name: 'search',
-          in: 'query',
-          description: 'Tìm kiếm theo tên hoặc email',
-          schema: { type: 'string' },
-        },
+        { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+        { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
+        { name: 'search', in: 'query', schema: { type: 'string' } },
       ],
       responses: {
         '200': {
@@ -382,6 +366,141 @@ const paths = {
         },
         '401': { $ref: '#/components/responses/UnauthorizedError' },
         '403': { description: 'Không có quyền ADMIN' },
+      },
+    },
+  },
+
+  // ====================== LICENSE CATEGORIES ======================
+  [`${API_BASE}/license-categories`]: {
+    get: {
+      tags: ['License Category'],
+      summary: 'Lấy danh sách hạng bằng lái',
+      description: 'Trả về toàn bộ danh sách các hạng bằng lái đang hoạt động (chưa bị xóa mềm).',
+      responses: {
+        '200': {
+          description: 'Thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/LicenseCategoryListResponse' },
+            },
+          },
+        },
+      },
+    },
+    post: {
+      tags: ['License Category'],
+      summary: 'Tạo mới hạng bằng lái',
+      description: 'Tạo một hạng bằng lái mới vào hệ thống. Yêu cầu quyền Quản trị viên.',
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateLicenseCategoryDTO' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Đã tạo thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/StandardResponse' },
+            },
+          },
+        },
+        '409': {
+          description: 'Tên đã tồn tại trong hệ thống',
+        },
+      },
+    },
+  },
+
+  [`${API_BASE}/license-categories/{id}`]: {
+    put: {
+      tags: ['License Category'],
+      summary: 'Cập nhật hạng bằng lái',
+      description: 'Chỉnh sửa tên hoặc mô tả của hạng bằng lái hiện có.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          description: 'UUID của hạng bằng lái',
+          schema: { type: 'string', format: 'uuid' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateLicenseCategoryDTO' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Cập nhật thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/StandardResponse' },
+            },
+          },
+        },
+      },
+    },
+    delete: {
+      tags: ['License Category'],
+      summary: 'Xóa hạng bằng lái',
+      description: 'Thực hiện xóa mềm hạng bằng lái. Hệ thống sẽ chặn xóa nếu có câu hỏi hoặc đề thi liên quan.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          description: 'UUID của hạng bằng lái',
+          schema: { type: 'string', format: 'uuid' },
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'Xóa thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/StandardResponse' },
+            },
+          },
+        },
+      },
+    },
+  },
+
+  [`${API_BASE}/license-categories/{id}/restore`]: {
+    patch: {
+      tags: ['License Category'],
+      summary: 'Khôi phục hạng bằng lái',
+      description: 'Mở khóa (restore) hạng bằng lái đã bị xóa mềm trước đó.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          description: 'UUID của hạng bằng lái cần khôi phục',
+          schema: { type: 'string', format: 'uuid' },
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'Khôi phục thành công',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/StandardResponse' },
+            },
+          },
+        },
       },
     },
   },
@@ -450,6 +569,7 @@ const options = {
       },
 
       schemas: {
+        // Common Responses
         SuccessResponse: {
           type: 'object',
           properties: {
@@ -471,7 +591,17 @@ const options = {
           },
         },
 
-        // DTOs
+        StandardResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            code: { type: 'string', example: 'SYS_000' },
+            statusCode: { type: 'number', example: 200 },
+            message: { type: 'string', example: 'Thao tác thực hiện thành công' },
+          },
+        },
+
+        // Auth DTOs
         RegisterDTO: {
           type: 'object',
           required: ['username', 'email', 'password', 'confirmPassword'],
@@ -521,11 +651,30 @@ const options = {
           },
         },
 
+        ForgotPasswordDTO: {
+          type: 'object',
+          required: ['email'],
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+          },
+        },
+
+        ResetPasswordDTO: {
+          type: 'object',
+          required: ['email', 'otp', 'newPassword'],
+          properties: {
+            email: { type: 'string', format: 'email' },
+            otp: { type: 'string', example: '123456' },
+            newPassword: { type: 'string', minLength: 8, example: 'NewPass789!!!' },
+          },
+        },
+
+        // User DTOs
         UpdateProfileDTO: {
           type: 'object',
           properties: {
             fullName: { type: 'string', example: 'Trinh Cậu Vàng V2' },
-            urlPicture: { type: 'string | File ', format: 'uri', example: 'https://example.com/avatar.png' },
+            urlPicture: { type: 'string', format: 'uri', example: 'https://example.com/avatar.png' },
           },
         },
 
@@ -551,25 +700,6 @@ const options = {
           },
         },
 
-        ForgotPasswordDTO: {
-          type: 'object',
-          required: ['email'],
-          properties: {
-            email: { type: 'string', format: 'email', example: 'user@example.com' },
-          },
-        },
-
-        ResetPasswordDTO: {
-          type: 'object',
-          required: ['email', 'otp', 'newPassword'],
-          properties: {
-            email: { type: 'string', format: 'email' },
-            otp: { type: 'string', example: '123456' },
-            newPassword: { type: 'string', minLength: 8, example: 'NewPass789!!!' },
-          },
-        },
-
-        // User schemas
         UserResponseDTO: {
           type: 'object',
           properties: {
@@ -586,28 +716,72 @@ const options = {
         },
 
         UserListResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            data: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/UserResponseDTO' },
-            },
-            meta: {
+          allOf: [
+            { $ref: '#/components/schemas/SuccessResponse' },
+            {
               type: 'object',
               properties: {
-                total: { type: 'integer', example: 100 },
-                page: { type: 'integer', example: 1 },
-                limit: { type: 'integer', example: 10 },
-                totalPages: { type: 'integer', example: 10 },
+                data: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/UserResponseDTO' },
+                },
+                meta: {
+                  type: 'object',
+                  properties: {
+                    total: { type: 'integer', example: 100 },
+                    page: { type: 'integer', example: 1 },
+                    limit: { type: 'integer', example: 10 },
+                    totalPages: { type: 'integer', example: 10 },
+                  },
+                },
               },
             },
+          ],
+        },
+
+        // License Category Schemas
+        CreateLicenseCategoryDTO: {
+          type: 'object',
+          required: ['name', 'description'],
+          properties: {
+            name: { type: 'string', example: 'B2', description: 'Tên hạng bằng (Viết hoa và số)' },
+            description: { type: 'string', example: 'Xe ô tô dưới 9 chỗ', description: 'Mô tả chi tiết' },
           },
+        },
+
+        UpdateLicenseCategoryDTO: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'B2' },
+            description: { type: 'string', example: 'Mô tả cập nhật mới' },
+          },
+        },
+
+        LicenseCategoryListResponse: {
+          allOf: [
+            { $ref: '#/components/schemas/StandardResponse' },
+            {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', format: 'uuid' },
+                      name: { type: 'string' },
+                      description: { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+          ],
         },
       },
     },
 
-    paths, // ← Sử dụng biến paths đã định nghĩa ở trên
+    paths, // ← Đã merge đầy đủ
   },
   apis: [], // Nếu sau này dùng JSDoc thì thêm đường dẫn file vào đây
 };

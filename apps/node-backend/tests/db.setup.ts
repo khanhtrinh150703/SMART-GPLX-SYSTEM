@@ -26,6 +26,7 @@ export const connectDB = async () => {
 export const cleanupDB = async () => {
     console.log("🧹 Cleaning up database...");
     await prisma.user.deleteMany(); // Xóa sạch user sau khi test xong
+    await prisma.licenseCategory.deleteMany(); // Xóa sạch user sau khi test xong
     await prisma.$disconnect();
     if (redisClient) {
         await redisClient.quit(); // Hoặc redisClient.disconnect();
