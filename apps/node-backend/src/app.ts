@@ -4,7 +4,7 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import rootRouter from "./api/routes/index";
-import { specs } from './infrastructure/swagger/swagger.config';
+import { specs } from './infrastructure/swagger/index';
 import { globalErrorHandler } from './api/middlewares/error.middleware';
 import { requestTimer } from "./api/middlewares/timer.middleware";
 import { apiMonitor } from "./api/middlewares/monitor.middleware";
