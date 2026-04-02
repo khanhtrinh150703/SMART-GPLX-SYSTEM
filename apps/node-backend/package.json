@@ -68,7 +68,8 @@
     "db:pull:test": "dotenv -e .env.local -- prisma db pull",
     "db:gen": "npx prisma generate",
     "db:seed:test": "dotenv -e .env.local -- prisma db seed",
-    "db:seed:cicd": "dotenv -e .env.test -- prisma db seed"
+    "db:seed:cicd": "dotenv -e .env.test -- prisma db seed",
+    "db:see" : "npx prisma studio"
   },
   "prisma": {
     "seed": "npx tsx -r tsconfig-paths/register prisma/seed.ts"

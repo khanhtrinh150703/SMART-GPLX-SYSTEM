@@ -1,44 +1,94 @@
 import { AuthController } from "@/api/controllers/auth.controller";
+import { LicenseCategoryController } from "@/api/controllers/license-category.controller";
 import { UserController } from "@/api/controllers/user.controller";
 import { AuthService } from "@/application/services/auth.service";
+import { LicenseCategoryService } from "@/application/services/license-category.service";
 import { OtpService } from "@/application/services/otp.service";
 import { RegistrationService } from "@/application/services/registration.service";
 import { RoleService } from "@/application/services/role.service";
 import { UserService } from "@/application/services/user.service";
 import { IEmailService } from "@/domain/interfaces/external/i-email.service";
+import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
 import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
 import { IOtpRepository } from "@/domain/interfaces/repositories/i-otp.repository";
 import { IPendingUserRepository } from "@/domain/interfaces/repositories/i-pending-user.repository";
 import { IRoleRepository } from "@/domain/interfaces/repositories/i-role.repository";
 import { ITokenRepository } from "@/domain/interfaces/repositories/i-token.repository";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
-import { IFileStorageService } from "@/infrastructure/external-services/file-storage.service";
+import { ILicenseCategoryRepository } from "@/domain/interfaces/repositories/i-license-category-repository";
 import { PrismaClient } from "@prisma/client";
 import { Redis } from 'ioredis';
-// Định nghĩa tất cả những thứ sẽ nằm trong Container
+
+/**
+ * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
+ * Được sử dụng bởi Awilix để tự động inject vào constructor của các class thông qua cơ chế Proxy.
+ */
 export interface ICradle {
-    // Infrastructure
-    prisma: PrismaClient;
-    redisClient: Redis;
-    userRepository: IUserRepository;
-    otpRepository: IOtpRepository;
-    tokenRepository: ITokenRepository;
-    roleRepository: IRoleRepository;
-    emailService: IEmailService;
-    pendingUserRepository: IPendingUserRepository,
+    // --- HẠ TẦNG & CƠ SỞ DỮ LIỆU (INFRASTRUCTURE) ---
     
-    // Managers
+    /** @description Client ORM Prisma để tương tác với cơ sở dữ liệu MySQL. */
+    prisma: PrismaClient;
+
+    /** @description Client Ioredis để tương tác với máy chủ lưu trữ đệm Redis. */
+    redisClient: Redis;
+
+    /** @description Repository quản lý dữ liệu người dùng (MySQL). */
+    userRepository: IUserRepository;
+
+    /** @description Repository quản lý mã OTP (Redis). */
+    otpRepository: IOtpRepository;
+
+    /** @description Repository quản lý danh sách trắng/đen của Tokens (Redis). */
+    tokenRepository: ITokenRepository;
+
+    /** @description Repository quản lý vai trò và phân quyền (MySQL). */
+    roleRepository: IRoleRepository;
+
+    /** @description Repository quản lý danh mục hạng bằng lái (MySQL). */
+    licenseCategoryRepository: ILicenseCategoryRepository;
+
+    /** @description Dịch vụ gửi Email (Nodemailer/External API). */
+    emailService: IEmailService;
+
+    /** @description Repository lưu trữ thông tin đăng ký người dùng tạm thời (Redis). */
+    pendingUserRepository: IPendingUserRepository;
+
+    // --- QUẢN LÝ KỸ THUẬT (MANAGERS) ---
+
+    /** @description Quản lý vòng đời JWT, ký và xác thực mã thông báo. */
     tokenManager: ITokenManager;
 
-    // Services
+    // --- NGHIỆP VỤ ỨNG DỤNG (APPLICATION SERVICES) ---
+
+    /** @description Điều phối nghiệp vụ liên quan đến người dùng và hồ sơ cá nhân. */
     userService: UserService;
+
+    /** @description Xử lý logic sinh mã, gửi và xác thực OTP. */
     otpService: OtpService;
+
+    /** @description Điều phối luồng xác thực, đăng nhập và bảo mật tài khoản. */
     authService: AuthService;
+
+    /** @description Quản lý nghiệp vụ cho các loại hạng bằng lái. */
+    licenseCategoryService: LicenseCategoryService;
+
+    /** @description Điều phối quy trình đăng ký tài khoản người dùng mới. */
     registrationService: RegistrationService;
-    roleService: RoleService,
+
+    /** @description Quản lý nghiệp vụ liên quan đến vai trò hệ thống. */
+    roleService: RoleService;
+
+    /** @description Dịch vụ quản lý và lưu trữ tệp tin (Local/Cloud Storage). */
     fileStorageService: IFileStorageService;
-    
-    // Controllers
+
+    // --- GIAO TIẾP API (CONTROLLERS) ---
+
+    /** @description Xử lý các yêu cầu HTTP liên quan đến xác thực (Auth). */
     authController: AuthController;
+
+    /** @description Xử lý các yêu cầu HTTP liên quan đến người dùng (User). */
     userController: UserController;
-}// Định nghĩa tất cả những thứ sẽ nằm trong Container
+
+    /** @description Xử lý các yêu cầu HTTP liên quan đến hạng bằng lái. */
+    licenseCategoryController: LicenseCategoryController;
+}

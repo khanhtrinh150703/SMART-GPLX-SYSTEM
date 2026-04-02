@@ -1,5 +1,3 @@
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
 import { RegisterDTO } from '../dtos/request/auth.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
 import { TIME_CONSTANTS } from '@/domain/constants/time.constants'
@@ -9,6 +7,8 @@ import { UserService } from './user.service';
 import { IPendingUserRepository } from '@/domain/interfaces/repositories/i-pending-user.repository';
 import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
 import { ICradle } from '@/shared/types/container.types';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 /**
  * Service quản lý quy trình đăng ký người dùng mới và điều phối xác thực OTP.

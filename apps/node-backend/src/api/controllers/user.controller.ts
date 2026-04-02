@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from '@/application/dtos/request/user.dto';
-import { UserService } from '@/application/services/user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Result } from '@/shared/responses/api-response';
 
@@ -10,12 +9,13 @@ import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { AuthRequest } from '@/shared/types/auth.types';
 import { UserQueryDTO } from '@/application/dtos/request/user-query.dto';
 import { ICradle } from '@/shared/types/container.types';
+import { IUserService } from '@/domain/interfaces/services/i-user.service';
 
 
 export class UserController {
 
   // 1. Khai báo thuộc tính riêng tư (Private Property)
-  private readonly _userService: UserService;
+  private readonly _userService: IUserService;
 
   /**
    * @param {ICradle} cradle - Object chứa các dependencies từ Container
@@ -83,9 +83,11 @@ export class UserController {
   });
 
   /**
-     * Tác dụng: API endpoint thay đổi mật khẩu người dùng.
-     * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
-     */
+   * Tác dụng: API endpoint thay đổi mật khẩu người dùng.
+   * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
   public changePassword = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
     // 1. Lấy userId trực tiếp (Hết lỗi đỏ nhờ AuthRequest và Middleware)
     const userId = req.user.userId;
@@ -169,6 +171,8 @@ export class UserController {
    * @route GET /api/v1/users
    * @access Private (Admin only)
    * @description Lấy danh sách người dùng có phân trang và lọc.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
    */
   public getUsers = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
     // 1. Thu thập Query Params từ URL (vd: ?page=1&limit=10&role=STUDENT)

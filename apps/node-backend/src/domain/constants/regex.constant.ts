@@ -6,7 +6,7 @@ export const REGEX = {
     EMAIL: {
         /** Định dạng email cơ bản (Standard) */
         BASIC: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        
+
         /** Định dạng Gmail cụ thể (Yêu cầu ít nhất 6 ký tự trước @) */
         GMAIL_ONLY: /^[a-z0-9](\.?[a-z0-9]){5,}@gmail\.com$/,
 
@@ -28,5 +28,8 @@ export const REGEX = {
     PHONE: {
         /** Định dạng số điện thoại Việt Nam (10 số, bắt đầu bằng 03, 05, 07, 08, 09) */
         VIETNAM: /(84|0[3|5|7|8|9])+([0-9]{8})\b/
+    },
+    LICENSE: {
+        NAME_FORMAT: /^[A-Z0-9]+$/
     }
 } as const;
