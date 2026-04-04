@@ -23,11 +23,37 @@ export const connectDB = async () => {
     }
 };
 
+export const dropAllTables = async () => {
+    console.log("💣 Nuking all tables...");
+
+    try {
+        // 1. Tắt khóa ngoại
+        await prisma.$executeRawUnsafe(`SET FOREIGN_KEY_CHECKS = 0;`);
+
+        // 2. Lấy danh sách bảng
+        const tableNames = await prisma.$queryRaw<Array<{ TABLE_NAME: string }>>`
+      SELECT TABLE_NAME FROM information_schema.TABLES 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
+    `;
+
+        // 3. DROP từng bảng một
+        for (const { TABLE_NAME } of tableNames) {
+            if (TABLE_NAME !== "_prisma_migrations") {
+                await prisma.$executeRawUnsafe(`DROP TABLE \`${TABLE_NAME}\`;`);
+            }
+        }
+
+        // 4. Bật lại khóa ngoại
+        await prisma.$executeRawUnsafe(`SET FOREIGN_KEY_CHECKS = 1;`);
+
+        console.log("✨ All tables dropped! Now you need to run 'prisma db push'.");
+    } catch (error) {
+        console.error("❌ Drop failed:", error);
+    }
+};
+
 export const cleanupDB = async () => {
-    console.log("🧹 Cleaning up database...");
-    await prisma.user.deleteMany(); // Xóa sạch user sau khi test xong
-    await prisma.licenseCategory.deleteMany();
-    await prisma.chapter.deleteMany();
+    await dropAllTables()
     await prisma.$disconnect();
     if (redisClient) {
         await redisClient.quit(); // Hoặc redisClient.disconnect();

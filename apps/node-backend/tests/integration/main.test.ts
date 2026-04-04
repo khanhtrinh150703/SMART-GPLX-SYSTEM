@@ -3,6 +3,7 @@ import { authSteps } from './steps/auth.test';
 import { userSteps } from './steps/user.test';
 import { licenseSteps } from './steps/license.test';
 import { chapterSteps } from './steps/chapter.test';
+import { questionSteps } from './steps/question-management.test';
 import { cleanupDB, connectDB } from '../jest.setup';
 
 
@@ -31,6 +32,10 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
 
     describe('Phase 4: Chapter Operations', () => {
         chapterSteps();
+    });
+
+    describe('Phase 5: Question Operations', () => {
+        questionSteps();
     });
 
     // Dọn dẹp DB sau khi tất cả đã xong

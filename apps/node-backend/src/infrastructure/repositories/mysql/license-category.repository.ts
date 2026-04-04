@@ -3,15 +3,28 @@ import { LicenseCategory } from '@/domain/entities/license-category/license-cate
 import { ILicenseCategoryRepository } from '@/domain/interfaces/repositories/i-license-category-repository';
 import { LicenseCategoryMapper } from '@/infrastructure/database/mappers/license-category.mapper';
 import { ILicenseCategoryRecord, PrismaLicenseCategory } from '@/infrastructure/persistence/license-category.record';
-import { ICradle } from '@/shared/types/container.types';
+/**
+ * @interface IMySQLLicenseCategoryRepositoryCradle
+ * @description Các phụ thuộc cần thiết cho LicenseCategory Repository.
+ * Đảm bảo tính đóng gói và chỉ cung cấp đúng PrismaClient cho tầng dữ liệu.
+ */
+export interface IMySQLLicenseCategoryRepositoryCradle {
+  prisma: PrismaClient;
+}
 
 /**
+ * @class MySQLLicenseCategoryRepository
  * @description Triển khai Repository cho Hạng bằng lái sử dụng MySQL và Prisma ORM.
  */
 export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepository {
   private readonly _prisma: PrismaClient;
 
-  constructor({ prisma }: ICradle) {
+  /**
+   * @description Khởi tạo Repository với "vũ khí" Prisma chuyên dụng.
+   * @param {IMySQLLicenseCategoryRepositoryCradle} cradle - Dependencies được tiêm từ DI Container.
+   */
+  constructor({ prisma }: IMySQLLicenseCategoryRepositoryCradle) {
+    // Ép kiểu cụ thể giúp tránh việc các repository khác "đi lạc" vào đây
     this._prisma = prisma;
   }
 
@@ -37,7 +50,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     const records = await this._prisma.licenseCategory.findMany({
       where: { deletedAt: null }
     });
-    
+
     return records
       .map((rec) => this._toDomain(rec as PrismaLicenseCategory))
       .filter((item): item is LicenseCategory => item !== null);
@@ -91,6 +104,24 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
       where: { id },
       data: { deletedAt: new Date() }
     });
+  }
+
+  /**
+   * @description Kiểm tra sự tồn tại của bản ghi theo ID.
+   * @param {string} id - ID của danh mục/chương cần kiểm tra.
+   * @returns {Promise<boolean>} Trả về true nếu tồn tại và đang hoạt động (deletedAt là null), ngược lại false.
+   */
+  public async exists(id: string): Promise<boolean> {
+    // Dùng count để Database chỉ đếm số lượng, không bốc dữ liệu thừa (Over-fetching)
+    const count = await this._prisma.licenseCategory.count({
+      where: {
+        id,
+        deletedAt: null // Quan trọng: Chỉ tính những bản ghi "đang sống"
+      }
+    });
+
+    // Nếu count > 0 nghĩa là có tồn tại
+    return count > 0;
   }
 
   public async countRelatedData(id: string): Promise<{ questions: number; matrices: number; attempts: number }> {

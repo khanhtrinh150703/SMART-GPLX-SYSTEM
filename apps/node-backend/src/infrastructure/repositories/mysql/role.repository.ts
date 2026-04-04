@@ -1,16 +1,33 @@
 import { IRoleRepository } from "@/domain/interfaces/repositories/i-role.repository";
 import { Role } from "@/domain/entities/role/role.entity";
-import _prisma from "../../../../prisma/prisma";
 import { IRoleRecord, PrismaRoleWithPermissions } from "@/infrastructure/persistence/roles.record";
 import { RoleMapper } from "@/infrastructure/database/mappers/role.mapper";
+import { PrismaClient } from "@prisma/client";
 
 /**
- * @description Triển khai Repository quản lý Vai trò (Role) sử dụng MySQL và Prisma ORM.
+ * @interface IMySQLRoleRepositoryCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) dành riêng cho Role Repository.
+ * Chỉ cho phép tiếp cận PrismaClient để thực hiện các thao tác với bảng Roles.
+ */
+export interface IMySQLRoleRepositoryCradle {
+  prisma: PrismaClient;
+}
+
+/**
+ * @class MySQLRoleRepository
+ * @description Triển khai Repository cho Vai trò (Role) sử dụng MySQL và Prisma ORM.
+ * Quản lý các quyền hạn trong hệ thống (Admin, User, Instructor...).
  */
 export class MySQLRoleRepository implements IRoleRepository {
-  /** * Cấu hình Eager Loading. 
-   * Lưu ý: Tên 'rolePermissions' phải khớp với tên relation trong schema.prisma.
+  private readonly _prisma: PrismaClient;
+
+  /**
+   * @description Khởi tạo Repository với "vũ khí" Prisma được "tiêm" từ DI Container.
+   * @param {IMySQLRoleRepositoryCradle} cradle - Chỉ chứa PrismaClient.
    */
+  constructor({ prisma }: IMySQLRoleRepositoryCradle) {
+    this._prisma = prisma;
+  }
   private readonly _includePermissions = {
     rolePermissions: {
       include: {
@@ -45,7 +62,7 @@ export class MySQLRoleRepository implements IRoleRepository {
   }
 
   public async findByName(name: string): Promise<Role | null> {
-    const rawRole = await _prisma.role.findUnique({
+    const rawRole = await this._prisma.role.findUnique({
       where: { name },
       include: this._includePermissions,
     });
@@ -54,7 +71,7 @@ export class MySQLRoleRepository implements IRoleRepository {
   }
 
   public async findById(id: string): Promise<Role | null> {
-    const rawRole = await _prisma.role.findUnique({
+    const rawRole = await this._prisma.role.findUnique({
       where: { id },
       include: this._includePermissions,
     });
@@ -63,7 +80,7 @@ export class MySQLRoleRepository implements IRoleRepository {
   }
 
   public async findAll(): Promise<Role[]> {
-    const rawRoles = await _prisma.role.findMany({
+    const rawRoles = await this._prisma.role.findMany({
       include: this._includePermissions,
     });
 
@@ -79,7 +96,7 @@ export class MySQLRoleRepository implements IRoleRepository {
   public async save(role: Role): Promise<void> {
     const data = RoleMapper.toPersistence(role);
 
-    await _prisma.role.upsert({
+    await this._prisma.role.upsert({
       where: { id: role.id },
       update: { 
         name: data.name,

@@ -83,4 +83,16 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.CHAPTER.CREATE_FAILED]: 'Quá trình tạo mới chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
+
+    // --- QUESTION ---
+    [ErrorCode.QUESTION.NOT_FOUND]: 'Câu hỏi không tồn tại trong hệ thống.',
+    [ErrorCode.QUESTION.CHAPTER_REQUIRED]: 'ID chương lý thuyết không được để trống.',
+    [ErrorCode.QUESTION.CONTENT_INVALID]: 'Nội dung câu hỏi phải có ít nhất 10 ký tự.',
+    [ErrorCode.QUESTION.LICENSE_REQUIRED]: 'Vui lòng chọn ít nhất một hạng bằng lái.',
+    [ErrorCode.QUESTION.ANSWERS_INSUFFICIENT]: 'Mỗi câu hỏi phải cung cấp tối thiểu 2 đáp án.',
+    [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 'Câu hỏi bắt buộc phải có ít nhất một đáp án đúng.',
+    [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 'Đường dẫn hình ảnh minh họa không hợp lệ.',
+    [ErrorCode.QUESTION.ALREADY_EXISTS]: 'Nội dung câu hỏi này đã tồn tại trong hệ thống.',
+    [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
+    [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
 };

@@ -103,6 +103,19 @@ export const ErrorCode = {
         UPDATE_FAILED: 'CHPT_002',           // Lỗi khi cập nhật
         INVALID_ORDER: 'CHPT_003',           // Thứ tự hiển thị không hợp lệ
     },
+
+    QUESTION: {
+        NOT_FOUND: 'QST_404',             // Không tìm thấy câu hỏi
+        CHAPTER_REQUIRED: 'QST_001',      // Thiếu ID chương
+        CONTENT_INVALID: 'QST_002',       // Nội dung không hợp lệ (ngắn quá)
+        LICENSE_REQUIRED: 'QST_003',      // Thiếu hạng bằng lái
+        ANSWERS_INSUFFICIENT: 'QST_004',  // Thiếu số lượng đáp án (min 2)
+        CORRECT_ANSWER_MISSING: 'QST_005',// Thiếu đáp án đúng
+        IMAGE_URL_INVALID: 'QST_006',     // Link ảnh không hợp lệ
+        ALREADY_EXISTS: 'QST_409',        // Câu hỏi đã tồn tại (trùng nội dung)
+        CANNOT_DELETE_CRITICAL: 'QUESTION_CANNOT_DELETE_CRITICAL',
+        ANSWERS_SYNC_ERROR: 'QUESTION_ANSWERS_SYNC_ERROR',
+    },
 } as const;
 
 export type ErrorCodeType = {

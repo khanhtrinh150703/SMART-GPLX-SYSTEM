@@ -54,4 +54,6 @@ export interface IChapterRepository {
    * @returns {Promise<void>}
    */
   restore(id: string): Promise<void>;
+
+  exists(id: string): Promise<boolean>;
 }

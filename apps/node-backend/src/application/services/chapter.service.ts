@@ -1,21 +1,34 @@
 import { IChapterRepository } from "@/domain/interfaces/repositories/i-chapter.repository";
-import { ICradle } from "@/shared/types/container.types";
 import { ErrorCode } from "@/shared/errors/error-codes";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterService } from "@/domain/interfaces/services/i-chapter.service";
 import { AppError } from "@/shared/errors/error-app";
 import { ChapterResponseDTO } from "../dtos/response/chapter/chapter.dto.respone";
 import { ChapterMapper } from "@/infrastructure/database/mappers/chapter.mapper";
-import { CreateChapterRequestDTO} from "../dtos/request/chapter/create-chapter.request.dto";
+import { CreateChapterRequestDTO } from "../dtos/request/chapter/create-chapter.request.dto";
 import { UpdateChapterRequestDTO } from "../dtos/request/chapter/update-chapter.request.dto";
 
 /**
- * @description Dịch vụ điều phối nghiệp vụ quản lý các chương lý thuyết (Chapter Domain).
+ * @interface IChapterServiceCradle
+ * @description Các mảnh ghép (dependencies) dành riêng cho ChapterService.
+ * Giúp TypeScript canh gác chặt chẽ, không cho các Repo "đi lạc" vào đây.
+ */
+export interface IChapterServiceCradle {
+  chapterRepository: IChapterRepository;
+}
+
+/**
+ * @class ChapterService
+ * @description Xử lý logic nghiệp vụ cho các Chương lý thuyết lái xe.
  */
 export class ChapterService implements IChapterService {
   private readonly _chapterRepo: IChapterRepository;
 
-  constructor({ chapterRepository }: ICradle) {
+  /**
+   * @description Khởi tạo Service với túi đồ nghề chuyên dụng.
+   * @param {IChapterServiceCradle} cradle - Chỉ bao gồm những gì cần thiết để quản lý Chapter.
+   */
+  constructor({ chapterRepository }: IChapterServiceCradle) {
     this._chapterRepo = chapterRepository;
   }
 
@@ -97,7 +110,6 @@ export class ChapterService implements IChapterService {
    * @returns {Promise<void>}
    */
   public async deleteChapter(id: string): Promise<void> {
-    console.log(id)
     const chapter = await this._getChapterEntityOrThrow(id);
     // Kiểm tra ràng buộc dữ liệu
     const questionCount = await this._chapterRepo.countQuestions(id);
@@ -140,5 +152,9 @@ export class ChapterService implements IChapterService {
       throw new AppError(ErrorCode.CHAPTER.NOT_FOUND);
     }
     return chapter;
+  }
+
+  public async exists(id: string): Promise<boolean> {
+    return await this._chapterRepo.exists(id);
   }
 }

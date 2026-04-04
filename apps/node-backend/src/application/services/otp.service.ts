@@ -4,23 +4,18 @@ import { IOtpRepository } from '@/domain/interfaces/repositories/i-otp.repositor
 import { AppError, ErrorCode } from '@/shared/errors';
 import { TIME_CONSTANTS } from '@/domain/constants/time.constants'
 import { IOtpService } from '@/domain/interfaces/services/i-otp.service';
-import { ICradle } from '@/shared/types/container.types';
 
-/**
- * Dịch vụ xử lý nghiệp vụ tạo, gửi và xác thực mã OTP.
- */
+export interface IOtpServiceCradle {
+  otpRepository: IOtpRepository;
+  emailService: IEmailService;
+}
+
 export class OtpService implements IOtpService {
-  // 1. Khai báo các thuộc tính (properties) của class
   private readonly _otpRepo: IOtpRepository;
   private readonly _emailService: IEmailService;
 
-  /**
-   * @param {ICradle} cradle - Object chứa các dependencies từ DI Container
-   */
-  constructor({ otpRepository, emailService }: ICradle) {
-    // 2. Gán các dependency từ object vào thuộc tính class
-    // LƯU Ý: 'otpRepository' và 'emailService' phải khớp chính xác 
-    // với Key cậu đã đăng ký (register) trong container.ts
+  // Thay ICradle bằng IOtpServiceCradle
+  constructor({ otpRepository, emailService }: IOtpServiceCradle) {
     this._otpRepo = otpRepository;
     this._emailService = emailService;
   }

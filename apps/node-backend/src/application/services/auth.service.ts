@@ -1,30 +1,40 @@
 import bcrypt from 'bcrypt';
 import { LoginResponseDTO } from '../dtos/response/auth/auth.respone.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
-import { UserService } from './user.service';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { TokenPayload } from '@/shared/types/auth.types';
 import { ITokenManager } from '@/domain/interfaces/external/i-token-manager';
-import { OtpService } from './otp.service';
 import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
-import { ICradle } from '@/shared/types/container.types';
 import { ResetPasswordRequestDTO } from '../dtos/request/auth/reset-password.request.dto';
 import { LoginRequestDTO } from '../dtos/request/auth/login.request.dto';
+import { IUserService } from '@/domain/interfaces/services/i-user.service';
+import { IOtpService } from '@/domain/interfaces/services/i-otp.service';
 
 /**
- * Service xử lý logic nghiệp vụ liên quan đến xác thực và bảo mật tài khoản.
- * Triển khai các Use Cases: Đăng nhập, Đăng xuất và Khôi phục mật khẩu.
+ * @interface IAuthServiceCradle
+ * @description "Túi đồ nghề" bảo mật dành riêng cho AuthService.
+ * Tập hợp các service cần thiết để thực hiện Đăng nhập, Đăng xuất và OTP.
+ */
+export interface IAuthServiceCradle {
+  userService: IUserService;
+  tokenManager: ITokenManager;
+  otpService: IOtpService;
+}
+
+/**
+ * @class AuthService
+ * @description Dịch vụ điều phối logic nghiệp vụ liên quan đến Xác thực và Bảo mật.
  */
 export class AuthService implements IAuthService {
-  private readonly _userService: UserService;
+  private readonly _userService: IUserService;
   private readonly _tokenManager: ITokenManager;
-  private readonly _otpService: OtpService;
+  private readonly _otpService: IOtpService;
 
   /**
-   * Khởi tạo AuthService với các phụ thuộc được inject từ Container.
-   * @param {ICradle} dependencies - Các service cần thiết (User, Token, Otp).
+   * @description Khởi tạo AuthService với các phụ thuộc chuyên biệt.
+   * @param {IAuthServiceCradle} cradle - Chỉ chứa User, Token và OTP Services.
    */
-  constructor({ userService, tokenManager, otpService }: ICradle) {
+  constructor({ userService, tokenManager, otpService }: IAuthServiceCradle) {
     this._userService = userService;
     this._tokenManager = tokenManager;
     this._otpService = otpService;

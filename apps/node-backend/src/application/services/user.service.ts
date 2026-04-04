@@ -11,7 +11,6 @@ import { PaginatedResult } from "@/shared/types/pagination.types";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
 import { UserResponseDTO } from "../dtos/response/user/user.respone.dto";
-import { ICradle } from "@/shared/types/container.types";
 import { RoleCacheService } from "@/infrastructure/security/role-cache.service";
 import { Role } from "@/domain/entities/role/role.entity";
 import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
@@ -19,24 +18,36 @@ import bcrypt from 'bcrypt';
 import { UpdateProfileRequestDTO } from "../dtos/request/user/update-profile.request.dto";
 import { ChangePasswordRequestDTO } from "../dtos/request/user/update-password.request.dto";
 import { ChangeStatusRequestDTO } from "../dtos/request/user/update-status.request.dto";
+import { LoginResponseDTO } from "../dtos/response/auth/auth.respone.dto";
 
 /**
- * Service quản lý các nghiệp vụ lõi liên quan đến Người dùng.
- * Đã được tối ưu hóa để tái sử dụng logic và đảm bảo tính minh bạch.
+ * @interface IUserServiceCradle
+ * @description Định nghĩa các phụ thuộc cần thiết cho UserService.
+ * Bao gồm Repository để truy cập DB, TokenManager cho bảo mật và FileStorage cho upload ảnh.
+ */
+export interface IUserServiceCradle {
+    userRepository: IUserRepository;
+    tokenManager: ITokenManager;
+    fileStorageService: IFileStorageService;
+}
+
+/**
+ * @class UserService
+ * @description Xử lý các nghiệp vụ lõi liên quan đến Người dùng (User Domain).
  */
 export class UserService implements IUserService {
-    // 1. Khai báo các thuộc tính của class ở đây
     private readonly _userRepo: IUserRepository;
     private readonly _tokenManager: ITokenManager;
     private readonly _fileStorageService: IFileStorageService;
 
     /**
-     * @param {ICradle} cradle - Object chứa tất cả dependencies từ Container
+     * @description Khởi tạo Service với bộ công cụ chuyên biệt cho User.
+     * @param {IUserServiceCradle} cradle - Dependencies được tiêm tự động từ DI Container.
      */
-    constructor({ userRepository, tokenManager, fileStorageService }: ICradle) {
-        this._fileStorageService = fileStorageService;
+    constructor({ userRepository, tokenManager, fileStorageService }: IUserServiceCradle) {
         this._userRepo = userRepository;
         this._tokenManager = tokenManager;
+        this._fileStorageService = fileStorageService;
     }
     // ============================================================
     // PRIVATE HELPERS (Các hàm bổ trợ để tái sử dụng)
@@ -73,9 +84,9 @@ export class UserService implements IUserService {
      * Thực hiện cập nhật hồ sơ người dùng
      * @param {string} userId - ID của người dùng
      * @param {UpdateProfileRequestDTO} dto - Dữ liệu cần cập nhật
-     * @returns {Promise<User>} Entity User sau khi đã cập nhật
+     * @returns {Promise<LoginResponseDTO>} Entity User sau khi đã cập nhật
      */
-    public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<User> {
+    public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<LoginResponseDTO> {
         // 1. Kiểm tra sự tồn tại của User (Sử dụng helper nội bộ)
         const user = await this.getActiveUserOrThrow(userId);
 
@@ -91,7 +102,8 @@ export class UserService implements IUserService {
         user.updateProfile(dto.fullName, newUrlPicture);
 
         // 4. Lưu lại sự thay đổi vào Database thông qua Repository
-        return await this._userRepo.update(user);
+        const updatedUser = await this._userRepo.update(user);
+        return UserMapper.toLoginResponse(updatedUser, "", "");
     }
 
     /**

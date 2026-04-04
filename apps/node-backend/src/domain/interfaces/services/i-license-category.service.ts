@@ -1,5 +1,5 @@
-import { CreateLicenseCategoryDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
-import { UpdateLicenseCategoryDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
+import { CreateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
+import { UpdateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
 import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
 
 /**
@@ -15,10 +15,10 @@ export interface ILicenseCategoryService {
 
   /**
    * @description Tạo mới một hạng bằng lái.
-   * @param {CreateLicenseCategoryDTO} dto - Dữ liệu đầu vào.
+   * @param {CreateLicenseCategoryRequestDTO} dto - Dữ liệu đầu vào.
    * @returns {Promise<LicenseCategoryResponse>}
    */
-  createCategory(dto: CreateLicenseCategoryDTO): Promise<LicenseCategoryResponse>;
+  createCategory(dto: CreateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse>;
 
   /**
    * @description Xóa mềm một hạng bằng lái.
@@ -29,10 +29,10 @@ export interface ILicenseCategoryService {
 
   /**
    * @description Cập nhật thông tin hạng bằng lái.
-   * @param {UpdateLicenseCategoryDTO} dto - Dữ liệu cập nhật.
+   * @param {UpdateLicenseCategoryRequestDTO} dto - Dữ liệu cập nhật.
    * @returns {Promise<LicenseCategoryResponse>}
    */
-  updateCategory(dto: UpdateLicenseCategoryDTO): Promise<LicenseCategoryResponse>;
+  updateCategory(dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse>;
 
   /**
    * @description Khôi phục hạng bằng lái đã bị xóa mềm.
@@ -40,4 +40,6 @@ export interface ILicenseCategoryService {
    * @returns {Promise<LicenseCategoryResponse>}
    */
   restoreCategory(id: string): Promise<LicenseCategoryResponse>;
+
+  exists(id: string): Promise<boolean>;
 }

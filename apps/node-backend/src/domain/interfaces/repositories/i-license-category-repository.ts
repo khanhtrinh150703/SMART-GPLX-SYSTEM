@@ -72,4 +72,6 @@ export interface ILicenseCategoryRepository {
    * @returns {Promise<void>}
    */
   restore(id: string): Promise<void>;
+
+  exists(id: string): Promise<boolean>;
 }

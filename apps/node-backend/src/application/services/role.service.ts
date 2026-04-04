@@ -2,24 +2,30 @@ import { IRoleService } from "@/domain/interfaces/services/i-role.service";
 import { IRoleRepository } from "@/domain/interfaces/repositories/i-role.repository";
 import { Role } from "@/domain/entities/role/role.entity";
 import { AppError, ErrorCode } from "@/shared/errors";
-import { ICradle } from "@/shared/types/container.types";
+
+/**
+ * @interface IRoleServiceCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) dành riêng cho RoleService.
+ * Giúp TypeScript kiểm soát chặt chẽ các repository được "tiêm" vào.
+ */
+export interface IRoleServiceCradle {
+    roleRepository: IRoleRepository;
+}
 
 /**
  * @class RoleService
- * @implements IRoleService
- * @description Triển khai các nghiệp vụ về Role, đóng vai trò trung gian cho các Service khác
+ * @description Triển khai các nghiệp vụ liên quan đến vai trò (Role) và phân quyền.
+ * Đóng vai trò cung cấp dữ liệu Role cho các Service khác trong hệ thống.
  */
 export class RoleService implements IRoleService {
-    // 1. Khai báo thuộc tính của class ở đây
     private readonly _roleRepo: IRoleRepository;
 
     /**
-     * @param {ICradle} cradle - Object chứa tất cả dependencies từ Container
+     * @description Khởi tạo Service với túi đồ nghề chuyên dụng cho Role.
+     * @param {IRoleServiceCradle} cradle - Chứa các repository đã được đăng ký trong DI Container.
      */
-    constructor({ roleRepository }: ICradle) {
-        // 2. Gán dependency từ object vào thuộc tính class
-        // LƯU Ý: Tên 'roleRepository' phải khớp 100% với Key 
-        // cậu đã register trong container.ts
+    constructor({ roleRepository }: IRoleServiceCradle) {
+        // Gán trực tiếp từ Cradle chuyên biệt, không dùng ICradle tổng
         this._roleRepo = roleRepository;
     }
 

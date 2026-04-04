@@ -22,6 +22,9 @@ import { MySQLLicenseCategoryRepository } from '@/infrastructure/repositories/my
 import { MySQLChapterRepository } from '@/infrastructure/repositories/mysql/chapter.repository';
 import { ChapterService } from '@/application/services/chapter.service';
 import { ChapterController } from '@/api/controllers/chapter.controller';
+import { MySQLQuestionRepository } from '@/infrastructure/repositories/mysql/question.repository';
+import { QuestionService } from '@/application/services/question.service';
+import { QuestionController } from '@/api/controllers/question.controller';
 
 /**
  * @description Khởi tạo Dependency Injection (DI) Container sử dụng thư viện Awilix.
@@ -47,6 +50,7 @@ container.register({
     pendingUserRepository: asClass(RedisPendingUserRepository).singleton(),
     licenseCategoryRepository: asClass(MySQLLicenseCategoryRepository).singleton(),
     chapterRepository: asClass(MySQLChapterRepository).singleton(),
+    questionRepository: asClass(MySQLQuestionRepository).singleton(),
     otpRepository: asClass(RedisOtpRepository).singleton(),
 
     // --- TẦNG TIỆN ÍCH & BẢO MẬT (SECURITY & EXTERNAL SERVICES) ---
@@ -62,10 +66,13 @@ container.register({
     otpService: asClass(OtpService).singleton(),
     chapterService: asClass(ChapterService).singleton(),
     roleService: asClass(RoleService).singleton(),
+    questionService: asClass(QuestionService).singleton(),
+
 
     // --- TẦNG GIAO TIẾP (API LAYER - CONTROLLERS) ---
     userController: asClass(UserController).singleton(),
     authController: asClass(AuthController).singleton(),
     licenseCategoryController: asClass(LicenseCategoryController).singleton(),
     chapterController: asClass(ChapterController).singleton(),
+    questionController: asClass(QuestionController).singleton(),
 });

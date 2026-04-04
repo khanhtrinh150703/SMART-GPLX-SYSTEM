@@ -50,4 +50,15 @@ export class Message {
     FETCH_SUCCESS: 'Lấy danh sách chương lý thuyết thành công.',
     RESTORE_SUCCESS: 'Khôi phục chương lý thuyết thành công.',
   } as const
+
+  static readonly QUESTION = {
+    CREATE_SUCCESS: 'Thêm mới câu hỏi thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin câu hỏi thành công.',
+    DELETE_SUCCESS: 'Xóa câu hỏi thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách câu hỏi thành công.',
+    FETCH_DETAIL_SUCCESS: 'Lấy chi tiết câu hỏi thành công.',
+    RESTORE_SUCCESS: 'Khôi phục câu hỏi thành công.',
+    IMPORT_SUCCESS: 'Nhập danh sách câu hỏi từ file thành công.',
+    STATUS_UPDATE_SUCCESS: 'Cập nhật trạng thái câu hỏi thành công.',
+  } as const;
 }

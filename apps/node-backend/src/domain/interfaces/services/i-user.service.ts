@@ -6,6 +6,7 @@ import { UserResponseDTO } from "@/application/dtos/response/user/user.respone.d
 import { UpdateProfileRequestDTO } from "@/application/dtos/request/user/update-profile.request.dto";
 import { ChangePasswordRequestDTO } from "@/application/dtos/request/user/update-password.request.dto";
 import { ChangeStatusRequestDTO } from "@/application/dtos/request/user/update-status.request.dto";
+import { LoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
 
 /**
  * @description Interface định nghĩa các nghiệp vụ cốt lõi quản lý người dùng (User Domain).
@@ -17,9 +18,9 @@ export interface IUserService {
    * @description Cập nhật thông tin hồ sơ cá nhân của người dùng.
    * @param {string} userId - ID định danh duy nhất của người dùng.
    * @param {UpdateProfileRequestDTO} dto - Dữ liệu cập nhật (Họ tên, ảnh đại diện...).
-   * @returns {Promise<User>} Thực thể người dùng sau khi đã cập nhật thành công.
+   * @returns {Promise<LoginResponseDTO>} Thực thể người dùng sau khi đã cập nhật thành công.
    */
-  updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<User>;
+  updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<LoginResponseDTO>;
 
   /**
    * @description Lưu trực tiếp các thay đổi của thực thể User vào cơ sở dữ liệu.

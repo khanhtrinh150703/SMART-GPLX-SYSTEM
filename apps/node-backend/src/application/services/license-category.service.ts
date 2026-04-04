@@ -4,21 +4,33 @@ import { ILicenseCategoryRepository } from '@/domain/interfaces/repositories/i-l
 import { AppError, ErrorCode } from '@/shared/errors';
 import { LicenseCategoryResponse } from '../dtos/response/license-category/license-category.respone.dto';
 import { LicenseCategoryMapper } from '@/infrastructure/database/mappers/license-category.mapper';
-import { ICradle } from '@/shared/types/container.types';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
 import { CreateLicenseCategoryRequestDTO } from '../dtos/request/license-category/create-license-category.request.dto';
 import { UpdateLicenseCategoryRequestDTO } from '../dtos/request/license-category/update-license-category.request.dto';
 
 /**
- * Service xử lý logic nghiệp vụ cho Hạng bằng lái.
+ * @interface ILicenseCategoryServiceCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) cần thiết cho LicenseCategoryService.
+ * Giúp tuân thủ nguyên tắc Interface Segregation (ISP).
+ */
+export interface ILicenseCategoryServiceCradle {
+    licenseCategoryRepository: ILicenseCategoryRepository;
+}
+
+/**
+ * @class LicenseCategoryService
+ * @description Service xử lý logic nghiệp vụ liên quan đến các Hạng bằng lái (A1, A2, B1, B2...).
  */
 export class LicenseCategoryService implements ILicenseCategoryService {
     private readonly _repo: ILicenseCategoryRepository;
 
-    constructor({ licenseCategoryRepository }: ICradle) {
+    /**
+     * @description Khởi tạo Service với các dependency được "tiêm" từ DI Container.
+     * @param {ILicenseCategoryServiceCradle} cradle - Chỉ chứa những thứ Service này thực sự cần.
+     */
+    constructor({ licenseCategoryRepository }: ILicenseCategoryServiceCradle) {
         this._repo = licenseCategoryRepository;
     }
-
     /**
      * Lấy danh sách hạng bằng lái.
      * @returns {Promise<LicenseCategoryResponse[]>}
@@ -133,5 +145,9 @@ export class LicenseCategoryService implements ILicenseCategoryService {
         // 4. Thực hiện khôi phục
         await this._repo.restore(id);
         return LicenseCategoryMapper.toResponse(category);
+    }
+
+    public async exists(id: string): Promise<boolean> {
+        return await this._repo.exists(id);
     }
 }

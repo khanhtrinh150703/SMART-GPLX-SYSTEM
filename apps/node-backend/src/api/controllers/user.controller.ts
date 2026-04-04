@@ -1,30 +1,38 @@
 import { Response } from 'express';
-import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Result } from '@/shared/responses/api-response';
-
-// Import hàm bọc lỗi thần thánh
 import { catchAsync } from '@/shared/utils/catch-async';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { AuthRequest } from '@/shared/types/auth.types';
 import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
-import { ICradle } from '@/shared/types/container.types';
 import { IUserService } from '@/domain/interfaces/services/i-user.service';
 import { UpdateProfileDTO } from '@/application/dtos/request/user/update-profile.request.dto';
 import { ChangePasswordRequestDTO } from '@/application/dtos/request/user/update-password.request.dto';
 import { ChangeStatusRequestDTO } from '@/application/dtos/request/user/update-status.request.dto';
 
+/**
+ * @interface IUserControllerCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) cần thiết cho UserController.
+ * Giúp TypeScript canh gác chặt chẽ, chỉ cho phép tiêm đúng IUserService vào đây.
+ */
+export interface IUserControllerCradle {
+  userService: IUserService;
+}
 
+/**
+ * @class UserController
+ * @description Tiếp nhận các HTTP Request và điều phối xử lý nghiệp vụ liên quan đến Người dùng.
+ */
 export class UserController {
-
-  // 1. Khai báo thuộc tính riêng tư (Private Property)
+  // 1. Khai báo thuộc tính riêng tư (Sử dụng Interface để đạt tính Loose Coupling)
   private readonly _userService: IUserService;
 
   /**
-   * @param {ICradle} cradle - Object chứa các dependencies từ Container
+   * @description Khởi tạo UserController với "túi đồ nghề" chuyên biệt cho User.
+   * @param {IUserControllerCradle} cradle - Object chứa các dependencies được tiêm tự động từ Awilix.
    */
-  constructor({ userService }: ICradle) {
-    // 2. Gán instance userService từ "cái nôi" (Cradle) vào thuộc tính class
-    // LƯU Ý: Tên 'userService' phải khớp 100% với Key trong file container.ts
+  constructor({ userService }: IUserControllerCradle) {
+    // 2. Gán instance userService từ Cradle vào thuộc tính class
+    // LƯU Ý: Tên 'userService' phải khớp chính xác với Key trong file container.ts
     this._userService = userService;
   }
 
@@ -45,12 +53,9 @@ export class UserController {
 
     const updatedUser = await this._userService.updateProfile(userId, dto);
 
-    // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
-    const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
-
     Result.ok(
       res,
-      cleanUser,
+      updatedUser,
       Message.USER.UPDATE_SUCCESS,
       'USER_UPDATE_SUCCESS'
     );
@@ -63,7 +68,6 @@ export class UserController {
    * @returns {Promise<void>}
    */
   public updateProfileAdmin = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
-    console.log(req.body)
     const userId = req.params.id as string; // Hoặc req.user.id tùy theo Payload cậu đặt
 
     // 3. Đóng gói dữ liệu vào một Object duy nhất cho DTO
@@ -73,12 +77,10 @@ export class UserController {
 
     const updatedUser = await this._userService.updateProfile(userId, dto);
 
-    // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
-    const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
 
     Result.ok(
       res,
-      cleanUser,
+      updatedUser,
       Message.USER.UPDATE_SUCCESS,
       'USER_UPDATE_SUCCESS'
     );

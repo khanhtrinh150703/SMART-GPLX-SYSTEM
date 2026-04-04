@@ -2,19 +2,32 @@ import { PrismaClient } from '@prisma/client';
 import { IChapterRepository } from '@/domain/interfaces/repositories/i-chapter.repository';
 import { Chapter } from '@/domain/entities/chapter/chapter.entity';
 import { ChapterMapper } from '@/infrastructure/database/mappers/chapter.mapper';
-import { ICradle } from '@/shared/types/container.types';
 import { IChapterRecord, PrismaChapter } from '@/infrastructure/persistence/chapter.record';
 
 /**
+ * @interface IMySQLChapterRepositoryCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) cần thiết cho Chapter Repository.
+ * Chỉ cho phép tiếp cận PrismaClient để thực hiện các thao tác với Database.
+ */
+export interface IMySQLChapterRepositoryCradle {
+  prisma: PrismaClient;
+}
+
+/**
+ * @class MySQLChapterRepository
  * @description Triển khai Repository cho Chương lý thuyết sử dụng MySQL và Prisma ORM.
+ * Quản lý các bản ghi chương (Khái niệm, Quy tắc, Kỹ thuật lái xe...).
  */
 export class MySQLChapterRepository implements IChapterRepository {
   private readonly _prisma: PrismaClient;
 
-  constructor({ prisma }: ICradle) {
+  /**
+   * @description Khởi tạo Repository với "vũ khí" Prisma được "tiêm" từ DI Container.
+   * @param {IMySQLChapterRepositoryCradle} cradle - Chỉ chứa PrismaClient.
+   */
+  constructor({ prisma }: IMySQLChapterRepositoryCradle) {
     this._prisma = prisma;
   }
-
   /**
    * Helper: "Thông dịch viên" từ Prisma sang Domain thông qua Record.
    */
@@ -97,11 +110,30 @@ export class MySQLChapterRepository implements IChapterRepository {
     });
   }
 
+  /**
+   * @description Kiểm tra sự tồn tại của bản ghi theo ID.
+   * @param {string} id - ID của danh mục/chương cần kiểm tra.
+   * @returns {Promise<boolean>} Trả về true nếu tồn tại và đang hoạt động (deletedAt là null), ngược lại false.
+   */
+  public async exists(id: string): Promise<boolean> {
+    // Dùng count để Database chỉ đếm số lượng, không bốc dữ liệu thừa (Over-fetching)
+    const count = await this._prisma.chapter.count({
+      where: {
+        id,
+        deletedAt: null // Quan trọng: Chỉ tính những bản ghi "đang sống"
+      }
+    });
+
+    // Nếu count > 0 nghĩa là có tồn tại
+    return count > 0;
+  }
+
   public async countQuestions(id: string): Promise<number> {
     return await this._prisma.question.count({
       where: { chapterId: id }
     });
   }
+
 
   public async restore(id: string): Promise<void> {
     await this._prisma.chapter.update({

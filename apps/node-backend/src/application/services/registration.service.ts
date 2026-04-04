@@ -1,37 +1,44 @@
 import { ErrorCode, AppError } from '@/shared/errors';
 import { TIME_CONSTANTS } from '@/domain/constants/time.constants'
 import { User } from '@/domain/entities/user/user.entity';
-import { OtpService } from './otp.service';
-import { UserService } from './user.service';
 import { IPendingUserRepository } from '@/domain/interfaces/repositories/i-pending-user.repository';
 import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
-import { ICradle } from '@/shared/types/container.types';
+import { RegisterRequestDTO } from '../dtos/request/auth/register.request.dto';
+import { IUserService } from '@/domain/interfaces/services/i-user.service';
+import { IOtpService } from '@/domain/interfaces/services/i-otp.service';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { RegisterRequestDTO } from '../dtos/request/auth/register.request.dto';
 
 /**
- * Service quản lý quy trình đăng ký người dùng mới và điều phối xác thực OTP.
+ * @interface IRegistrationServiceCradle
+ * @description "Bộ lọc" dependencies cho RegistrationService.
+ * Đảm bảo service này chỉ tiếp cận đúng các công cụ cần thiết cho việc đăng ký.
+ */
+export interface IRegistrationServiceCradle {
+  userService: IUserService;
+  otpService: IOtpService;
+  pendingUserRepository: IPendingUserRepository;
+}
+
+/**
+ * @class RegistrationService
+ * @description Điều phối quy trình đăng ký tài khoản mới và xác thực OTP đầu vào.
  */
 export class RegistrationService implements IRegistrationService {
-
-  // 1. Khai báo các thuộc tính của class (biến private)
-  private readonly _userService: UserService;
-  private readonly _otpService: OtpService;
+  // Sử dụng Interface thay vì Class trực tiếp để tăng tính linh hoạt (Loose Coupling)
+  private readonly _userService: IUserService;
+  private readonly _otpService: IOtpService;
   private readonly _pendingRepo: IPendingUserRepository;
 
   /**
-   * @param {ICradle} cradle - Object chứa tất cả dependencies từ Container
+   * @description Khởi tạo Service với túi đồ nghề chuyên biệt.
+   * @param {IRegistrationServiceCradle} cradle - Dependencies được tiêm tự động từ Awilix.
    */
-  constructor({ userService, otpService, pendingUserRepository }: ICradle) {
-    // 2. Gán các dependency từ object 'cradle' vào thuộc tính class
-    // LƯU Ý: 'userService', 'otpService', 'pendingUserRepository' 
-    // phải khớp 100% với tên (key) cậu đã register trong file container.ts
+  constructor({ userService, otpService, pendingUserRepository }: IRegistrationServiceCradle) {
     this._userService = userService;
     this._otpService = otpService;
     this._pendingRepo = pendingUserRepository;
   }
-
   /**
    * Tác dụng: Khởi tạo quy trình đăng ký, lưu dữ liệu tạm và ra lệnh gửi mã OTP.
    * @param {RegisterRequestDTO} dto - Dữ liệu đăng ký từ client.

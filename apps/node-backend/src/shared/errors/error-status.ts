@@ -83,4 +83,16 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.CHAPTER.CREATE_FAILED]: 400,          // Bad Request
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 400,          // Bad Request
     [ErrorCode.CHAPTER.INVALID_ORDER]: 400,          // Bad Request
+
+    // --- QUESTION ---
+    [ErrorCode.QUESTION.NOT_FOUND]: 404,
+    [ErrorCode.QUESTION.CHAPTER_REQUIRED]: 400,
+    [ErrorCode.QUESTION.CONTENT_INVALID]: 400,
+    [ErrorCode.QUESTION.LICENSE_REQUIRED]: 400,
+    [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 400,
+    [ErrorCode.QUESTION.ANSWERS_INSUFFICIENT]: 400,
+    [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 400,
+    [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 400,
+    [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 400,
+    [ErrorCode.QUESTION.ALREADY_EXISTS]: 409,
 };

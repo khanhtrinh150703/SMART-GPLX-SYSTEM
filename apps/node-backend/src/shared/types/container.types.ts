@@ -21,6 +21,9 @@ import { Redis } from 'ioredis';
 import { IChapterRepository } from "@/domain/interfaces/repositories/i-chapter.repository";
 import { ChapterService } from "@/application/services/chapter.service";
 import { ChapterController } from "@/api/controllers/chapter.controller";
+import { QuestionService } from "@/application/services/question.service";
+import { IQuestionRepository } from "@/domain/interfaces/repositories/i-question.repository";
+import { QuestionController } from "@/api/controllers/question.controller";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -53,6 +56,9 @@ export interface ICradle {
     /** @description Repository quản lý chapter hạng bằng lái (MySQL). */
     chapterRepository: IChapterRepository;
 
+    /** @description Repository quản lý câu hỏi hạng bằng lái (MySQL). */
+    questionRepository: IQuestionRepository;
+
     /** @description Dịch vụ gửi Email (Nodemailer/External API). */
     emailService: IEmailService;
 
@@ -81,6 +87,9 @@ export interface ICradle {
     /** @description Quản lý nghiệp vụ cho các loại hạng bằng lái. */
     chapterService: ChapterService;
 
+    /** @description Quản lý nghiệp vụ cho câu hỏi. */
+    questionService: QuestionService;
+
     /** @description Điều phối quy trình đăng ký tài khoản người dùng mới. */
     registrationService: RegistrationService;
 
@@ -103,4 +112,7 @@ export interface ICradle {
 
     /** @description Xử lý các yêu cầu HTTP liên quan đến hạng bằng lái. */
     chapterController: ChapterController;
+
+    /** @description Xử lý các yêu cầu HTTP liên quan đến câu hỏi. */
+    quenstionController: QuestionController;
 }

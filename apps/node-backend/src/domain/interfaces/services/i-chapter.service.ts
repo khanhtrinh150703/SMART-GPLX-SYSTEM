@@ -1,12 +1,12 @@
 import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
 import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
-import { ChapterResponseDTO} from "@/application/dtos/response/chapter/chapter.dto.respone";
+import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto.respone";
 
 /**
  * @description Interface điều phối các nghiệp vụ quản lý Chương lý thuyết (Chapter Domain).
  */
 export interface IChapterService {
-  
+
   /**
    * @description Lấy danh sách toàn bộ chương lý thuyết, sắp xếp theo thứ tự hiển thị.
    * @returns {Promise<ChapterResponseDTO[]>} Danh sách thực thể Chương lý thuyết.
@@ -47,4 +47,6 @@ export interface IChapterService {
    * @returns {Promise<void>}
    */
   restoreChapter(id: string): Promise<ChapterResponseDTO>;
+
+  exists(id: string): Promise<boolean>;
 }

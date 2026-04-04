@@ -2,11 +2,8 @@ import { Request, Response } from 'express';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
-
-// IMPORT HÀM BỌC LỖI
 import { catchAsync } from '@/shared/utils/catch-async';
 import { AuthRequest } from '@/shared/types/auth.types';
-import { ICradle } from '@/shared/types/container.types';
 import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
 import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
 import { RegisterRequestDTO } from '@/application/dtos/request/auth/register.request.dto';
@@ -15,17 +12,30 @@ import { LoginRequestDTO } from '@/application/dtos/request/auth/login.request.d
 import { ResetPasswordRequestDTO } from '@/application/dtos/request/auth/reset-password.request.dto';
 
 /**
- * Controller xử lý các luồng xác thực và đăng ký người dùng.
- * Tuân thủ quy tắc: KHÔNG dùng try-catch, lỗi được chuyển tiếp cho Global Error Middleware
- * thông qua hàm bọc catchAsync.
+ * @interface IAuthControllerCradle
+ * @description "Túi đồ nghề" bảo mật cho AuthController.
+ * Tập hợp các service cần thiết để điều phối luồng Xác thực và Đăng ký.
+ */
+export interface IAuthControllerCradle {
+  authService: IAuthService;
+  registrationService: IRegistrationService;
+}
+
+/**
+ * @class AuthController
+ * @description Tiếp nhận và điều phối các yêu cầu HTTP liên quan đến Xác thực, Đăng ký và OTP.
+ * Tuân thủ: Chuyển tiếp lỗi cho Global Error Middleware qua wrapper (ví dụ: catchAsync).
  */
 export class AuthController {
-
   private readonly _authService: IAuthService;
   private readonly _registrationService: IRegistrationService;
 
-  // CHỈ NHẬN NHỮNG THỨ ĐÃ ĐĂNG KÝ TRONG CONTAINER
-  constructor({ authService, registrationService }: ICradle) {
+  /**
+   * @description Khởi tạo AuthController với các phụ thuộc chuyên biệt.
+   * @param {IAuthControllerCradle} cradle - Dependencies được tiêm tự động từ DI Container.
+   */
+  constructor({ authService, registrationService }: IAuthControllerCradle) {
+    // CHỈ NHẬN NHỮNG THỨ CẦN THIẾT CHO AUTH & REGISTRATION
     this._authService = authService;
     this._registrationService = registrationService;
   }

@@ -114,6 +114,7 @@ model Chapter {
   @@map("chapters")
 }
 
+
 model Question {
   id              String    @id @default(uuid()) @db.VarChar(36)
   chapterId       String    @map("chapter_id") @db.VarChar(36)
@@ -150,6 +151,7 @@ model Answer {
   id         String    @id @default(uuid()) @db.VarChar(36)
   questionId String    @map("question_id") @db.VarChar(36)
   content    String    @db.Text
+  imageUrl   String?   @map("image_url") @db.VarChar(255)
   isCorrect  Boolean   @default(false) @map("is_correct")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")

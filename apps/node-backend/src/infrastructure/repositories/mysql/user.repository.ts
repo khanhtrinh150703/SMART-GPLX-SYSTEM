@@ -1,13 +1,34 @@
 import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
-import prisma from "../../../../prisma/prisma";
 import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { IUserRecord, PrismaUserWithRoles } from "@/infrastructure/persistence/user.record";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
 
-export class MySQLUserRepository implements IUserRepository {
+/**
+ * @interface IMySQLUserRepositoryCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) dành riêng cho User Repository.
+ * Chỉ cho phép tiếp cận PrismaClient để thực hiện các thao tác với bảng Users.
+ */
+export interface IMySQLUserRepositoryCradle {
+  prisma: PrismaClient;
+}
 
+/**
+ * @class MySQLUserRepository
+ * @description Triển khai Repository cho Người dùng sử dụng MySQL và Prisma ORM.
+ * Quản lý các thông tin định danh, hồ sơ và trạng thái tài khoản.
+ */
+export class MySQLUserRepository implements IUserRepository {
+  private readonly _prisma: PrismaClient;
+
+  /**
+   * @description Khởi tạo Repository với "vũ khí" Prisma được "tiêm" từ DI Container.
+   * @param {IMySQLUserRepositoryCradle} cradle - Chỉ chứa PrismaClient.
+   */
+  constructor({ prisma }: IMySQLUserRepositoryCradle) {
+    this._prisma = prisma;
+  }
   /** @description Include roles từ bảng trung gian, map về key user_roles của IUserRecord */
   private readonly _userInclude = {
     userRoles: {
@@ -45,7 +66,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveByEmail(email: string): Promise<User | null> {
-    const raw = await prisma.user.findFirst({
+    const raw = await this._prisma.user.findFirst({
       where: { email, deletedAt: null },
       include: this._userInclude
     });
@@ -53,7 +74,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveByUsername(username: string): Promise<User | null> {
-    const raw = await prisma.user.findFirst({
+    const raw = await this._prisma.user.findFirst({
       where: { username, deletedAt: null },
       include: this._userInclude
     });
@@ -61,7 +82,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveById(id: string): Promise<User | null> {
-    const raw = await prisma.user.findFirst({
+    const raw = await this._prisma.user.findFirst({
       where: { id, deletedAt: null },
       include: this._userInclude
     });
@@ -69,7 +90,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveByIdentifier(identifier: string): Promise<User | null> {
-    const raw = await prisma.user.findFirst({
+    const raw = await this._prisma.user.findFirst({
       where: {
         OR: [{ email: identifier }, { username: identifier }],
         deletedAt: null,
@@ -80,7 +101,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findExistingInSystem(email: string, username: string): Promise<User[]> {
-    const raws = await prisma.user.findMany({
+    const raws = await this._prisma.user.findMany({
       where: {
         OR: [{ email }, { username }]
       },
@@ -90,7 +111,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findByEmailInSystem(email: string): Promise<User | null> {
-    const raw = await prisma.user.findFirst({
+    const raw = await this._prisma.user.findFirst({
       where: { email },
       include: this._userInclude
     });
@@ -98,7 +119,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findByUsernameInSystem(username: string): Promise<User | null> {
-    const raw = await prisma.user.findFirst({
+    const raw = await this._prisma.user.findFirst({
       where: { username },
       include: this._userInclude
     });
@@ -106,7 +127,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findByIdInSystem(id: string): Promise<User | null> {
-    const raw = await prisma.user.findUnique({
+    const raw = await this._prisma.user.findUnique({
       where: { id },
       include: this._userInclude
     });
@@ -115,7 +136,7 @@ export class MySQLUserRepository implements IUserRepository {
 
   async create(user: User): Promise<User> {
     const data = UserMapper.toPersistence(user);
-    const raw = await prisma.user.create({
+    const raw = await this._prisma.user.create({
       data: {
         ...data,
         userRoles: {
@@ -130,7 +151,7 @@ export class MySQLUserRepository implements IUserRepository {
 
   async update(user: User): Promise<User> {
     const data = UserMapper.toPersistence(user);
-    const raw = await prisma.user.update({
+    const raw = await this._prisma.user.update({
       where: { id: user.id },
       data: {
         ...data,
@@ -177,15 +198,15 @@ export class MySQLUserRepository implements IUserRepository {
       ];
     }
 
-    const [rawUsers, total] = await prisma.$transaction([
-      prisma.user.findMany({
+    const [rawUsers, total] = await this._prisma.$transaction([
+      this._prisma.user.findMany({
         where,
         include: this._userInclude,
         skip,
         take,
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.user.count({ where })
+      this._prisma.user.count({ where })
     ]);
 
     const domainUsers = rawUsers.map(raw => this._toDomain(raw) as User);
