@@ -4,12 +4,11 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Save, Hash, FileText, Activity, Info } from "lucide-react";
+import { BookOpen, Hash, FileText, Activity, Info } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import Input from "@/components/ui/Input/Input";
 import { Chapter } from "./chapter.config";
-import { z } from "zod";
 import { cn } from "@/lib/utils/utils";
 import { chapterEditSchema, ChapterFormEditValues } from "../schema/chapter.schema";
 

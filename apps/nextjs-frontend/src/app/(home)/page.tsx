@@ -9,7 +9,7 @@ import { HOME_FEATURES } from "@/components/features/home/FeatureCard/feature-ca
 import { Reveal } from "@/components/ui/Reveal";
 import { PromoBanner } from "@/components/features/home/PromoBanner";
 import { GeometricInteractiveBackground } from "@/components/common/EmeraldWhiteAurora";
-import { AmbientBackground } from "@/components/common/AmbientBackground";
+// import { AmbientBackground } from "@/components/common/AmbientBackground";
 
 export default function LandingPage() {
   useEffect(() => {

@@ -93,7 +93,7 @@ export class AuthService implements IAuthService {
     }
 
     // 3. Kiểm tra thực thể User trong Database
-    const user = await this._userService.getUsersbyId(payload.userId);
+    const user = await this._userService.getUserById(payload.userId);
     if (!user) {
       throw new AppError(ErrorCode.USER.NOT_FOUND);
     }

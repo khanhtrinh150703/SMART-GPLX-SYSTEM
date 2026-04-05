@@ -4,7 +4,7 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, Mail, Phone, ShieldCheck, Info } from "lucide-react";
+import { User, Mail } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import Input from "@/components/ui/Input/Input";

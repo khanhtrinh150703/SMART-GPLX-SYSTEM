@@ -88,7 +88,13 @@ export interface IUserService {
    */
   checkExisting(username: string, email: string): Promise<boolean>;
 
-  getUsersbyId(userId: string): Promise<User>;
+  /**
+   * @description Lấy thông tin chi tiết của một người dùng dựa trên mã định danh (ID).
+   * @param {string} userId - Mã định danh (ID) của người dùng cần truy xuất.
+   * @returns {Promise<User>} Trả về đối tượng người dùng (User) tương ứng.
+   */
+  getUserById(userId: string): Promise<User>;
+
   /**
    * @description Truy vấn danh sách người dùng có hỗ trợ phân trang và bộ lọc tìm kiếm.
    * @param {UserQueryDTO} query - Tham số truy vấn (Page, Limit, Search, Role, Status).

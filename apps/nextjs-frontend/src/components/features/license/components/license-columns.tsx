@@ -1,4 +1,4 @@
-import { Edit2, Trash2, RotateCcw, CreditCard, User, Clock, ClipboardCheck } from "lucide-react";
+import { Edit2, Trash2, RotateCcw, User, Clock, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { License } from "./license.config";

@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { CreditCard, Trash2, ShieldCheck } from "lucide-react"; // Dùng CreditCard cho GPLX
+import { CreditCard, Trash2 } from "lucide-react"; 
 import { StatusTabs } from "@/components/ui/StatusTabs/StatusTabs";
 import { ManagementToolbar } from "@/components/common/ManagementToolbar/ManagementToolbar";
 import { GenericPagination } from "@/components/common/Pagination/GenericPagination";
 
-// IMPORT: Các thành phần của License (Cập nhật đường dẫn thực tế của cậu)
 import {
   License,
   LICENSE_STATUS_OPTIONS,
@@ -14,13 +13,12 @@ import {
 } from "@/components/features/license/components/license.config";
 import EditLicenseModal from "@/components/features/license/components/EditLicenseModal";
 import BaseConfirmModal from "@/components/common/Modals/BaseConfirmModal";
-import {
-  LicenseFormEditValues,
-  LicenseFormValues,
-} from "@/components/features/license/schema/license.schema";
-import { LicenseTable } from "@/components/common/Generic-Table/LicenseTable";
+import { CreateLicensePayload, LicenseFormEditValues } from "@/components/features/license/schema/license.schema";
+import { LicenseTable } from "@/components/features/license/components/LicenseTable";
 import SplashScreen from "@/components/common/Loaders/SplashScreen";
-import CreateLicenseModal from "@/components/features/license/components/CreateLicenseModal";
+
+// FIX LỖI: Import đúng CreateLicensePayload từ Modal tạo mới
+import CreateLicenseModal  from "@/components/features/license/components/CreateLicenseModal";
 
 /**
  * LicensesPage - Trang quản lý các hạng giấy phép lái xe (GPLX)
@@ -39,21 +37,23 @@ export default function LicensesPage() {
     limit: 10,
   });
 
-  // Quản lý Modal & Thực thể được chọn (License)
+  // Quản lý Modal & Thực thể được chọn
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  // SplashScreen delay mượt mà
   useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => setIsMounted(true), 400);
+    return () => clearTimeout(timer);
   }, []);
 
   // --- 2. LOGIC LỌC DỮ LIỆU ---
   const allFilteredResults = useMemo(() => {
     return MOCK_LICENSES.filter((license) => {
       const matchesTab = currentTab === "all" || license.status === currentTab;
-      // Lọc theo tên hạng bằng (Ví dụ: A1, B2...)
       const matchesSearch = license.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -71,7 +71,6 @@ export default function LicensesPage() {
   }, [allFilteredResults, pagination.page, pagination.limit]);
 
   // --- 4. HANDLERS (Hàm xử lý) ---
-
   const handleEdit = (license: License) => {
     setSelectedLicense(license);
     setIsEditModalOpen(true);
@@ -106,16 +105,19 @@ export default function LicensesPage() {
     }
   };
 
-  const handleCreateLicense = async (data: LicenseFormValues) => {
+  // FIX LỖI: Đổi tham số từ LicenseFormValues sang CreateLicensePayload
+  const handleCreateLicense = async (data: CreateLicensePayload) => {
     setIsCreating(true);
     try {
-      console.log("Dữ liệu tạo mới:", data);
-      // Gọi API thêm mới ở đây...
-      // await api.licenses.create(data);
+      console.log("📦 Dữ liệu tạo mới gửi lên API:", data);
+      
+      // Giả lập API delay để nhìn thấy vòng quay Loading trên nút bấm
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // await axios.post('/api/licenses', data);
 
       setIsCreateModalOpen(false); // Đóng Modal khi thành công
     } catch (error) {
-      console.error(error);
+      console.error("❌ Lỗi khi tạo mới hạng bằng:", error);
     } finally {
       setIsCreating(false);
     }
@@ -133,14 +135,17 @@ export default function LicensesPage() {
     hasPreviousPage: pagination.page > 1,
   };
 
+  // --- MÀN HÌNH CHỜ ---
   if (!isMounted) {
     return (
       <SplashScreen icon={CreditCard} message="Đang tải cấu hình bằng lái..." />
     );
   }
 
+  // --- GIAO DIỆN CHÍNH ---
   return (
     <div className="flex flex-col gap-8 w-full animate-in fade-in duration-700">
+      
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3 text-emerald-600">
@@ -153,8 +158,7 @@ export default function LicensesPage() {
           Quản lý Hạng bằng lái <span className="text-emerald-500">.</span>
         </h1>
         <p className="text-slate-500 text-lg font-medium">
-          Cấu hình các loại giấy phép lái xe (A1, A2, B1, B2...) và quy định sát
-          hạch đi kèm.
+          Cấu hình các loại giấy phép lái xe (A1, A2, B1, B2...) và quy định sát hạch đi kèm.
         </p>
       </div>
 
@@ -186,7 +190,7 @@ export default function LicensesPage() {
       </div>
 
       {/* DATA SECTION */}
-      <div className="flex-1 bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-soft border border-white/80 overflow-hidden ring-1 ring-black/5 transition-all duration-500">
+      <div className="flex-1 bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-soft border border-white/80 overflow-hidden ring-1 ring-black/5 hover:shadow-emerald transition-all duration-500">
         <LicenseTable
           licenses={paginatedLicenses}
           isLoading={isLoading}
@@ -209,6 +213,14 @@ export default function LicensesPage() {
       </div>
 
       {/* --- MODALS SECTION --- */}
+
+      {/* 0. Modal Thêm mới License */}
+      <CreateLicenseModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleCreateLicense}
+        isLoading={isCreating}
+      />
 
       {/* 1. Modal Chỉnh sửa License */}
       <EditLicenseModal
@@ -236,12 +248,6 @@ export default function LicensesPage() {
           </>
         }
         confirmText="Xác nhận xóa"
-      />
-      <CreateLicenseModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateLicense}
-        isLoading={isCreating}
       />
     </div>
   );

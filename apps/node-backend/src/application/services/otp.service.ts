@@ -34,6 +34,17 @@ export class OtpService implements IOtpService {
    * @returns {Promise<void>}
    */
   public async requestOtp(userEmail: string): Promise<void> {
+
+    //     import requestIp from 'request-ip';
+
+    // // Trong Controller
+    // const clientIp = requestIp.getClientIp(req);
+    // Chặn theo IP trước để bot không dùng nhiều email phá hoại
+    // await globalApiLimiter.consume(ip); 
+
+    // // Chặn theo Email để không làm phiền người dùng
+    // await otpLimiter.daily.consume(email);
+    // await otpLimiter.resend.consume(email);
     // 1. Kiểm tra xem người dùng có đang bị khóa tính năng gửi lại không
     const isLocked = await this._otpRepo.isResendLocked(userEmail);
     if (isLocked) {

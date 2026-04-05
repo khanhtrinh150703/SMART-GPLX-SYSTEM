@@ -4,8 +4,6 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BookOpen, Hash, FileText, Info } from "lucide-react";
-import { z } from "zod";
-
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import { FormField } from "@/components/common/Form/FormField";

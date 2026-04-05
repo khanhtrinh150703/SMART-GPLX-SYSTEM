@@ -5,7 +5,6 @@ import {
   History,
   UserCircle,
   Settings,
-  AlertTriangle,
   Database,
   Users,
   CreditCard,

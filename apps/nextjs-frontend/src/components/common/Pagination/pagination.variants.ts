@@ -1,4 +1,4 @@
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 
 export const paginationButtonVariants = cva(
   "px-5 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-2",

@@ -12,13 +12,13 @@ import {
   CHAPTER_STATUS_OPTIONS,
   MOCK_CHAPTERS,
 } from "@/components/features/chapter/components/chapter.config";
-import { ChapterTable } from "@/components/common/Generic-Table/ChapterTable";
+import { ChapterTable } from "@/components/features/chapter/components/ChapterTable";
 
 // IMPORT: Các thành phần Modals
 import EditChapterModal from "@/components/features/chapter/components/EditChapterModal";
 import BaseConfirmModal from "@/components/common/Modals/BaseConfirmModal";
-import CreateChapterModal, { CreateChapterPayload } from "@/components/features/chapter/components/CreateChapterModal";
-import { ChapterFormEditValues } from "@/components/features/chapter/schema/chapter.schema";
+import CreateChapterModal from "@/components/features/chapter/components/CreateChapterModal";
+import { ChapterFormEditValues, CreateChapterPayload } from "@/components/features/chapter/schema/chapter.schema";
 
 /**
  * ChaptersPage - Trang quản lý danh sách chương học

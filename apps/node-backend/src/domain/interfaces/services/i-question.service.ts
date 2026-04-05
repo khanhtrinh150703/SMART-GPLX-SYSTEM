@@ -1,5 +1,5 @@
-import { CreateQuestionDto } from "@/application/dtos/request/question/create-question.request.dto";
-import { UpdateQuestionDto } from "@/application/dtos/request/question/update-question.request.dto";
+import { CreateQuestionRequestDto } from "@/application/dtos/request/question/create-question.request.dto";
+import { UpdateQuestionRequestDto } from "@/application/dtos/request/question/update-question.request.dto";
 import { QuestionResponseDto } from "@/application/dtos/response/question/question.respone.dto";
 
 /**
@@ -10,18 +10,18 @@ import { QuestionResponseDto } from "@/application/dtos/response/question/questi
 export interface IQuestionService {
   /**
    * @description Tiếp nhận DTO, thực hiện quy trình tạo mới câu hỏi và lưu trữ.
-   * @param {CreateQuestionDto} dto - Dữ liệu yêu cầu từ Client.
+   * @param {CreateQuestionRequestDto} dto - Dữ liệu yêu cầu từ Client.
    * @returns {Promise<QuestionResponseDto>} DTO phản hồi chứa thông tin câu hỏi vừa tạo.
    */
-  createQuestion(dto: CreateQuestionDto): Promise<QuestionResponseDto>;
+  createQuestion(dto: CreateQuestionRequestDto): Promise<QuestionResponseDto>;
 
   /**
    * @description Cập nhật thông tin chi tiết của một câu hỏi hiện có.
    * @param {string} id - ID của câu hỏi cần cập nhật.
-   * @param {UpdateQuestionDto} dto - Dữ liệu cập nhật mới.
+   * @param {UpdateQuestionRequestDto} dto - Dữ liệu cập nhật mới.
    * @returns {Promise<QuestionResponseDto>} DTO phản hồi sau khi cập nhật thành công.
    */
-  updateQuestion(id: string, dto: UpdateQuestionDto): Promise<QuestionResponseDto>;
+  updateQuestion(id: string, dto: UpdateQuestionRequestDto): Promise<QuestionResponseDto>;
 
   /**
    * @description Tìm kiếm tất cả câu hỏi thuộc về một chương (Chapter) cụ thể.

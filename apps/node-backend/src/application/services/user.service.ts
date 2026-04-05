@@ -227,7 +227,7 @@ export class UserService implements IUserService {
     * @param {string} userId - UserID cần tìm.
     * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
     */
-    public async getUsersbyId(userId: string): Promise<User> {
+    public async getUserById(userId: string): Promise<User> {
         const user = await this._userRepo.findActiveById(userId);
 
         if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
