@@ -86,6 +86,10 @@ export const ErrorCode = {
         NAME_FORMAT_INVALID: 'VAL_003',
         DESCRIPTION_REQUIRED: 'VAL_004',
         DESCRIPTION_TOO_LONG: 'VAL_005',
+        MIN_AGE_MUST_BE_NUMBER: 'VAL_006', // Đã thêm từ DTO trước
+        MIN_AGE_INVALID: 'VAL_007',
+        REFRESH_TOKEN_REQUIRED: 'VAL_008',
+        REFRESH_TOKEN_INVALID_FORMAT: 'VAL_009',
     },
 
     LICENSE: {
@@ -93,6 +97,28 @@ export const ErrorCode = {
         ALREADY_EXISTS: 'LIC_001',
         NOT_FOUND: 'LIC_002',
         IS_IN_USE: 'LIC_003',
+    },
+
+    CHAPTER: {
+        NOT_FOUND: 'CHPT_404',               // Không tìm thấy chương
+        ALREADY_EXISTS: 'CHPT_409',          // Trùng tên chương
+        HAS_RELATED_QUESTIONS: 'CHPT_403',   // Vi phạm ràng buộc (có câu hỏi)
+        CREATE_FAILED: 'CHPT_001',           // Lỗi khi tạo mới
+        UPDATE_FAILED: 'CHPT_002',           // Lỗi khi cập nhật
+        INVALID_ORDER: 'CHPT_003',           // Thứ tự hiển thị không hợp lệ
+    },
+
+    QUESTION: {
+        NOT_FOUND: 'QST_404',             // Không tìm thấy câu hỏi
+        CHAPTER_REQUIRED: 'QST_001',      // Thiếu ID chương
+        CONTENT_INVALID: 'QST_002',       // Nội dung không hợp lệ (ngắn quá)
+        LICENSE_REQUIRED: 'QST_003',      // Thiếu hạng bằng lái
+        ANSWERS_INSUFFICIENT: 'QST_004',  // Thiếu số lượng đáp án (min 2)
+        CORRECT_ANSWER_MISSING: 'QST_005',// Thiếu đáp án đúng
+        IMAGE_URL_INVALID: 'QST_006',     // Link ảnh không hợp lệ
+        ALREADY_EXISTS: 'QST_409',        // Câu hỏi đã tồn tại (trùng nội dung)
+        CANNOT_DELETE_CRITICAL: 'QUESTION_CANNOT_DELETE_CRITICAL',
+        ANSWERS_SYNC_ERROR: 'QUESTION_ANSWERS_SYNC_ERROR',
     },
 } as const;
 

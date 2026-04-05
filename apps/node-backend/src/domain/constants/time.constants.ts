@@ -6,6 +6,7 @@ export const TIME_CONSTANTS = {
   LOCK_TIME: 60,
   PENDING_TTL: 600,
   ACCESS_TOKEN_EXPIRE: 900,
+  REFRESH_TOKEN_EXPIRE: 30 * 24 * 60 * 60,
 } as const;
 
 

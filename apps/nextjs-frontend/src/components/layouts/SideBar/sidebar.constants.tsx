@@ -5,9 +5,10 @@ import {
   History,
   UserCircle,
   Settings,
-  AlertTriangle,
   Database,
   Users,
+  CreditCard,
+  BookOpen,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -37,14 +38,19 @@ export const NAV_ITEMS = [
     icon: <Users className="w-5 h-5" />,
   },
   {
-    href: "/questions",
-    label: "Ngân hàng câu hỏi",
-    icon: <Database className="w-5 h-5" />,
+    href: "/chapter", // Cập nhật theo yêu cầu của cậu
+    label: "Quản lý chương học",
+    icon: <BookOpen className="w-5 h-5" />, // Chapter Management
   },
   {
-    href: "/alert",
-    label: "Biển báo",
-    icon: <AlertTriangle className="w-5 h-5" />,
+    href: "/questions", // Cập nhật theo yêu cầu của cậu
+    label: "Ngân hàng câu hỏi",
+    icon: <Database className="w-5 h-5" />, // Question Bank
+  },
+  {
+    href: "/licenses", // Cập nhật theo yêu cầu của cậu
+    label: "Hạng bằng lái",
+    icon: <CreditCard className="w-5 h-5" />, // License/GPLX Management
   },
   {
     href: "/settings",

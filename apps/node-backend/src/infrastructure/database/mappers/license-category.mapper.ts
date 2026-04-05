@@ -1,4 +1,4 @@
-import { LicenseCategoryResponse } from "@/application/dtos/response/license-category/res-license-category.dto";
+import { LicenseCategoryResponse } from "@/application/dtos/response/license-category/license-category.respone.dto";
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 import { ILicenseCategoryRecord } from "@/infrastructure/persistence/license-category.record";
 
@@ -18,6 +18,7 @@ export class LicenseCategoryMapper {
       description: raw.description,
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
+      minAge: raw.minAge,
       deletedAt: raw.deleted_at ?? null,
     });
   }
@@ -44,6 +45,7 @@ export class LicenseCategoryMapper {
     return {
       id: entity.id || '',
       name: entity.name,
+      minAge: entity.minAge,
       description: entity.description,
       createdAt: entity.createdAt ? entity.createdAt.toISOString() : new Date().toISOString(),
     };

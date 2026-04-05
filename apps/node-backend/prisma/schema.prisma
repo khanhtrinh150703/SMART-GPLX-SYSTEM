@@ -90,7 +90,8 @@ model LicenseCategory {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
-
+  minAge      Int       @default(18) @map("min_age")
+  
   questionLinks   QuestionLicenseCategory[]
   examMatrix      ExamMatrix?
   examAttempts    ExamAttempt[]
@@ -99,17 +100,21 @@ model LicenseCategory {
 }
 
 model Chapter {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  name      String    @db.VarChar(255)
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  name        String    @db.VarChar(255)
+  description String?   @db.Text // Lưu mô tả chi tiết của chương
+  orderIndex  Int       @default(0) @map("order_index") // Thứ tự hiển thị (Của Cậu Vàng đây)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
+  // Quan hệ
   questions      Question[]
   userWeaknesses UserWeakness[]
 
   @@map("chapters")
 }
+
 
 model Question {
   id              String    @id @default(uuid()) @db.VarChar(36)
@@ -147,6 +152,7 @@ model Answer {
   id         String    @id @default(uuid()) @db.VarChar(36)
   questionId String    @map("question_id") @db.VarChar(36)
   content    String    @db.Text
+  imageUrl   String?   @map("image_url") @db.VarChar(255)
   isCorrect  Boolean   @default(false) @map("is_correct")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")

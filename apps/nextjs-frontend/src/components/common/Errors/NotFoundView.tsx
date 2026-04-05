@@ -26,32 +26,35 @@ export const NotFoundView = () => {
   }, []); // Đảm bảo chỉ chạy 1 lần duy nhất khi mount
 
   const handleGoBack = () => {
-    // 1. Lấy link trang trước đó
-    const referrer = document.referrer;
+    const referrer = typeof document !== "undefined" ? document.referrer : null;
 
-    // 2. Nếu không có lịch sử (truy cập thẳng) -> Về trang chủ
+    // 1. Nếu không có trang trước đó (truy cập trực tiếp bằng link lỗi) -> Về trang chủ
     if (!referrer) {
-      router.push("/");
+      window.location.href = "/";
       return;
     }
 
     try {
-      const url = new URL(referrer);
+      const referrerUrl = new URL(referrer);
+      const currentOrigin =
+        typeof window !== "undefined" ? window.location.origin : "";
 
-      // 3. KIỂM TRA: Nếu trang trước đó là TRANG CHỦ (localhost:3001/)
-      if (url.pathname === "/" && url.origin === window.location.origin) {
-        // Dùng window.location.href để "đập đi xây lại" trang chủ sạch sẽ
+      // 2. KIỂM TRA: Nếu trang trước đó cùng thuộc hệ thống của mình
+      if (referrerUrl.origin === currentOrigin) {
+        /**
+         * 💡 ĐÂY LÀ CHÌA KHÓA:
+         * Thay vì router.back(), ta dùng window.location.href.
+         * Điều này ép trang Quản lý người dùng phải "F5" lại hoàn toàn.
+         * Dữ liệu sẽ được gọi mới từ API, không còn tình trạng mảng rỗng nữa.
+         */
+        window.location.href = referrer;
+      } else {
+        // Nếu từ trang web khác tới thì về trang chủ cho an toàn
         window.location.href = "/";
       }
-      // 4. TRƯỜNG HỢP CÒN LẠI: Các trang con (đang điền dữ liệu)
-      else {
-        // Dùng router.back() để giữ nguyên State/Dữ liệu đang nhập dở
-        router.back();
-      }
     } catch (e) {
-      console.log(e)
-      // Nếu có lỗi parse URL thì cứ Back cho an toàn
-      router.back();
+      console.error("Lỗi điều hướng:", e);
+      window.location.href = "/";
     }
   };
   return (

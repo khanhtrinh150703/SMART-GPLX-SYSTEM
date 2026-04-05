@@ -3,7 +3,7 @@ import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
 import { LICENSE_ENDPOINTS } from '../../test.data'; // Đảm bảo đường dẫn import đúng
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/res-license-category.dto';
+import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
 
 // Giả định helper cho Auth
 // const getAuthHeader = () => ({ Authorization: `Bearer test-admin-token` });
@@ -94,6 +94,13 @@ export const licenseSteps = () => {
                 expect(res.body.message).toBe(Message.LICENSE.DELETE_SUCCESS);
             });
 
+            it('✅ Nên xóa mềm không thành công (deleted_at != null)', async () => {
+                // Gọi hàm .DELETE(id)
+                const res = await request(app)
+                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId));
+
+                expect(res.status).toBe(404);
+            });
             // it('❌ Nên trả về lỗi 403 khi xóa hạng bằng đang có dữ liệu liên quan (Constraint)', async () => {
             //     const res = await request(app)
             //         .delete(LICENSE_ENDPOINTS.DELETE('used-id-constant'))

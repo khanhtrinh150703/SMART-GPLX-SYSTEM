@@ -16,7 +16,7 @@ export class RedisPendingUserRepository implements IPendingUserRepository {
    */
   public async save(key: string, data: string, ttlSeconds: number): Promise<void> {
     // SỬA LỖI: Đổi tên biến thành redisKey để tránh trùng lặp (shadowing) với tham số 'key'
-    const redisKey = `${REDIS_CONSTANTS.PENDING_PREFIX}${key}`;
+    const redisKey = `${REDIS_CONSTANTS.PENDING_USER_PREFIX}${key}`;
     
     // SỬA LỖI: Truyền đúng biến 'data' vào thay vì 'otpCode'
     // Lưu ý: Tùy thuộc vào thư viện (redis v4 hay ioredis), hàm này có thể là setEx hoặc setex
@@ -30,7 +30,7 @@ export class RedisPendingUserRepository implements IPendingUserRepository {
    */
   public async get(key: string): Promise<string | null> {
     // SỬA LỖI: Sử dụng đúng Prefix của Pending User thay vì hardcode 'otp:'
-    const redisKey = `${REDIS_CONSTANTS.PENDING_PREFIX}${key}`;
+    const redisKey = `${REDIS_CONSTANTS.PENDING_USER_PREFIX}${key}`;
     return await redisClient.get(redisKey);
   }
 
@@ -41,7 +41,7 @@ export class RedisPendingUserRepository implements IPendingUserRepository {
    */
   public async delete(key: string): Promise<void> {
     // SỬA LỖI: Sử dụng đúng Prefix của Pending User
-    const redisKey = `${REDIS_CONSTANTS.PENDING_PREFIX}${key}`;
+    const redisKey = `${REDIS_CONSTANTS.PENDING_USER_PREFIX}${key}`;
     await redisClient.del(redisKey);
   }
 }

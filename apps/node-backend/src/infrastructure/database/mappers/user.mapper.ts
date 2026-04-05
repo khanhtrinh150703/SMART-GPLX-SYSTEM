@@ -1,20 +1,21 @@
 import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
-import { LoginResponseDTO } from '@/application/dtos/response/auth/auth.dto';
-import { UserResponseDTO } from '@/application/dtos/response/user/user.dto';
+import { LoginResponseDTO } from '@/application/dtos/response/auth/auth.respone.dto';
+import { UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
 import { RoleCacheService } from '@/infrastructure/security/role-cache.service';
 import { Role } from '@/domain/entities/role/role.entity';
 import { Permission } from '@/domain/entities/permission/permission.entity';
-import { UserWithRolesPayload } from '@/shared/types/user-payload.type';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { Prisma } from '@prisma/client';
+import { IUserRecord } from '@/infrastructure/persistence/user.record';
+
 
 export class UserMapper {
   /**
-   * @description Chuyển dữ liệu từ Prisma sang Entity User.
+   * @description Chuyển dữ liệu từ bản ghi Database (Persistence) sang Domain Entity.
    */
-  public static toDomain(raw: UserWithRolesPayload): User {
-    // 1. Hydrate Roles từ Cache
+  public static toDomain(raw: IUserRecord): User {
+    // 1. Hydrate Roles từ Cache dựa trên dữ liệu từ DB
     const roleEntities: Role[] = (raw.userRoles || []).map((ur) => {
       const cached = RoleCacheService.getRole(ur.roleId);
 
@@ -22,10 +23,16 @@ export class UserMapper {
         throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
       }
 
+      // Tái tạo Permission từ danh sách tên quyền trong Cache
       const permissionEntities: Permission[] = cached.permissions.map(pName =>
-        Permission.reconstitute({ id: "N/A", name: pName, description: "" })
+        Permission.reconstitute({ 
+          id: "N/A", // Permission trong cache thường chỉ lưu name để nhẹ
+          name: pName, 
+          description: null 
+        })
       );
 
+      // Tái tạo Role Entity bằng props chuẩn
       return Role.reconstitute({
         id: cached.id,
         name: cached.name,
@@ -34,26 +41,25 @@ export class UserMapper {
       });
     });
 
-    // 2. Tái tạo User chuẩn DDD
-    // Lưu ý: Chuyển "" thành null nếu Entity yêu cầu string | null
+    // 2. Tái tạo User Entity theo cấu trúc _props
     return User.reconstitute({
       id: raw.id,
       username: raw.username,
       email: raw.email,
-      fullName: raw.fullName || null,
-      passwordHash: raw.passwordHash ,
+      fullName: raw.fullName, // Mapping snake_case -> camelCase
+      passwordHash: raw.passwordHash,
       phoneNumber: raw.phoneNumber ?? "",
-      urlPicture: raw.urlPicture || null,
+      urlPicture: raw.urlPicture,
       status: raw.status as UserStatus,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
-      deletedAt: raw.deletedAt || null,
+      deletedAt: raw.deletedAt,
       roles: roleEntities,
     });
   }
 
   /**
-   * @description Trích xuất dữ liệu từ Entity để lưu vào DB (Prisma).
+   * @description Ánh xạ từ Domain Entity sang Persistence Model (Prisma).
    */
   public static toPersistence(user: User): Prisma.UserCreateInput {
     return {
@@ -64,9 +70,9 @@ export class UserMapper {
       passwordHash: user.passwordHash,
       status: user.status,
       urlPicture: user.urlPicture ?? "",
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      deletedAt: user.deletedAt ,
+      createdAt: user.createdAt as Date,
+      updatedAt: user.updatedAt as Date,
+      deletedAt: user.deletedAt,
     };
   }
 
@@ -77,7 +83,7 @@ export class UserMapper {
     const baseUrl = process.env.APP_URL || '';
 
     return {
-      id: user.id,
+      id: user.id as string,
       email: user.email,
       username: user.username,
       fullName: user.fullName ?? "",
@@ -86,8 +92,8 @@ export class UserMapper {
         ? `${baseUrl}/${user.urlPicture.replace(/\\/g, '/')}`
         : "",
       status: user.status,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      createdAt: user.createdAt as Date,
+      updatedAt: user.updatedAt as Date,
       roles: user.roles.map(r => ({
         id: r.id,
         name: r.name,

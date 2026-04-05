@@ -138,6 +138,7 @@ src/
 │  
 ├── shared/                       # Các module dùng chung toàn dự án
 │   ├── errors/                   # Quản lý lỗi tập trung
+│   ├── config/                   # Quản lý config
 │   ├── responses/                # Chuẩn hóa Response API
 │   ├── types/                    # Định nghĩa Types/Interfaces dùng chung
 │   └── utils/                    # Các hàm tiện ích bổ trợ

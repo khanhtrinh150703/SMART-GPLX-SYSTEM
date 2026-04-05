@@ -1,42 +1,55 @@
 import { Request, Response } from 'express';
-import { RegisterDTO, ResetPasswordDTO, VerifyUserDTO } from '@/application/dtos/request/auth.dto';
-import { LoginInputDTO } from '@/application/dtos/request/loginInput.dto';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
-
-// IMPORT HÀM BỌC LỖI
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { AuthRequest } from '@/shared/types/auth.types';
-import { ICradle } from '@/shared/types/container.types';
 import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
 import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
+import { RegisterRequestDTO } from '@/application/dtos/request/auth/register.request.dto';
+import { VerifyUserRequestDTO } from '@/application/dtos/request/auth/verify-otp.request.dto';
+import { LoginRequestDTO } from '@/application/dtos/request/auth/login.request.dto';
+import { ResetPasswordRequestDTO } from '@/application/dtos/request/auth/reset-password.request.dto';
+import { RefreshTokenRequestDTO } from '@/application/dtos/request/auth/refresh.token.request.dto';
 
 /**
- * Controller xử lý các luồng xác thực và đăng ký người dùng.
- * Tuân thủ quy tắc: KHÔNG dùng try-catch, lỗi được chuyển tiếp cho Global Error Middleware
- * thông qua hàm bọc catchAsync.
+ * @interface IAuthControllerCradle
+ * @description "Túi đồ nghề" bảo mật cho AuthController.
+ * Tập hợp các service cần thiết để điều phối luồng Xác thực và Đăng ký.
+ */
+export interface IAuthControllerCradle {
+  authService: IAuthService;
+  registrationService: IRegistrationService;
+}
+
+/**
+ * @class AuthController
+ * @description Tiếp nhận và điều phối các yêu cầu HTTP liên quan đến Xác thực, Đăng ký và OTP.
+ * Tuân thủ: Chuyển tiếp lỗi cho Global Error Middleware qua wrapper (ví dụ: catchAsync).
  */
 export class AuthController {
-
   private readonly _authService: IAuthService;
   private readonly _registrationService: IRegistrationService;
 
-  // CHỈ NHẬN NHỮNG THỨ ĐÃ ĐĂNG KÝ TRONG CONTAINER
-  constructor({ authService, registrationService }: ICradle) {
+  /**
+   * @description Khởi tạo AuthController với các phụ thuộc chuyên biệt.
+   * @param {IAuthControllerCradle} cradle - Dependencies được tiêm tự động từ DI Container.
+   */
+  constructor({ authService, registrationService }: IAuthControllerCradle) {
+    // CHỈ NHẬN NHỮNG THỨ CẦN THIẾT CHO AUTH & REGISTRATION
     this._authService = authService;
     this._registrationService = registrationService;
   }
 
   /** 
    * Tác dụng: Tiếp nhận thông tin đăng ký ban đầu và yêu cầu gửi OTP.
-   * @param {Request} req - Chứa RegisterDTO trong body.
+   * @param {Request} req - Chứa RegisterRequestDTO trong body.
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
   // SỬ DỤNG catchAsync BỌC TOÀN BỘ HÀM
   public signUpInit = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const dto = new RegisterDTO(req.body);
+    const dto = new RegisterRequestDTO(req.body);
 
     // Nếu trong initiate có throw AppError, catchAsync sẽ tự động vớt và gọi next(err)
     await this._registrationService.initiate(dto);
@@ -50,6 +63,27 @@ export class AuthController {
   });
 
   /**
+   * @description Làm mới Access Token bằng Refresh Token (Silent Refresh).
+   * @route POST /api/v1/auth/refresh-token
+   * @param {Request} req - Chứa refreshToken.
+   * @param {Response} res - Trả về Access Token mới.
+   * @returns {Promise<void>}
+   */
+  public refreshToken = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const dto = new RefreshTokenRequestDTO(req.body);
+    dto.isValid();
+
+    const newToken = await this._authService.refresh(dto);
+
+    Result.ok(
+      res,
+      newToken,
+      Message.AUTH.TOKEN_REFRESHED,
+      'AUTH_TOKEN_REFRESH_SUCCESS'
+    );
+  });
+
+  /**
    * API Xác thực OTP và hoàn tất đăng ký tài khoản.
    * @route POST /api/v1/auth/signup-verify
    * @param {Request} req - Chứa email và mã otp trong body.
@@ -57,7 +91,7 @@ export class AuthController {
    * @returns {Promise<void>}
    */
   public signUpVerify = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const dto = new VerifyUserDTO(req.body);
+    const dto = new VerifyUserRequestDTO(req.body);
     const newUser = await this._registrationService.complete(dto.email, dto.otp);
     const result = UserMapper.toResponse(newUser);
 
@@ -72,7 +106,7 @@ export class AuthController {
    * @returns {Promise<void>}
    */
   public login = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const dto = new LoginInputDTO(req.body);
+    const dto = new LoginRequestDTO(req.body);
     const result = await this._authService.login(dto);
 
     Result.ok(res, result, Message.AUTH.LOGIN_SUCCESS, 'AUTH_LOGIN_SUCCESS');
@@ -131,12 +165,12 @@ export class AuthController {
   /**
    * API Xác thực OTP và cập nhật mật khẩu mới.
    * @route POST /api/v1/auth/reset-password
-   * @param {Request} req - Chứa ResetPasswordDTO (otp, newPassword) trong body.
+   * @param {Request} req - Chứa ResetPasswordRequestDTO (otp, newPassword) trong body.
    * @param {Response} res - Đối tượng Response của Express.
    * @returns {Promise<void>}
    */
   public resetPassword = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const dto = new ResetPasswordDTO(req.body);
+    const dto = new ResetPasswordRequestDTO(req.body);
     await this._authService.resetPassword(dto);
 
     Result.ok(res, undefined, Message.AUTH.PASSWORD_RESET, 'AUTH_PASSWORD_RESET_SUCCESS');

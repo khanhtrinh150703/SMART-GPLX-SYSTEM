@@ -1,5 +1,7 @@
 // user-test.config.ts
 
+import { REDIS_CONSTANTS } from '@/domain/constants/redis.constant';
+
 /**
  * CONFIGURATION CHUNG CHO INTEGRATION TESTS
  * File này chứa các config, endpoint, test data dùng chung cho User, Auth và License.
@@ -9,6 +11,8 @@ export const API_BASE = {
   AUTH: '/api/v1/auth',
   USER: '/api/v1/users',
   LICENSE: '/api/v1/license-categories', // Tên đồng bộ
+  CHAPTER: '/api/v1/chapters',
+  QUESTION: '/api/v1/questions',
 } as const;
 
 // ==================== AUTH ENDPOINTS ====================
@@ -43,6 +47,18 @@ export const LICENSE_ENDPOINTS = {
   RESTORE: (id: string) => `${API_BASE.LICENSE}/${id}/restore`,
 } as const;
 
+// ==================== CHAPTER ENDPOINTS ====================
+// ==================== CHAPTER ENDPOINTS ====================
+export const CHAPTER_ENDPOINTS = {
+  BASE: API_BASE.CHAPTER,
+  CREATE: API_BASE.CHAPTER,
+  FETCH_ALL: API_BASE.CHAPTER,
+  UPDATE: (id: string) => `${API_BASE.CHAPTER}/${id}`,
+  DELETE: (id: string) => `${API_BASE.CHAPTER}/${id}`,
+  RESTORE: (id: string) => `${API_BASE.CHAPTER}/${id}/restore`,
+} as const;
+
+
 // ==================== TEST ACCOUNT DATA ====================
 export const TEST_ACCOUNT = {
   username: 'trinh_cau_vang',
@@ -67,15 +83,107 @@ export const INVALID_TEST_DATA = {
   weakPassword: '123',
 } as const;
 
+
+// ==================== QUESTION ENDPOINTS ====================
+export const QUESTION_ENDPOINTS = {
+  BASE: `${API_BASE.QUESTION}`,
+  BY_ID: (id: string) => `${API_BASE.QUESTION}/${id}`,
+  RESTORE: (id: string) => `${API_BASE.QUESTION}/${id}/restore`,
+
+  // Các URL tĩnh dùng cho Route setup
+  ROUTE: {
+    ROOT: '/',
+    DETAIL: '/:id',
+    RESTORE: '/:id/restore'
+  }
+} as const;
+
 // ==================== OTHER TEST CONSTANTS ====================
 export const TEST_EMAIL = 'gplx@dividesk.com';
 export const NEW_PASSWORD = 'NewSecurePassword123@';
 
+/**
+ * @description Dữ liệu mẫu cho module Question (Ngân hàng câu hỏi)
+ * Cậu Vàng lưu ý: chapterId và licenseCategoryIds sẽ được ghi đè (spread) trong file test
+ * sau khi bốc được ID thực tế từ database.
+ */
+export const QUESTION_DATA = {
+  // --- 1. DỮ LIỆU TẠO THÀNH CÔNG ---
+  NORMAL_PAYLOAD: {
+    content: "Khái niệm 'Phương tiện giao thông cơ giới đường bộ' được hiểu thế nào là đúng?",
+    imageUrl: "https://example.com/images/question-1.png",
+    isCritical: false,
+    difficultyLevel: 1, 
+    answers: [
+      { content: "Gồm xe ô tô; máy kéo; rơ moóc...", isCorrect: true, imageUrl: null },
+      { content: "Gồm xe gắn máy, xe đạp...", isCorrect: false, imageUrl: null }
+    ]
+  },
+
+  CRITICAL_PAYLOAD: {
+    content: "[CÂU ĐIỂM LIỆT] Người điều khiển phương tiện tham gia giao thông trong cơ thể có chất ma túy có bị nghiêm cấm hay không?",
+    imageUrl: null,
+    isCritical: true, 
+    difficultyLevel: 2,
+    answers: [
+      { content: "Bị nghiêm cấm", isCorrect: true },
+      { content: "Không bị nghiêm cấm", isCorrect: false }
+    ]
+  },
+
+  // --- 2. DỮ LIỆU TEST VALIDATION LỖI ---
+  INVALID_CONTENT_SHORT: {
+    content: "Ngắn quá", // < 10 ký tự
+    difficultyLevel: 1,
+    answers: [
+      { content: "Đáp án A", isCorrect: true },
+      { content: "Đáp án B", isCorrect: false }
+    ]
+  },
+
+  MISSING_LICENSE: {
+    content: "Nội dung câu hỏi này dài hơn 10 ký tự chắc chắn rồi.",
+    licenseCategoryIds: [], // Cố tình để mảng rỗng
+    difficultyLevel: 1,
+    answers: [
+      { content: "Đáp án A", isCorrect: true },
+      { content: "Đáp án B", isCorrect: false }
+    ]
+  },
+
+  INSUFFICIENT_ANSWERS: {
+    content: "Câu hỏi này chỉ có duy nhất một đáp án thôi nè.",
+    difficultyLevel: 1,
+    answers: [
+      { content: "Chỉ có mình em", isCorrect: true } // Thiếu đáp án thứ 2
+    ]
+  },
+
+  NO_CORRECT_ANSWER: {
+    content: "Câu hỏi này toàn đáp án sai, chọn kiểu gì bây giờ?",
+    difficultyLevel: 1,
+    answers: [
+      { content: "Sai bét", isCorrect: false },
+      { content: "Cũng sai luôn", isCorrect: false } // Không có true
+    ]
+  },
+
+  // --- 3. DỮ LIỆU CẬP NHẬT ---
+  UPDATE_PAYLOAD: {
+    content: "[UPDATED] Nội dung đã được chỉnh sửa bởi Admin",
+    isCritical: false, // QUAN TRỌNG: Giữ false để test Xóa thành công ở bước sau
+    difficultyLevel: 3, 
+    answers: [
+      { content: "Đáp án cũ được giữ lại", isCorrect: true, imageUrl: null },
+      { content: "Đáp án mới toanh vừa thêm vào", isCorrect: false, imageUrl: "https://example.com/new-ans.png" }
+    ]
+  }
+};
 // ==================== REDIS HELPERS KEYS ====================
 export const REDIS_KEYS = {
-  getOtpKey: (email: string) => `otp:${email.toLowerCase()}`,
-  getResendLockKey: (email: string) => `otp_lock:${email}`,
-  getPendingUserKey: (email: string) => `pending_user:${email}`,
+  getOtpKey: (email: string) => `${REDIS_CONSTANTS.OTP_PREFIX}${email.toLowerCase()}`,
+  getResendLockKey: (email: string) => `${REDIS_CONSTANTS.OTP_LOCK_PREFIX}${email}`,
+  getPendingUserKey: (email: string) => `${REDIS_CONSTANTS.PENDING_USER_PREFIX}${email}`,
 } as const;
 
 // ==================== RE-EXPORT SHARED CONSTANTS ====================

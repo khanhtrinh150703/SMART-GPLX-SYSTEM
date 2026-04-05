@@ -42,10 +42,10 @@ export const userService = {
     // 3. Tác vụ phụ (Side Effect): Cập nhật trạng thái toàn cục (Global State)
     // Chỉ cập nhật khi API thành công và có dữ liệu user bên trong.
     if (response.success && response.data?.user) {
-      const { setUser } = useUserStore.getState();
+      const { setAuth } = useUserStore.getState();
 
       // 💡 Bóc tách đúng thực thể User để nạp vào Zustand
-      setUser(response.data.user);
+      setAuth(response.data.user, response.data.accessToken, response.data.refreshToken);
 
       // 💡 Bonus: Nếu muốn cập nhật Token luôn thì làm ở đây
       // localStorage.setItem('accessToken', response.data.accessToken);
@@ -79,10 +79,10 @@ export const userService = {
     // 3. Tác vụ phụ (Side Effect): Cập nhật trạng thái toàn cục (Global State)
     // Chỉ cập nhật khi API thành công và có dữ liệu user bên trong.
     if (response.success && response.data?.user) {
-      const { setUser } = useUserStore.getState();
+      const { setAuth } = useUserStore.getState();
 
       // 💡 Bóc tách đúng thực thể User để nạp vào Zustand
-      setUser(response.data.user);
+      setAuth(response.data.user, response.data.accessToken, response.data.refreshToken);
 
       // 💡 Bonus: Nếu muốn cập nhật Token luôn thì làm ở đây
       // localStorage.setItem('accessToken', response.data.accessToken);

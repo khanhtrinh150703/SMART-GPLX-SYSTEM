@@ -1,25 +1,33 @@
 import { Request, Response } from 'express';
-import { catchAsync } from '@/shared/utils/catch-async';
-import { CreateLicenseCategoryDTO } from '@/application/dtos/request/license-category/create-license-category.dto';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
-import { UpdateLicenseCategoryDTO } from '@/application/dtos/request/license-category/update-license-category.dto';
-import { ICradle } from '@/shared/types/container.types';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
-
+import { CreateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
+import { UpdateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
 
 /**
- * Controller điều phối các yêu cầu HTTP liên quan đến Danh mục hạng bằng lái.
- * Tuân thủ Clean Architecture: Chỉ nhận Request, gọi Service và trả về Response chuẩn qua Result class.
+ * @interface ILicenseCategoryControllerCradle
+ * @description "Túi đồ nghề" chuyên biệt cho LicenseCategoryController.
+ * Đảm bảo Controller chỉ có quyền tiếp cận đúng Service mà nó cần điều phối.
+ */
+export interface ILicenseCategoryControllerCradle {
+  licenseCategoryService: ILicenseCategoryService;
+}
+
+/**
+ * @class LicenseCategoryController
+ * @description Tiếp nhận các yêu cầu HTTP và điều phối xử lý nghiệp vụ Danh mục hạng bằng lái.
  */
 export class LicenseCategoryController {
   private readonly _licenseService: ILicenseCategoryService;
 
   /**
-   * Khởi tạo Controller với Dependency Injection.
-   * @param {ICradle} dependencies - Các service cần thiết được inject từ container.
+   * @description Khởi tạo Controller với các phụ thuộc chuyên biệt.
+   * @param {ILicenseCategoryControllerCradle} cradle - Dependencies được tiêm tự động từ Awilix.
    */
-  constructor({ licenseCategoryService }: ICradle) {
+  constructor({ licenseCategoryService }: ILicenseCategoryControllerCradle) {
+    // Gán instance service từ Cradle vào thuộc tính class
     this._licenseService = licenseCategoryService;
   }
 
@@ -49,10 +57,10 @@ export class LicenseCategoryController {
    * @returns {Promise<void>}
    */
   public store = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const { name, description } = req.body;
+    const { name, description, minAge } = req.body;
 
     // Khởi tạo và thực thi tự kiểm tra dữ liệu (Self-Validating DTO)
-    const dto = new CreateLicenseCategoryDTO({ name, description });
+    const dto = new CreateLicenseCategoryRequestDTO({ name, description, minAge });
     dto.isValid();
 
     const result = await this._licenseService.createCategory(dto);
@@ -77,7 +85,7 @@ export class LicenseCategoryController {
     const { name, description } = req.body;
 
     // Sử dụng DTO để validate dữ liệu cập nhật
-    const dto = new UpdateLicenseCategoryDTO({ id, name, description });
+    const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description });
     dto.isValid();
 
     const result = await this._licenseService.updateCategory(dto);
@@ -97,7 +105,7 @@ export class LicenseCategoryController {
    * @param {Response} res - Đối tượng Response của Express.
    * @returns {Promise<void>}
    */
-  public destroy = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  public delete = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const id = req.params.id as string;
 
     await this._licenseService.deleteCategory(id);

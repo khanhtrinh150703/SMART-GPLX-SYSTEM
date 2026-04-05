@@ -8,7 +8,8 @@ import { FeatureCard } from "@/components/features/home";
 import { HOME_FEATURES } from "@/components/features/home/FeatureCard/feature-card.constants";
 import { Reveal } from "@/components/ui/Reveal";
 import { PromoBanner } from "@/components/features/home/PromoBanner";
-import { AmbientBackground } from "@/components/ui/AmbientBackground";
+import { GeometricInteractiveBackground } from "@/components/common/EmeraldWhiteAurora";
+// import { AmbientBackground } from "@/components/common/AmbientBackground";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -22,7 +23,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-x-hidden relative">
-      <AmbientBackground />
+      {/* <AmbientBackground /> */}
+      <GeometricInteractiveBackground/>
       <main className="max-w-7xl mx-auto px-6 pt-40 pb-20 relative z-10">
         <Hero
           titleLine1="Khám Phá Giải Pháp Học &"

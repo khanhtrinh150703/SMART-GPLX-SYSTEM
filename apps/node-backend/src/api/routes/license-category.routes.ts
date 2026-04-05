@@ -57,7 +57,7 @@ router.delete(
   '/:id',
   // authMiddleware,
   // roleMiddleware(['ADMIN']),
-  controller.destroy
+  controller.delete
 );
 
 /**
