@@ -1,40 +1,53 @@
 import { AppError, ErrorCode } from "@/shared/errors";
-import bcrypt from 'bcrypt';
 import { UserStatus } from "@/domain/entities/user/user.status";
 import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
-import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from "../dtos/request/user.dto";
 import { REGEX } from "@/domain/constants/regex.constant";
 import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
 import { SystemRoles } from "@/domain/constants/roles.constant";
 import { IUserService } from "@/domain/interfaces/services/i-user.service";
-import { UserQueryDTO } from "../dtos/request/user-query.dto";
+import { UserQueryDTO } from "../dtos/request/user/user-query.request.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
-import { UserResponseDTO } from "../dtos/response/user.dto";
-import { ICradle } from "@/shared/types/container.types";
+import { UserResponseDTO } from "../dtos/response/user/user.respone.dto";
 import { RoleCacheService } from "@/infrastructure/security/role-cache.service";
 import { Role } from "@/domain/entities/role/role.entity";
 import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
+import bcrypt from 'bcrypt';
+import { UpdateProfileRequestDTO } from "../dtos/request/user/update-profile.request.dto";
+import { ChangePasswordRequestDTO } from "../dtos/request/user/update-password.request.dto";
+import { ChangeStatusRequestDTO } from "../dtos/request/user/update-status.request.dto";
+import { LoginResponseDTO } from "../dtos/response/auth/auth.respone.dto";
 
 /**
- * Service quản lý các nghiệp vụ lõi liên quan đến Người dùng.
- * Đã được tối ưu hóa để tái sử dụng logic và đảm bảo tính minh bạch.
+ * @interface IUserServiceCradle
+ * @description Định nghĩa các phụ thuộc cần thiết cho UserService.
+ * Bao gồm Repository để truy cập DB, TokenManager cho bảo mật và FileStorage cho upload ảnh.
+ */
+export interface IUserServiceCradle {
+    userRepository: IUserRepository;
+    tokenManager: ITokenManager;
+    fileStorageService: IFileStorageService;
+}
+
+/**
+ * @class UserService
+ * @description Xử lý các nghiệp vụ lõi liên quan đến Người dùng (User Domain).
  */
 export class UserService implements IUserService {
-    // 1. Khai báo các thuộc tính của class ở đây
     private readonly _userRepo: IUserRepository;
     private readonly _tokenManager: ITokenManager;
     private readonly _fileStorageService: IFileStorageService;
 
     /**
-     * @param {ICradle} cradle - Object chứa tất cả dependencies từ Container
+     * @description Khởi tạo Service với bộ công cụ chuyên biệt cho User.
+     * @param {IUserServiceCradle} cradle - Dependencies được tiêm tự động từ DI Container.
      */
-    constructor({ userRepository, tokenManager, fileStorageService }: ICradle) {
-        this._fileStorageService = fileStorageService;
+    constructor({ userRepository, tokenManager, fileStorageService }: IUserServiceCradle) {
         this._userRepo = userRepository;
         this._tokenManager = tokenManager;
+        this._fileStorageService = fileStorageService;
     }
     // ============================================================
     // PRIVATE HELPERS (Các hàm bổ trợ để tái sử dụng)
@@ -70,10 +83,10 @@ export class UserService implements IUserService {
     /**
      * Thực hiện cập nhật hồ sơ người dùng
      * @param {string} userId - ID của người dùng
-     * @param {UpdateProfileDTO} dto - Dữ liệu cần cập nhật
-     * @returns {Promise<User>} Entity User sau khi đã cập nhật
+     * @param {UpdateProfileRequestDTO} dto - Dữ liệu cần cập nhật
+     * @returns {Promise<LoginResponseDTO>} Entity User sau khi đã cập nhật
      */
-    public async updateProfile(userId: string, dto: UpdateProfileDTO): Promise<User> {
+    public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<LoginResponseDTO> {
         // 1. Kiểm tra sự tồn tại của User (Sử dụng helper nội bộ)
         const user = await this.getActiveUserOrThrow(userId);
 
@@ -89,7 +102,8 @@ export class UserService implements IUserService {
         user.updateProfile(dto.fullName, newUrlPicture);
 
         // 4. Lưu lại sự thay đổi vào Database thông qua Repository
-        return await this._userRepo.update(user);
+        const updatedUser = await this._userRepo.update(user);
+        return UserMapper.toLoginResponse(updatedUser, "", "");
     }
 
     /**
@@ -105,11 +119,11 @@ export class UserService implements IUserService {
     };
 
     /**
-       * Tác dụng: Thực hiện nghiệp vụ đổi mật khẩu và thu hồi toàn bộ phiên đăng nhập cũ.
-       * @param {string} userId - ID người dùng lấy từ Token xác thực.
-       * @param {ChangePasswordDTO} dto - Dữ liệu mật khẩu cũ và mới.
-       */
-    public async changePassword(userId: string, dto: ChangePasswordDTO): Promise<void> {
+     * Tác dụng: Thực hiện nghiệp vụ đổi mật khẩu và thu hồi toàn bộ phiên đăng nhập cũ.
+     * @param {string} userId - ID người dùng lấy từ Token xác thực.
+     * @param {ChangePasswordRequestDTO} dto - Dữ liệu mật khẩu cũ và mới.
+     */
+    public async changePassword(userId: string, dto: ChangePasswordRequestDTO): Promise<void> {
         // 1. Rule 8: DTO tự validate dữ liệu đầu vào (Cheap Check)
         dto.validateOrThrow();
 
@@ -140,16 +154,21 @@ export class UserService implements IUserService {
     }
 
     /**
-     * Tác dụng: Thay đổi trạng thái tài khoản (Dành cho Admin).
+     * Cập nhật trạng thái hoạt động của tài khoản (Dành cho quản trị viên).
+     * @param {string} userId - ID của người dùng cần cập nhật.
+     * @param {ChangeStatusRequestDTO} dto - Dữ liệu trạng thái mới.
+     * @returns {Promise<void>}
      */
-    public async updateStatus(userId: string, dto: ChangeStatusDTO): Promise<void> {
+    public async updateStatus(userId: string, dto: ChangeStatusRequestDTO): Promise<void> {
         const user = await this.getActiveUserOrThrow(userId);
         user.updateStatus(dto.status as UserStatus);
         await this._userRepo.update(user);
     }
 
     /**
-     * Tác dụng: Xóa mềm (Soft Delete) tài khoản người dùng.
+     * Thực hiện xóa mềm (Soft Delete) tài khoản người dùng.
+     * @param {string} userId - ID của người dùng cần xóa.
+     * @returns {Promise<void>}
      */
     public async deleteUser(userId: string): Promise<void> {
         const user = await this.getActiveUserOrThrow(userId);
@@ -157,28 +176,26 @@ export class UserService implements IUserService {
         await this._userRepo.update(user);
     }
 
-
     /**
- * Tác dụng: Khôi phục tài khoản người dùng đã bị xóa mềm.
- * @param {string} userId - ID của người dùng cần khôi phục.
- */
+     * Khôi phục tài khoản người dùng đã bị xóa mềm về trạng thái hoạt động.
+     * @param {string} userId - ID của người dùng cần khôi phục.
+     * @returns {Promise<void>}
+     */
     public async restoreUser(userId: string): Promise<void> {
-        // 1. Tìm user (Bao gồm cả những người có deletedAt != null)
-        // Bạn cần một hàm tìm kiếm không lọc trạng thái 'deleted'
         const user = await this._userRepo.findByIdInSystem(userId);
 
         if (!user) {
             throw new AppError(ErrorCode.USER.NOT_FOUND);
         }
 
-        // 2. Gọi logic nghiệp vụ ở tầng Domain
         user.restore();
-
-        // 3. Cập nhật lại vào Database
         await this._userRepo.update(user);
     }
+
     /**
-     * Tác dụng: Tìm kiếm người dùng bằng Username và kiểm tra trạng thái khóa.
+     * Tìm kiếm người dùng qua Username và xác thực trạng thái tài khoản.
+     * @param {string} username - Tên đăng nhập cần tìm.
+     * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
      */
     public async getUserByUserName(username: string): Promise<User> {
         const user = await this._userRepo.findActiveByUsername(username);
@@ -191,7 +208,9 @@ export class UserService implements IUserService {
     }
 
     /**
-     * Tác dụng: Tìm kiếm người dùng bằng Username và kiểm tra trạng thái khóa.
+     * Tìm kiếm người dùng qua Email và xác thực trạng thái tài khoản.
+     * @param {string} email - Địa chỉ email cần tìm.
+     * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
      */
     public async getUserByEmail(email: string): Promise<User> {
         const user = await this._userRepo.findActiveByEmail(email);
@@ -203,6 +222,20 @@ export class UserService implements IUserService {
         return user;
     }
 
+    /**
+    * Tìm kiếm người dùng qua Email và xác thực trạng thái tài khoản.
+    * @param {string} userId - UserID cần tìm.
+    * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
+    */
+    public async getUserById(userId: string): Promise<User> {
+        const user = await this._userRepo.findActiveById(userId);
+
+        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+
+        this.ensureAccountNotLocked(user);
+
+        return user;
+    }
 
     /**
      * Tác dụng: Kiểm tra tính duy nhất của Username và Email.
@@ -237,7 +270,9 @@ export class UserService implements IUserService {
     }
 
     /**
-     * Xử lý tìm kiếm người dùng khi đăng nhập bằng định danh linh hoạt.
+     * Tìm kiếm người dùng qua định danh linh hoạt (Email hoặc Username) và kiểm tra trạng thái tài khoản.
+     * @param {string} identifier - Email hoặc tên đăng nhập của người dùng.
+     * @returns {Promise<User>} Thực thể người dùng hợp lệ và không bị khóa.
      */
     public async getUserByIdentifier(identifier: string): Promise<User> {
         const isEmail = REGEX.EMAIL.EMAIL.test(identifier);
@@ -252,7 +287,6 @@ export class UserService implements IUserService {
 
         return user;
     }
-
     // // Trong RoleService hoặc UserService (Nơi thực hiện lệnh đổi quyền)
     // public async updatePermissions(userId: string, newRoles: string[]): Promise<void> {
     //     // 1. Lưu vào MySQL (Sử dụng UserRepository.update như mình đã viết)
@@ -288,7 +322,9 @@ export class UserService implements IUserService {
     }
 
     /**
-     * Tác dụng: Tạo mới một người dùng và lưu vào database.
+     * Tạo mới người dùng, thiết lập vai trò mặc định và lưu vào cơ sở dữ liệu.
+     * @param {Object} data - Tập hợp thông tin định danh và mật khẩu đã băm của người dùng.
+     * @returns {Promise<User>} Thực thể người dùng sau khi đã được gán vai trò và lưu trữ thành công.
      */
     public async createUser(data: {
         id: string;
@@ -300,17 +336,16 @@ export class UserService implements IUserService {
         const roleData = RoleCacheService.getByName(SystemRoles.STUDENT);
 
         if (!roleData) {
-            // Nếu không thấy trong cache, có thể hệ thống chưa init hoặc sai tên Role
             throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);
         }
 
-        // 2. Biến dữ liệu thô từ Cache thành Entity Role xịn (Để hết lỗi TypeScript)
         const defaultRole = Role.reconstitute({
             id: roleData.id,
             name: roleData.name,
             description: roleData.description,
-            permissions: [] // Khi tạo mới, ta có thể để trống permissions hoặc hydrate từ cache nếu cần
+            permissions: []
         });
+
         const userEntity = User.create({
             id: data.id,
             username: data.username,

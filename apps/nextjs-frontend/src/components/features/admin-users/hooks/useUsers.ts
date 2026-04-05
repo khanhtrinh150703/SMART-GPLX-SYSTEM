@@ -1,40 +1,39 @@
-// src/features/admin-users/hooks/useUsers.ts
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { userService } from "@/services/user/user.service";
 import { UserResponseDTO } from "@/types/user-respone";
 import { PaginationMeta } from "@/types/api.types";
 import { UserQueryDTO } from "@/types/query-user";
-import { AdminUserFormValues } from "@/lib/validations/auth.schema"; // Đảm bảo import đúng
+import { AdminUpdateFormValues } from "@/lib/validations/user.schema";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { Form } from "lucide-react";
-import { AdminUpdateFormValues} from "@/lib/validations/user.schema";
 
 /**
- * Mục đích (Purpose): Quản lý tập trung toàn bộ logic nghiệp vụ (Business Logic) 
- * cho phân hệ Quản trị người dùng.
+ * Hook quản lý nghiệp vụ người dùng
+ * Đảm bảo dữ liệu không bị "rỗng" khi điều hướng back/forward
  */
 export function useUsers() {
   const [users, setUsers] = useState<UserResponseDTO[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false); // Đã bổ sung state này
   const [status, setStatus] = useState<UserQueryDTO["status"]>("active");
 
+  // State quản lý trạng thái tải (Loading States)
+  const [isLoading, setIsLoading] = useState(true); // Để true để tránh hiện "No data" lúc vừa vào
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Ref để theo dõi lần đầu render (First Render Tracker)
+  const isFirstRender = useRef(true);
+
   /**
-   * Hàm tải dữ liệu (Load Data function)
+   * Hàm tải dữ liệu chính (Core Fetch Function)
    */
-  const loadUsers = useCallback(async (
-    page: number = 1,
-    statusFilter: UserQueryDTO["status"] = "active"
-  ) => {
+  const loadUsers = useCallback(async (page: number = 1, currentStatus = status) => {
     setIsLoading(true);
     try {
       const response = await userService.getUsers({
         page,
         limit: 10,
-        status: statusFilter === "all" ? "all" : statusFilter
+        status: currentStatus === "all" ? "all" : currentStatus,
       });
 
       if (response.success && response.data) {
@@ -42,128 +41,120 @@ export function useUsers() {
         setMeta(response.data.meta);
       }
     } catch (error) {
+      console.error("API Error:", error);
+      setUsers([]); // Clear data để tránh hiển thị sai lệch
       if (axios.isAxiosError(error)) {
-        console.error("API Error:", error.response?.data?.message);
+        toast.error(error.response?.data?.message || "Không thể tải danh sách");
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [status]);
 
   /**
-   * Hàm chuyển đổi trạng thái lọc (Change Status Handler)
+   * Hàm làm mới dữ liệu (Reload / Refresh)
    */
-  const changeStatus = useCallback((newStatus: UserQueryDTO["status"]) => {
-    setStatus(newStatus);
-    loadUsers(1, newStatus);
-  }, [loadUsers]);
+  const reload = useCallback(
+    (page?: number) => {
+      return loadUsers(page || meta?.page || 1, status);
+    },
+    [loadUsers, meta?.page, status]
+  );
 
   /**
-   * Hàm xử lý xóa/khóa (Handle Delete)
+   * Hàm đổi tab trạng thái (Tab Changer)
    */
-  const handleDelete = useCallback(async (id: string) => {
+  const changeStatus = useCallback(
+    (newStatus: UserQueryDTO["status"]) => {
+      setStatus(newStatus);
+      loadUsers(1, newStatus);
+    },
+    [loadUsers]
+  );
+
+  /**
+   * Tự động gọi API khi Mount hoặc khi Back lại trang
+   * Kỹ thuật này giúp giữ nguyên dữ liệu Form nếu điều hướng bằng router.back()
+   */
+  useEffect(() => {
+    // Nếu danh sách trống hoặc là lần đầu truy cập -> Gọi API
+    if (users.length === 0 || isFirstRender.current) {
+      loadUsers(1, status);
+      isFirstRender.current = false;
+    }
+  }, [loadUsers, status, users.length]);
+
+  /**
+   * Các hàm thao tác nghiệp vụ (Business Actions)
+   */
+
+  // 1. Khóa/Xóa người dùng (Delete/Lock)
+  const handleDelete = async (id: string) => {
     setIsDeleting(true);
     try {
-      const response = await userService.deleteUser(id);
-      if (response.success) {
-        toast.success("Đã khóa người dùng thành công");
-        await loadUsers(meta?.page || 1, status);
-        return response;
+      const res = await userService.deleteUser(id);
+      if (res.success) {
+        toast.success("Thao tác thành công");
+        await reload();
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Xóa thất bại");
-      }
-      throw error;
+    } catch (err) {
+      toast.error("Xóa thất bại");
     } finally {
       setIsDeleting(false);
     }
-  }, [loadUsers, meta?.page, status]);
+  };
 
-  /**
-   * Hàm mở khóa tài khoản (Handle Unlock)
-   */
-  const handleUnlock = useCallback(async (id: string) => {
+  // 2. Mở khóa (Unlock)
+  const handleUnlock = async (id: string) => {
     setIsLoading(true);
     try {
-      // Logic: Cập nhật status về active
-      // await userService.updateStatus(id, 'active');
+      await userService.restoreUser(id); // Giả định API restore dùng chung cho unlock
       toast.success("Đã mở khóa tài khoản");
-      await loadUsers(meta?.page || 1, status);
-    } catch (error) {
-      console.error("Unlock failed");
+      await reload();
+    } catch (err) {
       toast.error("Mở khóa thất bại");
     } finally {
       setIsLoading(false);
     }
-  }, [loadUsers, meta?.page, status]);
+  };
 
-  /**
-   * Hàm khôi phục từ thùng rác (Handle Restore)
-   */
-  const handleRestore = useCallback(async (id: string) => {
+  // 3. Khôi phục từ thùng rác (Restore)
+  const handleRestore = async (id: string) => {
     setIsLoading(true);
     try {
       await userService.restoreUser(id);
       toast.success("Khôi phục thành công");
-      await loadUsers(meta?.page || 1, status);
-    } catch (error) {
-      console.error("Restore failed");
+      await reload();
+    } catch (err) {
       toast.error("Khôi phục thất bại");
     } finally {
       setIsLoading(false);
     }
-  }, [loadUsers, meta?.page, status]);
+  };
 
-  /**
-   * Hàm cập nhật thông tin (Handle Update)
-   */
-  const handleUpdate = useCallback(async (
-    userId: string,
+  // 4. Cập nhật thông tin (Update)
+  const handleUpdate = async (
+    id: string,
     data: AdminUpdateFormValues,
     onSuccess?: () => void
   ) => {
     setIsUpdating(true);
     try {
-      // 1. Phải có 'const' và nếu gửi JSON thì không để kiểu là FormData
-      const updateData: AdminUpdateFormValues = {
-        fullName: data.fullName,
-        email: data.email ?? "",
-        // phoneNumber: data.phone,
-        // licenseClass: data.licenseClass, // Nếu backend cần thì mở ra
-      };
-
-      // 2. Gọi hàm service dành riêng cho Admin (truyền cả ID)
-      const response = await userService.updateProfileAdmin(userId, updateData);
-
-      if (response.success) {
-        toast.success("Cập nhật thông tin thành công!");
-        // Load lại danh sách ở trang hiện tại để thấy data mới
-        await loadUsers(meta?.page || 1, status);
+      const res = await userService.updateProfileAdmin(id, data);
+      if (res.success) {
+        toast.success("Cập nhật thành công");
+        await reload();
         if (onSuccess) onSuccess();
       }
-    } catch (error: unknown) {
-      console.error("Update User Error:", error);
-
-      // 3. Xử lý lỗi không dùng 'any'
-      let msg = "Có lỗi xảy ra khi cập nhật";
-      if (axios.isAxiosError(error)) {
-        msg = error.response?.data?.message || msg;
-      }
+    } catch (error) {
+      let msg = "Có lỗi xảy ra";
+      if (axios.isAxiosError(error)) msg = error.response?.data?.message || msg;
       toast.error(msg);
     } finally {
       setIsUpdating(false);
     }
-  }, [loadUsers, meta?.page, status]);
+  };
 
-  useEffect(() => {
-    loadUsers(1, "active");
-  }, [loadUsers]);
-
-  // Định nghĩa reload
-  const reload = (page?: number) => loadUsers(page || meta?.page || 1, status);
-
-  // CHỈ CÓ DUY NHẤT 1 RETURN Ở CUỐI CÙNG
   return {
     users,
     meta,
@@ -176,6 +167,6 @@ export function useUsers() {
     handleDelete,
     handleUnlock,
     handleRestore,
-    handleUpdate
+    handleUpdate,
   };
 }

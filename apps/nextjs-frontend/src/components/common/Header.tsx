@@ -9,13 +9,13 @@ import { useUserStore } from '@/store/user/user.store';
 
 export default function Header() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { user, clear } = useUserStore(); // 💡 Lấy thông tin user và hàm reset từ Store
+  const { user, logout } = useUserStore(); // 💡 Lấy thông tin user và hàm reset từ Store
 
   // Hàm xử lý Đăng xuất (Logout Handler)
   const handleLogout = async () => {
     setIsLoggingOut(true);
     // 💡 Xóa sạch cả RAM (Zustand) và Disk (LocalStorage)
-    clear(); 
+    logout(); 
     // Dùng replace để xóa lịch sử điều hướng, không cho "Back" lại Dashboard
     window.location.replace('/login'); 
   };

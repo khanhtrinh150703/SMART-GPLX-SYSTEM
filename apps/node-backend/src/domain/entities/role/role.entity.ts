@@ -1,39 +1,46 @@
 import { Permission } from "../permission/permission.entity";
+import { IRoleProps } from "./role.props";
 
 /**
- * @description Thực thể Vai trò (Role), chứa danh sách các Quyền hạn
+ * Thực thể Vai trò (Role), chứa danh sách các Quyền hạn.
  */
 export class Role {
-  private constructor(
-    private readonly _id: string,
-    private readonly _name: string,
-    private readonly _description: string,
-    private _permissions: Permission[]
-  ) {}
+  /**
+   * Private constructor để ép việc khởi tạo qua phương thức static.
+   */
+  private constructor(private _props: IRoleProps) {}
 
-  public get id(): string { return this._id; }
-  public get name(): string { return this._name; }
-  public get description(): string { return this._description; }
-  public get permissions(): Permission[] { return this._permissions; }
-
+  // --- Getters: Truy xuất tập trung từ _props ---
+  public get id(): string { return this._props.id; }
+  public get name(): string { return this._props.name; }
+  public get description(): string { return this._props.description; }
+  public get permissions(): Permission[] { return this._props.permissions; }
 
   /**
-   * @description Kiểm tra Role này có chứa một quyền cụ thể hay không
+   * Kiểm tra Role này có chứa một quyền cụ thể hay không.
    * @param permissionName Tên quyền (vd: 'user:write')
    */
   public hasPermission(permissionName: string): boolean {
-    return this._permissions.some(p => p.name === permissionName);
+    return this._props.permissions.some(p => p.name === permissionName);
   }
 
   /**
-   * @description Tái tạo thực thể Role
+   * Tái tạo thực thể Role từ dữ liệu thô hoặc kết quả truy vấn Database.
+   * @param props Dữ liệu thuộc tính của Role.
    */
-  public static reconstitute(props: { 
-    id: string; 
-    name: string; 
-    description: string;
-    permissions?: Permission[] 
-  }): Role {
-    return new Role(props.id, props.name, props.description, props.permissions || []);
+  public static reconstitute(props: IRoleProps): Role {
+    return new Role({
+      id: props.id,
+      name: props.name,
+      description: props.description,
+      permissions: props.permissions || [],
+    });
+  }
+
+  /**
+   * Trả về dữ liệu phẳng của Role (nếu cần dùng cho Mapper).
+   */
+  public toProps(): IRoleProps {
+    return { ...this._props };
   }
 }

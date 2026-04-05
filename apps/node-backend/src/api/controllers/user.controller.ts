@@ -1,28 +1,38 @@
 import { Response } from 'express';
-import { ChangePasswordDTO, ChangeStatusDTO, UpdateProfileDTO } from '@/application/dtos/request/user.dto';
-import { UserService } from '@/application/services/user.service';
-import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Result } from '@/shared/responses/api-response';
-
-// Import hàm bọc lỗi thần thánh
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { AuthRequest } from '@/shared/types/auth.types';
-import { UserQueryDTO } from '@/application/dtos/request/user-query.dto';
-import { ICradle } from '@/shared/types/container.types';
+import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
+import { IUserService } from '@/domain/interfaces/services/i-user.service';
+import { UpdateProfileDTO } from '@/application/dtos/request/user/update-profile.request.dto';
+import { ChangePasswordRequestDTO } from '@/application/dtos/request/user/update-password.request.dto';
+import { ChangeStatusRequestDTO } from '@/application/dtos/request/user/update-status.request.dto';
 
+/**
+ * @interface IUserControllerCradle
+ * @description Định nghĩa các phụ thuộc (dependencies) cần thiết cho UserController.
+ * Giúp TypeScript canh gác chặt chẽ, chỉ cho phép tiêm đúng IUserService vào đây.
+ */
+export interface IUserControllerCradle {
+  userService: IUserService;
+}
 
+/**
+ * @class UserController
+ * @description Tiếp nhận các HTTP Request và điều phối xử lý nghiệp vụ liên quan đến Người dùng.
+ */
 export class UserController {
-
-  // 1. Khai báo thuộc tính riêng tư (Private Property)
-  private readonly _userService: UserService;
+  // 1. Khai báo thuộc tính riêng tư (Sử dụng Interface để đạt tính Loose Coupling)
+  private readonly _userService: IUserService;
 
   /**
-   * @param {ICradle} cradle - Object chứa các dependencies từ Container
+   * @description Khởi tạo UserController với "túi đồ nghề" chuyên biệt cho User.
+   * @param {IUserControllerCradle} cradle - Object chứa các dependencies được tiêm tự động từ Awilix.
    */
-  constructor({ userService }: ICradle) {
-    // 2. Gán instance userService từ "cái nôi" (Cradle) vào thuộc tính class
-    // LƯU Ý: Tên 'userService' phải khớp 100% với Key trong file container.ts
+  constructor({ userService }: IUserControllerCradle) {
+    // 2. Gán instance userService từ Cradle vào thuộc tính class
+    // LƯU Ý: Tên 'userService' phải khớp chính xác với Key trong file container.ts
     this._userService = userService;
   }
 
@@ -43,12 +53,9 @@ export class UserController {
 
     const updatedUser = await this._userService.updateProfile(userId, dto);
 
-    // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
-    const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
-
     Result.ok(
       res,
-      cleanUser,
+      updatedUser,
       Message.USER.UPDATE_SUCCESS,
       'USER_UPDATE_SUCCESS'
     );
@@ -61,7 +68,6 @@ export class UserController {
    * @returns {Promise<void>}
    */
   public updateProfileAdmin = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
-    console.log(req.body)
     const userId = req.params.id as string; // Hoặc req.user.id tùy theo Payload cậu đặt
 
     // 3. Đóng gói dữ liệu vào một Object duy nhất cho DTO
@@ -71,27 +77,27 @@ export class UserController {
 
     const updatedUser = await this._userService.updateProfile(userId, dto);
 
-    // Loại bỏ mật khẩu/thông tin nhạy cảm trước khi trả về
-    const cleanUser = UserMapper.toLoginResponse(updatedUser, "", "");
 
     Result.ok(
       res,
-      cleanUser,
+      updatedUser,
       Message.USER.UPDATE_SUCCESS,
       'USER_UPDATE_SUCCESS'
     );
   });
 
   /**
-     * Tác dụng: API endpoint thay đổi mật khẩu người dùng.
-     * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
-     */
+   * Tác dụng: API endpoint thay đổi mật khẩu người dùng.
+   * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
   public changePassword = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
     // 1. Lấy userId trực tiếp (Hết lỗi đỏ nhờ AuthRequest và Middleware)
     const userId = req.user.userId;
 
     // 2. Khởi tạo DTO từ body (Ép kiểu sang Record để tránh any)
-    const dto = new ChangePasswordDTO(req.body as Record<string, unknown>);
+    const dto = new ChangePasswordRequestDTO(req.body as Record<string, unknown>);
 
     // 3. Gọi Service
     await this._userService.changePassword(userId, dto);
@@ -113,7 +119,7 @@ export class UserController {
    */
   public updateStatus = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.params.id as string;
-    const dto = new ChangeStatusDTO(req.body);
+    const dto = new ChangeStatusRequestDTO(req.body);
 
     await this._userService.updateStatus(userId, dto);
 
@@ -169,6 +175,8 @@ export class UserController {
    * @route GET /api/v1/users
    * @access Private (Admin only)
    * @description Lấy danh sách người dùng có phân trang và lọc.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
    */
   public getUsers = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
     // 1. Thu thập Query Params từ URL (vd: ?page=1&limit=10&role=STUDENT)

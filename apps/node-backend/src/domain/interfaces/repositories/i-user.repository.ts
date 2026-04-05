@@ -1,4 +1,4 @@
-import { UserQueryDTO } from '@/application/dtos/request/user-query.dto';
+import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
 import { User } from '@/domain/entities/user/user.entity';
 
 /**

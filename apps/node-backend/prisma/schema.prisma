@@ -7,34 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// PHÂN HỆ 1: RBAC (ROLE-BASED ACCESS CONTROL)
+// ==========================================
 model User {
-  id           String     @id @default(uuid())
-  username     String     @unique
-  email        String     @unique
-  phoneNumber  String     
-  passwordHash String     @map("password_hash")
-  fullName     String?    @map("full_name")
-  status       String     @default("active")
-  urlPicture   String?    @map("url_picture")
+  id           String     @id @default(uuid()) @db.VarChar(36)
+  username     String     @unique @db.VarChar(50)
+  email        String     @unique @db.VarChar(100)
+  phoneNumber  String     @map("phone_number") @db.VarChar(20)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  fullName     String?    @map("full_name") @db.VarChar(100)
+  status       String     @default("active") @db.VarChar(20)
+  urlPicture   String?    @map("url_picture") @db.VarChar(255)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
 
-  @@index([deletedAt])
-  // Quan hệ: Một User có nhiều Role
-  userRoles    UserRole[]
+  // Quan hệ
+  userRoles      UserRole[]
+  examAttempts   ExamAttempt[]
+  userWeaknesses UserWeakness[]
 
+  @@index([deletedAt])
   @@map("users")
 }
 
 model Role {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  description String?
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  // Quan hệ
   userRoles       UserRole[]
   rolePermissions RolePermission[]
 
@@ -42,38 +46,224 @@ model Role {
 }
 
 model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique // vd: 'user:view', 'user:delete'
-  description String?
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  // Quan hệ
   rolePermissions RolePermission[]
 
   @@map("permissions")
 }
 
-// Bảng trung gian User - Role (N-N)
 model UserRole {
-  userId String @map("user_id")
-  roleId String @map("role_id")
+  userId String @map("user_id") @db.VarChar(36)
+  roleId String @map("role_id") @db.VarChar(36)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@id([userId, roleId]) // Composite Primary Key
+  @@id([userId, roleId])
   @@map("user_roles")
 }
 
-// Bảng trung gian Role - Permission (N-N)
 model RolePermission {
-  roleId       String @map("role_id")
-  permissionId String @map("permission_id")
+  roleId       String @map("role_id") @db.VarChar(36)
+  permissionId String @map("permission_id") @db.VarChar(36)
 
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  @@id([roleId, permissionId]) // Composite Primary Key
+  @@id([roleId, permissionId])
   @@map("role_permissions")
+}
+
+// ==========================================
+// PHÂN HỆ 2: NGÂN HÀNG CÂU HỎI (QUESTION BANK)
+// ==========================================
+
+model LicenseCategory {
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  name        String    @unique @db.VarChar(10)
+  description String    @db.VarChar(500)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  minAge      Int       @default(18) @map("min_age")
+  
+  questionLinks   QuestionLicenseCategory[]
+  examMatrix      ExamMatrix?
+  examAttempts    ExamAttempt[]
+
+  @@map("license_categories")
+}
+
+model Chapter {
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  name        String    @db.VarChar(255)
+  description String?   @db.Text // Lưu mô tả chi tiết của chương
+  orderIndex  Int       @default(0) @map("order_index") // Thứ tự hiển thị (Của Cậu Vàng đây)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Quan hệ
+  questions      Question[]
+  userWeaknesses UserWeakness[]
+
+  @@map("chapters")
+}
+
+
+model Question {
+  id              String    @id @default(uuid()) @db.VarChar(36)
+  chapterId       String    @map("chapter_id") @db.VarChar(36)
+  content         String    @db.Text
+  imageUrl        String?   @map("image_url") @db.VarChar(255)
+  difficultyLevel Int       @default(1) @map("difficulty_level") @db.TinyInt
+  isCritical      Boolean   @default(false) @map("is_critical")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  chapter        Chapter                   @relation(fields: [chapterId], references: [id])
+  answers        Answer[]
+  licenseLinks   QuestionLicenseCategory[]
+  aiExplanation  AiExplanation?
+  attemptDetails AttemptDetail[]
+
+  @@index([chapterId])
+  @@map("questions")
+}
+
+model QuestionLicenseCategory {
+  questionId        String @map("question_id") @db.VarChar(36)
+  licenseCategoryId String @map("license_category_id") @db.VarChar(36)
+
+  question        Question        @relation(fields: [questionId], references: [id])
+  licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
+
+  @@id([questionId, licenseCategoryId])
+  @@map("question_license_categories")
+}
+
+model Answer {
+  id         String    @id @default(uuid()) @db.VarChar(36)
+  questionId String    @map("question_id") @db.VarChar(36)
+  content    String    @db.Text
+  imageUrl   String?   @map("image_url") @db.VarChar(255)
+  isCorrect  Boolean   @default(false) @map("is_correct")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  question       Question        @relation(fields: [questionId], references: [id])
+  attemptDetails AttemptDetail[]
+
+  @@index([questionId])
+  @@map("answers")
+}
+
+model QuestionArchive {
+  id              String    @id @db.VarChar(36)
+  chapterId       String    @map("chapter_id") @db.VarChar(36)
+  content         String    @db.Text
+  imageUrl        String?   @map("image_url") @db.VarChar(255)
+  difficultyLevel Int       @map("difficulty_level") @db.TinyInt
+  isCritical      Boolean   @map("is_critical")
+  createdAt       DateTime  @map("created_at")
+  updatedAt       DateTime  @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  archivedAt      DateTime  @default(now()) @map("archived_at")
+
+  @@map("questions_archive")
+}
+
+// ==========================================
+// PHÂN HỆ 3: CẤU HÌNH ĐỀ THI (EXAM MATRIX)
+// ==========================================
+
+model ExamMatrix {
+  id                String   @id @default(uuid()) @db.VarChar(36)
+  licenseCategoryId String   @unique @map("license_category_id") @db.VarChar(36)
+  totalQuestions    Int      @map("total_questions")
+  passingScore      Int      @map("passing_score")
+  durationMinutes   Int      @map("duration_minutes")
+  rulesConfig       Json     @map("rules_config")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
+
+  @@map("exam_matrices")
+}
+
+// ==========================================
+// PHÂN HỆ 4: LỊCH SỬ THI (EXAM EXECUTION)
+// ==========================================
+
+model ExamAttempt {
+  id                String    @id @default(uuid()) @db.VarChar(36)
+  userId            String    @map("user_id") @db.VarChar(36)
+  licenseCategoryId String    @map("license_category_id") @db.VarChar(36)
+  startTime         DateTime  @default(now()) @map("start_time")
+  endTime           DateTime? @map("end_time")
+  totalCorrect      Int       @default(0) @map("total_correct")
+  isPassed          Boolean   @default(false) @map("is_passed")
+  failedByCritical  Boolean   @default(false) @map("failed_by_critical")
+
+  user            User            @relation(fields: [userId], references: [id])
+  licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
+  details         AttemptDetail[]
+
+  @@index([userId])
+  @@map("exam_attempts")
+}
+
+model AttemptDetail {
+  id               String  @id @default(uuid()) @db.VarChar(36)
+  attemptId        String  @map("attempt_id") @db.VarChar(36)
+  questionId       String  @map("question_id") @db.VarChar(36)
+  selectedAnswerId String? @map("selected_answer_id") @db.VarChar(36)
+  isCorrect        Boolean @default(false) @map("is_correct")
+
+  attempt        ExamAttempt @relation(fields: [attemptId], references: [id])
+  question       Question    @relation(fields: [questionId], references: [id])
+  selectedAnswer Answer?     @relation(fields: [selectedAnswerId], references: [id])
+
+  @@index([attemptId])
+  @@map("attempt_details")
+}
+
+// ==========================================
+// PHÂN HỆ 5: TRÍ TUỆ NHÂN TẠO (AI & ANALYTICS)
+// ==========================================
+
+model AiExplanation {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  questionId       String   @unique @map("question_id") @db.VarChar(36)
+  explanationText  String   @map("explanation_text") @db.Text
+  promptTokens     Int      @map("prompt_tokens")
+  completionTokens Int      @map("completion_tokens")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@map("ai_explanations")
+}
+
+model UserWeakness {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  userId         String   @map("user_id") @db.VarChar(36)
+  chapterId      String   @map("chapter_id") @db.VarChar(36)
+  errorRate      Float    @map("error_rate") @db.Float
+  lastAnalyzedAt DateTime @default(now()) @map("last_analyzed_at")
+
+  user    User    @relation(fields: [userId], references: [id])
+  chapter Chapter @relation(fields: [chapterId], references: [id])
+
+  @@index([userId])
+  @@map("user_weaknesses")
 }

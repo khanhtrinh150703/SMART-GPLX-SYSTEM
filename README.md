@@ -127,6 +127,7 @@ src/
 │   ├── external-services/        # Kết nối với các dịch vụ bên thứ 3
 │   │   └── mailer/
 │   │       └── mailer.service.ts # Ví dụ: Gửi email
+│   ├── persistence
 │   ├── logging/                  # Hệ thống logging
 │   │   └── winston.logger.ts
 │   ├── repositories/             # Implement các interface từ Domain
@@ -137,6 +138,7 @@ src/
 │  
 ├── shared/                       # Các module dùng chung toàn dự án
 │   ├── errors/                   # Quản lý lỗi tập trung
+│   ├── config/                   # Quản lý config
 │   ├── responses/                # Chuẩn hóa Response API
 │   ├── types/                    # Định nghĩa Types/Interfaces dùng chung
 │   └── utils/                    # Các hàm tiện ích bổ trợ
