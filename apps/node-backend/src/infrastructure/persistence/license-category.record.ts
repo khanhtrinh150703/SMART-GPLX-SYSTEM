@@ -8,6 +8,7 @@ export interface ILicenseCategoryRecord {
   id: string;
   name: string;
   description: string;
+  minAge: number;
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;

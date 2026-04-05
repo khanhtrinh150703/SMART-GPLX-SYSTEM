@@ -8,15 +8,21 @@ export class UpdateLicenseCategoryRequestDTO {
   public readonly id: string;
   public readonly name: string;
   public readonly description: string;
+  public readonly minAge: number;
 
   /**
    * Khởi tạo DTO từ dữ liệu nhận được.
    */
-  constructor(data: { id: unknown; name: unknown; description: unknown }) {
-    this.id = typeof data.id === 'string' ? data.id.trim() : '';
-    this.name = typeof data.name === 'string' ? data.name.trim() : '';
-    this.description = typeof data.description === 'string' ? data.description.trim() : '';
+  constructor(data: Partial<UpdateLicenseCategoryRequestDTO>) {
+    if (!data.id) {
+      throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED);
+    }
+    this.id = data.id;
+    this.name = data.name?.trim() || "";
+    this.description = data.description?.trim() || "";
+    this.minAge = data.minAge ?? 18;
   }
+
 
   /**
    * Kiểm tra tính hợp lệ của dữ liệu cập nhật.

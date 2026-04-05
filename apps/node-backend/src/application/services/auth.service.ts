@@ -2,13 +2,16 @@ import bcrypt from 'bcrypt';
 import { LoginResponseDTO } from '../dtos/response/auth/auth.respone.dto';
 import { ErrorCode, AppError } from '@/shared/errors';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
-import { TokenPayload } from '@/shared/types/auth.types';
+import { TokenPayload, Tokens } from '@/shared/types/auth.types';
 import { ITokenManager } from '@/domain/interfaces/external/i-token-manager';
 import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
 import { ResetPasswordRequestDTO } from '../dtos/request/auth/reset-password.request.dto';
 import { LoginRequestDTO } from '../dtos/request/auth/login.request.dto';
 import { IUserService } from '@/domain/interfaces/services/i-user.service';
 import { IOtpService } from '@/domain/interfaces/services/i-otp.service';
+import { RefreshTokenRequestDTO } from '../dtos/request/auth/refresh.token.request.dto';
+import { jwtUtil } from '@/shared/utils/jwt.util';
+import { REDIS_CONSTANTS } from '@/domain/constants/redis.constant';
 
 /**
  * @interface IAuthServiceCradle
@@ -68,6 +71,48 @@ export class AuthService implements IAuthService {
   }
 
   /**
+   * @description Logic làm mới cặp Token (Access & Refresh)
+   * @param {RefreshTokenRequestDTO} dto - Chứa chuỗi refreshToken từ Client
+   */
+  public async refresh(dto: RefreshTokenRequestDTO): Promise<Tokens> {
+    // 1. Verify chữ ký JWT của Refresh Token
+    // Nếu token giả hoặc hết hạn, jwtUtil sẽ ném AppError(401)
+    const payload = jwtUtil.verifyRefreshToken(dto.refreshToken) as TokenPayload;
+
+    // 2. Kiểm tra "Sổ cái" Redis: Refresh Token này đã bị hủy chưa?
+    const deviceId = payload.deviceId || 'default';
+    const refreshKey = `${REDIS_CONSTANTS.REFRESH_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
+
+    // Giả định tokenRepository được bọc trong tokenManager hoặc truy cập trực tiếp
+    // Ở đây ta check xem session này còn valid trong Redis không
+    const isValidSession = await this._tokenManager.exists(refreshKey);
+
+    if (!isValidSession) {
+      // Nếu không tìm thấy Key -> Token đã bị dùng rồi hoặc đã Logout
+      throw new AppError(ErrorCode.AUTH.UNAUTHORIZED);
+    }
+
+    // 3. Kiểm tra thực thể User trong Database
+    const user = await this._userService.getUsersbyId(payload.userId);
+    if (!user) {
+      throw new AppError(ErrorCode.USER.NOT_FOUND);
+    }
+
+    if (user.status !== 'active') {
+      throw new AppError(ErrorCode.AUTH.ACCOUNT_LOCKED);
+    }
+
+    // 4. TOKEN ROTATION (Xoay vòng Token)
+    // - Bước A: Thu hồi (Xóa) cặp Token cũ trong Redis để không ai dùng lại được nữa
+    await this._tokenManager.revokeTokenByPayLoad(payload);
+
+    // - Bước B: Tạo và Lưu cặp Token mới tinh (Access & Refresh mới, JTI mới)
+    const newTokens = await this._tokenManager.generateAndStoreTokens(user);
+
+    return newTokens;
+  }
+
+  /**
    * Đăng xuất người dùng và thu hồi (revoke) toàn bộ session hiện có.
    * @param {TokenPayload} payload - Thông tin trích xuất từ JWT hợp lệ.
    * @returns {Promise<void>}
@@ -87,6 +132,8 @@ export class AuthService implements IAuthService {
     const user = await this._userService.getUserByEmail(email);
     if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
 
+    
+    // const clientIp = requestIp.getClientIp(req);
     // 2. Sinh mã OTP, lưu Redis và gửi Mail qua OtpService
     await this._otpService.requestOtp(email);
   }

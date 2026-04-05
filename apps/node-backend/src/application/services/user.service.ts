@@ -223,6 +223,21 @@ export class UserService implements IUserService {
     }
 
     /**
+    * Tìm kiếm người dùng qua Email và xác thực trạng thái tài khoản.
+    * @param {string} userId - UserID cần tìm.
+    * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
+    */
+    public async getUsersbyId(userId: string): Promise<User> {
+        const user = await this._userRepo.findActiveById(userId);
+
+        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+
+        this.ensureAccountNotLocked(user);
+
+        return user;
+    }
+
+    /**
      * Tác dụng: Kiểm tra tính duy nhất của Username và Email.
      * @throws {AppError} - Ném lỗi cụ thể nếu đã tồn tại.
      * @returns {Promise<boolean>} - Trả về false nếu KHÔNG tìm thấy trùng lặp.

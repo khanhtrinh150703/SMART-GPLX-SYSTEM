@@ -1,5 +1,7 @@
 // user-test.config.ts
 
+import { REDIS_CONSTANTS } from '@/domain/constants/redis.constant';
+
 /**
  * CONFIGURATION CHUNG CHO INTEGRATION TESTS
  * File này chứa các config, endpoint, test data dùng chung cho User, Auth và License.
@@ -179,9 +181,9 @@ export const QUESTION_DATA = {
 };
 // ==================== REDIS HELPERS KEYS ====================
 export const REDIS_KEYS = {
-  getOtpKey: (email: string) => `otp:${email.toLowerCase()}`,
-  getResendLockKey: (email: string) => `otp_lock:${email}`,
-  getPendingUserKey: (email: string) => `pending_user:${email}`,
+  getOtpKey: (email: string) => `${REDIS_CONSTANTS.OTP_PREFIX}${email.toLowerCase()}`,
+  getResendLockKey: (email: string) => `${REDIS_CONSTANTS.OTP_LOCK_PREFIX}${email}`,
+  getPendingUserKey: (email: string) => `${REDIS_CONSTANTS.PENDING_USER_PREFIX}${email}`,
 } as const;
 
 // ==================== RE-EXPORT SHARED CONSTANTS ====================

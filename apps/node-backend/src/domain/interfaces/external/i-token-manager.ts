@@ -29,4 +29,12 @@ export interface ITokenManager {
    * @returns {Promise<void>}
    */
   revokeTokenByPayLoad(payload: TokenPayload): Promise<void>;
+
+  /**
+   * @description Kiểm tra xem một mã định danh (Key) có còn tồn tại trong kho lưu trữ hay không.
+   * Phục vụ cho việc xác thực Session (Phiên làm việc) còn hiệu lực hay đã bị thu hồi.
+   * @param {string} key - Chuỗi định danh hoàn chỉnh (đã bao gồm prefix) cần kiểm tra.
+   * @returns {Promise<boolean>} True nếu tồn tại (Valid), False nếu không (Revoked/Expired).
+   */
+  exists(key: string): Promise<boolean>;
 }

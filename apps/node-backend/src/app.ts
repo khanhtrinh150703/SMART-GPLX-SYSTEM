@@ -19,10 +19,13 @@ const uploadPath = path.join(__dirname, '..', 'uploads');
 
 // Cấu hình CORS (Cross-Origin Resource Sharing - Chia sẻ tài nguyên chéo nguồn gốc)
 // Đặt ở trên cùng để "mở cửa" cho trình duyệt trước khi làm bất cứ việc gì khác
+
+app.set('trust proxy', true);
+
 app.use(cors({
   origin: 'http://localhost:3001', // Mở cửa cho cổng 3001 của Frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Các phương thức HTTP được phép
-  allowedHeaders: ['Content-Type', 'Authorization'], // Các tiêu đề (Headers) được phép
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'], // Các tiêu đề (Headers) được phép
   credentials: true // Cho phép gửi kèm Cookie/Token bảo mật
 }));
 

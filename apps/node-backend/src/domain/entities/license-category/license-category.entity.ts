@@ -9,12 +9,14 @@ export class LicenseCategory {
   private readonly _id?: string;
   private _name: string;
   private _description: string;
+  private _minAge: number;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
   private readonly _deletedAt?: Date | null;
 
   constructor(props: ILicenseCategoryProps) {
     this._id = props.id;
+    this._minAge = props.minAge;
     this._name = props.name;
     this._description = props.description;
     this._createdAt = props.createdAt;
@@ -26,6 +28,7 @@ export class LicenseCategory {
   get id(): string | undefined { return this._id; }
   get name(): string { return this._name; }
   get description(): string { return this._description; }
+  get minAge(): number { return this._minAge; }
   
   // Fix: Thêm | undefined vì trong constructor chúng là optional
   get createdAt(): Date | undefined { return this._createdAt; }

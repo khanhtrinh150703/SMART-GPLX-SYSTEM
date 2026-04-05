@@ -10,6 +10,7 @@ export class CreateLicenseCategoryRequestDTO {
   public readonly id?: string; // ID thường là optional khi tạo mới (DB tự gen)
   public readonly name: string;
   public readonly description: string;
+  public readonly minAge: number;
 
   /**
    * Constructor nhận vào dữ liệu thô để khởi tạo object.
@@ -19,6 +20,7 @@ export class CreateLicenseCategoryRequestDTO {
     this.id = data.id;
     this.name = data.name?.trim() || "";
     this.description = data.description?.trim() || "";
+    this.minAge = data.minAge ?? 18;
   }
 
   /**

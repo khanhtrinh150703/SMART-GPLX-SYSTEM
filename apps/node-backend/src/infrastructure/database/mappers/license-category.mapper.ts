@@ -18,6 +18,7 @@ export class LicenseCategoryMapper {
       description: raw.description,
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
+      minAge: raw.minAge,
       deletedAt: raw.deleted_at ?? null,
     });
   }
@@ -44,6 +45,7 @@ export class LicenseCategoryMapper {
     return {
       id: entity.id || '',
       name: entity.name,
+      minAge: entity.minAge,
       description: entity.description,
       createdAt: entity.createdAt ? entity.createdAt.toISOString() : new Date().toISOString(),
     };

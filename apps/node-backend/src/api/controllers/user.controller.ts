@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { Result } from '@/shared/responses/api-response';
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { AuthRequest } from '@/shared/types/auth.types';
 import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';

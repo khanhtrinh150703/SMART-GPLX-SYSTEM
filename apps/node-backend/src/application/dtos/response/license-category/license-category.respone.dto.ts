@@ -13,4 +13,6 @@ export class LicenseCategoryResponse {
 
   /** @property {string} createdAt - Thời điểm tạo bản ghi (định dạng ISO). */
   public readonly createdAt!: string;
+
+  public readonly minAge!: number;
 }

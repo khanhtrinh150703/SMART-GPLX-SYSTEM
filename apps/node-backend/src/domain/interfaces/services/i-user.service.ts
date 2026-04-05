@@ -88,6 +88,7 @@ export interface IUserService {
    */
   checkExisting(username: string, email: string): Promise<boolean>;
 
+  getUsersbyId(userId: string): Promise<User>;
   /**
    * @description Truy vấn danh sách người dùng có hỗ trợ phân trang và bộ lọc tìm kiếm.
    * @param {UserQueryDTO} query - Tham số truy vấn (Page, Limit, Search, Role, Status).

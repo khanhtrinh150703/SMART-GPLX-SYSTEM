@@ -86,6 +86,10 @@ export const ErrorCode = {
         NAME_FORMAT_INVALID: 'VAL_003',
         DESCRIPTION_REQUIRED: 'VAL_004',
         DESCRIPTION_TOO_LONG: 'VAL_005',
+        MIN_AGE_MUST_BE_NUMBER: 'VAL_006', // Đã thêm từ DTO trước
+        MIN_AGE_INVALID: 'VAL_007',
+        REFRESH_TOKEN_REQUIRED: 'VAL_008',
+        REFRESH_TOKEN_INVALID_FORMAT: 'VAL_009',
     },
 
     LICENSE: {

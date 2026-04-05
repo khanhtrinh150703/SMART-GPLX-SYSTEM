@@ -1,7 +1,8 @@
 import { LoginRequestDTO } from "@/application/dtos/request/auth/login.request.dto";
+import { RefreshTokenRequestDTO } from "@/application/dtos/request/auth/refresh.token.request.dto";
 import { ResetPasswordRequestDTO } from "@/application/dtos/request/auth/reset-password.request.dto";
 import { LoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
-import { TokenPayload } from "@/shared/types/auth.types";
+import { TokenPayload, Tokens } from "@/shared/types/auth.types";
 
 /**
  * @description Giao diện xử lý các quy trình xác thực và bảo mật tài khoản (Authentication & Account Security).
@@ -36,4 +37,6 @@ export interface IAuthService {
    * @returns {Promise<void>}
    */
   resetPassword(dto: ResetPasswordRequestDTO): Promise<void>;
+
+  refresh(dto: RefreshTokenRequestDTO): Promise<Tokens>;
 }

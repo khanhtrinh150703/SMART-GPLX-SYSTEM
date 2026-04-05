@@ -62,6 +62,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu nhập vào không hợp lệ.',
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được giống mật khẩu cũ.',
     [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 'Mật khẩu cũ không chính xác.',
+
     // --- VALIDATION ---
     [ErrorCode.VALIDATION.ID_REQUIRED]: 'ID định danh không được để trống.',
     [ErrorCode.VALIDATION.NAME_REQUIRED]: 'Tên hạng bằng lái không được để trống.',
@@ -69,6 +70,11 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên hạng bằng lái chỉ được chứa chữ cái in hoa và chữ số (VD: A1, B2).',
     [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Mô tả hạng bằng lái không được để trống.',
     [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả không được vượt quá 500 ký tự.',
+    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số.',
+    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 'Độ tuổi yêu cầu không hợp lệ (thường từ 16-100).',
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 'Refresh Token là bắt buộc và không được để trống.',
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 'Định dạng Refresh Token không hợp lệ hoặc quá ngắn.',
+
 
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',

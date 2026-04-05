@@ -57,6 +57,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
             id: crypto.randomUUID(),
             name: dto.name,
             description: dto.description,
+            minAge: dto.minAge,
             deletedAt: null
         });
 

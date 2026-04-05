@@ -90,7 +90,8 @@ model LicenseCategory {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
-
+  minAge      Int       @default(18) @map("min_age")
+  
   questionLinks   QuestionLicenseCategory[]
   examMatrix      ExamMatrix?
   examAttempts    ExamAttempt[]

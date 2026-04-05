@@ -3,7 +3,7 @@ import { ICradle } from '@/shared/types/container.types';
 import { Result } from '@/shared/responses/api-response';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { IChapterService } from '@/domain/interfaces/services/i-chapter.service';
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 
 /**
  * @description Controller xử lý các yêu cầu HTTP liên quan đến quản lý Chương lý thuyết (Theory Chapters).

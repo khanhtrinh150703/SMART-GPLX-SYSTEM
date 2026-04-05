@@ -37,6 +37,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     const record: ILicenseCategoryRecord = {
       id: raw.id,
       name: raw.name,
+      minAge: raw.minAge,
       description: raw.description,
       created_at: raw.createdAt,
       updated_at: raw.updatedAt,

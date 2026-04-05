@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { UserMapper } from '@/infrastructure/database/mappers/user.mapper';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { AuthRequest } from '@/shared/types/auth.types';
 import { IAuthService } from '@/domain/interfaces/services/i-auth.service';
 import { IRegistrationService } from '@/domain/interfaces/services/i-registration.service';
@@ -10,6 +10,7 @@ import { RegisterRequestDTO } from '@/application/dtos/request/auth/register.req
 import { VerifyUserRequestDTO } from '@/application/dtos/request/auth/verify-otp.request.dto';
 import { LoginRequestDTO } from '@/application/dtos/request/auth/login.request.dto';
 import { ResetPasswordRequestDTO } from '@/application/dtos/request/auth/reset-password.request.dto';
+import { RefreshTokenRequestDTO } from '@/application/dtos/request/auth/refresh.token.request.dto';
 
 /**
  * @interface IAuthControllerCradle
@@ -58,6 +59,27 @@ export class AuthController {
       undefined,
       Message.AUTH.OTP_EMAIL,
       'AUTH_REGISTER_SUCCESS'
+    );
+  });
+
+  /**
+   * @description Làm mới Access Token bằng Refresh Token (Silent Refresh).
+   * @route POST /api/v1/auth/refresh-token
+   * @param {Request} req - Chứa refreshToken.
+   * @param {Response} res - Trả về Access Token mới.
+   * @returns {Promise<void>}
+   */
+  public refreshToken = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const dto = new RefreshTokenRequestDTO(req.body);
+    dto.isValid();
+
+    const newToken = await this._authService.refresh(dto);
+
+    Result.ok(
+      res,
+      newToken,
+      Message.AUTH.TOKEN_REFRESHED,
+      'AUTH_TOKEN_REFRESH_SUCCESS'
     );
   });
 

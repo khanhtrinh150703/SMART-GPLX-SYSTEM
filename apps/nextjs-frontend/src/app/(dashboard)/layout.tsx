@@ -1,28 +1,28 @@
-import Sidebar from '@/components/ui/Sidebar';
-import Header from '@/components/common/Header';
+import Sidebar from "@/components/common/Sidebar";
+import Header from "@/components/common/Header";
 
+/**
+ * DashboardLayout - Bố cục chính cho trang quản trị (Dashboard)
+ * @param {Object} props - Thuộc tính truyền vào component
+ * @param {React.ReactNode} props.children - Các component trang con
+ */
+/**
+ * DashboardLayout - Bố cục khu vực quản trị
+ * Khóa khung hình bằng h-screen để tạo vùng cuộn riêng cho thẻ <main>.
+ */
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
-      {/* Thanh Menu bên trái (Sidebar) */}
+    // h-screen và overflow-hidden: Khóa chặt khung nhìn trình duyệt
+    <div className="flex h-screen w-full overflow-hidden">
       <Sidebar />
-
-      {/* Cột Nội dung bên phải (Main Content Column) */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Thanh Tiêu đề trên cùng (Header) */}
+      <div className="flex flex-1 flex-col min-h-0 min-w-0">
         <Header />
-
-        {/* Vùng chứa nội dung chính (High Whitespace, Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* Nội dung của các file page.tsx sẽ được Render (Kết xuất) vào đây */}
-            {children}
-          </div>
-        </main>
+        {/* flex-1 và overflow-y-auto: Chỉ cho phép vùng này được cuộn */}
+        <main className="flex-1 overflow-y-auto p-8">{children}</main>
       </div>
     </div>
   );

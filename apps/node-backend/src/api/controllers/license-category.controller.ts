@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
@@ -57,10 +57,10 @@ export class LicenseCategoryController {
    * @returns {Promise<void>}
    */
   public store = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const { name, description } = req.body;
+    const { name, description, minAge } = req.body;
 
     // Khởi tạo và thực thi tự kiểm tra dữ liệu (Self-Validating DTO)
-    const dto = new CreateLicenseCategoryRequestDTO({ name, description });
+    const dto = new CreateLicenseCategoryRequestDTO({ name, description, minAge });
     dto.isValid();
 
     const result = await this._licenseService.createCategory(dto);

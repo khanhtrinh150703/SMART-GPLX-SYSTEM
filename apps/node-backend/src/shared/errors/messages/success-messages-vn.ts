@@ -13,6 +13,7 @@ export class Message {
     OTP_RESENT: 'Mã OTP mới đã được gửi vào email của bạn.',
     LOGOUT_SUCCESS: 'Đăng xuất thành công.',
     PASSWORD_RESET: 'Mật khẩu của bạn đã được thay đổi thành công. Vui lòng đăng nhập lại.',
+    TOKEN_REFRESHED: 'Làm mới phiên đăng nhập thành công.',
   } as const;
 
   /**
