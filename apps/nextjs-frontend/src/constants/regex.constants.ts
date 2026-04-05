@@ -15,4 +15,6 @@ export const REGEX = {
 
   // Chỉ cho phép nhập số (Numbers Only)
   ONLY_NUMBERS: /^\d+$/,
+
+  USERNAME: /^[a-zA-Z0-9]{3,20}$/,
 };  

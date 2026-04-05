@@ -1,10 +1,10 @@
-// src/types/auth.type.ts
+import { User } from "./user.type";
 
-
-// 1. Request Payloads (Dữ liệu gửi lên BE)
+// Request Payloads (Dữ liệu gửi lên Backend)
 export interface RegisterPayload {
   username: string;
   email: string;
+  fullName: string;
   password: string;
 }
 
@@ -18,18 +18,30 @@ export interface LoginPayload {
   password: string;
 }
 
-// 2. Response Data (Dữ liệu BE trả về)
+export interface ResendOtpPayload {
+  email: string;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  otp: string;
+  newPassword: string;
+  email: string;
+}
+
+// Response Data (Dữ liệu phản hồi từ API)
 export interface RegisterResponse {
   message: string;
   userId: string;
 }
 
-// Định nghĩa kiểu dữ liệu nhận về (Response Data Type)
 export interface LoginResponseData {
-  accessToken: string; // Mã thông báo truy cập
-  refreshToken: string; // Mã thông báo làm mới
+  user: User;
+  accessToken: string;
+  refreshToken: string;
 }
 
-export interface ResendOtpPayload {
-  email: string;
-}
+

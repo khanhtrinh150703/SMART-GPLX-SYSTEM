@@ -44,18 +44,22 @@ export class JwtTokenManager implements ITokenManager {
       jti: jti,
     });
 
-    // 1. Ký Token (Sử dụng Utility đã được fix Zero Any và No Static)
-    // Manager không cần truyền Secret vào đây, Utility tự quản lý cấu hình.
+    // 1. Ký Token
     const accessToken = jwtUtil.signAccessToken(payload, JWT_CONSTANTS.ACCESS_TOKEN_EXPIRE);
     const refreshToken = jwtUtil.signRefreshToken(payload, JWT_CONSTANTS.REFRESH_TOKEN_EXPIRE);
-    const ttl = TIME_CONSTANTS.ACCESS_TOKEN_EXPIRE;
 
-    // 2. Định nghĩa Key lưu trữ chuẩn hệ thống
-    // Sử dụng Constants để tránh hardcode string prefix
+    // 2. Định nghĩa 2 loại Key
     const deviceId = payload.deviceId || 'default';
-    const redisKey = `${REDIS_CONSTANTS.TOKEN_PREFIX}${payload.userId}:${deviceId}:${jti}`;
-    // 3. Lưu Access Token vào kho để quản lý phiên làm việc (15 phút = 900 giây)
-    await this._tokenRepo.save(redisKey, 'valid', ttl);
+    const accessKey = `${REDIS_CONSTANTS.ACCESS_TOKEN_PREFIX}${payload.userId}:${deviceId}:${jti}`;
+    const refreshKey = `${REDIS_CONSTANTS.REFRESH_TOKEN_PREFIX}${payload.userId}:${deviceId}:${jti}`;
+
+    // 3. Lưu vào Redis với TTL tương ứng
+    // Access Token: 15 phút (900s)
+    // Refresh Token: 7 ngày hoặc 30 ngày (Ví dụ: 604800s)
+    await Promise.all([
+      this._tokenRepo.save(accessKey, 'valid', TIME_CONSTANTS.ACCESS_TOKEN_EXPIRE),
+      this._tokenRepo.save(refreshKey, 'valid', TIME_CONSTANTS.REFRESH_TOKEN_EXPIRE)
+    ]);
 
     return {
       accessToken,
@@ -64,30 +68,45 @@ export class JwtTokenManager implements ITokenManager {
   }
 
   /**
-   * Tác dụng: Thu hồi toàn bộ Token của một người dùng trên mọi thiết bị.
+   * Tác dụng: Thu hồi TOÀN BỘ Token (Access & Refresh) của một người dùng trên MỌI thiết bị.
    * @param {string} userId - ID của người dùng.
    * @returns {Promise<void>}
    */
   public async revokeTokenByPattern(userId: string): Promise<void> {
+    // Pattern này sẽ khớp với:
+    // auth:access:userId:...
+    // auth:refresh:userId:...
+    const pattern = `auth:*:${userId}:*`;
 
-    const pattern = `${REDIS_CONSTANTS.TOKEN_PREFIX}${userId}:`;
-    // 1. Tìm tất cả các key khớp với pattern (ví dụ: auth:token:123:*)
-    // Lưu ý: Dùng SCAN thay vì KEYS để không làm treo Redis nếu data lớn
+    // Xóa tất cả các key khớp với pattern để "đăng xuất từ xa" toàn bộ
     await this._tokenRepo.deleteByPattern(pattern);
-
   }
-  /**
- * Tác dụng: Thu hồi toàn bộ Token của một người dùng trên mọi thiết bị.
- * @param {string} userId - ID của người dùng.
- * @returns {Promise<void>}
- */
-  // Trong TokenManager hoặc AuthService
-  public async revokeTokenByPayLoad(payload: TokenPayload): Promise<void> {
-    // Phải dựng lại đúng cấu trúc Key lúc nãy
-    const deviceId = payload.deviceId || 'default';
-    const redisKey = `${REDIS_CONSTANTS.TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
 
-    // Gọi Repo để xóa
-    await this._tokenRepo.delete(redisKey);
+  /**
+   * Tác dụng: Thu hồi cặp Token hiện tại dựa trên Payload (thường dùng cho Logout).
+   * @param {TokenPayload} payload - Chứa userId, jti, deviceId.
+   * @returns {Promise<void>}
+   */
+  public async revokeTokenByPayLoad(payload: TokenPayload): Promise<void> {
+    const deviceId = payload.deviceId || 'default';
+
+    // Dựng lại chính xác 2 Key đã lưu lúc generate
+    const accessKey = `${REDIS_CONSTANTS.ACCESS_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
+    const refreshKey = `${REDIS_CONSTANTS.REFRESH_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
+
+    // Gọi Repo xóa cả 2 cùng lúc
+    await Promise.all([
+      this._tokenRepo.delete(accessKey),
+      this._tokenRepo.delete(refreshKey)
+    ]);
+  }
+
+
+  /**
+   * Tác dụng: Kiểm tra trạng thái tồn tại của Token Key trong Redis.
+   */
+  public async exists(key: string): Promise<boolean> {
+    // Gọi Repo để check lệnh EXISTS của Redis
+    return await this._tokenRepo.exists(key);
   }
 }

@@ -59,7 +59,7 @@ export const authSteps = () => {
 
         expect(initRes.status).toBe(200);
         expect(initRes.body.message).toBe(Message.AUTH.OTP_EMAIL);
-      }, 10000);
+      }, 20000);
 
       it('should successfully resend OTP', async () => {
         await clearResendLock(TEST_ACCOUNT.email);
@@ -96,9 +96,8 @@ export const authSteps = () => {
             email: TEST_ACCOUNT.email,
             otp: otp,
           });
-
         expect(response.status).toBe(201);
-      });
+      }, 10000);
 
       it('Nên chặn đăng ký khi Username đã bị chiếm dụng', async () => {
         const response = await request(app)

@@ -39,6 +39,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.PHONE_EXISTS]: 'Số điện thoại này đã được đăng ký.',
     [ErrorCode.USER.REGISTER_FAILED]: 'Quá trình đăng ký gặp lỗi, vui lòng kiểm tra lại.',
     [ErrorCode.USER.UPDATE_FAILED]: 'Cập nhật thông tin không thành công.',
+    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
 
     // === SMART-GPLX (EXAM & AI) ===
     [ErrorCode.EXAM.NOT_FOUND]: 'Đề thi không tồn tại hoặc đã bị gỡ bỏ.',
@@ -60,4 +61,44 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 'Dữ liệu không đúng định dạng yêu cầu.',
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu nhập vào không hợp lệ.',
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được giống mật khẩu cũ.',
+    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 'Mật khẩu cũ không chính xác.',
+
+    // --- VALIDATION ---
+    [ErrorCode.VALIDATION.ID_REQUIRED]: 'ID định danh không được để trống.',
+    [ErrorCode.VALIDATION.NAME_REQUIRED]: 'Tên hạng bằng lái không được để trống.',
+    [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 'Tên hạng bằng lái phải có độ dài từ 2 đến 10 ký tự.',
+    [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên hạng bằng lái chỉ được chứa chữ cái in hoa và chữ số (VD: A1, B2).',
+    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Mô tả hạng bằng lái không được để trống.',
+    [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả không được vượt quá 500 ký tự.',
+    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số.',
+    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 'Độ tuổi yêu cầu không hợp lệ (thường từ 16-100).',
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 'Refresh Token là bắt buộc và không được để trống.',
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 'Định dạng Refresh Token không hợp lệ hoặc quá ngắn.',
+
+
+    // --- LICENSE ---
+    [ErrorCode.LICENSE.ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
+    [ErrorCode.LICENSE.NOT_FOUND]: 'Không tìm thấy hạng bằng lái yêu cầu.',
+    [ErrorCode.LICENSE.IS_IN_USE]: 'Không thể xóa: Đang có câu hỏi hoặc đề thi thuộc hạng bằng này.',
+    [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
+
+    // === CHAPTER (CHƯƠNG LÝ THUYẾT) ===
+    [ErrorCode.CHAPTER.NOT_FOUND]: 'Không tìm thấy chương lý thuyết yêu cầu.',
+    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 'Tên chương lý thuyết này đã tồn tại trong hệ thống.',
+    [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 'Không thể xóa chương này vì đang có dữ liệu câu hỏi liên quan.',
+    [ErrorCode.CHAPTER.CREATE_FAILED]: 'Quá trình tạo mới chương lý thuyết thất bại.',
+    [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
+    [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
+
+    // --- QUESTION ---
+    [ErrorCode.QUESTION.NOT_FOUND]: 'Câu hỏi không tồn tại trong hệ thống.',
+    [ErrorCode.QUESTION.CHAPTER_REQUIRED]: 'ID chương lý thuyết không được để trống.',
+    [ErrorCode.QUESTION.CONTENT_INVALID]: 'Nội dung câu hỏi phải có ít nhất 10 ký tự.',
+    [ErrorCode.QUESTION.LICENSE_REQUIRED]: 'Vui lòng chọn ít nhất một hạng bằng lái.',
+    [ErrorCode.QUESTION.ANSWERS_INSUFFICIENT]: 'Mỗi câu hỏi phải cung cấp tối thiểu 2 đáp án.',
+    [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 'Câu hỏi bắt buộc phải có ít nhất một đáp án đúng.',
+    [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 'Đường dẫn hình ảnh minh họa không hợp lệ.',
+    [ErrorCode.QUESTION.ALREADY_EXISTS]: 'Nội dung câu hỏi này đã tồn tại trong hệ thống.',
+    [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
+    [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
 };

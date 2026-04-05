@@ -32,6 +32,7 @@ export const userSteps = () => {
 
     userId = loginRes.body.data.user.id;
     accessToken = loginRes.body.data.accessToken;
+    console.log(accessToken)
   });
 
   // --- HELPER FUNCTION ---
@@ -73,6 +74,7 @@ export const userSteps = () => {
         expect(res.body.success).toBe(true);
         expect(res.body.data).toHaveProperty('accessToken');
         expect(res.body.data.user.email).toBe(TEST_ACCOUNT.email);
+        accessToken = res.body.data.accessToken;
       });
 
       it('Nên trả về lỗi 401 khi đăng nhập bằng email nhưng sai mật khẩu', async () => {
@@ -125,7 +127,7 @@ export const userSteps = () => {
 
         expect(response.body).toMatchObject({
           success: false,
-          code: ErrorCode.AUTH.INVALID_CREDENTIALS,
+          code: ErrorCode.VALIDATION.PASSWORD_DIFFERENT,
         });
         expect(response.body.message).toBeDefined();
       });
@@ -146,6 +148,22 @@ export const userSteps = () => {
     });
 
     describe('🚫 Kịch bản: Admin quản lý trạng thái và Xóa', () => {
+
+      beforeAll(async () => {
+        const loginRes = await request(app)
+          .post(AUTH_ENDPOINTS.LOGIN)
+          .send({
+            username: TEST_ACCOUNT.username,
+            // 💡 QUAN TRỌNG: Dùng password mới nhất sau khi đã đổi ở test trước
+            password: TEST_ACCOUNT.newPassword_2,
+          });
+
+        if (loginRes.body.data) {
+          userId = loginRes.body.data.user.id;
+          accessToken = loginRes.body.data.accessToken;
+        }
+      });
+
       it('Nên cập nhật trạng thái người dùng thành công', async () => {
         const response = await request(app)
           .patch(USER_ENDPOINTS.USER_STATUS(userId))
@@ -172,7 +190,6 @@ export const userSteps = () => {
             username: TEST_ACCOUNT.username,
             password: TEST_ACCOUNT.newPassword_2,
           });
-
         expect(loginFailRes.status).toBe(ErrorStatus.AUTH_423);
         expect(loginFailRes.body.code).toBe(ErrorCode.AUTH.ACCOUNT_LOCKED);
 

@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
-import { catchAsync } from '@/shared/utils/catch-async';
+import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { AuthRequest } from '@/shared/types/auth.types';
 import { AppError } from '@/shared/errors/error-app';
 import { ErrorCode } from '@/shared/errors/error-codes';
@@ -31,7 +31,7 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
     const tokenRepo = container.resolve('tokenRepository') as RedisTokenRepository;
 
     const deviceId = payload.deviceId || 'default';
-    const redisKey = `${REDIS_CONSTANTS.TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
+    const redisKey = `${REDIS_CONSTANTS.ACCESS_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
 
     // Kiểm tra xem Key này có còn tồn tại trong Redis không
     const isValidSession = await tokenRepo.exists(redisKey);
@@ -43,7 +43,7 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
 
     // 4. Mọi thứ OK, gán Payload vào Request để các Controller/Service sử dụng
     req.user = payload;
-
+    
     next();
   } catch (err: unknown) {
     // 🛡️ Xử lý lỗi Token cụ thể để trả về mã lỗi chính xác cho Frontend

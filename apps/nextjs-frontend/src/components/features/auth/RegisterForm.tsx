@@ -1,21 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Bộ điều hướng (Router)
-import axios from 'axios';
-import { useForm } from 'react-hook-form'; // Thư viện quản lý biểu mẫu
-import { zodResolver } from '@hookform/resolvers/zod'; // Trình giải quyết Zod
-
-import { GoogleButton, Divider } from '@/src/components/ui/SocialLogin';
-import Input from '@/src/components/ui/Input';
-import Button from '@/src/components/ui/Button';
-import { authApi } from '@/src/api/auth/auth.api';
-import { registerSchema, RegisterSchemaType } from '@/src/lib/validations/auth.schema';
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // Bộ điều hướng (Router)
+import axios from "axios";
+import { useForm } from "react-hook-form"; // Thư viện quản lý biểu mẫu
+import { zodResolver } from "@hookform/resolvers/zod"; // Trình giải quyết Zod
+import {
+  registerSchema,
+  RegisterSchemaType,
+} from "@/lib/validations/auth.schema";
+import { authApi } from "@/api/auth/auth.api";
+import { Divider, GoogleButton } from "@/components/features/auth/SocialLogin";
+import { Alert } from "@/components/ui/Alert";
+import Input from "@/components/ui/Input/Input";
+import Button from "@/components/ui/Button/Button";
+import TextLink from "@/components/ui/TextLink/TextLink";
 
 export default function RegisterForm() {
   const router = useRouter();
-  
+
   // Trạng thái (State) quản lý UI khi gọi API
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -39,26 +42,28 @@ export default function RegisterForm() {
       const response = await authApi.register({
         username: data.username.trim(),
         email: data.email.trim(),
+        fullName: data.fullName,
         password: data.password,
       });
 
-      console.log('Đăng ký thành công:', response);
+      console.log("Đăng ký thành công:", response);
 
       // Lưu tạm email để điền sẵn ở trang OTP
-      localStorage.setItem('register_email', data.email);
-      
+      localStorage.setItem("register_email", data.email);
+
       // Chuyển sang trang verify OTP
       // LƯU Ý: Vì bạn đã dùng Route Group (auth), đường dẫn phải là /verify-otp (bỏ chữ auth)
-      router.push('/verify'); 
-
+      router.push("/verify");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const backendMessage = error.response?.data?.message;
-        setErrorMsg(backendMessage || 'Máy chủ đang bảo trì. Vui lòng thử lại.');
+        setErrorMsg(
+          backendMessage || "Máy chủ đang bảo trì. Vui lòng thử lại.",
+        );
       } else if (error instanceof Error) {
         setErrorMsg(error.message);
       } else {
-        setErrorMsg('Đã có sự cố bất ngờ xảy ra.');
+        setErrorMsg("Đã có sự cố bất ngờ xảy ra.");
       }
     } finally {
       setIsLoading(false);
@@ -75,22 +80,27 @@ export default function RegisterForm() {
 
       {/* Cảnh báo lỗi từ máy chủ (Server Error Alert) */}
       {errorMsg && (
-        <div className="mb-6 bg-rose-50 border border-rose-400 text-rose-700 px-4 py-3 rounded-lg text-sm text-center">
-          {errorMsg}
-        </div>
+        <Alert
+          intent="error"
+          message={errorMsg}
+          className="mb-6" // Thêm margin nếu cần
+        />
       )}
-
       {/* Form đăng ký */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
           <Input
             label="Tên đăng nhập"
-            placeholder="VD: trinh_cau_vang"
+            placeholder="VD: wangwu"
             disabled={isLoading}
-            {...register('username')}
+            {...register("username")}
           />
           {/* Lỗi hiển thị nội tuyến (Inline-error) */}
-          {errors.username && <p className="text-rose-500 text-sm mt-1">{errors.username.message}</p>}
+          {errors.username && (
+            <p className="text-rose-500 text-sm mt-1">
+              {errors.username.message}
+            </p>
+          )}
         </div>
 
         <div>
@@ -99,9 +109,24 @@ export default function RegisterForm() {
             type="email"
             placeholder="nguyenvana@gmail.com"
             disabled={isLoading}
-            {...register('email')}
+            {...register("email")}
           />
-          {errors.email && <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Input
+            label="Họ Tên"
+            type="fullName"
+            placeholder="Wang Wu"
+            disabled={isLoading}
+            {...register("fullName")}
+          />
+          {errors.email && (
+            <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>
+          )}
         </div>
 
         <div>
@@ -110,9 +135,13 @@ export default function RegisterForm() {
             type="password"
             placeholder="Tạo mật khẩu"
             disabled={isLoading}
-            {...register('password')}
+            {...register("password")}
           />
-          {errors.password && <p className="text-rose-500 text-sm mt-1">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-rose-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
         <div>
@@ -121,27 +150,32 @@ export default function RegisterForm() {
             type="password"
             placeholder="Nhập lại mật khẩu"
             disabled={isLoading}
-            {...register('confirmPassword')}
+            {...register("confirmPassword")}
           />
-          {errors.confirmPassword && <p className="text-rose-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
+          {errors.confirmPassword && (
+            <p className="text-rose-500 text-sm mt-1">
+              {errors.confirmPassword.message}
+            </p>
+          )}
         </div>
 
         <div className="pt-4">
           <Button
-            text={isLoading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
+            variant="primary"
+            size="lg" // size "lg" trong file variants đã có w-full và py-3.5
+            isLoading={isLoading}
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-semibold transition-all shadow-soft disabled:opacity-60 disabled:cursor-not-allowed"
+            text={isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
           />
         </div>
       </form>
 
-      <div className="mt-8 text-center text-sm text-gray-600">
-        Đã có tài khoản?{' '}
-        {/* LƯU Ý Route Group: Đổi /auth/login thành /login */}
-        <Link href="/login" className="text-emerald-600 font-semibold hover:text-emerald-700 hover:underline transition-colors">
+      {/* 🚀 Phiên bản Senior: Gọn gàng, đồng bộ và cực kỳ chuyên nghiệp */}
+      <div className="mt-8 text-center text-sm text-slate-600">
+        Đã có tài khoản?{" "}
+        <TextLink href="/login" intent="primary">
           Đăng nhập ngay
-        </Link>
+        </TextLink>
       </div>
     </div>
   );

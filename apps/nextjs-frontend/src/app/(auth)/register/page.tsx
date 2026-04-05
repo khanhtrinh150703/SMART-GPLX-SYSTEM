@@ -1,6 +1,6 @@
-import AuthLayout from '@/src/components/layouts/AuthLayout';
-import { siteConfig } from '@/src/constants/config/site';
-import RegisterForm from '@/src/components/features/auth/RegisterForm'; // Gọi Component vừa tạo
+import AuthLayout from '@/components/layouts/AuthLayout';
+import { siteConfig } from '@/constants/config/site';
+import RegisterForm from '@/components/features/auth/RegisterForm'; // Gọi Component vừa tạo
 
 export default function RegisterPage() {
   return (

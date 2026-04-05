@@ -1,74 +1,99 @@
 import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
-import { LoginResponseDTO } from '@/application/dtos/response/auth.dto';
-import { UserResponseDTO } from '@/application/dtos/response/user.dto';
-import { RoleMapper, RoleWithPermissionsPayload } from './role.mapper';
-import { UserWithRolesPayload } from '@/shared/types/user-payload.type';
+import { LoginResponseDTO } from '@/application/dtos/response/auth/auth.respone.dto';
+import { UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
+import { RoleCacheService } from '@/infrastructure/security/role-cache.service';
+import { Role } from '@/domain/entities/role/role.entity';
+import { Permission } from '@/domain/entities/permission/permission.entity';
+import { AppError, ErrorCode } from '@/shared/errors';
+import { Prisma } from '@prisma/client';
+import { IUserRecord } from '@/infrastructure/persistence/user.record';
 
 
 export class UserMapper {
   /**
-     * @description Chuyển dữ liệu từ Prisma sang Entity User.
-     * @param {UserRawPrisma} raw - Dữ liệu thô từ câu lệnh query Prisma.
-     * @returns {User} Thực thể User chuẩn DDD.
-     */
-  public static toDomain(raw: UserWithRolesPayload): User {
-    // 1. Chuyển đổi từ cấu trúc bảng trung gian (userRoles) sang mảng Entity Role
-    const roleEntities = (raw.userRoles || []).map((ur) =>
-      RoleMapper.toDomain(ur.role as RoleWithPermissionsPayload)
-    );
+   * @description Chuyển dữ liệu từ bản ghi Database (Persistence) sang Domain Entity.
+   */
+  public static toDomain(raw: IUserRecord): User {
+    // 1. Hydrate Roles từ Cache dựa trên dữ liệu từ DB
+    const roleEntities: Role[] = (raw.userRoles || []).map((ur) => {
+      const cached = RoleCacheService.getRole(ur.roleId);
 
-    // 2. Tái tạo User Entity thông qua Factory Method chuẩn
+      if (!cached) {
+        throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
+      }
+
+      // Tái tạo Permission từ danh sách tên quyền trong Cache
+      const permissionEntities: Permission[] = cached.permissions.map(pName =>
+        Permission.reconstitute({ 
+          id: "N/A", // Permission trong cache thường chỉ lưu name để nhẹ
+          name: pName, 
+          description: null 
+        })
+      );
+
+      // Tái tạo Role Entity bằng props chuẩn
+      return Role.reconstitute({
+        id: cached.id,
+        name: cached.name,
+        description: cached.description,
+        permissions: permissionEntities
+      });
+    });
+
+    // 2. Tái tạo User Entity theo cấu trúc _props
     return User.reconstitute({
       id: raw.id,
       username: raw.username,
       email: raw.email,
-      fullName: raw.fullName ?? "",
+      fullName: raw.fullName, // Mapping snake_case -> camelCase
       passwordHash: raw.passwordHash,
+      phoneNumber: raw.phoneNumber ?? "",
       urlPicture: raw.urlPicture,
       status: raw.status as UserStatus,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt,
-      roles: roleEntities, // Truyền đúng mảng Entity Role[]
+      roles: roleEntities,
     });
   }
 
   /**
-     * @description Trích xuất dữ liệu từ Entity User để chuẩn bị lưu vào Database.
-     * @param {User} user - Entity từ tầng Domain.
-     */
-  public static toPersistence(user: User) {
+   * @description Ánh xạ từ Domain Entity sang Persistence Model (Prisma).
+   */
+  public static toPersistence(user: User): Prisma.UserCreateInput {
     return {
-      id: user.id,
       username: user.username,
       email: user.email,
       fullName: user.fullName,
-      passwordHash: user.passwordHash ?? "",
+      phoneNumber: user.phoneNumber ?? "",
+      passwordHash: user.passwordHash,
       status: user.status,
-      urlPicture: user.urlPicture,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      urlPicture: user.urlPicture ?? "",
+      createdAt: user.createdAt as Date,
+      updatedAt: user.updatedAt as Date,
       deletedAt: user.deletedAt,
     };
   }
 
   /**
-   * @description Chuyển đổi từ Domain Entity sang Response DTO để trả về cho Client.
-   * @summary Đảm bảo không rò rỉ thông tin nhạy cảm (password, deletedAt) và xử lý linh hoạt các Role.
+   * @description Chuyển đổi sang Response DTO trả về Client.
    */
-  static toResponse(user: User): UserResponseDTO {
+  public static toResponse(user: User): UserResponseDTO {
+    const baseUrl = process.env.APP_URL || '';
+
     return {
-      id: user.id,
+      id: user.id as string,
       email: user.email,
       username: user.username,
       fullName: user.fullName ?? "",
-      urlPicture: user.urlPicture ?? "",
+      phoneNumber: user.phoneNumber ?? "",
+      urlPicture: user.urlPicture
+        ? `${baseUrl}/${user.urlPicture.replace(/\\/g, '/')}`
+        : "",
       status: user.status,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-
-      // Chỉ để lại roles, xóa dòng role (số ít) bị lỗi
+      createdAt: user.createdAt as Date,
+      updatedAt: user.updatedAt as Date,
       roles: user.roles.map(r => ({
         id: r.id,
         name: r.name,
@@ -76,18 +101,19 @@ export class UserMapper {
       })),
     };
   }
+
   /**
-   * Tác dụng: Ánh xạ dữ liệu cho phản hồi đăng nhập thành công.
+   * @description Ánh xạ dữ liệu cho phản hồi đăng nhập.
    */
-  static toLoginResponse(
+  public static toLoginResponse(
     user: User,
     accessToken: string,
     refreshToken: string
   ): LoginResponseDTO {
     return {
       user: this.toResponse(user),
-      accessToken: accessToken,
-      refreshToken: refreshToken,
+      accessToken,
+      refreshToken,
     };
   }
 }

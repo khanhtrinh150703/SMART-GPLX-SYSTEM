@@ -29,6 +29,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 400,              // Bad Request
     [ErrorCode.AUTH.MISSING_FIELDS]: 400, // Bad Request
     [ErrorCode.AUTH.INVALID_TOKEN]: 401, // Bad Request
+    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 401, // Bad Request
 
 
     // --- USER & PROFILE ---
@@ -59,4 +60,43 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 400,
+
+    // --- VALIDATION ---
+    [ErrorCode.VALIDATION.ID_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.NAME_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 400,
+    [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 400,
+    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 400,
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 400,
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 400,
+    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 400,
+
+    // --- LICENSE ---
+    [ErrorCode.LICENSE.ALREADY_EXISTS]: 400,
+    [ErrorCode.LICENSE.NOT_FOUND]: 404,
+    [ErrorCode.LICENSE.IS_IN_USE]: 403,
+    [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 409,
+
+    // --- CHAPTER DOMAIN ---
+    [ErrorCode.CHAPTER.NOT_FOUND]: 404,              // Not Found
+    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 409,         // Conflict
+    [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 403,  // Forbidden (Ràng buộc dữ liệu)
+    [ErrorCode.CHAPTER.CREATE_FAILED]: 400,          // Bad Request
+    [ErrorCode.CHAPTER.UPDATE_FAILED]: 400,          // Bad Request
+    [ErrorCode.CHAPTER.INVALID_ORDER]: 400,          // Bad Request
+
+    // --- QUESTION ---
+    [ErrorCode.QUESTION.NOT_FOUND]: 404,
+    [ErrorCode.QUESTION.CHAPTER_REQUIRED]: 400,
+    [ErrorCode.QUESTION.CONTENT_INVALID]: 400,
+    [ErrorCode.QUESTION.LICENSE_REQUIRED]: 400,
+    [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 400,
+    [ErrorCode.QUESTION.ANSWERS_INSUFFICIENT]: 400,
+    [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 400,
+    [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 400,
+    [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 400,
+    [ErrorCode.QUESTION.ALREADY_EXISTS]: 409,
 };

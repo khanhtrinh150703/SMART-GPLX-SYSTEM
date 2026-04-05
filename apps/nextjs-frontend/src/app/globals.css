@@ -1,29 +1,78 @@
+/* FILE: src/app/globals.css 
+   FIX: Định nghĩa shadow-soft trước khi sử dụng @apply
+*/
+
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* --- 1. THEME CONFIGURATION (Cấu hình biến hệ thống) --- */
+@theme {
+  /* Định nghĩa đổ bóng tùy chỉnh theo chuẩn v4 */
+  --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  
+  /* Bổ sung thêm các biến cho dự án Smart-GPLX */
+  --color-emerald-primary: #059669;
+  --color-deep-forest: #022c22;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* --- 2. BASE STYLES --- */
+@layer base {
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background-color: #F8FAFC;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --- 3. CUSTOM UTILITIES (Định nghĩa các class tiện ích) --- */
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+@utility custom-scrollbar {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto !important;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-slate-700/30 rounded-full transition-all duration-300;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    @apply bg-emerald-500/50;
+  }
+}
+
+/* --- 4. COMPONENTS (Sử dụng @apply sau khi đã có định nghĩa) --- */
+@layer components {
+  .glass {
+    /* Bây giờ shadow-soft đã được định nghĩa ở trên, @apply sẽ hoạt động */
+    @apply bg-white/40 backdrop-blur-md border border-white/60 shadow-soft;
+  }
+
+  .glass-dark {
+    @apply bg-slate-900/40 backdrop-blur-md border border-slate-800/50 shadow-2xl;
+  }
+}
+
+/* --- 5. LENIS CONFIG --- */
+html.lenis {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
 }

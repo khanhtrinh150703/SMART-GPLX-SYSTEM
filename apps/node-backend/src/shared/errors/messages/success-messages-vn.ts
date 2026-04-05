@@ -12,7 +12,8 @@ export class Message {
     LOGIN_SUCCESS: 'Đăng nhập thành công.',
     OTP_RESENT: 'Mã OTP mới đã được gửi vào email của bạn.',
     LOGOUT_SUCCESS: 'Đăng xuất thành công.',
-    PASSWORD_RESET :'Mật khẩu của bạn đã được thay đổi thành công. Vui lòng đăng nhập lại.',
+    PASSWORD_RESET: 'Mật khẩu của bạn đã được thay đổi thành công. Vui lòng đăng nhập lại.',
+    TOKEN_REFRESHED: 'Làm mới phiên đăng nhập thành công.',
   } as const;
 
   /**
@@ -33,5 +34,32 @@ export class Message {
   static readonly SYSTEM = {
     ACTION_SUCCESS: 'Thao tác thực hiện thành công.',
     DATA_RETRIEVED: 'Lấy dữ liệu thành công.',
+  } as const;
+
+  static readonly LICENSE = {
+    CREATE_SUCCESS: 'Thêm mới hạng bằng lái thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin hạng bằng lái thành công.',
+    DELETE_SUCCESS: 'Xóa hạng bằng lái thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách hạng bằng lái thành công.',
+    RESTORE_SUCCESS: 'Khôi phục bằng lái bằng lái thành công.',
+  } as const;
+
+  static readonly CHAPTER = {
+    CREATE_SUCCESS: 'Thêm mới chương lý thuyết thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin chương lý thuyết thành công.',
+    DELETE_SUCCESS: 'Xóa chương lý thuyết thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách chương lý thuyết thành công.',
+    RESTORE_SUCCESS: 'Khôi phục chương lý thuyết thành công.',
+  } as const
+
+  static readonly QUESTION = {
+    CREATE_SUCCESS: 'Thêm mới câu hỏi thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin câu hỏi thành công.',
+    DELETE_SUCCESS: 'Xóa câu hỏi thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách câu hỏi thành công.',
+    FETCH_DETAIL_SUCCESS: 'Lấy chi tiết câu hỏi thành công.',
+    RESTORE_SUCCESS: 'Khôi phục câu hỏi thành công.',
+    IMPORT_SUCCESS: 'Nhập danh sách câu hỏi từ file thành công.',
+    STATUS_UPDATE_SUCCESS: 'Cập nhật trạng thái câu hỏi thành công.',
   } as const;
 }
