@@ -4,20 +4,20 @@ export const licenseSchemas = {
     type: 'object',
     required: ['name', 'description', 'minAge'],
     properties: {
-      name: { 
-        type: 'string', 
-        example: 'A1', 
-        description: 'Tên hạng bằng lái (Viết hoa và số)' 
+      name: {
+        type: 'string',
+        example: 'A1',
+        description: 'Tên hạng bằng lái (Viết hoa và số)'
       },
       minAge: {
         type: 'integer',
         example: 18,
         description: 'Độ tuổi tối thiểu để được cấp bằng'
       },
-      description: { 
-        type: 'string', 
-        example: 'Xe mô tô hai bánh có dung tích xi-lanh đến 125 cm3', 
-        description: 'Mô tả chi tiết về phạm vi của hạng bằng' 
+      description: {
+        type: 'string',
+        example: 'Xe mô tô hai bánh có dung tích xi-lanh đến 125 cm3',
+        description: 'Mô tả chi tiết về phạm vi của hạng bằng'
       },
     },
   },
@@ -56,7 +56,6 @@ export const licenseSchemas = {
       },
     ],
   },
-
   LicenseCategoryListResponse: {
     allOf: [
       { $ref: '#/components/schemas/StandardResponse' },
@@ -64,9 +63,23 @@ export const licenseSchemas = {
         type: 'object',
         properties: {
           data: {
-            type: 'array',
-            items: { $ref: '#/components/schemas/LicenseCategoryDTO' }, // Trả về 1 mảng các object
-          },
+            type: 'object',
+            properties: {
+              data: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/LicenseCategoryDTO' },
+              },
+              meta: {
+                type: 'object',
+                properties: {
+                  total: { type: 'integer', example: 100 },
+                  page: { type: 'integer', example: 1 },
+                  limit: { type: 'integer', example: 10 },
+                  totalPages: { type: 'integer', example: 10 },
+                },
+              },
+            } // Đừng quên đóng ngoặc properties ở đây nhé
+          }
         },
       },
     ],
