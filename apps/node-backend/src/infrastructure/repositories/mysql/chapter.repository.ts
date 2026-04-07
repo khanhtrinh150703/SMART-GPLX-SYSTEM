@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { IChapterRepository } from '@/domain/interfaces/repositories/i-chapter.repository';
 import { Chapter } from '@/domain/entities/chapter/chapter.entity';
 import { ChapterMapper } from '@/infrastructure/database/mappers/chapter.mapper';
 import { IChapterRecord, PrismaChapter } from '@/infrastructure/persistence/chapter.record';
+import { ChapterQueryDTO } from '@/application/dtos/request/chapter/chapter-query.request.dto';
 
 /**
  * @interface IMySQLChapterRepositoryCradle
@@ -126,6 +127,87 @@ export class MySQLChapterRepository implements IChapterRepository {
 
     // Nếu count > 0 nghĩa là có tồn tại
     return count > 0;
+  }
+
+  /**
+   * @description Tìm kiếm và phân trang Chương bài học (Sử dụng gán thủ công để đảm bảo Type-safe)
+   * (Search and paginate Chapters with explicit assignment for type-safety)
+   */
+  async findAndCount(
+    query: ChapterQueryDTO,
+    skip: number,
+    limit: number
+  ): Promise<[Chapter[], number]> {
+    const where: Prisma.ChapterWhereInput = {};
+
+    // --- 1. MAPPING: Định nghĩa các cột được phép Sort ---
+    // Sử dụng keyof để TypeScript kiểm soát, không lo dùng 'any'
+    const fieldMapping: Record<string, keyof Prisma.ChapterOrderByWithRelationInput> = {
+      name: 'name',
+      description: 'description',
+      orderIndex: 'orderIndex',
+      createdAt: 'createdAt',
+    };
+
+    // --- 2. GÁN ĐIỀU KIỆN TÌM KIẾM ---
+    if (query.name) where.name = { contains: query.name };
+    if (query.description) where.description = { contains: query.description };
+    if (query.orderIndex !== undefined) where.orderIndex = Number(query.orderIndex);
+
+    // --- 3. LOGIC TRẠNG THÁI ---
+    if (query.status === 'active') {
+      where.deletedAt = null;
+    } else if (query.status === 'deleted') {
+      where.deletedAt = { not: null };
+    }
+
+    // Search tổng quát
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search } },
+        { description: { contains: query.search } },
+      ];
+    }
+
+    // --- 4. XỬ LÝ SORT FIELD (FIX LỖI UNDEFINED) ---
+    const sortBy = query.sortBy as string;
+    let sortField: keyof Prisma.ChapterOrderByWithRelationInput;
+
+    if (sortBy === 'status') {
+      sortField = 'deletedAt';
+    } else {
+      // Nếu có trong mapping thì dùng, không thì mặc định là 'orderIndex'
+      sortField = fieldMapping[sortBy] || 'orderIndex';
+    }
+
+    const sortOrder = query.sortOrder || 'asc';
+
+    // --- 5. THỰC THI TRUY VẤN ---
+    const [rawRecords, total] = await this._prisma.$transaction([
+      this._prisma.chapter.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [
+          {
+            // Ở đây ép kiểu 'as string' để Prisma làm key động, nhưng sortField đã được bảo vệ bởi Mapping
+            [sortField as string]: sortOrder
+          },
+          {
+            id: 'desc'
+          }
+        ],
+      }),
+      // 🚨 Chỗ này tui sửa lại cho gọn, bỏ cái select phức tạp trong log của bạn đi
+      this._prisma.chapter.count({ where }),
+    ]);
+
+    // --- 6. MAPPING & RETURN ---
+    const domainEntities = rawRecords.map((record) =>
+      ChapterMapper.toDomain(record as unknown as IChapterRecord)
+    );
+
+    return [domainEntities, total];
   }
 
   public async countQuestions(id: string): Promise<number> {

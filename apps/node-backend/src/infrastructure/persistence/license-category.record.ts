@@ -11,7 +11,7 @@ export interface ILicenseCategoryRecord {
   minAge: number;
   created_at: Date;
   updated_at: Date;
-  deleted_at: Date | null;
+  deletedAt: Date | null;
 }
 
 export type PrismaLicenseCategory = Prisma.LicenseCategoryGetPayload<Record<string, never>>;

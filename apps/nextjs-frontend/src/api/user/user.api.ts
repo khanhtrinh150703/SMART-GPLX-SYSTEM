@@ -1,7 +1,7 @@
 import axiosClient from '../../services/axios-client';
 import { ENDPOINTS } from '@/constants/api-endpoints.constant';
 import type { StandardResponse } from '@/types/common.type';
-import { PaginatedResult } from '@/types/paginaton';
+import { PaginatedResult } from '@/types/paginaton.type';
 import { UserQueryDTO } from '@/types/query-user';
 import { UserResponseDTO } from '@/types/user-respone';
 import { IUpdateProfileResponse, UserChangePassword } from '@/types/user.type';

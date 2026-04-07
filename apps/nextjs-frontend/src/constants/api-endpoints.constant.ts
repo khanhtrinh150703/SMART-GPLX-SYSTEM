@@ -17,6 +17,18 @@ export const ENDPOINTS = {
     DELETE: `${API_BASE_URL}/users`,
     GET_ALL: `${API_BASE_URL}/users`,
     RESTORE: `${API_BASE_URL}/users`,
-  }
+  },
+
+  LICENSE: {
+    BASE: "/license-categories",
+    DETAIL: (id: string) => `/license-categories/${id}`,
+    RESTORE: (id: string) => `/license-categories/${id}/restore`,
+  },
+
+  CHAPTER: {
+    BASE: "/chapters",
+    DETAIL: (id: string) => `/chapters/${id}`,
+    RESTORE: (id: string) => `/chapters/${id}/restore`,
+  },
   // Thêm các tính năng khác sau này: EXAM, USER_PROFILE...
 };

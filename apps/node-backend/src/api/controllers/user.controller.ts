@@ -182,9 +182,9 @@ export class UserController {
     // 1. Thu thập Query Params từ URL (vd: ?page=1&limit=10&role=STUDENT)
     // Cậu có thể dùng class-transformer để ép kiểu sang UserQueryDTO ở đây
     const query: UserQueryDTO = req.query as unknown as UserQueryDTO;
-
+    console.log(query)
     // 2. Gọi tầng Service xử lý nghiệp vụ
-    const result = await this._userService.getUsers(query);
+    const result = await this._userService.getPaginatedUsers(query);
 
     // 3. Trả về phản hồi thông qua BaseResponse để đồng nhất cấu trúc JSON
     Result.ok(

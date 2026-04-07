@@ -22,6 +22,13 @@ export const LICENSE_STATUS_OPTIONS: StatusOption<License["status"] | "all">[] =
   { id: "deleted", label: "Thùng rác", color: "text-rose-600" },
 ];
 
+export const FILTER_FIELDS = [
+  { label: "Tên hạng", value: "name" },
+  { label: "Mô tả", value: "description" },
+  { label: "Trạng thái", value: "status" },
+  { label: "Độ tuổi", value: "minAge" },
+];
+
 /** * 3. Dữ liệu mẫu (Mock Data) 
  * Cập nhật theo quy định thực tế của Tổng cục Đường bộ Việt Nam
  */

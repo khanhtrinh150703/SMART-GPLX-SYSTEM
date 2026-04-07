@@ -1,23 +1,21 @@
-// src/components/common/Modals/BaseConfirmModal.tsx
 "use client";
 
 import React from "react";
-import { AlertTriangle, LucideIcon, Trash2 } from "lucide-react";
+import { AlertTriangle, LucideIcon, Trash2, Info } from "lucide-react";
 import Button from "@/components/ui/Button/Button";
-import { BaseModal } from "./BaseModal"; // Tái sử dụng BaseModal đã viết ở câu trước
+import { BaseModal } from "./BaseModal";
+import { cn } from "@/lib/utils/utils";
 
 /**
  * BaseConfirmModalProps - Thuộc tính cho Modal xác nhận hành động
- * @param {string} confirmText - Chữ hiển thị trên nút xác nhận (English: Confirm Label)
- * @param {"danger" | "warning" | "info"} variant - Cấp độ cảnh báo (English: Alert Level)
  */
 interface BaseConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => Promise<void> | void; // Sửa type cho chuẩn
   isLoading: boolean;
   title: string;
-  message: string | React.ReactNode;
+  message: string | React.ReactNode; // Nội dung câu hỏi xác nhận
   confirmText?: string;
   variant?: "danger" | "warning" | "info";
   icon?: LucideIcon;
@@ -35,13 +33,13 @@ export default function BaseConfirmModal({
   icon: CustomIcon,
 }: BaseConfirmModalProps) {
   
-  // Cấu hình màu sắc dựa trên variant (English: Variant-based styling)
+  // Cấu hình Style và Icon dựa trên variant
   const variantConfig = {
     danger: {
       bg: "bg-rose-50",
       text: "text-rose-500",
       button: "bg-rose-500 hover:bg-rose-600 shadow-rose-500/20",
-      icon: CustomIcon || AlertTriangle,
+      icon: CustomIcon || Trash2,
     },
     warning: {
       bg: "bg-amber-50",
@@ -53,7 +51,7 @@ export default function BaseConfirmModal({
       bg: "bg-emerald-50",
       text: "text-emerald-500",
       button: "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20",
-      icon: CustomIcon || Trash2,
+      icon: CustomIcon || Info,
     },
   };
 
@@ -68,28 +66,44 @@ export default function BaseConfirmModal({
       icon={Icon}
       maxWidth="sm"
     >
-      <div className="flex flex-col items-center text-center">
-        {/* Icon cảnh báo lớn phía trên (English: Visual Alert) */}
-        <div className={`w-20 h-20 ${config.bg} ${config.text} rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-300`}>
+      <div className="flex flex-col items-center text-center p-2">
+        {/* 1. Icon cảnh báo lớn (Visual Alert) */}
+        <div
+          className={cn(
+            "w-20 h-20 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-300",
+            config.bg,
+            config.text
+          )}
+        >
           <Icon size={40} />
         </div>
 
-        <p className="text-slate-500 text-sm leading-relaxed mb-8">
-          {message}
-        </p>
+        {/* 2. Nội dung thông báo (Message Body) */}
+        <div className="mb-8 px-2">
+          <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+          <div className="text-slate-500 font-medium leading-relaxed">
+            {message}
+          </div>
+        </div>
 
+        {/* 3. Cụm nút bấm (Action Buttons) */}
         <div className="flex w-full gap-3">
           <button
+            type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 px-6 py-3.5 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+            className="flex-1 px-6 py-3.5 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Hủy bỏ
           </button>
+          
           <Button
             isLoading={isLoading}
             onClick={onConfirm}
-            className={`flex-1 h-[52px] rounded-2xl text-white font-bold transition-all active:scale-95 shadow-lg ${config.button}`}
+            className={cn(
+              "flex-1 h-[56px] rounded-2xl text-white font-bold transition-all active:scale-95 shadow-lg",
+              config.button
+            )}
             text={confirmText}
           />
         </div>

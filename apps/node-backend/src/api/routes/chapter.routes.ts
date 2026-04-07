@@ -10,7 +10,7 @@ const chapterController = container.resolve('chapterController') as ChapterContr
  * @description Route lấy danh sách chương (Public hoặc Auth tùy Cậu Vàng).
  * @route GET /api/v1/chapters
  */
-router.get('', chapterController.getAll);
+router.get('', chapterController.list);
 
 /**
  * @description Route tạo mới chương (Admin only).

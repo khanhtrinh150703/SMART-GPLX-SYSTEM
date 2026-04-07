@@ -178,39 +178,82 @@ export class MySQLUserRepository implements IUserRepository {
   ): Promise<[User[], number]> {
     const where: Prisma.UserWhereInput = {};
 
-    switch (filter.status) {
-      case 'active': where.status = 'active'; where.deletedAt = null; break;
-      case 'locked': where.status = 'locked'; where.deletedAt = null; break;
-      case 'deleted': where.deletedAt = { not: null }; break;
-      case 'all': where.deletedAt = null; break;
-      default: where.deletedAt = null; break;
+    // --- 1. MAPPING: Định nghĩa "bản đồ" ánh xạ từ FE sang BE ---
+    // Việc này giúp ép kiểu chính xác mà không cần dùng any
+    const fieldMapping: Record<string, keyof Prisma.UserWhereInput> = {
+      name: 'fullName',
+      fullName: 'fullName',
+      email: 'email',
+      username: 'username',
+    };
+
+    // Xác định field thực tế trong DB dựa trên sortBy từ FE
+    // Nếu FE gửi 'name', dbField sẽ là 'fullName'. Nếu không khớp thì mặc định 'fullName'
+    const dbField = fieldMapping[filter.sortBy as string] || 'fullName';
+    const searchValue = filter.name;
+
+    // --- 2. DYNAMIC SEARCH: Sort đâu - Search đó ---
+    if (searchValue) {
+      // Chỉ search nếu dbField là những cột có kiểu chuỗi (String)
+      if (dbField === 'fullName' || dbField === 'email' || dbField === 'username') {
+        where[dbField] = { contains: searchValue };
+      }
     }
 
-    if (filter.role) {
-      where.userRoles = { some: { role: { name: filter.role } } };
+    // --- 3. LOGIC TRẠNG THÁI (Status Tabs) ---
+    if (filter.status === 'active') {
+      where.deletedAt = null;
+      where.status = 'active';
+    } else if (filter.status === 'deleted') {
+      where.deletedAt = { not: null };
+    } else if (filter.status === 'all') {
+      // Admin xem hết
+    } else {
+      where.deletedAt = null;
     }
 
+    // --- 4. LỌC THEO ROLE ---
+    if (filter.roles) {
+      where.userRoles = {
+        some: {
+          role: { name: { equals: filter.roles } }
+        }
+      };
+    }
+
+    // --- 5. SEARCH TỔNG QUÁT (Ô tìm kiếm chung) ---
     if (filter.search) {
       where.OR = [
         { fullName: { contains: filter.search } },
         { email: { contains: filter.search } },
-        { username: { contains: filter.search } }
+        { username: { contains: filter.search } },
       ];
     }
 
+    // --- 6. XỬ LÝ SORT FIELD (Cho orderBy) ---
+    // Tái sử dụng dbField ở trên, nhưng xử lý riêng trường hợp status
+    const finalSortField = filter.sortBy === 'status' ? 'deletedAt' : (dbField as string);
+    const sortOrder = filter.sortOrder || 'desc';
+
+    // --- 7. THỰC THI TRUY VẤN ---
     const [rawUsers, total] = await this._prisma.$transaction([
       this._prisma.user.findMany({
         where,
         include: this._userInclude,
         skip,
         take,
-        orderBy: { createdAt: 'desc' }
+        orderBy: [
+          {
+            [finalSortField]: sortOrder
+          },
+          {
+            id: 'desc'
+          }
+        ],
       }),
-      this._prisma.user.count({ where })
+      this._prisma.user.count({ where }),
     ]);
 
-    const domainUsers = rawUsers.map(raw => this._toDomain(raw) as User);
-
-    return [domainUsers, total];
+    return [rawUsers.map((raw) => this._toDomain(raw) as User), total];
   }
 }

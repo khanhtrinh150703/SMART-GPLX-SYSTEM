@@ -261,4 +261,68 @@ export const authSteps = () => {
       });
     });
   });
+
+  describe('🔄 Kịch bản: Làm mới mã xác thực (Refresh Token Flow)', () => {
+    let validRefreshToken = '';
+
+    // Bước chuẩn bị: Lấy một Refresh Token hợp lệ trước khi bắt đầu test
+    beforeAll(async () => {
+      // Gọi API Login để lấy token thật (Lưu ý: Lúc này mật khẩu đã bị đổi thành NEW_PASSWORD từ kịch bản trước)
+      const loginRes = await request(app)
+        .post(AUTH_ENDPOINTS.LOGIN)
+        .send({
+          username: TEST_EMAIL,
+          password: NEW_PASSWORD
+        });
+
+      validRefreshToken = loginRes.body.data?.refreshToken || '';
+    });
+
+    it('Nên báo lỗi khi KHÔNG truyền Refresh Token (Thiếu dữ liệu)', async () => {
+      const response = await request(app)
+        .post(AUTH_ENDPOINTS.REFRESH_TOKEN)
+        .send({}); // Gửi body rỗng
+
+      // Kỳ vọng trả về lỗi 400 (Bad Request)
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe(ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED);
+    });
+
+    it('Nên báo lỗi khi Refresh Token sai định dạng (Quá ngắn)', async () => {
+      const response = await request(app)
+        .post(AUTH_ENDPOINTS.REFRESH_TOKEN)
+        .send({ refreshToken: 'chuoi-nay-qua-ngan-duoi-40-ky-tu' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT);
+    });
+
+    it('Nên báo lỗi INVALID_TOKEN khi Token là giả mạo hoặc không tồn tại (Session không hợp lệ)', async () => {
+      // Tạo một token giả mạo nhưng đủ độ dài (> 40 ký tự) để vượt qua lớp Validation đầu tiên
+      const fakeLongToken = 'fake-jwt-token-that-is-long-enough-to-pass-validation-length-check-123456789';
+
+      const response = await request(app)
+        .post(AUTH_ENDPOINTS.REFRESH_TOKEN)
+        .send({ refreshToken: fakeLongToken });
+
+      expect(response.status).toBe(401);
+      expect(response.body.code).toBe(ErrorCode.AUTH.INVALID_TOKEN);
+    });
+
+    it('Nên cấp mới bộ Token thành công khi sử dụng Refresh Token hợp lệ', async () => {
+      // Đảm bảo là có token thật để test
+      expect(validRefreshToken).not.toBe('');
+
+      const response = await request(app)
+        .post(AUTH_ENDPOINTS.REFRESH_TOKEN)
+        .send({ refreshToken: validRefreshToken });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.accessToken).toBeDefined();
+      expect(response.body.data.refreshToken).toBeDefined();
+
+      // Đảm bảo token mới phải khác token cũ (Kiểm tra cơ chế Token Rotation)
+      expect(response.body.data.refreshToken).not.toBe(validRefreshToken);
+    });
+  });
 };

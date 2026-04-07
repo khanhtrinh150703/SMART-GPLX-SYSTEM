@@ -11,13 +11,25 @@ const axiosClient = axios.create({
 // 1. Request Interceptor: Giữ nguyên logic gắn Token
 axiosClient.interceptors.request.use(
   (config) => {
+    // 1. Lấy token từ Zustand Store
     const token = useUserStore.getState().accessToken;
+
+    // 2. Xử lý gửi tệp tin (FormData)
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
-    if (token && typeof token === 'string' && token !== 'undefined' && token !== 'null') {
+
+    // 3. Kiểm tra Token và nhét vào Headers
+    // Kiểm tra đúng biến "token" vừa lấy ở trên
+    if (token && token !== 'undefined' && token !== 'null') {
+      // Gắn token vào thẻ Authorization (Nhớ có chữ Bearer đằng trước tùy backend yêu cầu)
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // Bật dòng này lên nếu bạn muốn theo dõi xem có API nào đang gọi mà thiếu token không
+      // console.warn("Axios Interceptor: Đang gửi API mà không có Token hợp lệ!");
     }
+
+    // 4. QUAN TRỌNG NHẤT: Bắt buộc phải trả lại config để Axios chạy tiếp
     return config;
   },
   (error) => Promise.reject(error)

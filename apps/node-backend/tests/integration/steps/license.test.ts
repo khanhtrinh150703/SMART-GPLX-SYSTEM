@@ -53,8 +53,8 @@ export const licenseSteps = () => {
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                expect(Array.isArray(res.body.data)).toBe(true);
-                const data = res.body.data as LicenseCategoryResponse[];
+                expect(Array.isArray(res.body.data.data)).toBe(true);
+                const data = res.body.data.data as LicenseCategoryResponse[];
 
                 const createdItem = data.find((item) => item.name === 'B2');
 
@@ -70,7 +70,7 @@ export const licenseSteps = () => {
             it('✅ Nên cập nhật thành công khi thay đổi mô tả', async () => {
                 // Gọi hàm .UPDATE(id) thay vì cộng chuỗi
                 const res = await request(app)
-                    .put(LICENSE_ENDPOINTS.UPDATE(testCategoryId))
+                    .patch(LICENSE_ENDPOINTS.UPDATE(testCategoryId))
                     .send({
                         name: 'B2',
                         description: 'Mô tả đã được chỉnh sửa chuẩn xác hơn.'

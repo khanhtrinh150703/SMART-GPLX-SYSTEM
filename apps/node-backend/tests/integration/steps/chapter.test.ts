@@ -54,9 +54,9 @@ export const chapterSteps = () => {
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                expect(Array.isArray(res.body.data)).toBe(true);
+                expect(Array.isArray(res.body.data.data)).toBe(true);
 
-                const data = res.body.data as ChapterResponseDTO[];
+                const data = res.body.data.data as ChapterResponseDTO[];
 
                 // Tìm chương vừa tạo để lấy ID cho các bước sau
                 const createdItem = data.find((item) => item.name === 'Khái niệm và quy tắc giao thông');

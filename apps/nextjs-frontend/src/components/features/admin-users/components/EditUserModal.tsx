@@ -8,14 +8,15 @@ import { User, Mail } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import Input from "@/components/ui/Input/Input";
-import { AdminUpdateFormValues, adminUpdateSchema } from "@/lib/validations/user.schema";
+
 import { UserResponseDTO } from "@/types/user-respone";
+import { AdminUpdatePayload, adminUpdateSchema } from "../schema/user.schema";
 
 interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserResponseDTO | null;
-  onSave: (data: AdminUpdateFormValues) => Promise<void>;
+  onSave: (data: AdminUpdatePayload) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -26,7 +27,7 @@ export default function EditUserModal({
   onSave,
   isLoading,
 }: EditUserModalProps) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AdminUpdateFormValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AdminUpdatePayload>({
     resolver: zodResolver(adminUpdateSchema),
   });
 

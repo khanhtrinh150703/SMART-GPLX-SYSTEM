@@ -7,6 +7,9 @@ import { ChapterResponseDTO } from "../dtos/response/chapter/chapter.dto.respone
 import { ChapterMapper } from "@/infrastructure/database/mappers/chapter.mapper";
 import { CreateChapterRequestDTO } from "../dtos/request/chapter/create-chapter.request.dto";
 import { UpdateChapterRequestDTO } from "../dtos/request/chapter/update-chapter.request.dto";
+import { ChapterQueryDTO } from "../dtos/request/chapter/chapter-query.request.dto";
+import { PaginatedResult } from "@/shared/types/pagination.types";
+import { PaginationUtil } from "@/shared/utils/pagination.util";
 
 /**
  * @interface IChapterServiceCradle
@@ -33,13 +36,31 @@ export class ChapterService implements IChapterService {
   }
 
   /**
-   * @description Lấy danh sách toàn bộ chương lý thuyết, trả về dạng DTO.
-   * @returns {Promise<ChapterResponseDTO[]>}
+   * @description Lấy danh sách chương bài học đã qua bộ lọc (tìm kiếm/trạng thái) và ánh xạ sang DTO sạch.
+   * (Fetch filtered chapters list and map to clean Response DTOs)
+   * @param {ChapterQueryDTO} query - DTO chứa các tiêu chí lọc và thông số phân trang từ Request.
+   * @returns {Promise<PaginatedResult<ChapterResponseDTO>>} Trả về DTO thay vì Entity để đảm bảo tính đóng gói.
    */
-  public async getAllChapters(): Promise<ChapterResponseDTO[]> {
-    const chapters = await this._chapterRepo.findAll();
-    return ChapterMapper.toResponseList(chapters);
+  public async getPaginatedChapters(query: ChapterQueryDTO): Promise<PaginatedResult<ChapterResponseDTO>> {
+    // 1. Chuẩn hóa thông số phân trang (đảm bảo luôn là số dương)
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+
+    // 2. Tính toán skip cho Repository (Logic phân trang tập trung tại Util)
+    const skip = PaginationUtil.getSkip(page, limit);
+
+    // 3. Truy vấn dữ liệu từ DB thông qua Chapter Repository
+    // Nhận về Tuple [Entity[], total] để phục vụ tính toán Metadata
+    const [chapters, total] = await this._chapterRepo.findAndCount(query, skip, limit);
+
+    // 4. ÁNH XẠ DỮ LIỆU (Mapping): Chuyển mảng Domain Entity sang mảng Chapter Response DTO
+    // Sử dụng ChapterMapper để lọc bỏ các trường nhạy cảm hoặc không cần thiết
+    const chapterResponses = chapters.map(chapter => ChapterMapper.toResponse(chapter));
+
+    // 5. Đóng gói kết quả cuối cùng kèm Metadata phân trang (total, page, limit, totalPages, hooks...)
+    return PaginationUtil.createPaginatedResponse(chapterResponses, total, page, limit);
   }
+
 
   /**
    * @description Lấy thông tin chi tiết một chương theo ID và trả về DTO.

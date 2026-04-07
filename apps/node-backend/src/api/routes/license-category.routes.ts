@@ -37,11 +37,11 @@ router.post(
 );
 
 /**
- * @route   PUT /api/v1/license-categories/:id
+ * @route   PATCH /api/v1/license-categories/:id
  * @desc    Cập nhật thông tin hạng bằng lái
  * @access  Private (Admin)
  */
-router.put(
+router.patch(
   '/:id',
   // authMiddleware,
   // roleMiddleware(['ADMIN']),

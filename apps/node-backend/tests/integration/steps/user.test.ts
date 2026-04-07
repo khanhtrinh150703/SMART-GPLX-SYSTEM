@@ -32,7 +32,6 @@ export const userSteps = () => {
 
     userId = loginRes.body.data.user.id;
     accessToken = loginRes.body.data.accessToken;
-    console.log(accessToken)
   });
 
   // --- HELPER FUNCTION ---

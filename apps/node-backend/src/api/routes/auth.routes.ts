@@ -56,6 +56,10 @@ router.post('/forgot-password', authController.forgotPassword);
  */
 router.post('/reset-password', authController.resetPassword);
 
-
+/**
+ * API Làm mới Access Token khi đã hết hạn bằng Refresh Token.
+ * @route   POST /api/auth/refresh-token
+ */
 router.post('/refresh-token', authController.refreshToken);
+
 export default router;

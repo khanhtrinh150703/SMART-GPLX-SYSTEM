@@ -20,6 +20,7 @@ const uploadPath = path.join(__dirname, '..', 'uploads');
 // Cấu hình CORS (Cross-Origin Resource Sharing - Chia sẻ tài nguyên chéo nguồn gốc)
 // Đặt ở trên cùng để "mở cửa" cho trình duyệt trước khi làm bất cứ việc gì khác
 
+
 app.set('trust proxy', true);
 
 app.use(cors({

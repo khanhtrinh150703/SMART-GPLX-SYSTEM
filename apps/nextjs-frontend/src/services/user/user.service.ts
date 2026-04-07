@@ -4,10 +4,11 @@ import { userApi } from "@/api/user/user.api";
 import { StandardResponse } from "@/types/common.type";
 import { IUpdateProfileResponse, UserChangePassword } from "@/types/user.type"; // 💡 Import Interface mới
 import { useUserStore } from "../../store/user/user.store";
-import { AdminUpdateFormValues, ChangePasswordValues, ProfileFormValues } from "@/lib/validations/user.schema";
+import { ChangePasswordValues, ProfileFormValues } from "@/lib/validations/user.schema";
 import { UserQueryDTO } from "@/types/query-user";
-import { PaginatedResult } from "@/types/paginaton";
+import { PaginatedResult } from "@/types/paginaton.type";
 import { UserResponseDTO } from "@/types/user-respone";
+import { AdminUpdatePayload } from "@/components/features/admin-users/schema/user.schema";
 
 /**
  * Lớp Xử lý Nghiệp vụ (Business Logic Layer) cho Người dùng
@@ -42,10 +43,10 @@ export const userService = {
     // 3. Tác vụ phụ (Side Effect): Cập nhật trạng thái toàn cục (Global State)
     // Chỉ cập nhật khi API thành công và có dữ liệu user bên trong.
     if (response.success && response.data?.user) {
-      const { setAuth } = useUserStore.getState();
+      useUserStore.getState().setUser(response.data.user);
 
       // 💡 Bóc tách đúng thực thể User để nạp vào Zustand
-      setAuth(response.data.user, response.data.accessToken, response.data.refreshToken);
+      // setAuth(response.data.user, response.data.accessToken, response.data.refreshToken);
 
       // 💡 Bonus: Nếu muốn cập nhật Token luôn thì làm ở đây
       // localStorage.setItem('accessToken', response.data.accessToken);
@@ -56,13 +57,15 @@ export const userService = {
   },
 
   updateProfileAdmin: async (userId: string,
-    data: AdminUpdateFormValues
+    data: AdminUpdatePayload
   ): Promise<StandardResponse<IUpdateProfileResponse>> => { // ✅ Đã sửa kiểu trả về
 
     // 1. Chuyển đổi dữ liệu sang FormData (Data Transformation)
     // Giúp gửi tệp tin (Binary/Files) lên Server dễ dàng.
     const formData = new FormData();
-    formData.append("fullName", data.fullName);
+    if (data.fullName !== undefined) {
+      formData.append("fullName", data.fullName);
+    }
 
     // if (data.username) {
     //   formData.append("username", data.username);
@@ -79,10 +82,10 @@ export const userService = {
     // 3. Tác vụ phụ (Side Effect): Cập nhật trạng thái toàn cục (Global State)
     // Chỉ cập nhật khi API thành công và có dữ liệu user bên trong.
     if (response.success && response.data?.user) {
-      const { setAuth } = useUserStore.getState();
+      // const { setAuth } = useUserStore.getState();
 
       // 💡 Bóc tách đúng thực thể User để nạp vào Zustand
-      setAuth(response.data.user, response.data.accessToken, response.data.refreshToken);
+      // setAuth(response.data.user, response.data.accessToken, response.data.refreshToken);
 
       // 💡 Bonus: Nếu muốn cập nhật Token luôn thì làm ở đây
       // localStorage.setItem('accessToken', response.data.accessToken);

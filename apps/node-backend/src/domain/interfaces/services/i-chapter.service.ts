@@ -1,6 +1,8 @@
+import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-query.request.dto";
 import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
 import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
 import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto.respone";
+import { PaginatedResult } from "@/shared/types/pagination.types";
 
 /**
  * @description Interface điều phối các nghiệp vụ quản lý Chương lý thuyết (Chapter Domain).
@@ -8,10 +10,12 @@ import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.
 export interface IChapterService {
 
   /**
-   * @description Lấy danh sách toàn bộ chương lý thuyết, sắp xếp theo thứ tự hiển thị.
-   * @returns {Promise<ChapterResponseDTO[]>} Danh sách thực thể Chương lý thuyết.
+   * @description Lấy danh sách chương lý thuyết có phân trang, sắp xếp theo thứ tự hiển thị.
+   * (Get paginated list of theoretical chapters, sorted by display order)
+   * @param {ChapterQueryDTO} query - Tham số truy vấn bao gồm phân trang và bộ lọc.
+   * @returns {Promise<PaginatedResult<ChapterResponse>>} Kết quả phân trang chứa danh sách Chapter.
    */
-  getAllChapters(): Promise<ChapterResponseDTO[]>;
+  getPaginatedChapters(query: ChapterQueryDTO): Promise<PaginatedResult<ChapterResponseDTO>>
 
   /**
    * @description Tìm kiếm thông tin chi tiết của một chương theo mã định danh.
@@ -47,6 +51,11 @@ export interface IChapterService {
    * @returns {Promise<void>}
    */
   restoreChapter(id: string): Promise<ChapterResponseDTO>;
-
+  
+  /**
+   * @description Kiểm tra sự tồn tại của một bản ghi trong hệ thống dựa trên ID.
+   * @param {string} id - Mã định danh duy nhất của bản ghi cần kiểm tra.
+   * @returns {Promise<boolean>} Trả về `true` nếu bản ghi tồn tại, ngược lại trả về `false`.
+   */
   exists(id: string): Promise<boolean>;
 }

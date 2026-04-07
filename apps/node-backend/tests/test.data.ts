@@ -24,6 +24,7 @@ export const AUTH_ENDPOINTS = {
   RESEND_OTP: `${API_BASE.AUTH}/resend-otp`,
   FORGOT_PASSWORD: `${API_BASE.AUTH}/forgot-password`,
   RESET_PASSWORD: `${API_BASE.AUTH}/reset-password`,
+  REFRESH_TOKEN: `${API_BASE.AUTH}/refresh-token`
 } as const;
 
 // ==================== USER ENDPOINTS ====================
@@ -113,7 +114,7 @@ export const QUESTION_DATA = {
     content: "Khái niệm 'Phương tiện giao thông cơ giới đường bộ' được hiểu thế nào là đúng?",
     imageUrl: "https://example.com/images/question-1.png",
     isCritical: false,
-    difficultyLevel: 1, 
+    difficultyLevel: 1,
     answers: [
       { content: "Gồm xe ô tô; máy kéo; rơ moóc...", isCorrect: true, imageUrl: null },
       { content: "Gồm xe gắn máy, xe đạp...", isCorrect: false, imageUrl: null }
@@ -123,7 +124,7 @@ export const QUESTION_DATA = {
   CRITICAL_PAYLOAD: {
     content: "[CÂU ĐIỂM LIỆT] Người điều khiển phương tiện tham gia giao thông trong cơ thể có chất ma túy có bị nghiêm cấm hay không?",
     imageUrl: null,
-    isCritical: true, 
+    isCritical: true,
     difficultyLevel: 2,
     answers: [
       { content: "Bị nghiêm cấm", isCorrect: true },
@@ -172,7 +173,7 @@ export const QUESTION_DATA = {
   UPDATE_PAYLOAD: {
     content: "[UPDATED] Nội dung đã được chỉnh sửa bởi Admin",
     isCritical: false, // QUAN TRỌNG: Giữ false để test Xóa thành công ở bước sau
-    difficultyLevel: 3, 
+    difficultyLevel: 3,
     answers: [
       { content: "Đáp án cũ được giữ lại", isCorrect: true, imageUrl: null },
       { content: "Đáp án mới toanh vừa thêm vào", isCorrect: false, imageUrl: "https://example.com/new-ans.png" }

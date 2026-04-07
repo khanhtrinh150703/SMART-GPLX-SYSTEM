@@ -302,7 +302,7 @@ export class UserService implements IUserService {
      * @description Lấy danh sách người dùng đã qua bộ lọc và ánh xạ sang DTO sạch.
      * @returns {Promise<PaginatedResult<UserResponseDTO>>} Trả về DTO thay vì Entity để bảo mật.
      */
-    public async getUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>> {
+    public async getPaginatedUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>> {
         // 1. Chuẩn hóa thông số phân trang
         const page = Number(query.page) || 1;
         const limit = Number(query.limit) || 10;

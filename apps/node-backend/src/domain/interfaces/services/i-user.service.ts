@@ -1,12 +1,11 @@
 import { User } from "@/domain/entities/user/user.entity";
-
-import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
 import { UserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
 import { UpdateProfileRequestDTO } from "@/application/dtos/request/user/update-profile.request.dto";
 import { ChangePasswordRequestDTO } from "@/application/dtos/request/user/update-password.request.dto";
 import { ChangeStatusRequestDTO } from "@/application/dtos/request/user/update-status.request.dto";
 import { LoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
+import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
 
 /**
  * @description Interface định nghĩa các nghiệp vụ cốt lõi quản lý người dùng (User Domain).
@@ -100,7 +99,7 @@ export interface IUserService {
    * @param {UserQueryDTO} query - Tham số truy vấn (Page, Limit, Search, Role, Status).
    * @returns {Promise<PaginatedResult<UserResponseDTO>>} Kết quả phân trang và siêu dữ liệu (Metadata).
    */
-  getUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>>;
+  getPaginatedUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>>;
 
   /**
    * @description Khởi tạo một người dùng mới vào hệ thống với các quyền mặc định.

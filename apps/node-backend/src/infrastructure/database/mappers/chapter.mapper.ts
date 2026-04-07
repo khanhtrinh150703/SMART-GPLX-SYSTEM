@@ -27,22 +27,6 @@ export class ChapterMapper {
   }
 
   /**
-   * @description Chuyển đổi thực thể nghiệp vụ sang đối tượng phản hồi (DTO) để gửi về phía Client.
-   * Lọc bỏ các thông tin nhạy cảm hoặc không cần thiết (như deletedAt) để tối ưu hóa dữ liệu truyền tải.
-   * @param {Chapter} chapter - Thực thể Domain cần ánh xạ.
-   * @returns {ChapterResponseDTO} Đối tượng truyền tải dữ liệu phía Client.
-   */
-  public static toResponse(chapter: Chapter): ChapterResponseDTO {
-    return {
-      id: chapter.id as string,
-      name: chapter.name,
-      description: chapter.description,
-      orderIndex: chapter.orderIndex,
-      createdAt: chapter.createdAt as Date,
-    };
-  }
-
-  /**
    * @description Chuyển đổi thực thể nghiệp vụ sang định dạng lưu trữ bền vững (Persistence Model).
    * Chuẩn bị dữ liệu để thực hiện các thao tác Create/Update thông qua Prisma ORM.
    * @param {Chapter} chapter - Thực thể Domain chứa dữ liệu mới nhất.
@@ -57,6 +41,23 @@ export class ChapterMapper {
       createdAt: chapter.createdAt,
       updatedAt: chapter.updatedAt,
       deletedAt: chapter.deletedAt ?? null,
+    };
+  }
+
+  /**
+   * @description Chuyển đổi thực thể nghiệp vụ sang đối tượng phản hồi (DTO) để gửi về phía Client.
+   * Lọc bỏ các thông tin nhạy cảm hoặc không cần thiết (như deletedAt) để tối ưu hóa dữ liệu truyền tải.
+   * @param {Chapter} chapter - Thực thể Domain cần ánh xạ.
+   * @returns {ChapterResponseDTO} Đối tượng truyền tải dữ liệu phía Client.
+   */
+  public static toResponse(chapter: Chapter): ChapterResponseDTO {
+    return {
+      id: chapter.id as string,
+      name: chapter.name,
+      description: chapter.description,
+      orderIndex: chapter.orderIndex,
+      createdAt: chapter.createdAt as Date,
+      status: chapter.isDeleted() ? 'deleted' : 'active'
     };
   }
 

@@ -17,10 +17,10 @@ export const questionSteps = () => {
 
     beforeAll(async () => {
         const chapterRes = await request(app).get(CHAPTER_ENDPOINTS.BASE);
-        chapterId = chapterRes.body.data?.[0]?.id;
+        chapterId = chapterRes.body.data?.data[0]?.id;
 
         const licenseRes = await request(app).get(LICENSE_ENDPOINTS.BASE);
-        licenseId = licenseRes.body.data?.[0]?.id;
+        licenseId = licenseRes.body.data?.data[0]?.id;
 
         if (!chapterId || !licenseId) {
             throw new Error("⚠️ Database trống! Hãy Seed data Chapter và License trước.");

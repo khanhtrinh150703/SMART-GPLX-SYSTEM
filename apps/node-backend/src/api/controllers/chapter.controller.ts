@@ -4,6 +4,7 @@ import { Result } from '@/shared/responses/api-response';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { IChapterService } from '@/domain/interfaces/services/i-chapter.service';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
+import { ChapterQueryDTO } from '@/application/dtos/request/chapter/chapter-query.request.dto';
 
 /**
  * @description Controller xử lý các yêu cầu HTTP liên quan đến quản lý Chương lý thuyết (Theory Chapters).
@@ -21,8 +22,10 @@ export class ChapterController {
      * @route GET /api/v1/chapters
      * @returns {Promise<void>} Phản hồi danh sách ChapterResponseDTO.
      */
-    public getAll = catchAsync(async (_req: Request, res: Response) => {
-        const response = await this._chapterService.getAllChapters();
+    public list = catchAsync(async (req: Request, res: Response) => {
+
+        const query: ChapterQueryDTO = req.query as unknown as ChapterQueryDTO;
+        const response = await this._chapterService.getPaginatedChapters(query);
 
         Result.ok(
             res,

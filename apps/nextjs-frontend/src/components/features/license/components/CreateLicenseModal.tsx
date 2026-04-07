@@ -1,20 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CreditCard, Hash, Info, User } from "lucide-react";
+import axios from "axios";
+
+// Components
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import { FormField } from "@/components/common/Form/FormField";
 import { FormGrid } from "@/components/common/Form/FormGrid";
-import { CreateLicensePayload, createLicenseSchema } from "../schema/license.schema";
+import { Alert } from "@/components/ui/Alert";
 
+// Types & Schemas
+import { CreateLicensePayload, createLicenseSchema } from "../schema/license.schema";
 
 interface CreateLicenseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CreateLicensePayload) => Promise<void>;
+  onSave: (data: CreateLicensePayload) => Promise<unknown>;
   isLoading: boolean;
 }
 
@@ -25,25 +30,42 @@ export default function CreateLicenseModal({
   isLoading 
 }: CreateLicenseModalProps) {
   
-  // Khởi tạo React Hook Form
+  // 1. Quản lý thông báo lỗi nội bộ (Internal Error State)
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // 2. Khởi tạo Form
   const { 
     register, 
     handleSubmit, 
-    reset, 
     formState: { errors } 
   } = useForm<CreateLicensePayload>({
     resolver: zodResolver(createLicenseSchema),
-    defaultValues: { 
-      name: "", 
-      description: "", 
-      minAge: 18 // Giá trị mặc định phổ biến nhất
-    } 
+    defaultValues: { name: "", description: "", minAge: 18 } 
   });
 
-  // Xử lý sự kiện gửi (Submit Event)
-  const onSubmit = async (data: CreateLicensePayload) => {
-    await onSave(data);
-    reset(); // Xóa trắng form sau khi thêm thành công
+  // 3. Hàm xử lý nộp form (Handle Submit with Error Catching)
+  const onSubmit = async (values: CreateLicensePayload) => {
+    try {
+      setMessage(null); // Xóa lỗi cũ trước khi thử lại
+      
+      // Đợi trang cha thực hiện lưu dữ liệu
+      await onSave(values); 
+      
+      // Nếu không có lỗi: Đóng modal (Thành công xử lý ở trang cha qua Toast)
+      onClose();
+    } catch (error) {
+      // Nếu trang cha ném lỗi (mutateAsync fail), Modal sẽ bắt ở đây
+      let errorText = "Không thể tạo hạng bằng lái. Vui lòng thử lại!";
+      
+      if (axios.isAxiosError(error)) {
+        errorText = error.response?.data?.message || errorText;
+      }
+      
+      setMessage({ type: "error", text: errorText });
+    }
   };
 
   return (
@@ -57,7 +79,17 @@ export default function CreateLicenseModal({
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         
-        {/* SỬ DỤNG GENERIC FORM TOOLKIT: Chia 2 cột cho Name và Age */}
+        {/* HIỂN THỊ ALERT (Lỗi tự hiện tự mất theo Modal nhờ vào 'key' ở trang cha) */}
+        {message && (
+          <Alert
+            key={message.text}
+            intent={message.type}
+            message={message.text}
+            duration={10000}
+            onClose={() => setMessage(null)}
+          />
+        )}
+
         <FormGrid cols={2}>
           <FormField
             label="Mã/Tên hạng bằng"
@@ -72,30 +104,28 @@ export default function CreateLicenseModal({
             label="Độ tuổi tối thiểu"
             icon={User}
             type="number"
-            {...register("minAge")}
+            {...register("minAge", { valueAsNumber: true })} 
             error={errors.minAge?.message}
             disabled={isLoading}
           />
         </FormGrid>
 
-        {/* Input dạng Textarea cho mô tả */}
         <FormField
           label="Mô tả quyền hạn"
           icon={Info}
           isTextArea
-          placeholder="VD: Xe mô tô hai bánh có dung tích xi lanh từ 50 cm3 đến dưới 175 cm3."
+          placeholder="Mô tả các loại phương tiện được phép điều khiển..."
           {...register("description")}
           error={errors.description?.message}
           disabled={isLoading}
         />
 
-        {/* Nút Submit (Nút Gửi) */}
         <div className="pt-4 flex gap-4">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="flex-[0.4] px-6 py-3.5 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all active:scale-95"
+            className="flex-[0.4] px-6 py-3.5 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
           >
             Hủy bỏ
           </button>
@@ -104,7 +134,7 @@ export default function CreateLicenseModal({
             variant="primary" 
             isLoading={isLoading} 
             text="Tạo hạng bằng" 
-            className="flex-1 h-[56px] rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-[0.98]" 
+            className="flex-1 h-[56px] rounded-2xl shadow-lg shadow-emerald-500/20" 
           />
         </div>
       </form>

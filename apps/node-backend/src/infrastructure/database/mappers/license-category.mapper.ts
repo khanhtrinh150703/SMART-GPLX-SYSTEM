@@ -19,7 +19,7 @@ export class LicenseCategoryMapper {
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
       minAge: raw.minAge,
-      deletedAt: raw.deleted_at ?? null,
+      deletedAt: raw.deletedAt ?? null,
     });
   }
 
@@ -33,6 +33,7 @@ export class LicenseCategoryMapper {
       id: domain.id,
       name: domain.name,
       description: domain.description,
+      minAge: domain.minAge,
     };
   }
 
@@ -48,6 +49,7 @@ export class LicenseCategoryMapper {
       minAge: entity.minAge,
       description: entity.description,
       createdAt: entity.createdAt ? entity.createdAt.toISOString() : new Date().toISOString(),
+      status: entity.isDeleted() ? 'deleted' : 'active'
     };
   }
 

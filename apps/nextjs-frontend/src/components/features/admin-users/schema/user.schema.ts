@@ -1,35 +1,39 @@
+import { emailField, fullNameField, userNameField } from "@/lib/validations/common";
 import { z } from "zod";
 
-
-// 1. Zod Schema: Định nghĩa cấu trúc dữ liệu và các quy tắc kiểm tra (Validation Rules)
-export const createUserSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Tên đăng nhập (Username) phải có ít nhất 3 ký tự")
-    .max(50, "Tên đăng nhập không được vượt quá 50 ký tự"),
-  
-  fullName: z
-    .string()
-    .min(1, "Họ và tên (Full Name) không được để trống"),
-
-  email: z
-    .string()
-    .min(1, "Email không được để trống")
-    .email("Định dạng email không hợp lệ (VD: luffy@gmail.com)"),
-
+// --- 1. ĐỊNH NGHĨA PHẦN LÕI (Raw Object) ---
+// Không dùng refine ở đây để có thể .pick() hay .omit() tùy ý
+const userBaseSchema = z.object({
+  username: userNameField,
+  fullName: fullNameField,
+  email: emailField,
   password: z
     .string()
     .min(6, "Mật khẩu (Password) phải có ít nhất 6 ký tự"),
-
   confirmPassword: z
     .string()
     .min(1, "Vui lòng xác nhận lại mật khẩu (Confirm Password)"),
-})
-// Sử dụng .refine() để kiểm tra logic chéo giữa 2 trường dữ liệu (Cross-field validation)
-.refine((data) => data.password === data.confirmPassword, {
-  message: "Mật khẩu xác nhận không khớp!",
-  path: ["confirmPassword"], // Lỗi sẽ được hiển thị ở ô confirmPassword
+  roles: z.array(z.string()),
 });
 
-// Trích xuất Type (Kiểu dữ liệu) để sử dụng cho React Hook Form
-export type CreateUserPayload = z.input<typeof createUserSchema>;
+// --- 2. TẠO CREATE SCHEMA (Có logic so khớp mật khẩu) ---
+export const createUserSchema = userBaseSchema.refine(
+  (data) => data.password === data.confirmPassword, 
+  {
+    message: "Mật khẩu xác nhận không khớp!",
+    path: ["confirmPassword"],
+  }
+);
+
+// --- 3. TẠO ADMIN UPDATE SCHEMA (Bốc từ lõi ra) ---
+// Bây giờ .pick() sẽ chạy mượt mà vì userBaseSchema vẫn là ZodObject
+export const adminUpdateSchema = userBaseSchema
+  .pick({
+    fullName: true,
+    email: true,
+  })
+  .partial(); // Admin có thể chỉ sửa 1 trong 2 hoặc cả 2
+
+// --- 4. TRÍCH XUẤT TYPE ---
+export type CreateUserPayload = z.infer<typeof createUserSchema>;
+export type AdminUpdatePayload = z.infer<typeof adminUpdateSchema>;

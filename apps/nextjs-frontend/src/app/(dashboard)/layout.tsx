@@ -1,5 +1,6 @@
 import Sidebar from "@/components/common/Sidebar";
 import Header from "@/components/common/Header";
+import QueryProvider from "@/components/common/Provider/QueryProvider";
 
 /**
  * DashboardLayout - Bố cục chính cho trang quản trị (Dashboard)
@@ -22,7 +23,9 @@ export default function DashboardLayout({
       <div className="flex flex-1 flex-col min-h-0 min-w-0">
         <Header />
         {/* flex-1 và overflow-y-auto: Chỉ cho phép vùng này được cuộn */}
-        <main className="flex-1 overflow-y-auto p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-8">
+          <QueryProvider>{children}</QueryProvider>
+        </main>
       </div>
     </div>
   );
