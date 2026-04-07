@@ -124,27 +124,68 @@ export const authPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/auth/logout`]: {
+    [`${API_CONSTANTS.API_BASE}/auth/refresh-token`]: {
         post: {
             tags: ['Authentication'],
-            summary: 'Đăng xuất',
-            description: 'Hủy session hiện tại',
-            operationId: 'logout',
-            security: [{ bearerAuth: [] }],
+            summary: 'Làm mới mã xác thực (Refresh Token)',
+            description: 'Sử dụng Refresh Token để cấp mới bộ đôi Access Token và Refresh Token mới. Hỗ trợ cơ chế Token Rotation để bảo mật.',
+            operationId: 'refreshToken',
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: { $ref: '#/components/schemas/RefreshTokenRequest' },
+                    },
+                },
+            },
             responses: {
                 '200': {
-                    description: 'Đăng xuất thành công',
+                    description: 'Cấp mới Token thành công',
                     content: {
                         'application/json': {
-                            schema: { $ref: '#/components/schemas/SuccessResponse' },
+                            schema: { $ref: '#/components/schemas/TokenResponse' },
                         },
                     },
                 },
-                '401': { $ref: '#/components/responses/UnauthorizedError' },
+                '400': {
+                    description: 'Dữ liệu không hợp lệ (Thiếu token hoặc sai định dạng)',
+                },
+                '401': {
+                    description: 'Phiên làm việc hết hạn hoặc Token đã bị thu hồi (Unauthorized)',
+                },
+                '403': {
+                    description: 'Tài khoản đã bị khóa (Account Locked)',
+                },
+                '404': {
+                    description: 'Người dùng không tồn tại (User Not Found)',
+                },
             },
         },
     },
 
+    [`${API_CONSTANTS.API_BASE}/auth/forgot-password`]: {
+        post: {
+            tags: ['Authentication'],
+            summary: 'Yêu cầu gửi OTP quên mật khẩu',
+            operationId: 'forgotPassword',
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: { $ref: '#/components/schemas/ForgotPasswordDTO' },
+                    },
+                },
+            },
+            responses: {
+                '200': {
+                    description: 'OTP đã được gửi qua email',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } },
+                },
+                '404': { description: 'Email không tồn tại trong hệ thống' },
+                '429': { description: 'Gửi quá nhanh, đang bị khóa tạm thời' },
+            },
+        },
+    },
     // Forgot & Reset Password
     [`${API_CONSTANTS.API_BASE}/auth/forgot-password`]: {
         post: {
