@@ -23,12 +23,21 @@ export const ENDPOINTS = {
     BASE: "/license-categories",
     DETAIL: (id: string) => `/license-categories/${id}`,
     RESTORE: (id: string) => `/license-categories/${id}/restore`,
+    SELECTION: "/license-categories/selection",
   },
 
   CHAPTER: {
     BASE: "/chapters",
     DETAIL: (id: string) => `/chapters/${id}`,
     RESTORE: (id: string) => `/chapters/${id}/restore`,
+    SELECTION: "/chapters/selection",
   },
+
+  QUESTION: {
+    BASE: "/questions",
+    DETAIL: (id: string) => `/questions/${id}`,
+    RESTORE: (id: string) => `/questions/${id}/restore`,
+  },
+  
   // Thêm các tính năng khác sau này: EXAM, USER_PROFILE...
 };

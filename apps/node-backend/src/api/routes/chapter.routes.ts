@@ -7,35 +7,45 @@ const router = Router();
 const chapterController = container.resolve('chapterController') as ChapterController;
 
 /**
- * @description Route lấy danh sách chương (Public hoặc Auth tùy Cậu Vàng).
+ * @description Lấy danh sách các chương học có hỗ trợ tìm kiếm và phân trang.
  * @route GET /api/v1/chapters
+ * @access Public/Private
  */
 router.get('', chapterController.list);
 
 /**
- * @description Route tạo mới chương (Admin only).
+ * @description Lấy danh sách các chương học định dạng selection (value/label) cho dropdown.
+ * @route GET /api/v1/chapters/selection
+ * @access Private (User/Admin)
+ */
+router.get('/selection', chapterController.getChapterSelections);
+
+/**
+ * @description Tạo mới một chương học lý thuyết.
  * @route POST /api/v1/chapters
+ * @access Private (Admin)
  */
 router.post('', chapterController.create);
 
 /**
- * @description Route cập nhật chương.
+ * @description Cập nhật thông tin chi tiết của một chương học theo ID.
  * @route PATCH /api/v1/chapters/:id
+ * @access Private (Admin)
  */
 router.patch('/:id', chapterController.update);
 
 /**
- * @description Route xóa chương.
+ * @description Xóa (xóa mềm) một chương học khỏi hệ thống.
  * @route DELETE /api/v1/chapters/:id
+ * @access Private (Admin)
  */
 router.delete('/:id', chapterController.delete);
 
 /**
- * @route   PATCH /api/v1/chapters/:id/restore
- * @desc    Khôi chapter đã xóa mềm
- * @access  Private (Admin)
+ * @description Khôi phục lại chương học đã bị xóa mềm trước đó.
+ * @route PATCH /api/v1/chapters/:id/restore
+ * @access Private (Admin)
  */
 router.patch('/:id/restore', chapterController.restore);
-
 
 export default router;

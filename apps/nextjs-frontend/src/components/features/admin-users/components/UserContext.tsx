@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Users } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { RotateCcw, Users } from "lucide-react";
 import axios from "axios";
 
 // Components
@@ -27,6 +26,7 @@ import {
   CreateUserPayload,
 } from "@/components/features/admin-users/schema/user.schema";
 import { UserQueryDTO } from "@/types/query-user";
+import { userToolbarVariants as variants } from "./user-toolbar.variants";
 
 export default function AdminUserManagementPage() {
   // --- 1. QUẢN LÝ URL & PARAMS ---
@@ -50,14 +50,14 @@ export default function AdminUserManagementPage() {
   const [prevActiveValue, setPrevActiveValue] = useState(activeValue);
   const [prevActiveField, setPrevActiveField] = useState(activeField);
 
-  const [selectedUser, setSelectedUser] = useState<UserResponseDTO | null>(
-    null,
-  );
+  const [selectedUser, setSelectedUser] = useState<UserResponseDTO | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // Chuẩn hóa Type message (intent thay vì type)
   const [message, setMessage] = useState<{
-    type: "success" | "error";
+    intent: "success" | "error" | "warning";
     text: string;
   } | null>(null);
 
@@ -70,13 +70,11 @@ export default function AdminUserManagementPage() {
   }
 
   // --- 4. EFFECTS ---
-  // Fix lỗi Hydration
   useEffect(() => {
     const raf = requestAnimationFrame(() => setIsMounted(true));
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Debounce Search
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchValue !== activeValue || localActiveField !== activeField) {
@@ -92,7 +90,7 @@ export default function AdminUserManagementPage() {
     handleSearchByField,
   ]);
 
-  // --- 5. DATA FETCHING (Dùng TanStack Query) ---
+  // --- 5. DATA FETCHING ---
   const {
     result,
     isLoading,
@@ -102,86 +100,81 @@ export default function AdminUserManagementPage() {
     handleUnlock,
     handleRestore,
     handleUpdate,
-  } = useUsers(getApiParams() as UserQueryDTO); // Đã ép kiểu chuẩn
+  } = useUsers(getApiParams() as UserQueryDTO);
 
   // --- 6. HANDLERS ---
+  
+  // Hàm trích xuất lỗi API chuẩn
+  const getApiError = (error: unknown) => {
+    return axios.isAxiosError(error)
+      ? error.response?.data?.message || "Lỗi kết nối đến máy chủ"
+      : "Đã xảy ra lỗi không xác định.";
+  };
+
   const handleCreateUser = async (data: CreateUserPayload) => {
     try {
-      // Giả lập API delay (Thay bằng mutation của bạn khi có)
+      setMessage(null);
+      // Giả lập API delay (Thay bằng mutation thực tế khi có)
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setIsCreateModalOpen(false);
-      setMessage({ type: "success", text: "Thêm mới học viên thành công!" });
-      toast.success("Khởi tạo thành công!");
-    } catch (error) {
-      toast.error("Lỗi khi tạo người dùng!");
+      setMessage({ intent: "success", text: "Thêm mới học viên thành công!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
     }
   };
 
   const handleUpdateUser = async (data: AdminUpdatePayload) => {
     if (!selectedUser) return;
     try {
+      setMessage(null);
       await handleUpdate.mutateAsync({ id: selectedUser.id, data });
+      
       setIsEditModalOpen(false);
       setSelectedUser(null);
-      setMessage({ type: "success", text: "Cập nhật thành công!" });
-      toast.success("Cập nhật thành công!");
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Lỗi cập nhật!";
-      toast.error(text);
+      setMessage({ intent: "success", text: "Cập nhật thành công!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
     }
   };
 
   const handleDeleteUserConfirm = async () => {
     if (!selectedUser) return;
     try {
+      setMessage(null);
       await handleDelete.mutateAsync(selectedUser.id);
+      
       setIsDeleteModalOpen(false);
-      setMessage({ type: "success", text: "Đã xóa người dùng!" });
-      toast.success("Xóa thành công!");
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Lỗi khi xóa!";
-      toast.error(text);
-      setMessage({ type: "error", text });
+      setSelectedUser(null);
+      setMessage({ intent: "success", text: "Đã khóa/xóa người dùng thành công!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
     }
   };
 
   const handleUnlockUser = async (user: UserResponseDTO) => {
     try {
+      setMessage(null);
       await handleUnlock.mutateAsync(user.id);
-
-      // Ghi message cho đồng bộ với Alert
-      setMessage({ type: "success", text: "Mở khóa tài khoản thành công!" });
-      toast.success("Mở khóa thành công!");
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Lỗi khi mở khóa!";
-      toast.error(text);
-      setMessage({ type: "error", text });
+      setMessage({ intent: "success", text: "Mở khóa tài khoản thành công!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
     }
   };
 
   const handleRestoreUser = async (user: UserResponseDTO) => {
     try {
+      setMessage(null);
       await handleRestore.mutateAsync(user.id);
-
-      // Ghi message cho đồng bộ với Alert
-      setMessage({ type: "success", text: "Khôi phục tài khoản thành công!" });
-      toast.success("Khôi phục thành công!");
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Lỗi khi khôi phục!";
-      toast.error(text);
-      setMessage({ type: "error", text });
+      setMessage({ intent: "success", text: "Khôi phục tài khoản thành công!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
     }
   };
-  // --- MÀN HÌNH CHỜ ---
+
+  // --- 7. RENDER ---
   if (!isMounted || (isLoading && !result)) {
     return (
       <SplashScreen icon={Users} message="Đang tải danh sách học viên..." />
@@ -204,41 +197,68 @@ export default function AdminUserManagementPage() {
       </div>
 
       {/* TOOLBAR SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/40 backdrop-blur-md p-4 rounded-[2.5rem] border border-white/60 shadow-soft">
-        <StatusTabs
-          options={USER_STATUS_OPTIONS}
-          currentValue={searchParams.get("status") || "all"}
-          onChange={(val) => updateUrlParam("status", val)}
-        />
-
-        <div className="flex flex-1 items-center justify-end gap-3 w-full">
-          <FilterSelect
-            options={FILTER_FIELDS}
-            value={localActiveField}
-            onChange={(newField) => {
-              setLocalActiveField(newField);
-              if (searchValue.trim() !== "") {
-                handleSearchByField(newField, searchValue);
-              }
-            }}
-            variant="solid"
-            size="base"
-            className="shrink-0 min-w-[130px]"
+      <div className={variants.root()}>
+        <div className={variants.tabsContainer()}>
+          <StatusTabs
+            options={USER_STATUS_OPTIONS}
+            currentValue={searchParams.get("status") || "all"}
+            onChange={(val) => updateUrlParam("status", val)}
           />
+        </div>
 
-          <ManagementToolbar
-            searchValue={searchValue}
-            onSearchChange={setSearchValue}
-            onAddClick={() => setIsCreateModalOpen(true)}
-            addLabel="Thêm học viên"
-            searchPlaceholder={`Tìm theo ${FILTER_FIELDS.find((f) => f.value === localActiveField)?.label?.toLowerCase()}...`}
-          />
+        <div className={variants.mainToolbar()}>
+          <div className="flex flex-1 items-center gap-2 w-full">
+            <button
+              onClick={() => {
+                setSearchValue("");
+                setLocalActiveField("name");
+                updateMultipleUrlParams({
+                  search: "",
+                  field: "name",
+                  status: "all",
+                  page: "1",
+                });
+              }}
+              className={variants.resetButton()}
+              title="Đặt lại bộ lọc"
+            >
+              <RotateCcw
+                size={18}
+                className="group-hover:-rotate-180 transition-transform duration-500"
+              />
+            </button>
+
+            <FilterSelect
+              options={FILTER_FIELDS}
+              value={localActiveField}
+              onChange={setLocalActiveField}
+              variant="solid"
+              className={variants.filterSelect()}
+            />
+
+            <div className="flex-[2]">
+              <ManagementToolbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                onAddClick={() => setIsCreateModalOpen(true)}
+                addLabel="Thêm học viên"
+                searchPlaceholder={`Tìm theo ${FILTER_FIELDS.find((f) => f.value === localActiveField)?.label?.toLowerCase()}...`}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2 px-6">
+          <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+            Tổng cộng: {result?.meta?.total || 0} học viên
+          </span>
         </div>
       </div>
 
+      {/* ALERT TRANG (PAGE LEVEL) */}
       {message && (
         <Alert
-          intent={message.type}
+          intent={message.intent} // Khớp type "intent"
           message={message.text}
           onClose={() => setMessage(null)}
           duration={5000}
@@ -282,10 +302,6 @@ export default function AdminUserManagementPage() {
 
       {/* PAGINATION SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-6 pb-10">
-        <p className="text-sm text-slate-500 font-medium">
-          Hiển thị <b className="text-slate-900">{result?.data?.length || 0}</b>{" "}
-          trên tổng số <b>{result?.meta?.total || 0}</b> học viên.
-        </p>
         <GenericPagination
           meta={{
             page: Number(searchParams.get("page")) || 1,
@@ -310,7 +326,10 @@ export default function AdminUserManagementPage() {
       <EditUserModal
         isOpen={isEditModalOpen}
         user={selectedUser}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedUser(null);
+        }}
         onSave={handleUpdateUser}
         isLoading={isUpdating}
       />
@@ -321,7 +340,14 @@ export default function AdminUserManagementPage() {
         variant="danger"
         onConfirm={handleDeleteUserConfirm}
         isLoading={isDeleting}
-        onClose={() => setIsDeleteModalOpen(false)}
+        // Truyền thông báo lỗi vào Modal
+        apiMessage={message}
+        onApiMessageClose={() => setMessage(null)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedUser(null);
+          setMessage(null); // Reset lỗi khi đóng Modal
+        }}
         message={
           <>
             Bạn có chắc chắn muốn khóa/xóa tài khoản{" "}

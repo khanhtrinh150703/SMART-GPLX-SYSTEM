@@ -41,8 +41,7 @@ export class LicenseCategoryController {
    */
   public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
 
-    const query: LicenseCategoryQueryDTO = req.query as unknown as LicenseCategoryQueryDTO;
-
+    const query = new LicenseCategoryQueryDTO(req.query as Record<string, unknown>);
     const categories = await this._licenseService.getPaginatedCategories(query);
 
     Result.ok(
@@ -140,6 +139,22 @@ export class LicenseCategoryController {
       result,
       Message.LICENSE.RESTORE_SUCCESS,
       'LICENSE_RESTORE_SUCCESS'
+    );
+  });
+
+  /**
+     * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) có hỗ trợ tìm kiếm.
+     * @route GET /api/v1/master-data/licenses/selection
+     * @param {Response} res - Đối tượng Response của Express.
+     * @returns {Promise<void>} Phản hồi danh sách hạng bằng dạng { items, meta }.
+     */
+  public getLicenseSelections = catchAsync(async (_req: Request, res: Response) => {
+    const result = await this._licenseService.getLicenseSelections();
+    Result.ok(
+      res,
+      result,
+      Message.LICENSE.GET_SELECTION_SUCCESS,
+      'LICENSE_SELECTION_SUCCESS'
     );
   });
 }

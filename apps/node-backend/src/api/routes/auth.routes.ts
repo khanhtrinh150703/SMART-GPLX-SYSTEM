@@ -6,59 +6,67 @@ import { AuthController } from '../controllers/auth.controller';
 const router = Router();
 
 /**
- * 💡 Giải phóng AuthController từ DI Container (Awilix).
+ * Resolve AuthController từ DI Container (Awilix).
  */
 const authController = container.resolve('authController') as AuthController;
 
 // ============================================================================
-// AUTHENTICATION ROUTES
+// AUTHENTICATION ROUTES (QUẢN LÝ XÁC THỰC)
 // ============================================================================
 
 /**
- * API Khởi tạo đăng ký và gửi mã OTP qua Email.
+ * @description Khởi tạo quá trình đăng ký tài khoản và gửi mã OTP xác thực qua Email.
  * @route POST /api/v1/auth/register/init
+ * @access Public
  */
 router.post('/register/init', authController.signUpInit);
 
 /**
- * API Xác thực OTP và hoàn tất tạo tài khoản mới.
+ * @description Xác thực mã OTP và hoàn tất quá trình tạo tài khoản người dùng mới.
  * @route POST /api/v1/auth/register/verify
+ * @access Public
  */
 router.post('/register/verify', authController.signUpVerify);
 
 /**
- * API Đăng nhập và cấp cặp mã thông báo Access/Refresh Token.
+ * @description Đăng nhập hệ thống và cấp cặp mã thông báo Access Token & Refresh Token.
  * @route POST /api/v1/auth/login
+ * @access Public
  */
 router.post('/login', authController.login);
 
 /**
- * API Gửi lại mã OTP xác thực tài khoản.
+ * @description Gửi lại mã OTP xác thực trong trường hợp người dùng chưa nhận được hoặc mã hết hạn.
  * @route POST /api/v1/auth/resend-otp
+ * @access Public
  */
 router.post('/resend-otp', authController.resendOtp);
 
 /**
- * API Đăng xuất và vô hiệu hóa mã thông báo hiện tại.
+ * @description Đăng xuất, vô hiệu hóa Access Token và xóa session/refresh token tương ứng.
  * @route POST /api/v1/auth/logout
+ * @access Private (Authenticated User)
  */
 router.post('/logout', authMiddleware, authController.logout);
 
 /**
- * API Yêu cầu gửi mã OTP để khôi phục mật khẩu.
+ * @description Yêu cầu khôi phục mật khẩu bằng cách gửi mã OTP xác nhận qua Email.
  * @route POST /api/v1/auth/forgot-password
+ * @access Public
  */
 router.post('/forgot-password', authController.forgotPassword);
 
 /**
- * API Xác thực OTP và thiết lập mật khẩu mới.
+ * @description Xác thực OTP và thiết lập mật khẩu mới cho người dùng.
  * @route POST /api/v1/auth/reset-password
+ * @access Public
  */
 router.post('/reset-password', authController.resetPassword);
 
 /**
- * API Làm mới Access Token khi đã hết hạn bằng Refresh Token.
- * @route   POST /api/auth/refresh-token
+ * @description Cấp mới Access Token bằng Refresh Token khi mã cũ đã hết hạn.
+ * @route POST /api/v1/auth/refresh-token
+ * @access Public (Requires Refresh Token in Body/Cookie)
  */
 router.post('/refresh-token', authController.refreshToken);
 

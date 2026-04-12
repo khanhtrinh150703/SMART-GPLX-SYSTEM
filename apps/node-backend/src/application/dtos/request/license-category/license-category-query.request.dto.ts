@@ -3,7 +3,6 @@ import { BaseQueryDTO } from "@/shared/types/common-query.dto.types";
 // features/license/dto/license-query.dto.ts
 export class LicenseCategoryQueryDTO extends BaseQueryDTO {
   // Thêm các field lọc đặc thù vào đây
-  public name?: string;
   public minAge?: number;
   public description?: string;
 

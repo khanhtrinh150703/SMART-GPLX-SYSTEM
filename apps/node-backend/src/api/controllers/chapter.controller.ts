@@ -24,7 +24,7 @@ export class ChapterController {
      */
     public list = catchAsync(async (req: Request, res: Response) => {
 
-        const query: ChapterQueryDTO = req.query as unknown as ChapterQueryDTO;
+        const query = new ChapterQueryDTO(req.query as Record<string, unknown>);
         const response = await this._chapterService.getPaginatedChapters(query);
 
         Result.ok(
@@ -103,4 +103,23 @@ export class ChapterController {
             'CHAPTER_RESTORE_SUCCESS'
         );
     });
+
+
+    /**
+     * @description Lấy danh sách các chương học định dạng selection (value/label) có hỗ trợ tìm kiếm và phân trang.
+     * @route GET /api/v1/master-data/chapters/selection
+     * @param {Response} res - Đối tượng Response của Express.
+     * @returns {Promise<void>} Phản hồi danh sách chương dạng { items, meta }.
+     */
+    public getChapterSelections = catchAsync(async (_req: Request, res: Response) => {
+        const result = await this._chapterService.getChapterSelections();
+
+        Result.ok(
+            res,
+            result,
+            Message.CHAPTER.GET_SELECTION_SUCCESS,
+            'CHAPTER_SELECTION_SUCCESS'
+        );
+    });
+
 }

@@ -159,7 +159,7 @@ export default function EditLicenseModal({
         </div>
 
         {/* SECTION 3: Quản lý Trạng thái */}
-        <div className="p-6 bg-slate-50/80 rounded-[2rem] border border-slate-100">
+        {/* <div className="p-6 bg-slate-50/80 rounded-[2rem] border border-slate-100">
           <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">
             <Activity size={14} /> Trạng thái hệ thống
           </label>
@@ -172,7 +172,7 @@ export default function EditLicenseModal({
             <option value="inactive">Tạm ngưng (Inactive)</option>
             <option value="deleted">Đã xóa (Deleted)</option>
           </select>
-        </div>
+        </div> */}
 
         {/* Action Buttons */}
         <div className="pt-4 flex items-center gap-4">

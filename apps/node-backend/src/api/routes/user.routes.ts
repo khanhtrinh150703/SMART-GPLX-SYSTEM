@@ -7,7 +7,7 @@ import { upload } from '../middlewares/upload.middleware';
 const router = Router();
 
 /**
- * 💡 PHÉP MÀU DI: Container tự động resolve các dependency (Service, Repo, Manager...).
+ * Resolve Controller từ Awilix Container.
  */
 const userController = container.resolve('userController') as UserController;
 
@@ -16,79 +16,56 @@ const userController = container.resolve('userController') as UserController;
 // ============================================================================
 
 /**
- * API Cập nhật thông tin cá nhân và ảnh đại diện.
+ * @description Cập nhật thông tin cá nhân và ảnh đại diện của người dùng hiện tại.
  * @route PATCH /api/v1/users/me/profile
+ * @access Private (Authenticated User)
  */
-router.patch(
-  '/me/profile', 
-  authMiddleware, 
-  upload.single('pictureFile'), 
-  userController.updateProfile
-);
+router.patch('/me/profile', authMiddleware, upload.single('pictureFile'), userController.updateProfile);
 
 /**
- * API Thay đổi mật khẩu người dùng.
+ * @description Thay đổi mật khẩu của người dùng hiện tại.
  * @route PATCH /api/v1/users/me/password
+ * @access Private (Authenticated User)
  */
-router.patch(
-  '/me/password', 
-  authMiddleware, 
-  userController.changePassword
-);
+router.patch('/me/password', authMiddleware, userController.changePassword);
 
 // ============================================================================
 // NHÓM 2: QUẢN TRỊ (ADMIN SCOPE)
 // ============================================================================
 
 /**
- * API Lấy danh sách toàn bộ người dùng (Phân trang/Lọc).
+ * @description Lấy danh sách toàn bộ người dùng với các bộ lọc, tìm kiếm và phân trang.
  * @route GET /api/v1/users
+ * @access Private (Admin)
  */
-router.get(
-  '', 
-  authMiddleware, 
-  userController.getUsers
-);
+router.get('', authMiddleware, userController.getUsers);
 
 /**
- * API Cập nhật trạng thái hoạt động của người dùng (Active/Inactive).
+ * @description Cập nhật trạng thái hoạt động (Active/Inactive) cho tài khoản người dùng.
  * @route PATCH /api/v1/users/:id/status
+ * @access Private (Admin)
  */
-router.patch(
-  '/:id/status', 
-  authMiddleware, 
-  userController.updateStatus
-);
+router.patch('/:id/status', authMiddleware, userController.updateStatus);
 
 /**
- * API Xóa mềm người dùng khỏi hệ thống.
+ * @description Xóa (xóa mềm) tài khoản người dùng khỏi hệ thống.
  * @route DELETE /api/v1/users/:id
+ * @access Private (Admin)
  */
-router.delete(
-  '/:id', 
-  authMiddleware, 
-  userController.deleteUser
-);
+router.delete('/:id', authMiddleware, userController.deleteUser);
 
 /**
- * API Khôi phục tài khoản người dùng đã xóa.
+ * @description Khôi phục lại tài khoản người dùng đã bị xóa mềm trước đó.
  * @route PATCH /api/v1/users/:id/restore
+ * @access Private (Admin)
  */
-router.patch(
-  '/:id/restore', 
-  authMiddleware, 
-  userController.restoreUser
-);
+router.patch('/:id/restore', authMiddleware, userController.restoreUser);
 
 /**
- * API Quản trị viên cập nhật thông tin chi tiết người dùng.
+ * @description Quản trị viên cập nhật thông tin chi tiết và ảnh đại diện của người dùng khác.
  * @route PATCH /api/v1/users/admin/:id
+ * @access Private (Admin)
  */
-router.patch(
-  '/admin/:id', 
-  authMiddleware, 
-  upload.single('pictureFile'), 
-  userController.updateProfileAdmin
-);
+router.patch('/admin/:id', authMiddleware, upload.single('pictureFile'), userController.updateProfileAdmin);
 
 export default router;

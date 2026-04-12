@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CreditCard } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { CreditCard, RotateCcw } from "lucide-react";
 import axios from "axios";
 
 // Components
@@ -19,13 +18,14 @@ import { FilterSelect } from "@/components/ui/Select/FilterSelect";
 
 // Hooks & Types
 import { LICENSE_STATUS_OPTIONS } from "@/components/features/license/components/license.config";
-import { useLicenseCategories } from "@/components/features/license/hook/use-license-categories";
-import { useLicenseUrlParams } from "@/components/features/license/hook/use-license-url-params";
+import { useLicenseCategories } from "@/components/features/license/hooks/use-license-categories";
+import { useLicenseUrlParams } from "@/components/features/license/hooks/use-license-url-params";
 import { LicenseCategory } from "@/types/license-category.types";
 import {
   CreateLicensePayload,
   UpdateLicensePayload,
 } from "@/components/features/license/schema/license.schema";
+import { licenseToolbarVariants as variants } from "./license-toolbar.variants";
 
 export function LicensesContent() {
   const {
@@ -48,17 +48,18 @@ export function LicensesContent() {
   const [prevActiveValue, setPrevActiveValue] = useState(activeValue);
   const [prevActiveField, setPrevActiveField] = useState(activeField);
 
-  const [selectedLicense, setSelectedLicense] =
-    useState<LicenseCategory | null>(null);
+  const [selectedLicense, setSelectedLicense] = useState<LicenseCategory | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // Chuẩn hóa type thành 'intent'
   const [message, setMessage] = useState<{
-    type: "success" | "error";
+    intent: "success" | "error" | "warning";
     text: string;
   } | null>(null);
 
-  // --- 2. ĐỒNG BỘ TRONG RENDER (FIX CASCADING RENDERS) ---
+  // --- 2. ĐỒNG BỘ TRONG RENDER ---
   if (activeValue !== prevActiveValue || activeField !== prevActiveField) {
     setPrevActiveValue(activeValue);
     setPrevActiveField(activeField);
@@ -67,7 +68,6 @@ export function LicensesContent() {
   }
 
   // --- 3. EFFECTS ---
-  // Fix lỗi: "Calling setState synchronously within an effect"
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       setIsMounted(true);
@@ -75,7 +75,6 @@ export function LicensesContent() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Xử lý Debounce cho ô tìm kiếm
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchValue !== activeValue || localActiveField !== activeField) {
@@ -102,52 +101,64 @@ export function LicensesContent() {
   } = useLicenseCategories(getApiParams());
 
   // --- 5. HANDLERS ---
+  
+  // Hàm trích xuất lỗi API
+  const getApiError = (error: unknown) => {
+    return axios.isAxiosError(error)
+      ? error.response?.data?.message || "Lỗi kết nối đến máy chủ"
+      : "Đã xảy ra lỗi không xác định.";
+  };
+
   const handleCreate = async (payload: CreateLicensePayload) => {
-    const res = await createCategory.mutateAsync(payload);
-    setMessage({ type: "success", text: "Thêm mới thành công!" });
-    toast.success("Khởi tạo thành công!");
-    return res;
+    try {
+      setMessage(null);
+      const res = await createCategory.mutateAsync(payload);
+      setIsCreateModalOpen(false);
+      setMessage({ intent: "success", text: "Thêm mới hạng bằng lái thành công!" });
+      return res;
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
+    }
   };
 
   const handleUpdate = async (payload: UpdateLicensePayload) => {
     if (!selectedLicense) return;
-    const res = await updateCategory.mutateAsync({
-      id: selectedLicense.id,
-      data: payload,
-    });
-    setIsEditModalOpen(false); // 1. Đóng Modal ngay lập tức
-    setMessage({ type: "success", text: "Cập nhật thành công!" });
-    toast.success("Cập nhật thành công!");
-    return res;
+    try {
+      setMessage(null);
+      const res = await updateCategory.mutateAsync({
+        id: selectedLicense.id,
+        data: payload,
+      });
+      setIsEditModalOpen(false);
+      setMessage({ intent: "success", text: "Cập nhật thành công!" });
+      return res;
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
+    }
   };
 
   const handleDelete = async () => {
     if (!selectedLicense) return;
     try {
+      setMessage(null);
       await deleteCategory.mutateAsync(selectedLicense.id);
-      setMessage({ type: "success", text: "Đã xóa hạng bằng lái!" });
-      toast.success("Xóa thành công!");
       setIsDeleteModalOpen(false);
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Lỗi khi xóa!";
-      toast.error(text);
-      setMessage({ type: "error", text });
+      setMessage({ intent: "success", text: "Đã xóa hạng bằng lái!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
     }
   };
 
   const handleRestore = useCallback(
     async (license: LicenseCategory) => {
       try {
+        setMessage(null);
         await restoreCategory.mutateAsync(license.id);
-        setMessage({ type: "success", text: "Khôi phục thành công!" });
-        toast.success("Đã khôi phục hạng bằng lái!");
-      } catch (error) {
-        const text = axios.isAxiosError(error)
-          ? error.response?.data?.message
-          : "Lỗi khôi phục!";
-        toast.error(text);
+        setMessage({ intent: "success", text: "Khôi phục thành công!" });
+      } catch (error: unknown) {
+        setMessage({ intent: "error", text: getApiError(error) });
       }
     },
     [restoreCategory],
@@ -174,41 +185,68 @@ export function LicensesContent() {
       </div>
 
       {/* TOOLBAR SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/40 backdrop-blur-md p-4 rounded-[2.5rem] border border-white/60 shadow-soft">
-        <StatusTabs
-          options={LICENSE_STATUS_OPTIONS}
-          currentValue={searchParams.get("status") || "all"}
-          onChange={(val) => updateUrlParam("status", val)}
-        />
-
-        <div className="flex flex-1 items-center justify-end gap-3 w-full">
-          <FilterSelect
-            options={FILTER_FIELDS}
-            value={localActiveField}
-            onChange={(newField) => {
-              setLocalActiveField(newField);
-              if (searchValue.trim() !== "") {
-                handleSearchByField(newField, searchValue);
-              }
-            }}
-            variant="solid"
-            size="base"
-            className="shrink-0 min-w-[130px]"
+      <div className={variants.root()}>
+        <div className={variants.tabsContainer()}>
+          <StatusTabs
+            options={LICENSE_STATUS_OPTIONS}
+            currentValue={searchParams.get("status") || "all"}
+            onChange={(val) => updateUrlParam("status", val)}
           />
+        </div>
 
-          <ManagementToolbar
-            searchValue={searchValue}
-            onSearchChange={setSearchValue}
-            onAddClick={() => setIsCreateModalOpen(true)}
-            addLabel="Thêm hạng"
-            searchPlaceholder={`Tìm theo ${FILTER_FIELDS.find((f) => f.value === localActiveField)?.label.toLowerCase()}...`}
-          />
+        <div className={variants.mainToolbar()}>
+          <div className="flex flex-1 items-center gap-2 w-full">
+            <button
+              onClick={() => {
+                setSearchValue("");
+                setLocalActiveField("name");
+                updateMultipleUrlParams({
+                  search: "",
+                  field: "name",
+                  status: "all",
+                  page: "1",
+                });
+              }}
+              className={variants.resetButton()}
+              title="Đặt lại bộ lọc"
+            >
+              <RotateCcw
+                size={18}
+                className="group-hover:-rotate-180 transition-transform duration-500"
+              />
+            </button>
+
+            <FilterSelect
+              options={FILTER_FIELDS}
+              value={localActiveField}
+              onChange={setLocalActiveField}
+              variant="solid"
+              className={variants.filterSelect()}
+            />
+
+            <div className="flex-[2]">
+              <ManagementToolbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                onAddClick={() => setIsCreateModalOpen(true)}
+                addLabel="Thêm hạng"
+                searchPlaceholder="Từ khóa ..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2 px-6">
+          <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+            Tổng cộng: {result?.meta?.total || 0} Hạng bằng lái
+          </span>
         </div>
       </div>
 
+      {/* ALERT SECTION */}
       {message && (
         <Alert
-          intent={message.type}
+          intent={message.intent} // Đã sửa lại từ type -> intent
           message={message.text}
           onClose={() => setMessage(null)}
           duration={5000}
@@ -286,10 +324,16 @@ export function LicensesContent() {
         variant="danger"
         onConfirm={handleDelete}
         isLoading={deleteCategory.isPending}
-        onClose={() => setIsDeleteModalOpen(false)}
+        // Thêm phần này để đẩy lỗi vào Modal (Push error into modal)
+        apiMessage={message}
+        onApiMessageClose={() => setMessage(null)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setMessage(null); // Reset thông báo khi đóng
+        }}
         message={
           <>
-            Bạn có chắc muốn xóa{" "}
+            Bạn có chắc muốn xóa hạng{" "}
             <b className="text-slate-900">{selectedLicense?.name}</b>?
           </>
         }

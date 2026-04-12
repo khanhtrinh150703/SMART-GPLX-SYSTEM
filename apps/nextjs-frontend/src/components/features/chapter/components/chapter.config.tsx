@@ -12,7 +12,6 @@ export const CHAPTER_STATUS_OPTIONS: StatusOption<Chapter["status"] | "all">[] =
   [
     { id: "all", label: "Tất cả" },
     { id: "active", label: "Đang Hoạt động", color: "text-emerald-600" },
-    { id: "draft", label: "Bản nháp", color: "text-slate-500" },
     { id: "deleted", label: "Thùng rác", color: "text-rose-600" },
   ];
 // chapter.config.ts

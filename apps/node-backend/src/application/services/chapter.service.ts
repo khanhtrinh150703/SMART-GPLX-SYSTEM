@@ -10,6 +10,7 @@ import { UpdateChapterRequestDTO } from "../dtos/request/chapter/update-chapter.
 import { ChapterQueryDTO } from "../dtos/request/chapter/chapter-query.request.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
+import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 
 /**
  * @interface IChapterServiceCradle
@@ -35,9 +36,13 @@ export class ChapterService implements IChapterService {
     this._chapterRepo = chapterRepository;
   }
 
+  public async getChapterSelections(): Promise<SelectionResponseDto[]> {
+    const chapters = await this._chapterRepo.findAll();
+    return ChapterMapper.toSelectionList(chapters);
+  }
+
   /**
    * @description Lấy danh sách chương bài học đã qua bộ lọc (tìm kiếm/trạng thái) và ánh xạ sang DTO sạch.
-   * (Fetch filtered chapters list and map to clean Response DTOs)
    * @param {ChapterQueryDTO} query - DTO chứa các tiêu chí lọc và thông số phân trang từ Request.
    * @returns {Promise<PaginatedResult<ChapterResponseDTO>>} Trả về DTO thay vì Entity để đảm bảo tính đóng gói.
    */

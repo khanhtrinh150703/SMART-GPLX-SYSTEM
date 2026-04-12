@@ -2,6 +2,7 @@ import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-quer
 import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
 import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
 import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto.respone";
+import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
 
 /**
@@ -10,8 +11,13 @@ import { PaginatedResult } from "@/shared/types/pagination.types";
 export interface IChapterService {
 
   /**
+   * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) có hỗ trợ tìm kiếm (theo mã hạng hoặc tên).
+   * @returns {Promise<SelectionResponseDto[]>} - Danh sách các hạng bằng lái rút gọn cho dropdown.
+   */
+  getChapterSelections(): Promise<SelectionResponseDto[]>;
+  
+  /**
    * @description Lấy danh sách chương lý thuyết có phân trang, sắp xếp theo thứ tự hiển thị.
-   * (Get paginated list of theoretical chapters, sorted by display order)
    * @param {ChapterQueryDTO} query - Tham số truy vấn bao gồm phân trang và bộ lọc.
    * @returns {Promise<PaginatedResult<ChapterResponse>>} Kết quả phân trang chứa danh sách Chapter.
    */
@@ -51,7 +57,7 @@ export interface IChapterService {
    * @returns {Promise<void>}
    */
   restoreChapter(id: string): Promise<ChapterResponseDTO>;
-  
+
   /**
    * @description Kiểm tra sự tồn tại của một bản ghi trong hệ thống dựa trên ID.
    * @param {string} id - Mã định danh duy nhất của bản ghi cần kiểm tra.

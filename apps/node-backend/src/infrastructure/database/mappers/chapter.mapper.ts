@@ -1,6 +1,7 @@
 import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto.respone";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterRecord } from "@/infrastructure/persistence/chapter.record";
+import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 
 /**
  * @description Lớp tiện ích ánh xạ dữ liệu (Data Mapper) cho phân hệ Chương lý thuyết (Chapter).
@@ -46,7 +47,6 @@ export class ChapterMapper {
 
   /**
    * @description Chuyển đổi thực thể nghiệp vụ sang đối tượng phản hồi (DTO) để gửi về phía Client.
-   * Lọc bỏ các thông tin nhạy cảm hoặc không cần thiết (như deletedAt) để tối ưu hóa dữ liệu truyền tải.
    * @param {Chapter} chapter - Thực thể Domain cần ánh xạ.
    * @returns {ChapterResponseDTO} Đối tượng truyền tải dữ liệu phía Client.
    */
@@ -68,5 +68,21 @@ export class ChapterMapper {
    */
   public static toResponseList(chapters: Chapter[]): ChapterResponseDTO[] {
     return chapters.map((chapter) => this.toResponse(chapter));
+  }
+
+  /**
+   * @description Chuyển đổi sang định dạng Selection (Value/Label) cho Dropdown
+   * @param {Chapter} entity 
+   * @returns {SelectionResponseDto}
+   */
+  static toSelectionResponse(entity: Chapter): SelectionResponseDto {
+    return new SelectionResponseDto({
+      value: entity.id!,
+      label: entity.name
+    });
+  }
+
+  static toSelectionList(entities: Chapter[]): SelectionResponseDto[] {
+    return entities.map(this.toSelectionResponse);
   }
 }

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { userService } from "@/services/user/user.service";
 import { UserQueryDTO } from "@/types/query-user";
 import { AdminUpdatePayload } from "../schema/user.schema";
+import { userAdminService } from "../services/user-admin.service";
 
 /**
  * Hook quản lý toàn bộ logic dữ liệu của Người dùng (User).
@@ -15,13 +15,13 @@ export const useUsers = (params: UserQueryDTO) => {
   // Tự động refetch khi params (page, limit, status, search...) thay đổi
   const usersQuery = useQuery({
     queryKey: ["users", params],
-    queryFn: () => userService.getUsers(params),
+    queryFn: () => userAdminService.getUsers(params),
     placeholderData: (previousData) => previousData, // Giữ dữ liệu cũ khi đang load trang mới (tránh nháy UI)
   });
 
   // 2. Mutation: Xóa hoặc Khóa người dùng (Delete/Lock)
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => userService.deleteUser(id),
+    mutationFn: (id: string) => userAdminService.deleteUser(id),
     onSuccess: () => {
       // Làm mới cache danh sách users ngay lập tức
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -30,7 +30,7 @@ export const useUsers = (params: UserQueryDTO) => {
 
   // 3. Mutation: Khôi phục hoặc Mở khóa (Restore/Unlock)
   const restoreMutation = useMutation({
-    mutationFn: (id: string) => userService.restoreUser(id),
+    mutationFn: (id: string) => userAdminService.restoreUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
@@ -39,7 +39,7 @@ export const useUsers = (params: UserQueryDTO) => {
   // 4. Mutation: Cập nhật thông tin (Update)
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: AdminUpdatePayload }) =>
-      userService.updateProfileAdmin(id, data),
+      userAdminService.updateProfileAdmin(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },

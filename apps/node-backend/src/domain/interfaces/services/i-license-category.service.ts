@@ -2,6 +2,7 @@ import { CreateLicenseCategoryRequestDTO } from '@/application/dtos/request/lice
 import { LicenseCategoryQueryDTO } from '@/application/dtos/request/license-category/license-category-query.request.dto';
 import { UpdateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
 import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
+import { SelectionResponseDto } from '@/shared/responses/selection-response.dto';
 import { PaginatedResult } from '@/shared/types/pagination.types';
 
 /**
@@ -9,6 +10,12 @@ import { PaginatedResult } from '@/shared/types/pagination.types';
  * Controller sẽ phụ thuộc vào Interface này thay vì Implementation cụ thể.
  */
 export interface ILicenseCategoryService {
+
+  /**
+   * @description Lấy danh sách các chương học định dạng selection (value/label) có hỗ trợ tìm kiếm theo tên.
+   * @returns {Promise<SelectionResponseDto[]>} - Danh sách các bản ghi đã được map sang định dạng value/label.
+   */
+  getLicenseSelections(): Promise<SelectionResponseDto[]>;
 
   /**
    * @description Lấy danh sách các hạng bằng lái có hỗ trợ tìm kiếm (theo tên/mô tả), 

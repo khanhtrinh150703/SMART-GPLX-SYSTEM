@@ -19,6 +19,10 @@ interface BaseConfirmModalProps {
   confirmText?: string;
   variant?: "danger" | "warning" | "info";
   icon?: LucideIcon;
+  
+  // --- BỔ SUNG 2 DÒNG NÀY ĐỂ FIX LỖI TYPE (Add these to fix the TS error) ---
+  apiMessage?: { intent: "success" | "error" | "warning"; text: string } | null;
+  onApiMessageClose?: () => void;
 }
 
 export default function BaseConfirmModal({
@@ -31,6 +35,9 @@ export default function BaseConfirmModal({
   confirmText = "Xác nhận",
   variant = "danger",
   icon: CustomIcon,
+  // --- BỔ SUNG Ở ĐÂY ĐỂ NHẬN PROPS (Extract the new props) ---
+  apiMessage,
+  onApiMessageClose,
 }: BaseConfirmModalProps) {
   
   // Cấu hình Style và Icon dựa trên variant
@@ -65,6 +72,8 @@ export default function BaseConfirmModal({
       title={title}
       icon={Icon}
       maxWidth="sm"
+      message={apiMessage}
+      onMessageClose={onApiMessageClose}
     >
       <div className="flex flex-col items-center text-center p-2">
         {/* 1. Icon cảnh báo lớn (Visual Alert) */}

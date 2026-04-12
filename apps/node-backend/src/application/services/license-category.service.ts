@@ -10,6 +10,7 @@ import { UpdateLicenseCategoryRequestDTO } from '../dtos/request/license-categor
 import { LicenseCategoryQueryDTO } from '../dtos/request/license-category/license-category-query.request.dto';
 import { PaginationUtil } from '@/shared/utils/pagination.util';
 import { PaginatedResult } from '@/shared/types/pagination.types';
+import { SelectionResponseDto } from '@/shared/responses/selection-response.dto';
 
 /**
  * @interface ILicenseCategoryServiceCradle
@@ -35,6 +36,11 @@ export class LicenseCategoryService implements ILicenseCategoryService {
         this._repo = licenseCategoryRepository;
     }
 
+    async getLicenseSelections(): Promise<SelectionResponseDto[]> {
+        const chapters = await this._repo.findAll();
+        return LicenseCategoryMapper.toSelectionList(chapters);
+    }
+
     /**
      * @description Lấy danh sách hạng bằng lái đã qua bộ lọc (tìm kiếm/trạng thái) và ánh xạ sang DTO sạch.
      * @param {LicenseCategoryQueryDTO} query - DTO chứa các tiêu chí lọc và thông số phân trang từ Request.
@@ -44,7 +50,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
         // 1. Chuẩn hóa thông số phân trang (đảm bảo luôn là số dương)
         const page = Number(query.page) || 1;
         const limit = Number(query.limit) || 10;
-        
+
         // 2. Tính toán skip cho Repository (Logic phân trang tập trung tại Util)
         const skip = PaginationUtil.getSkip(page, limit);
 

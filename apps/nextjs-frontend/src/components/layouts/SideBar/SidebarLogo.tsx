@@ -1,15 +1,19 @@
-'use client';
+// src/components/layouts/SideBar/SidebarLogo.tsx
+import Link from "next/link";
+import { cn } from "@/lib/utils/utils";
 
-import Link from 'next/link';
-
-export default function SidebarLogo() {
+export default function SidebarLogo({ className }: { className?: string }) {
   return (
     <Link 
-      href="/" 
-      className="h-20 flex items-center justify-center border-b border-slate-800 hover:bg-slate-800/30 transition-all group"
+      href="/dashboard" 
+      // SỬA LẠI: Tự căn giữa nội dung bên trong, dọn sạch outline/khung
+      className={cn(
+        "flex items-center justify-center outline-none group transition-all",
+        className
+      )}
     >
-      <h1 className="text-2xl font-black text-white tracking-tighter transition-transform group-active:scale-95">
-        Smart<span className="text-emerald-500 group-hover:text-emerald-400 transition-colors">GPLX</span>
+      <h1 className="text-xl font-black text-white tracking-tighter">
+        Smart<span className="text-emerald-500">GPLX</span>
       </h1>
     </Link>
   );

@@ -12,4 +12,5 @@ export const schemas = {
   ...licenseSchemas,
   ...chapterSchemas,
   ...questionSchemas,
+  ...commonSchemas,
 };

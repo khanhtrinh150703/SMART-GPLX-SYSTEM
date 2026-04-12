@@ -59,8 +59,8 @@ export const TableColumnFactory = {
     sortable: true,
     sortKey: "status" as keyof T,
     accessor: (item) => {
-      const config =
-        STATUS_VARIANTS[item.status as StatusType] || STATUS_VARIANTS.draft;
+      const normalizedStatus = item.status.toLowerCase() as StatusType;
+      const config = STATUS_VARIANTS[normalizedStatus] || STATUS_VARIANTS.draft;
       return (
         <span
           className={cn(
@@ -80,65 +80,71 @@ export const TableColumnFactory = {
     onEdit: (item: T) => void,
     onDelete: (item: T) => void,
     onRestore: (item: T) => void,
-    onUnlock?: (item: T) => void, // Tham số mới: Tùy chọn (Optional Parameter)
+    onUnlock?: (item: T) => void, // Tham số mới: Tùy chọn (English: Optional Parameter)
   ): TableColumn<T> => ({
     header: "Thao tác",
-    accessor: (item) => (
-      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 pr-4">
-        {/* TRƯỜNG HỢP 1: ĐÃ XÓA -> Chỉ hiện nút Khôi phục */}
-        {item.status === "deleted" ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRestore(item);
-            }}
-            className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-all"
-            title="Khôi phục"
-          >
-            <RotateCcw size={16} />
-          </button>
-        ) : (
-          /* TRƯỜNG HỢP 2: ĐANG HOẠT ĐỘNG HOẶC BỊ KHÓA */
-          <>
-            {/* Nếu trạng thái là Locked và có truyền hàm onUnlock thì mới hiện nút Mở khóa */}
-            {item.status === "locked" && onUnlock && (
+    accessor: (item) => {
+      // BƯỚC BẢO VỆ: Ép kiểu về chuỗi và chuyển thành chữ thường để so sánh an toàn
+      // (English: Safety step: Cast to string and convert to lowercase for safe comparison)
+      const normalizedStatus = String(item.status).toLowerCase();
+
+      return (
+        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 pr-4">
+          {/* TRƯỜNG HỢP 1: ĐÃ XÓA -> Chỉ hiện nút Khôi phục */}
+          {normalizedStatus === "deleted" ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRestore(item);
+              }}
+              className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-all"
+              title="Khôi phục"
+            >
+              <RotateCcw size={16} />
+            </button>
+          ) : (
+            /* TRƯỜNG HỢP 2: ĐANG HOẠT ĐỘNG HOẶC BỊ KHÓA */
+            <>
+              {/* Nếu trạng thái là Locked và có truyền hàm onUnlock thì mới hiện nút Mở khóa */}
+              {normalizedStatus === "locked" && onUnlock && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnlock(item);
+                  }}
+                  className="p-2 hover:bg-amber-50 text-amber-600 rounded-xl transition-all"
+                  title="Mở khóa"
+                >
+                  <Unlock size={16} />
+                </button>
+              )}
+
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onUnlock(item);
+                  onEdit(item);
                 }}
-                className="p-2 hover:bg-amber-50 text-amber-600 rounded-xl transition-all"
-                title="Mở khóa"
+                className="p-2 hover:bg-white hover:shadow-md text-slate-400 hover:text-emerald-600 rounded-xl transition-all"
+                title="Chỉnh sửa"
               >
-                <Unlock size={16} />
+                <Edit2 size={16} />
               </button>
-            )}
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 hover:bg-white hover:shadow-md text-slate-400 hover:text-emerald-600 rounded-xl transition-all"
-              title="Chỉnh sửa"
-            >
-              <Edit2 size={16} />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item);
-              }}
-              className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl transition-all"
-              title="Xóa / Khóa"
-            >
-              <Trash2 size={16} />
-            </button>
-          </>
-        )}
-      </div>
-    ),
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item);
+                }}
+                className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl transition-all"
+                title="Xóa / Khóa"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
+        </div>
+      );
+    },
     className: "text-right",
   }),
 };

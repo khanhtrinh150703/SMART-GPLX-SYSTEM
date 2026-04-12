@@ -1,8 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { IQuestionRepository } from "@/domain/interfaces/repositories/i-question.repository";
 import { Question as DomainQuestion } from "@/domain/entities/question/question.entity";
 import { QuestionMapper } from "@/infrastructure/database/mappers/question.mapper";
 import { IQuestionRecord, PrismaQuestionWithRelations } from "@/infrastructure/persistence/question.record";
+import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
+import { QuestionStatus } from "@/domain/entities/question/question.status";
 
 /**
  * @interface IMySQLQuestionRepositoryCradle
@@ -49,6 +51,8 @@ export class MySQLQuestionRepository implements IQuestionRepository {
       isCritical: raw.isCritical,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
+      deletedAt: raw.deletedAt,
+      status: raw.status,
       // Map danh sách đáp án
       answers: raw.answers.map((a) => ({
         id: a.id,
@@ -65,7 +69,6 @@ export class MySQLQuestionRepository implements IQuestionRepository {
         licenseCategoryId: l.licenseCategoryId,
       })),
     };
-
     return QuestionMapper.toDomain(record);
   }
 
@@ -83,6 +86,7 @@ export class MySQLQuestionRepository implements IQuestionRepository {
         imageUrl: props.imageUrl,
         isCritical: props.isCritical,
         difficultyLevel: props.difficultyLevel,
+        status: props.status,
         // Tạo nested Answers
         answers: {
           create: props.answers.map((a) => ({
@@ -101,7 +105,6 @@ export class MySQLQuestionRepository implements IQuestionRepository {
       },
       include: this._includeRelations,
     });
-
     return this._toDomain(saved as PrismaQuestionWithRelations)!;
   }
 
@@ -189,8 +192,8 @@ export class MySQLQuestionRepository implements IQuestionRepository {
       include: {
         licenseLinks: true, // Hạng bằng lái thường không dùng Soft Delete nên include thẳng
         answers: {
-          where: { deletedAt: null },  
-          orderBy: { createdAt: 'asc' } 
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -249,7 +252,10 @@ export class MySQLQuestionRepository implements IQuestionRepository {
   public async delete(id: string): Promise<void> {
     await this._prisma.question.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: {
+        deletedAt: new Date(),
+        status: "DELETED"
+      },
     });
   }
 
@@ -268,5 +274,125 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     });
 
     return this._toDomain(record as PrismaQuestionWithRelations)!;
+  }
+
+
+  /**
+  * @description Tìm kiếm và phân trang câu hỏi dành cho Admin (Dịch: Find and count questions for Admin)
+  * @param {QuestionsAdminQueryDto} dto - DTO chứa các điều kiện lọc từ Client.
+  * @param {number} skip - Vị trí bắt đầu lấy dữ liệu.
+  * @param {number} limit - Số lượng bản ghi tối đa.
+  * @returns {Promise<[DomainQuestion[], number]>} Mảng thực thể Domain và tổng số lượng.
+  */
+  public async findAndCountAdmin(
+    dto: QuestionsAdminQueryDto,
+    skip: number,
+    limit: number
+  ): Promise<[DomainQuestion[], number]> {
+    const where: Prisma.QuestionWhereInput = {};
+
+    // --- 1. GÁN ĐIỀU KIỆN CƠ BẢN (Dịch: Basic Filtering) ---
+    if (dto.chapterId) where.chapterId = dto.chapterId;
+    if (dto.difficultyLevel !== undefined) where.difficultyLevel = dto.difficultyLevel;
+    if (dto.isCritical !== undefined) where.isCritical = dto.isCritical;
+
+    // --- 2. LOGIC TRẠNG THÁI TỔNG HỢP (Dịch: Integrated Status Logic) ---
+    // Xử lý thông minh: Phân biệt giữa Tab UI và Business Status (Enum)
+    if (dto.status === 'all') {
+      // Không thêm điều kiện -> Lấy hết (Cả đã xóa và chưa xóa)
+    }
+    else if (dto.status === 'active') {
+      where.status = dto.status.toUpperCase() as QuestionStatus;
+      where.deletedAt = null;
+    }
+    else if (dto.status === 'deleted') {
+      where.deletedAt = { not: null };
+    }
+    else if (dto.status) {
+      // Nếu là DRAFT hoặc PUBLISHED: Phải viết hoa để khớp Enum Prisma
+      where.status = dto.status.toUpperCase() as QuestionStatus;
+      where.deletedAt = null; // Thường xem status nghiệp vụ thì chỉ xem cái chưa xóa
+    }
+
+    // --- 3. LOGIC QUAN HỆ & SEARCH (Dịch: Relation & Search Logic) ---
+    if (dto.licenseCategoryIds) {
+      where.licenseLinks = {
+        some: { licenseCategoryId: dto.licenseCategoryIds }
+      };
+    }
+
+    if (dto.search) {
+      where.OR = [
+        { content: { contains: dto.search } }
+      ];
+    }
+
+    // --- 4. XỬ LÝ SẮP XẾP PHỨC TẠP (Dịch: Advanced Sorting Logic) ---
+    // --- 4. XỬ LÝ SẮP XẾP PHỨC TẠP (Dịch: Complex Sorting Logic) ---
+    const sortBy = dto.sortBy;
+    const sortOrder = dto.sortOrder || 'desc';
+    const sortCriteria: Prisma.QuestionOrderByWithRelationInput[] = [];
+
+    /**
+     * LOGIC MẶC ĐỊNH (Khi mới vào trang hoặc sortBy là 'createdAt')
+     */
+    if (!sortBy || sortBy === 'createdAt' || sortBy === 'all') {
+      sortCriteria.push({ deletedAt: 'asc' });
+      sortCriteria.push({ status: 'asc' });
+      sortCriteria.push({ licenseLinks: { _count: 'desc' } });
+      sortCriteria.push({ content: 'asc' });
+    }
+    else {
+      // TRƯỜNG HỢP ADMIN CLICK CHỌN CỘT CỤ THỂ
+      switch (sortBy) {
+        case 'answers':
+          sortCriteria.push({ imageUrl: sortOrder });
+          sortCriteria.push({ answers: { _count: sortOrder } });
+          break;
+        case 'chapterName':
+          sortCriteria.push({ chapter: { name: sortOrder } });
+          break;
+        case 'licenseCategoryNames':
+          sortCriteria.push({ licenseLinks: { _count: sortOrder } });
+          sortCriteria.push({ content: 'asc' });
+          break;
+        case 'status':
+          // Khi click cột trạng thái, ta đảo ngược logic nhóm
+          sortCriteria.push({ deletedAt: sortOrder === 'desc' ? 'asc' : 'desc' });
+          sortCriteria.push({ status: sortOrder });
+          break;
+        default:
+          sortCriteria.push({ [sortBy]: sortOrder } as Prisma.QuestionOrderByWithRelationInput);
+      }
+
+      // Chốt chặn cuối cùng cho mọi trường hợp click cột khác
+      sortCriteria.push({ createdAt: 'desc' });
+    }
+
+    const finalOrderBy = [...sortCriteria];
+
+    // --- 5. THỰC THI TRANSACTION (Dịch: Database Execution) ---
+    const [rawRecords, total] = await this._prisma.$transaction([
+      this._prisma.question.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: finalOrderBy,
+        include: {
+          answers: true,
+          chapter: { select: { name: true } },
+          licenseLinks: {
+            include: { licenseCategory: { select: { name: true } } }
+          }
+        }
+      }),
+      this._prisma.question.count({ where })
+    ]);
+
+    // --- 6. MAPPING (Dịch: Domain Mapping) ---
+    // Chuyển đổi Database Record thô sang Domain Entity xịn xò
+    const entities = rawRecords.map((record) => QuestionMapper.toDomain(record));
+
+    return [entities, total];
   }
 }

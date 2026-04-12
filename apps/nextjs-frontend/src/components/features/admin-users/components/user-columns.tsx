@@ -13,18 +13,18 @@ export const getUserColumns = (
   page: number,
   limit: number,
 ): TableColumn<UserResponseDTO>[] => [
-  // 1. Cột STT (Tái sử dụng Factory)
+  // 1. Cột STT
   TableColumnFactory.stt<UserResponseDTO>(page, limit),
 
-  // 2. Cột đặc thù: Thông tin học viên (Avatar & Name)
+  // 2. Cột Thông tin học viên (Avatar + Tên + ID)
   {
     header: "Học viên",
     sortable: true,
     sortKey: "fullName",
     accessor: (user) => (
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-slate-100 flex items-center justify-center text-emerald-700 font-black shadow-sm shrink-0">
-          {user.fullName.charAt(0).toUpperCase()}
+      <div className="flex items-center gap-4 overflow-hidden">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-slate-100 flex items-center justify-center text-emerald-700 font-black shadow-sm shrink-0 uppercase">
+          {user.fullName.charAt(0)}
         </div>
         <div className="flex flex-col min-w-0">
           <span className="font-bold text-slate-800 leading-tight truncate">
@@ -38,7 +38,19 @@ export const getUserColumns = (
     ),
   },
 
-  // 3. Cột đặc thù: Vai trò (Roles)
+  // 3. Cột Email (Hiển thị text đơn giản để tránh rối mắt)
+  {
+    header: "Email",
+    sortable: true,
+    sortKey: "email",
+    accessor: (user) => (
+      <span className="text-sm text-slate-600 font-medium truncate block lowercase">
+        {user.email}
+      </span>
+    ),
+  },
+
+  // 4. Cột Vai trò (Roles)
   {
     header: "Vai trò",
     sortable: true,
@@ -58,17 +70,14 @@ export const getUserColumns = (
     className: "text-center w-36",
   },
 
-  // 4. Cột Trạng thái (Tái sử dụng Factory)
-  // Factory tự động map: active, locked, deleted sang màu và label chuẩn
+  // 5. Cột Trạng thái
   TableColumnFactory.status<UserResponseDTO>(),
 
-  // 5. Cột Thao tác (Tái sử dụng Factory)
-  // Nếu Factory của bạn hỗ trợ onUnlock, hãy truyền vào.
-  // Nếu không, bạn có thể truyền onUnlock vào tham số mở rộng của Factory.
+  // 6. Cột Thao tác
   TableColumnFactory.actions<UserResponseDTO>(
     onEdit,
     onDelete,
     onRestore,
-    onUnlock, // Factory sẽ tự hiện nút Unlock khi status === "locked"
+    onUnlock,
   ),
 ];

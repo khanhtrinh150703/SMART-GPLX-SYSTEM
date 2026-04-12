@@ -1,29 +1,19 @@
+// src/components/common/ManagementToolbar/ManagementToolbar.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Loader2, LucideIcon, ChevronDown, X } from "lucide-react";
+import { Search, Plus, Loader2, LucideIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
-import { searchInputVariants, toolbarButtonVariants } from "./management-toolbar.variants";
+import Button from "@/components/ui/Button/Button";
 
-/**
- * ManagementToolbarProps - Thuộc tính cho thanh công cụ quản lý.
- */
 interface ManagementToolbarProps {
-  // Logic tìm kiếm
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
-
-  // Nút thêm mới
   onAddClick: () => void;
   addLabel: string;
   addIcon?: LucideIcon;
   isLoading?: boolean;
-
-  // Nút lọc (Tùy chọn)
-  filterLabel?: string;
-  onFilterClick?: () => void;
-  
   className?: string;
 }
 
@@ -35,95 +25,65 @@ export const ManagementToolbar = ({
   addLabel,
   addIcon: AddIcon = Plus,
   isLoading = false,
-  filterLabel,
-  onFilterClick,
-  className
+  className,
 }: ManagementToolbarProps) => {
-  
-  // 1. Tạo State nội bộ để gõ chữ "mượt như lụa" (Local State for smooth typing)
   const [localSearch, setLocalSearch] = useState(searchValue);
 
-  // 2. Đồng bộ localSearch khi searchValue từ bên ngoài thay đổi (ví dụ: Reset search)
   useEffect(() => {
     setLocalSearch(searchValue);
   }, [searchValue]);
 
-  // 3. Hàm xử lý thay đổi văn bản
   const handleInputChange = (val: string) => {
-    setLocalSearch(val);        // Cập nhật giao diện ngay lập tức (Instant UI Update)
-    onSearchChange?.(val);      // Gửi lên trang cha để xử lý Debounce
-  };
-
-  // 4. Hàm xóa nhanh ô tìm kiếm
-  const handleClear = () => {
-    setLocalSearch("");
-    onSearchChange?.("");
+    setLocalSearch(val);
+    onSearchChange?.(val);
   };
 
   return (
-    <div className={cn("flex items-center justify-between gap-4 w-full", className)}>
-      <div className="flex items-center gap-3 flex-1">
-        
-        {/* Search Input Group */}
-        <div className="relative group flex-1 max-w-md">
-          <Search 
-            className={cn(
-              "absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300",
-              localSearch ? "text-emerald-500" : "text-slate-400"
-            )} 
-            size={18} 
-          />
-          
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => handleInputChange(e.target.value)}
-            placeholder={searchPlaceholder}
-            className={cn(
-              searchInputVariants(),
-              "pr-10" // Tạo khoảng trống bên phải cho nút X
-            )}
-          />
-
-          {/* Nút Xóa nhanh (Clear Button) */}
-          {localSearch && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 text-slate-400 hover:text-rose-500 rounded-lg transition-all active:scale-90"
-            >
-              <X size={14} />
-            </button>
+    <div className={cn("flex items-center gap-3 w-full", className)}>
+      {/* SEARCH INPUT GROUP: Thiết kế tối giản, bo góc 2xl */}
+      <div className="relative group flex-1">
+        <Search
+          className={cn(
+            "absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300",
+            localSearch ? "text-emerald-500" : "text-slate-400"
           )}
-        </div>
+          size={18}
+        />
 
-        {/* Filter Button */}
-        {filterLabel && (
-          <button 
+        <input
+          type="text"
+          value={localSearch}
+          onChange={(e) => handleInputChange(e.target.value)}
+          placeholder={searchPlaceholder}
+          className={cn(
+            "w-full h-12 pl-11 pr-10 bg-slate-100/50 border-none outline-none",
+            "rounded-2xl text-sm font-bold text-slate-700 transition-all",
+            "focus:bg-white focus:ring-4 focus:ring-emerald-500/5 focus:shadow-inner-sm",
+            "placeholder:text-slate-400 placeholder:font-medium"
+          )}
+        />
+
+        {localSearch && (
+          <button
             type="button"
-            onClick={onFilterClick}
-            className={toolbarButtonVariants({ intent: "secondary" })}
+            onClick={() => handleInputChange("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-lg transition-all"
           >
-            Bộ lọc: {filterLabel}
-            <ChevronDown size={16} className="opacity-50" />
+            <X size={14} />
           </button>
         )}
       </div>
 
-      {/* Main Action Button (Nút thêm mới) */}
-      <button
-        type="button"
-        disabled={isLoading}
+      {/* NÚT THÊM MỚI: Dùng chuẩn Button Atom */}
+      <Button
         onClick={onAddClick}
-        className={toolbarButtonVariants({ intent: "primary" })}
+        isLoading={isLoading}
+        variant="primary"
+        className="h-12 px-6 rounded-2xl flex items-center gap-2 shrink-0 font-bold text-[13px] uppercase tracking-wider shadow-lg shadow-emerald-500/20"
       >
-        {isLoading ? (
-          <Loader2 className="animate-spin" size={18} />
-        ) : (
-          <AddIcon size={18} />
-        )}
-        <span className="hidden sm:inline">{addLabel}</span>
-      </button>
+        {!isLoading && <AddIcon size={18} />}
+        <span className="hidden md:inline">{addLabel}</span>
+      </Button>
     </div>
   );
 };

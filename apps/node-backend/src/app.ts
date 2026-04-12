@@ -11,7 +11,7 @@ import { apiMonitor } from "./api/middlewares/monitor.middleware";
 import logger from "./infrastructure/logging/winston.logger";
 
 const app = express();
-const uploadPath = path.join(__dirname, '..', 'uploads');
+const uploadPath = path.resolve(process.env.UPLOAD_DIR || 'public/uploads');
 
 // =========================================================
 // 1. SECURITY & PARSING (Bảo mật & Phân tích dữ liệu)

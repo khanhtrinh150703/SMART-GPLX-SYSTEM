@@ -5,7 +5,8 @@ import { Message } from "@/shared/errors/messages/success-messages-vn";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { IQuestionService } from "@/domain/interfaces/services/i-question.service";
 import { UpdateQuestionRequestDto } from "@/application/dtos/request/question/update-question.request.dto";
-import {  CreateQuestionRequestDto } from "@/application/dtos/request/question/create-question.request.dto";
+import { CreateQuestionRequestDto, ICreateQuestionInput } from "@/application/dtos/request/question/create-question.request.dto";
+import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
 
 /**
  * @interface IQuestionControllerCradle
@@ -31,46 +32,49 @@ export class QuestionController {
     this._questionService = questionService;
   }
 
+  // Trong QuestionController.ts
+
   /**
-   * @description [POST] Tạo câu hỏi mới kèm đáp án và hạng bằng.
-   * @route /api/v1/questions
+   * @description Hàm hỗ trợ trích xuất dữ liệu từ Multipart Request (Dịch: Helper to extract multipart request data)
+   */
+  private _getMultipartData(req: Request): ICreateQuestionInput {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+    return {
+      ...req.body, // Spread toàn bộ body (chapterId, content, answers...)
+      imageFile: files?.['imageFile']?.[0],
+      answerFiles: files?.['answerImages'],
+    };
+  }
+
+  /**
+   * @description [POST] Tạo câu hỏi mới
    */
   public create = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const dto = new CreateQuestionRequestDto({ ...req.body });
+    // 1. Lấy data nhanh gọn qua helper
+    const dto = new CreateQuestionRequestDto(this._getMultipartData(req));
+    dto.isValid();
 
-    // 1. Validate ngay tại "cửa ngõ" Controller
-    dto.isValid()
-
-    // 2. Xử lý nghiệp vụ
     const data = await this._questionService.createQuestion(dto);
 
-    // 3. Trả về Response chuẩn 4 tham số
-    Result.ok(
-      res,
-      data,
-      Message.QUESTION.CREATE_SUCCESS,
-      'QUESTION_CREATE_SUCCESS'
-    );
+    Result.ok(res, data, Message.QUESTION.CREATE_SUCCESS, 'QUESTION_CREATE_SUCCESS');
   });
 
   /**
-   * @description [PUT] Cập nhật toàn diện thông tin câu hỏi.
-   * @route /api/v1/questions/:id
+   * @description [PUT] Cập nhật câu hỏi
    */
   public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const id = req.params.id as string;
-    const dto = new UpdateQuestionRequestDto({ ...req.body, id: id });
 
-    dto.isValid();
+    const rawInput = { ...this._getMultipartData(req), id };
+
+    const dto = new UpdateQuestionRequestDto(rawInput);
     
+    dto.isValid();
+
     const data = await this._questionService.updateQuestion(id, dto);
 
-    Result.ok(
-      res,
-      data,
-      Message.QUESTION.UPDATE_SUCCESS,
-      'QUESTION_UPDATE_SUCCESS'
-    );
+    Result.ok(res, data, Message.QUESTION.UPDATE_SUCCESS, 'QUESTION_UPDATE_SUCCESS');
   });
 
   /**
@@ -116,7 +120,7 @@ export class QuestionController {
 
 
   /**
-   * API Xóa (xóa mềm) một hạng bằng lái.
+   * @description API Xóa (xóa mềm) một hạng bằng lái.
    * @route DELETE /api/v1/license-categories/:id
    * @param {Request} req - Chứa params.id.
    * @param {Response} res - Đối tượng Response của Express.
@@ -124,7 +128,6 @@ export class QuestionController {
    */
   public delete = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const id = req.params.id as string;
-
     await this._questionService.deleteQuestion(id);
 
     Result.ok(
@@ -137,7 +140,7 @@ export class QuestionController {
 
 
   /**
-   * API Khôi phục hạng bằng lái đã bị xóa mềm.
+   * @description API Khôi phục hạng bằng lái đã bị xóa mềm.
    * @route PATCH /api/v1/license-categories/:id/restore
    * @param {Request} req - Chứa UUID hạng bằng trong params.id.
    * @param {Response} res - Đối tượng Response của Express.
@@ -153,6 +156,26 @@ export class QuestionController {
       result,
       Message.QUESTION.RESTORE_SUCCESS,
       'QUESTION_RESTORE_SUCCESS'
+    );
+  });
+
+  /**
+   * @description API Lấy danh sách câu hỏi dành cho Admin (Hỗ trợ phân trang, tìm kiếm và bộ lọc kết hợp).
+   * @route GET /api/v1/admin/questions
+   * @param {Request} req - Chứa Query Params: chapterId, licenseCategoryId, difficultyLevel, isCritical, search, status, page, limit.
+   * @param {Response} res - Đối tượng Response trả về kết quả chuẩn hóa.
+   * @returns {Promise<void>} Trả về PaginatedResult chứa danh sách QuestionResponseDTO.
+   */
+  public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const query = new QuestionsAdminQueryDto(req.query as Record<string, unknown>);
+
+    const categories = await this._questionService.getPaginatedQuestions(query);
+
+    Result.ok(
+      res,
+      categories,
+      Message.QUESTION.FETCH_SUCCESS,
+      'QUESTION_FETCH_SUCCESS'
     );
   });
 }

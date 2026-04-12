@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { chapters, licenses, permissions, roles } from './data.seed';
 
 const prisma = new PrismaClient();
 
@@ -6,14 +7,7 @@ async function main() {
     console.log('🌱 Đang bắt đầu quá trình Seed dữ liệu...');
 
     // 1. Định nghĩa danh sách Permissions (Nguyên liệu thô)
-    const permissions = [
-        { name: 'user:read', description: 'Xem thông tin người dùng' },
-        { name: 'user:write', description: 'Sửa thông tin người dùng' },
-        { name: 'user:delete', description: 'Xóa người dùng' },
-        { name: 'exam:manage', description: 'Quản lý bộ đề thi (Admin/GV)' },
-        { name: 'exam:take', description: 'Được phép làm bài thi (Học viên)' },
-        { name: 'admin:all', description: 'Toàn quyền hệ thống' },
-    ];
+
 
     console.log('- Đang nạp Permissions...');
     for (const p of permissions) {
@@ -25,11 +19,7 @@ async function main() {
     }
 
     // 2. Định nghĩa Roles (Các chức danh)
-    const roles = [
-        { name: 'ADMIN', description: 'Quản trị viên hệ thống' },
-        { name: 'INSTRUCTOR', description: 'Giảng viên/Người ra đề' },
-        { name: 'STUDENT', description: 'Học viên/Thí sinh' },
-    ];
+
 
     console.log('- Đang nạp Roles...');
     for (const r of roles) {
@@ -84,6 +74,30 @@ async function main() {
                 },
             });
         }
+    }
+
+    console.log('- Đang nạp danh mục Hạng bằng lái (Licenses)...');
+    for (const l of licenses) {
+        await prisma.licenseCategory.upsert({
+            where: { name: l.name }, // Dùng name làm định danh duy nhất để tránh tạo trùng
+            update: {
+                description: l.description,
+                minAge: l.minAge,
+            }, // Nếu đổi mô tả hoặc tuổi tối thiểu thì nó sẽ cập nhật luôn
+            create: l,
+        });
+    }
+
+    console.log('- Đang nạp danh mục Chương (Chapters)...');
+    for (const c of chapters) {
+        await prisma.chapter.upsert({
+            where: { name: c.name }, // Dùng name để tránh tạo trùng khi chạy lại lệnh seed
+            update: {
+                description: c.description,
+                orderIndex: c.orderIndex,
+            },
+            create: c,
+        }); 
     }
 
     console.log('✅ Seed dữ liệu hoàn tất!');

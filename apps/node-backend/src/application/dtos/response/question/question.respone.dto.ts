@@ -1,3 +1,5 @@
+import { QuestionStatus } from "@/domain/entities/question/question.status";
+
 /**
  * @interface AnswerResponseDto
  * @description Dữ liệu chi tiết của một đáp án (lựa chọn) trả về cho Client.
@@ -18,11 +20,11 @@ export interface AnswerResponseDto {
 }
 
 /**
- * @interface QuestionResponseDto
+ * @interface QuestionResponseDTO
  * @description Dữ liệu câu hỏi đầy đủ trả về cho Client, đảm bảo sạch và an toàn.
  * (Full question data returned to the Client, ensuring clean and safe structure)
  */
-export interface QuestionResponseDto {
+export interface QuestionResponseDTO {
   /** @property {string} id - Mã định danh duy nhất của câu hỏi (UUID). */
   id: string;
 
@@ -46,6 +48,8 @@ export interface QuestionResponseDto {
     level: number; 
     label: string; 
   };
+
+  status: QuestionStatus;
 
   /** @property {AnswerResponseDto[]} answers - Danh sách các lựa chọn đáp án đi kèm. */
   answers: AnswerResponseDto[];

@@ -115,7 +115,7 @@ export default function EditChapterModal({
             />
           </div>
 
-          {/* Trạng thái */}
+          {/* Trạng thái
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5 ml-1">
               <Activity size={14} className="text-slate-400" />
@@ -129,7 +129,7 @@ export default function EditChapterModal({
               <option value="active">Hoạt động (Active)</option>
               <option value="deleted">Đã xóa (Deleted)</option>
             </select>
-          </div>
+          </div> */}
         </div>
 
         {/* Mô tả chi tiết */}

@@ -143,6 +143,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
+  
   /**
    * @description Tìm kiếm và phân trang hạng bằng lái (Sử dụng gán thủ công để đảm bảo Type-safe)
    */
@@ -157,8 +158,8 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     // --- 1. GÁN THỦ CÔNG (Explicit Assignment) ---
     // Bạn chọn trường nào trên Dropdown, FE gửi trường đó về, mình gán đúng trường đó.
 
-    if (query.name) {
-      where.name = { contains: query.name };
+    if (query.search) {
+      where.name = { contains: query.search };
     }
 
     if (query.description) {

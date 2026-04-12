@@ -1,3 +1,4 @@
+import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
 import { Question } from "@/domain/entities/question/question.entity";
 
 /**
@@ -54,4 +55,17 @@ export interface IQuestionRepository {
    * @param id ID của câu hỏi cần khôi phục
    */
   restore(id: string): Promise<Question>;
+
+  /**
+   * @description Truy vấn danh sách câu hỏi và tổng số lượng bản ghi phục vụ cho giao diện quản trị (Admin). 
+   * @param {QuestionsAdminQueryDto} dto - Đối tượng chứa các tiêu chí lọc (Search, Chapter, License, Difficulty, Status) 
+   * @param {number} skip - Số bản ghi bỏ qua.
+   * @param {number} take - Số bản ghi lấy ra.
+   * @returns {Promise<[Question[], number]>} Một Tuple bao gồm:
+   */
+  findAndCountAdmin(
+    dto: QuestionsAdminQueryDto,
+    skip: number,
+    take: number
+  ): Promise<[Question[], number]>
 }

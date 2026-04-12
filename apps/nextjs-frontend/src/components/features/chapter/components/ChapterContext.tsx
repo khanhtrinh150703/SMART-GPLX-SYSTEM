@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { BookOpen } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { BookOpen, RotateCcw } from "lucide-react";
 import axios from "axios";
 
 // Components
@@ -19,13 +18,14 @@ import { FilterSelect } from "@/components/ui/Select/FilterSelect";
 
 // Hooks & Types
 import { CHAPTER_STATUS_OPTIONS } from "@/components/features/chapter/components/chapter.config";
-import { useChapters } from "@/components/features/chapter/hook/use-chapters";
-import { useChapterUrlParams } from "@/components/features/chapter/hook/use-chapter-url-params";
+import { useChapters } from "@/components/features/chapter/hooks/use-chapters";
+import { useChapterUrlParams } from "@/components/features/chapter/hooks/use-chapter-url-params";
 import { Chapter } from "@/types/chapter.types";
 import {
   CreateChapterPayload,
   UpdateChapterPayload,
 } from "@/components/features/chapter/schema/chapter.schema";
+import { chapterToolbarVariants as variants } from "./chapter-toolbar.variants";
 
 export function ChapterContent() {
   const {
@@ -44,7 +44,6 @@ export function ChapterContent() {
   const [searchValue, setSearchValue] = useState(activeValue);
   const [localActiveField, setLocalActiveField] = useState(activeField);
 
-  // State "trí nhớ" để đồng bộ (Fix lỗi Cascading Renders)
   const [prevActiveValue, setPrevActiveValue] = useState(activeValue);
   const [prevActiveField, setPrevActiveField] = useState(activeField);
 
@@ -52,12 +51,14 @@ export function ChapterContent() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // CHỈ DÙNG 1 BIẾN MESSAGE DUY NHẤT (Only one message state)
   const [message, setMessage] = useState<{
-    type: "success" | "error";
+    intent: "success" | "error" | "warning";
     text: string;
   } | null>(null);
 
-  // --- 2. ĐỒNG BỘ TRONG RENDER (DỌN SẠCH CON RỒNG ĐỎ) ---
+  // --- 2. ĐỒNG BỘ TRONG RENDER ---
   if (activeValue !== prevActiveValue || activeField !== prevActiveField) {
     setPrevActiveValue(activeValue);
     setPrevActiveField(activeField);
@@ -66,7 +67,6 @@ export function ChapterContent() {
   }
 
   // --- 3. EFFECTS ---
-  // Fix lỗi đồng bộ state trong Effect
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       setIsMounted(true);
@@ -74,7 +74,6 @@ export function ChapterContent() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Debounce search: Theo dõi cả Chữ gõ và Trường chọn
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchValue !== activeValue || localActiveField !== activeField) {
@@ -101,55 +100,64 @@ export function ChapterContent() {
   } = useChapters(getApiParams());
 
   // --- 5. HANDLERS ---
+  
+  // Hàm trích xuất lỗi API chuẩn xác
+  const getApiError = (error: unknown) => {
+    return axios.isAxiosError(error)
+      ? error.response?.data?.message || "Lỗi kết nối đến máy chủ"
+      : "Đã xảy ra lỗi không xác định.";
+  };
+
   const handleCreate = async (payload: CreateChapterPayload) => {
-    const res = await createChapter.mutateAsync(payload);
-    setMessage({
-      type: "success",
-      text: "Thêm mới chương bài học thành công!",
-    });
-    toast.success("Khởi tạo thành công!");
-    return res;
+    try {
+      setMessage(null);
+      const res = await createChapter.mutateAsync(payload);
+      setIsCreateModalOpen(false);
+      setMessage({ intent: "success", text: "Thêm mới chương bài học thành công!" });
+      return res;
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
+      throw error; // Bắn lỗi ra để form bên trong biết mà ngừng loading (nếu cần)
+    }
   };
 
   const handleUpdate = async (payload: UpdateChapterPayload) => {
     if (!selectedChapter) return;
-    const res = await updateChapter.mutateAsync({
-      id: selectedChapter.id,
-      data: payload,
-    });
-    setIsEditModalOpen(false);
-    setMessage({ type: "success", text: "Cập nhật thành công!" });
-    toast.success("Cập nhật thành công!");
-    return res;
+    try {
+      setMessage(null);
+      const res = await updateChapter.mutateAsync({
+        id: selectedChapter.id,
+        data: payload,
+      });
+      setIsEditModalOpen(false);
+      setMessage({ intent: "success", text: "Cập nhật thành công!" });
+      return res;
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
+    }
   };
 
   const handleDelete = async () => {
     if (!selectedChapter) return;
     try {
+      setMessage(null);
       await deleteChapter.mutateAsync(selectedChapter.id);
-      setMessage({ type: "success", text: "Đã xóa chương bài học!" });
-      toast.success("Xóa thành công!");
       setIsDeleteModalOpen(false);
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Lỗi khi xóa!";
-      toast.error(text);
-      setMessage({ type: "error", text });
+      setMessage({ intent: "success", text: "Đã xóa chương bài học!" });
+    } catch (error: unknown) {
+      setMessage({ intent: "error", text: getApiError(error) });
     }
   };
 
   const handleRestore = useCallback(
     async (chapter: Chapter) => {
       try {
+        setMessage(null);
         await restoreChapter.mutateAsync(chapter.id);
-        setMessage({ type: "success", text: "Khôi phục chương thành công!" });
-        toast.success("Đã khôi phục chương bài học!");
-      } catch (error) {
-        const text = axios.isAxiosError(error)
-          ? error.response?.data?.message
-          : "Lỗi khôi phục!";
-        toast.error(text);
+        setMessage({ intent: "success", text: "Khôi phục chương thành công!" });
+      } catch (error: unknown) {
+        setMessage({ intent: "error", text: getApiError(error) });
       }
     },
     [restoreChapter],
@@ -178,42 +186,61 @@ export function ChapterContent() {
       </div>
 
       {/* CONTROLS TOOLBAR */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/40 backdrop-blur-md p-4 rounded-[2.5rem] border border-white/60 shadow-soft">
-        <StatusTabs
-          options={CHAPTER_STATUS_OPTIONS}
-          currentValue={searchParams.get("status") || "all"}
-          onChange={(val) => updateUrlParam("status", val)}
-        />
-
-        <div className="flex flex-1 items-center justify-end gap-3 w-full">
-          <FilterSelect
-            options={FILTER_FIELDS}
-            value={localActiveField}
-            onChange={(newField) => {
-              setLocalActiveField(newField);
-              // Nếu ô search có chữ, đổi trường phát là đẩy URL luôn
-              if (searchValue.trim() !== "") {
-                handleSearchByField(newField, searchValue);
-              }
-            }}
-            variant="solid"
-            size="base"
-            className="shrink-0 min-w-[130px]"
+      <div className={variants.root()}>
+        <div className={variants.tabsContainer()}>
+          <StatusTabs
+            options={CHAPTER_STATUS_OPTIONS}
+            currentValue={searchParams.get("status") || "all"}
+            onChange={(val) => updateUrlParam("status", val)}
           />
+        </div>
 
-          <ManagementToolbar
-            searchValue={searchValue}
-            onSearchChange={setSearchValue}
-            onAddClick={() => setIsCreateModalOpen(true)}
-            addLabel="Thêm chương"
-            searchPlaceholder={`Tìm theo ${FILTER_FIELDS.find((f) => f.value === localActiveField)?.label.toLowerCase()}...`}
-          />
+        <div className={variants.mainToolbar()}>
+          <div className="flex flex-1 items-center gap-2 w-full">
+            <button
+              onClick={() => {
+                setSearchValue("");
+                updateMultipleUrlParams({ q: "", status: "all", page: "1" });
+              }}
+              className={variants.resetButton()}
+            >
+              <RotateCcw
+                size={18}
+                className="group-hover:-rotate-180 transition-transform duration-500"
+              />
+            </button>
+
+            <FilterSelect
+              options={FILTER_FIELDS}
+              value={localActiveField}
+              onChange={setLocalActiveField}
+              variant="solid"
+              className={variants.filterSelect()}
+            />
+
+            <div className="flex-[2]">
+              <ManagementToolbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                onAddClick={() => setIsCreateModalOpen(true)}
+                addLabel="Thêm chương mới"
+                searchPlaceholder="Tìm kiếm nội dung..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={variants.statsContainer()}>
+          <span className={variants.statsText()}>
+            Tổng cộng: {result?.meta?.total || 0} chương bài học
+          </span>
         </div>
       </div>
 
+      {/* ALERT SECTION CỦA TRANG */}
       {message && (
         <Alert
-          intent={message.type}
+          intent={message.intent} // Đã sửa lại từ type -> intent cho đúng type
           message={message.text}
           onClose={() => setMessage(null)}
           duration={5000}
@@ -273,6 +300,9 @@ export function ChapterContent() {
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreate}
         isLoading={createChapter.isPending}
+        // Truyền apiMessage vào đây nếu CreateChapterModal dùng BaseModal ở trong
+        // apiMessage={message}
+        // onApiMessageClose={() => setMessage(null)}
       />
 
       <EditChapterModal
@@ -290,7 +320,13 @@ export function ChapterContent() {
         variant="danger"
         onConfirm={handleDelete}
         isLoading={deleteChapter.isPending}
-        onClose={() => setIsDeleteModalOpen(false)}
+        // BẮT BUỘC PHẢI THÊM 2 DÒNG NÀY ĐỂ TRUYỀN LỖI VÀO MODAL
+        apiMessage={message}
+        onApiMessageClose={() => setMessage(null)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setMessage(null); // Reset thông báo khi đóng
+        }}
         message={
           <>
             Bạn có chắc muốn xóa chương{" "}

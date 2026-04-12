@@ -26,5 +26,5 @@ export interface QueryParams {
   status?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc"; // Kiểu Literal chuẩn
-  [key: string]: string | number | undefined; // Cho phép key động, KHÔNG dùng null
+  [key: string]: string | number | boolean | undefined;
 }

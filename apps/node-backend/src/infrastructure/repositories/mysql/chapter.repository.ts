@@ -133,35 +133,37 @@ export class MySQLChapterRepository implements IChapterRepository {
    * @description Tìm kiếm và phân trang Chương bài học (Sử dụng gán thủ công để đảm bảo Type-safe)
    * (Search and paginate Chapters with explicit assignment for type-safety)
    */
-  async findAndCount(
+  /**
+    * @description Tìm kiếm và phân trang chương học (Dịch: Find and count chapters with pagination)
+    * Sử dụng gán thủ công để đảm bảo Type-safe và xử lý logic All/Active/Deleted.
+    */
+  public async findAndCount(
     query: ChapterQueryDTO,
     skip: number,
     limit: number
   ): Promise<[Chapter[], number]> {
+    // 1. Khai báo kiểu WhereInput chuẩn của Prisma (Dịch: Initialize Prisma WhereInput)
     const where: Prisma.ChapterWhereInput = {};
 
-    // --- 1. MAPPING: Định nghĩa các cột được phép Sort ---
-    // Sử dụng keyof để TypeScript kiểm soát, không lo dùng 'any'
-    const fieldMapping: Record<string, keyof Prisma.ChapterOrderByWithRelationInput> = {
-      name: 'name',
-      description: 'description',
-      orderIndex: 'orderIndex',
-      createdAt: 'createdAt',
-    };
+    console.log(query)
 
-    // --- 2. GÁN ĐIỀU KIỆN TÌM KIẾM ---
-    if (query.name) where.name = { contains: query.name };
-    if (query.description) where.description = { contains: query.description };
-    if (query.orderIndex !== undefined) where.orderIndex = Number(query.orderIndex);
-
-    // --- 3. LOGIC TRẠNG THÁI ---
-    if (query.status === 'active') {
+    // --- 2. LOGIC TRẠNG THÁI (Status Tabs - Dịch: Tab status logic) ---
+    // Áp dụng case đặc biệt 'all' để lấy sạch sành sanh
+    if (query.status === 'all') {
+      // Do nothing -> Fetch everything (including deleted)
+    } else if (query.status === 'active') {
       where.deletedAt = null;
     } else if (query.status === 'deleted') {
       where.deletedAt = { not: null };
     }
 
-    // Search tổng quát
+    // --- 3. GÁN THỦ CÔNG CÁC TRƯỜNG ĐẶC THÙ (Dịch: Specific field assignment) ---
+    if (query.orderIndex !== undefined) {
+      where.orderIndex = Number(query.orderIndex);
+    }
+
+    // --- 4. SEARCH TỔNG QUÁT (Dịch: General Search Logic) ---
+    // Dùng OR để search đồng thời cả Tên và Mô tả
     if (query.search) {
       where.OR = [
         { name: { contains: query.search } },
@@ -169,20 +171,11 @@ export class MySQLChapterRepository implements IChapterRepository {
       ];
     }
 
-    // --- 4. XỬ LÝ SORT FIELD (FIX LỖI UNDEFINED) ---
-    const sortBy = query.sortBy as string;
-    let sortField: keyof Prisma.ChapterOrderByWithRelationInput;
-
-    if (sortBy === 'status') {
-      sortField = 'deletedAt';
-    } else {
-      // Nếu có trong mapping thì dùng, không thì mặc định là 'orderIndex'
-      sortField = fieldMapping[sortBy] || 'orderIndex';
-    }
-
+    // --- 5. XỬ LÝ SORT FIELD ---
+    const sortField = query.sortBy === 'status' ? 'deletedAt' : (query.sortBy || 'orderIndex');
     const sortOrder = query.sortOrder || 'asc';
 
-    // --- 5. THỰC THI TRUY VẤN ---
+    // --- 6. THỰC THI TRUY VẤN ---
     const [rawRecords, total] = await this._prisma.$transaction([
       this._prisma.chapter.findMany({
         where,
@@ -190,19 +183,21 @@ export class MySQLChapterRepository implements IChapterRepository {
         take: limit,
         orderBy: [
           {
-            // Ở đây ép kiểu 'as string' để Prisma làm key động, nhưng sortField đã được bảo vệ bởi Mapping
-            [sortField as string]: sortOrder
+            // 1. Tiêu chí chính: Theo UI Admin chọn (Dịch: Primary Criteria)
+            [sortField]: sortOrder
           },
           {
-            id: 'desc'
-          }
+            // 2. Tiêu chí phụ: Phân xử khi tiêu chí chính bị trùng (Dịch: Tie-breaker)
+            // Luôn xếp theo tên để Admin dễ tìm
+            name: 'asc'
+          },
         ],
       }),
-      // 🚨 Chỗ này tui sửa lại cho gọn, bỏ cái select phức tạp trong log của bạn đi
       this._prisma.chapter.count({ where }),
     ]);
 
-    // --- 6. MAPPING & RETURN ---
+    // --- 7. MAPPING & RETURN ---
+    // Biến Database Record thành Domain Entity
     const domainEntities = rawRecords.map((record) =>
       ChapterMapper.toDomain(record as unknown as IChapterRecord)
     );

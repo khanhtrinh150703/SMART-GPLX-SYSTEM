@@ -19,6 +19,8 @@ import { UpdateProfileRequestDTO } from "../dtos/request/user/update-profile.req
 import { ChangePasswordRequestDTO } from "../dtos/request/user/update-password.request.dto";
 import { ChangeStatusRequestDTO } from "../dtos/request/user/update-status.request.dto";
 import { LoginResponseDTO } from "../dtos/response/auth/auth.respone.dto";
+import { STORAGE_FOLDERS } from "@/domain/constants/storage.constant";
+import logger from '@/infrastructure/logging/winston.logger';
 
 /**
  * @interface IUserServiceCradle
@@ -81,28 +83,42 @@ export class UserService implements IUserService {
     // ============================================================
 
     /**
-     * Thực hiện cập nhật hồ sơ người dùng
-     * @param {string} userId - ID của người dùng
-     * @param {UpdateProfileRequestDTO} dto - Dữ liệu cần cập nhật
-     * @returns {Promise<LoginResponseDTO>} Entity User sau khi đã cập nhật
+     * @description Thực hiện cập nhật hồ sơ người dùng (Dịch: Update user profile logic)
+     * @param {string} userId - ID của người dùng cần cập nhật
+     * @param {UpdateProfileRequestDTO} dto - Dữ liệu yêu cầu từ Client
+     * @returns {Promise<LoginResponseDTO>} DTO phản hồi sau khi cập nhật thành công
      */
     public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<LoginResponseDTO> {
-        // 1. Kiểm tra sự tồn tại của User (Sử dụng helper nội bộ)
+        // 1. Lấy Entity từ Database (Dịch: Fetch entity from DB)
         const user = await this.getActiveUserOrThrow(userId);
 
+        // Lưu lại đường dẫn ảnh cũ để xóa sau khi upload thành công (Dịch: Keep old path for cleanup)
+        const oldPicturePath = user.urlPicture;
         let newUrlPicture: string | undefined;
-        // 2. Nếu có file upload, thực hiện lưu vật lý và lấy path
+
+        // 2. Xử lý File nếu có (Dịch: Handle file upload if exists)
         if (dto.pictureFile) {
-            // Lưu vào thư mục 'avatars'
-            newUrlPicture = await this._fileStorageService.saveFile(dto.pictureFile, 'avatars');
+            // Sử dụng Constant đã định nghĩa, không dùng magic string 'avatars'
+            newUrlPicture = await this._fileStorageService.saveFile(
+                dto.pictureFile,
+                STORAGE_FOLDERS.PROFILE
+            );
         }
 
-        // 3. Thực hiện cập nhật logic thông qua Domain Entity (Rich Logic)
-        // Nếu dto.fullName undefined, Entity sẽ tự bỏ qua không update field đó
+        // 3. Thực hiện logic nghiệp vụ tại Entity (Rich Domain Model)
         user.updateProfile(dto.fullName, newUrlPicture);
 
-        // 4. Lưu lại sự thay đổi vào Database thông qua Repository
+        // 4. Persistence - Lưu vào Database
         const updatedUser = await this._userRepo.update(user);
+
+        // 5. Cleanup - Xóa ảnh cũ nếu việc cập nhật ảnh mới thành công
+        if (newUrlPicture && oldPicturePath) {
+            this._fileStorageService.deleteFile(oldPicturePath).catch((err: unknown) => {
+                logger.error(`[Cleanup] Failed to delete old avatar: ${oldPicturePath}`, err);
+            });
+        }
+
+        // 6. Mapping - Chuyển đổi Entity sang DTO để trả về
         return UserMapper.toLoginResponse(updatedUser, "", "");
     }
 
