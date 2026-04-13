@@ -39,6 +39,15 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.USER.PHONE_EXISTS]: 409,             // Conflict
     [ErrorCode.USER.REGISTER_FAILED]: 400,          // Bad Request
     [ErrorCode.USER.UPDATE_FAILED]: 400,            // Bad Request
+    [ErrorCode.USER.NAME_REQUIRED]: 400,            // Tên bắt buộc
+    [ErrorCode.USER.NAME_TOO_SHORT]: 400,           // Tên quá ngắn
+    [ErrorCode.USER.NAME_TOO_LONG]: 400,            // Tên quá dài
+    [ErrorCode.USER.NAME_INVALID]: 400,             // Tên sai định dạng
+    [ErrorCode.USER.STATUS_INVALID]: 400,           // Trạng thái sai
+    [ErrorCode.USER.ROLES_REQUIRED]: 400,           // Thiếu vai trò
+    [ErrorCode.USER.INVALID_ROLE_ID]: 400,          // ID vai trò không hợp lệ
+    [ErrorCode.USER.AVATAR_TOO_LARGE]: 400,         // Ảnh quá nặng
+    [ErrorCode.USER.AVATAR_INVALID_TYPE]: 400,      // Sai định dạng ảnh
 
     // --- SMART-GPLX (EXAM & AI) ---
     [ErrorCode.EXAM.NOT_FOUND]: 404,                // Not Found

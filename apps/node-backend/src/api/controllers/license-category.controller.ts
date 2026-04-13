@@ -5,6 +5,7 @@ import { Result } from '@/shared/responses/api-response';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
 import { CreateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
 import { UpdateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
+import { LicenseCategoryQueryDTO } from '@/application/dtos/request/license-category/license-category-query.request.dto';
 
 /**
  * @interface ILicenseCategoryControllerCradle
@@ -38,8 +39,10 @@ export class LicenseCategoryController {
    * @param {Response} res - Đối tượng Response của Express.
    * @returns {Promise<void>}
    */
-  public list = catchAsync(async (_req: Request, res: Response): Promise<void> => {
-    const categories = await this._licenseService.getAll();
+  public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
+
+    const query = new LicenseCategoryQueryDTO(req.query as Record<string, unknown>);
+    const categories = await this._licenseService.getPaginatedCategories(query);
 
     Result.ok(
       res,
@@ -82,10 +85,10 @@ export class LicenseCategoryController {
    */
   public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const id = req.params.id as string;
-    const { name, description } = req.body;
+    const { name, description, minAge } = req.body;
 
     // Sử dụng DTO để validate dữ liệu cập nhật
-    const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description });
+    const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description, minAge });
     dto.isValid();
 
     const result = await this._licenseService.updateCategory(dto);
@@ -136,6 +139,22 @@ export class LicenseCategoryController {
       result,
       Message.LICENSE.RESTORE_SUCCESS,
       'LICENSE_RESTORE_SUCCESS'
+    );
+  });
+
+  /**
+     * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) có hỗ trợ tìm kiếm.
+     * @route GET /api/v1/master-data/licenses/selection
+     * @param {Response} res - Đối tượng Response của Express.
+     * @returns {Promise<void>} Phản hồi danh sách hạng bằng dạng { items, meta }.
+     */
+  public getLicenseSelections = catchAsync(async (_req: Request, res: Response) => {
+    const result = await this._licenseService.getLicenseSelections();
+    Result.ok(
+      res,
+      result,
+      Message.LICENSE.GET_SELECTION_SUCCESS,
+      'LICENSE_SELECTION_SUCCESS'
     );
   });
 }

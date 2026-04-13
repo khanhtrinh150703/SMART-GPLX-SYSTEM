@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { LicenseCategory } from '@/domain/entities/license-category/license-category.entity';
 import { ILicenseCategoryRepository } from '@/domain/interfaces/repositories/i-license-category-repository';
 import { LicenseCategoryMapper } from '@/infrastructure/database/mappers/license-category.mapper';
 import { ILicenseCategoryRecord, PrismaLicenseCategory } from '@/infrastructure/persistence/license-category.record';
+import { LicenseCategoryQueryDTO } from '@/application/dtos/request/license-category/license-category-query.request.dto';
 /**
  * @interface IMySQLLicenseCategoryRepositoryCradle
  * @description Các phụ thuộc cần thiết cho LicenseCategory Repository.
@@ -41,7 +42,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
       description: raw.description,
       created_at: raw.createdAt,
       updated_at: raw.updatedAt,
-      deleted_at: raw.deletedAt,
+      deletedAt: raw.deletedAt,
     };
 
     return LicenseCategoryMapper.toDomain(record);
@@ -96,6 +97,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
       data: {
         name: data.name,
         description: data.description,
+        minAge: data.minAge,
       }
     });
   }
@@ -141,6 +143,70 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
+  
+  /**
+   * @description Tìm kiếm và phân trang hạng bằng lái (Sử dụng gán thủ công để đảm bảo Type-safe)
+   */
+  public async findAndCount(
+    query: LicenseCategoryQueryDTO,
+    skip: number,
+    limit: number
+  ): Promise<[LicenseCategory[], number]> {
+    // Khai báo kiểu WhereInput chuẩn của Prisma ngay từ đầu
+    const where: Prisma.LicenseCategoryWhereInput = {};
+
+    // --- 1. GÁN THỦ CÔNG (Explicit Assignment) ---
+    // Bạn chọn trường nào trên Dropdown, FE gửi trường đó về, mình gán đúng trường đó.
+
+    if (query.search) {
+      where.name = { contains: query.search };
+    }
+
+    if (query.description) {
+      where.description = { contains: query.description };
+    }
+
+    if (query.minAge) {
+      // Ép kiểu về Number để tránh lỗi Prisma nếu dữ liệu từ URL là string
+      where.minAge = Number(query.minAge);
+    }
+
+    // --- 2. LOGIC TRẠNG THÁI (Status Tabs) ---
+    if (query.status === 'active') {
+      where.deletedAt = null;
+    } else if (query.status === 'deleted') {
+      where.deletedAt = { not: null };
+    }
+
+    // --- 3. SEARCH TỔNG QUÁT (Nếu còn dùng ô search chung) ---
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search } },
+        { description: { contains: query.search } },
+      ];
+    }
+    const sortField = query.sortBy === 'status' ? 'deletedAt' : query.sortBy;
+    // --- 4. THỰC THI TRUY VẤN ---
+    const [rawRecords, total] = await this._prisma.$transaction([
+      this._prisma.licenseCategory.findMany({
+        where,
+        // Dùng pagination helper hoặc tính toán trực tiếp
+        skip: skip,   // Truyền biến skip vào đây
+        take: limit,
+        // Sắp xếp động theo sortBy
+        orderBy: { [sortField]: query.sortOrder },
+      }),
+      this._prisma.licenseCategory.count({ where }),
+    ]);
+
+    // --- 5. MAPPING & RETURN ---
+    const domainEntities = rawRecords.map((record) =>
+      LicenseCategoryMapper.toDomain(record as unknown as ILicenseCategoryRecord)
+    );
+
+    return [domainEntities, total];
+  }
+
 
   public async restore(id: string): Promise<void> {
     await this._prisma.licenseCategory.update({

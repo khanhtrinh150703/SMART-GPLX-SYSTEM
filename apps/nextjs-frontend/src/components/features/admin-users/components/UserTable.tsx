@@ -3,29 +3,49 @@
 import React, { useMemo } from "react";
 import { UserResponseDTO } from "@/types/user-respone";
 import { GenericTable } from "@/components/common/Generic-Table/GenericTable";
-import { getUserColumns } from "./users-table.config";
+import { getUserColumns } from "./user-columns";
 
 export interface UserTableProps {
   users: UserResponseDTO[];
   isLoading: boolean;
+  page: number; // Thêm page
+  limit: number; // Thêm limit
   onEdit: (user: UserResponseDTO) => void;
   onDelete: (user: UserResponseDTO) => void;
   onUnlock: (user: UserResponseDTO) => void;
   onRestore: (user: UserResponseDTO) => void;
+  sortConfig?: { key: keyof UserResponseDTO; direction: "asc" | "desc" | null };
+  onSort?: (key: keyof UserResponseDTO) => void;
 }
 
-export const UserTable = (props: UserTableProps) => {
+export const UserTable = ({
+  users,
+  isLoading,
+  page,
+  limit,
+  onEdit,
+  onDelete,
+  onUnlock,
+  onRestore,
+  sortConfig,
+  onSort,
+}: UserTableProps) => {
+  // Memoize columns để tránh render lại vô ích
+  // Cần thêm page và limit vào dependency array để STT cập nhật khi chuyển trang
   const columns = useMemo(
-    () => getUserColumns(props.onEdit, props.onDelete, props.onUnlock, props.onRestore),
-    [props.onEdit, props.onDelete, props.onUnlock, props.onRestore]
+    () => getUserColumns(onEdit, onDelete, onUnlock, onRestore, page, limit),
+    [onEdit, onDelete, onUnlock, onRestore, page, limit],
   );
 
   return (
     <GenericTable<UserResponseDTO>
       columns={columns}
-      data={props.users}
-      isLoading={props.isLoading}
+      data={users}
+      isLoading={isLoading}
       className="bg-transparent"
+      sortConfig={sortConfig}
+      onSort={onSort}
+      onRowClick={onEdit}
     />
   );
 };

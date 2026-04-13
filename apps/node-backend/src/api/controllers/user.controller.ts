@@ -8,6 +8,7 @@ import { IUserService } from '@/domain/interfaces/services/i-user.service';
 import { UpdateProfileDTO } from '@/application/dtos/request/user/update-profile.request.dto';
 import { ChangePasswordRequestDTO } from '@/application/dtos/request/user/update-password.request.dto';
 import { ChangeStatusRequestDTO } from '@/application/dtos/request/user/update-status.request.dto';
+import { UpdateAdminRequestDTO } from '@/application/dtos/request/user/update-admin.request.dto';
 
 /**
  * @interface IUserControllerCradle
@@ -182,9 +183,8 @@ export class UserController {
     // 1. Thu thập Query Params từ URL (vd: ?page=1&limit=10&role=STUDENT)
     // Cậu có thể dùng class-transformer để ép kiểu sang UserQueryDTO ở đây
     const query: UserQueryDTO = req.query as unknown as UserQueryDTO;
-
     // 2. Gọi tầng Service xử lý nghiệp vụ
-    const result = await this._userService.getUsers(query);
+    const result = await this._userService.getPaginatedUsers(query);
 
     // 3. Trả về phản hồi thông qua BaseResponse để đồng nhất cấu trúc JSON
     Result.ok(
@@ -195,13 +195,31 @@ export class UserController {
     );
   });
 
+  /**
+   * @route PUT /api/v1/users/:id/admin
+   * @access Private (Admin only)
+   * @description Admin cập nhật thông tin và vai trò của người dùng.
+   * @param {AuthRequest} req - Yêu cầu chứa userId trong params và dữ liệu trong body.
+   * @param {Response} res - Phản hồi tiêu chuẩn.
+   * @returns {Promise<void>}
+   */
+  public updateUserByAdmin = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+    // 1. Lấy userId từ Path Parameters
+    const userId = req.params.id as string;
+    
+    // 2. Thu thập dữ liệu từ body và khởi tạo DTO
+    // DTO này sẽ thực hiện logic validate (fullName, roles) ngay trong constructor hoặc hàm isValid()
+    const dto = new UpdateAdminRequestDTO(req.body);
 
+    // 3. Gọi tầng Service để thực hiện nghiệp vụ (bao gồm cả Transaction)
+    await this._userService.updateUserByAdmin(userId, dto);
 
-  // /**
-  //  * @route GET /api/v1/users/:id
-  //  * @description Lấy thông tin chi tiết một người dùng
-  //  */
-  // public getUserDetail = async (req: Request, res: Response): Promise<void> => {
-  //   // ... logic tiếp theo của cậu
-  // }
+    // 4. Trả về phản hồi thành công (thường update xong chỉ cần trả message/200 OK)
+    Result.ok(
+      res,
+      null, // Không nhất thiết trả lại User object nếu Admin đang quản lý danh sách lớn
+      Message.USER.UPDATE_SUCCESS,
+      'USER_UPDATE_SUCCESS'
+    );
+  });
 }

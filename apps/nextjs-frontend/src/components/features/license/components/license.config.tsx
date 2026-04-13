@@ -17,9 +17,15 @@ export interface License {
 // 2. Cấu hình Tab trạng thái
 export const LICENSE_STATUS_OPTIONS: StatusOption<License["status"] | "all">[] = [
   { id: "all", label: "Tất cả" },
-  { id: "active", label: "Đang cấp", color: "text-emerald-600" },
-  { id: "draft", label: "Tạm ngưng", color: "text-slate-500" },
+  { id: "active", label: "Đang hoạt động", color: "text-emerald-600" },
   { id: "deleted", label: "Thùng rác", color: "text-rose-600" },
+];
+
+export const FILTER_FIELDS = [
+  { label: "Tên hạng", value: "name" },
+  { label: "Mô tả", value: "description" },
+  { label: "Trạng thái", value: "status" },
+  { label: "Độ tuổi", value: "minAge" },
 ];
 
 /** * 3. Dữ liệu mẫu (Mock Data) 

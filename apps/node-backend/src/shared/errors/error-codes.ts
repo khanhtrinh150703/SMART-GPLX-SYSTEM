@@ -39,6 +39,7 @@ export const ErrorCode = {
     /** * --- USER & PROFILE (USER) --- 
      * Nghiệp vụ liên quan đến tài khoản người dùng.
      */
+
     USER: {
         NOT_FOUND: 'USER_404',          // Không tìm thấy user
         EMAIL_EXISTS: 'USER_409',       // Email đã dùng
@@ -46,6 +47,15 @@ export const ErrorCode = {
         PHONE_EXISTS: 'USER_411',       // SĐT đã dùng
         REGISTER_FAILED: 'USER_003',    // Đăng ký thất bại
         UPDATE_FAILED: 'USER_004',      // Cập nhật profile lỗi
+        NAME_REQUIRED: 'USER_V001',     // Họ tên là bắt buộc
+        NAME_TOO_SHORT: 'USER_V002',    // Họ tên quá ngắn (< 2 ký tự)
+        NAME_TOO_LONG: 'USER_V003',     // Họ tên quá dài (> 100 ký tự)
+        NAME_INVALID: 'USER_V004',      // Họ tên chứa ký tự không hợp lệ
+        STATUS_INVALID: 'USER_V005',    // Trạng thái tài khoản không hợp lệ
+        ROLES_REQUIRED: 'USER_V006',    // Phải gán ít nhất một vai trò
+        INVALID_ROLE_ID: 'USER_V007',   // ID vai trò không tồn tại trong hệ thống
+        AVATAR_TOO_LARGE: 'USER_V008',  // Kích thước ảnh quá lớn
+        AVATAR_INVALID_TYPE: 'USER_V009' // Định dạng ảnh không hỗ trợ (chỉ jpg, png...)
     },
 
     /** * --- SMART-GPLX DOMAIN (EXAM) --- 

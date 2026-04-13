@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { container } from '@/shared/utils/container';
 import { LicenseCategoryController } from '../controllers/license-category.controller';
-// Giả định bạn đã có các middleware này theo yêu cầu tại mục 4 (Security)
-// import { authMiddleware } from '../middlewares/auth.middleware';
-// import { roleMiddleware } from '../middlewares/role.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { authorizeRoles } from '../middlewares/role.middleware';
+import { UserRole } from '@/domain/constants/roles.constant';
 
 const router = Router();
 
@@ -11,65 +11,71 @@ const router = Router();
  * Resolve Controller từ Awilix Container.
  * Sử dụng Generic Type để đảm bảo Type-safe (Zero Any).
  */
-const controller = container.resolve<LicenseCategoryController>('licenseCategoryController');
+const licenseController = container.resolve<LicenseCategoryController>('licenseCategoryController');
+
+// ============================================================================
+// CHẤU HÌNH CHUNG: TẤT CẢ ROUTE ĐỀU YÊU CẦU ĐĂNG NHẬP
+// ============================================================================
+router.use(authMiddleware);
+
+// ============================================================================
+// NHÓM 1: QUYỀN HẠN CHIA SẺ (ADMIN & INSTRUCTOR)
+// Đặt lên trên trước khi áp dụng "thiết quân luật" chỉ Admin.
+// ============================================================================
 
 /**
- * @route   GET /api/v1/license-categories
- * @desc    Lấy danh sách toàn bộ hạng bằng lái
- * @access  Private (Admin/Staff)
+ * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) cho dropdown.
+ * @route GET /api/v1/license-categories/selection
+ * @access Private (User/Admin)
  */
 router.get(
-  '/',
-  // authMiddleware, 
-  controller.list
+    '/selection',
+    authorizeRoles(UserRole.ADMIN, UserRole.INSTRUCTOR),
+    licenseController.getLicenseSelections
 );
 
-/**
- * @route   POST /api/v1/license-categories
- * @desc    Tạo mới một hạng bằng lái
- * @access  Private (Admin)
- */
-router.post(
-  '/',
-  // authMiddleware,
-  // roleMiddleware(['ADMIN']),
-  controller.store
-);
+// ============================================================================
+// NHÓM 2: CHỈ DÀNH CHO QUẢN LÝ
+// ============================================================================
+router.use(authorizeRoles(UserRole.ADMIN, UserRole.INSTRUCTOR),);
 
 /**
- * @route   PUT /api/v1/license-categories/:id
- * @desc    Cập nhật thông tin hạng bằng lái
- * @access  Private (Admin)
+ * Nhóm các hành động thao tác trên root path "/"
  */
-router.put(
-  '/:id',
-  // authMiddleware,
-  // roleMiddleware(['ADMIN']),
-  controller.update // Giả định hàm update đã được thêm vào Controller
-);
+router.route('/')
+    /**
+     * @description Lấy danh sách các hạng bằng lái có hỗ trợ tìm kiếm và phân trang.
+     * @route GET /api/v1/license-categories
+     */
+    .get(licenseController.list)
+
+    /**
+     * @description Tạo mới một hạng bằng lái xe.
+     * @route POST /api/v1/license-categories
+     */
+    .post(licenseController.store);
 
 /**
- * @route   DELETE /api/v1/license-categories/:id
- * @desc    Xóa hạng bằng lái (Kiểm tra ràng buộc tại Service)
- * @access  Private (Admin)
+ * Nhóm các hành động thao tác dựa trên ID ":id"
  */
-router.delete(
-  '/:id',
-  // authMiddleware,
-  // roleMiddleware(['ADMIN']),
-  controller.delete
-);
+router.route('/:id')
+    /**
+     * @description Cập nhật thông tin chi tiết của một hạng bằng lái theo ID.
+     * @route PATCH /api/v1/license-categories/:id
+     */
+    .patch(licenseController.update)
+
+    /**
+     * @description Xóa (xóa mềm) một hạng bằng lái khỏi hệ thống.
+     * @route DELETE /api/v1/license-categories/:id
+     */
+    .delete(licenseController.delete);
 
 /**
- * @route   PATCH /api/v1/license-categories/:id/restore
- * @desc    Khôi phục hạng bằng lái đã xóa mềm
- * @access  Private (Admin)
+ * @description Khôi phục lại hạng bằng lái đã bị xóa mềm trước đó.
+ * @route PATCH /api/v1/license-categories/:id/restore
+ * @access Private (Admin)
  */
-router.patch(
-  '/:id/restore',
-  // authMiddleware,
-  // roleMiddleware(['ADMIN']),
-  controller.restore
-);
+router.patch('/:id/restore', licenseController.restore);
 
 export default router;

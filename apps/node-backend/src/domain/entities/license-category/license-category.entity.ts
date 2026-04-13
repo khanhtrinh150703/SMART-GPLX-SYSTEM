@@ -29,7 +29,7 @@ export class LicenseCategory {
   get name(): string { return this._name; }
   get description(): string { return this._description; }
   get minAge(): number { return this._minAge; }
-  
+
   // Fix: Thêm | undefined vì trong constructor chúng là optional
   get createdAt(): Date | undefined { return this._createdAt; }
   get updatedAt(): Date | undefined { return this._updatedAt; }
@@ -38,7 +38,7 @@ export class LicenseCategory {
   /**
    * Cập nhật thông tin hạng bằng với logic kiểm tra nghiệp vụ (Business Rules).
    */
-  public updateDetails(name: string, description: string): void {
+  public updateDetails(name: string, description: string, minAge: number): void {
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
 
@@ -48,7 +48,7 @@ export class LicenseCategory {
       throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
     }
 
-    if (trimmedName.length < 2 || trimmedName.length > 10) {
+    if (trimmedName.length < 1 || trimmedName.length > 10) {
       throw new AppError(ErrorCode.VALIDATION.NAME_INVALID_LENGTH);
     }
 
@@ -61,9 +61,18 @@ export class LicenseCategory {
       throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
     }
 
+    if (minAge === undefined || minAge === null || typeof minAge !== 'number' || Number.isNaN(minAge)) {
+      throw new AppError(ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER); // "Độ tuổi phải là một con số hợp lệ."
+    }
+
+    if (minAge < 18) {
+      throw new AppError(ErrorCode.VALIDATION.MIN_AGE_INVALID); // "Độ tuổi tối thiểu không được nhỏ hơn 18."
+    }
+
     // Gán giá trị sau khi đã validate và trim
     this._name = trimmedName;
     this._description = trimmedDescription;
+    this._minAge = minAge;
   }
 
   /**

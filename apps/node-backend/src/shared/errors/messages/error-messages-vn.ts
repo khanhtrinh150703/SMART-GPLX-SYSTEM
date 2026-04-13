@@ -40,6 +40,15 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.REGISTER_FAILED]: 'Quá trình đăng ký gặp lỗi, vui lòng kiểm tra lại.',
     [ErrorCode.USER.UPDATE_FAILED]: 'Cập nhật thông tin không thành công.',
     [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
+    [ErrorCode.USER.NAME_REQUIRED]: 'Họ và tên không được để trống.',
+    [ErrorCode.USER.NAME_TOO_SHORT]: 'Họ tên quá ngắn, vui lòng nhập tối thiểu 2 ký tự.',
+    [ErrorCode.USER.NAME_TOO_LONG]: 'Họ tên quá dài, tối đa không quá 100 ký tự.',
+    [ErrorCode.USER.NAME_INVALID]: 'Họ tên chứa ký tự không hợp lệ.',
+    [ErrorCode.USER.STATUS_INVALID]: 'Trạng thái tài khoản không hợp lệ.',
+    [ErrorCode.USER.ROLES_REQUIRED]: 'Người dùng phải được gán ít nhất một vai trò.',
+    [ErrorCode.USER.INVALID_ROLE_ID]: 'Một hoặc nhiều vai trò được chọn không tồn tại trên hệ thống.',
+    [ErrorCode.USER.AVATAR_TOO_LARGE]: 'Dung lượng ảnh đại diện không được vượt quá 5MB.',
+    [ErrorCode.USER.AVATAR_INVALID_TYPE]: 'Định dạng tệp không hỗ trợ. Vui lòng sử dụng JPG, PNG hoặc WEBP.',
 
     // === SMART-GPLX (EXAM & AI) ===
     [ErrorCode.EXAM.NOT_FOUND]: 'Đề thi không tồn tại hoặc đã bị gỡ bỏ.',
@@ -65,13 +74,6 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
 
     // --- VALIDATION ---
     [ErrorCode.VALIDATION.ID_REQUIRED]: 'ID định danh không được để trống.',
-    [ErrorCode.VALIDATION.NAME_REQUIRED]: 'Tên hạng bằng lái không được để trống.',
-    [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 'Tên hạng bằng lái phải có độ dài từ 2 đến 10 ký tự.',
-    [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên hạng bằng lái chỉ được chứa chữ cái in hoa và chữ số (VD: A1, B2).',
-    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Mô tả hạng bằng lái không được để trống.',
-    [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả không được vượt quá 500 ký tự.',
-    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số.',
-    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 'Độ tuổi yêu cầu không hợp lệ (thường từ 16-100).',
     [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 'Refresh Token là bắt buộc và không được để trống.',
     [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 'Định dạng Refresh Token không hợp lệ hoặc quá ngắn.',
 
@@ -81,6 +83,13 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.LICENSE.NOT_FOUND]: 'Không tìm thấy hạng bằng lái yêu cầu.',
     [ErrorCode.LICENSE.IS_IN_USE]: 'Không thể xóa: Đang có câu hỏi hoặc đề thi thuộc hạng bằng này.',
     [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
+    [ErrorCode.VALIDATION.NAME_REQUIRED]: 'Tên hạng bằng lái không được để trống.',
+    [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 'Tên hạng bằng lái phải có độ dài từ 1 đến 10 ký tự.',
+    [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên hạng bằng lái chỉ được chứa chữ cái in hoa và chữ số (VD: A1, B2).',
+    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Mô tả hạng bằng lái không được để trống.',
+    [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả không được vượt quá 500 ký tự.',
+    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số.',
+    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 'Độ tuổi yêu cầu không hợp lệ (>=18).',
 
     // === CHAPTER (CHƯƠNG LÝ THUYẾT) ===
     [ErrorCode.CHAPTER.NOT_FOUND]: 'Không tìm thấy chương lý thuyết yêu cầu.',

@@ -1,6 +1,7 @@
 import { Role } from "@/domain/entities/role/role.entity";
 import { Permission } from "@/domain/entities/permission/permission.entity";
 import { IRoleRecord } from "@/infrastructure/persistence/roles.record";
+import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 
 /**
  * @class RoleMapper
@@ -41,7 +42,25 @@ export class RoleMapper {
       id: role.id,
       name: role.name,
       // Cậu có thể thêm description vào đây nếu Prisma Schema yêu cầu
-      description: role.description, 
+      description: role.description,
     };
   }
+
+  /**
+   * @description Chuyển đổi sang định dạng Selection dùng License Code làm Label (A1, B2...)
+   * @param {Role} entity 
+   * @returns {SelectionResponseDto}
+   */
+  static toSelectionResponse(entity: Role): SelectionResponseDto {
+    return new SelectionResponseDto({
+      value: entity.id!,
+      label: entity.name
+    });
+  }
+
+  static toSelectionList(entities: Role[]): SelectionResponseDto[] {
+    return entities.map(this.toSelectionResponse);
+  }
 }
+
+

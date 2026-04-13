@@ -4,7 +4,7 @@ import userRoutes from './user.routes';
 import licenseRoutes from './license-category.routes'; 
 import chapterRoutes from './chapter.routes'; 
 import questionRoutes from './quesion.routes'; 
-
+import roleRoutes from './roles.routes'
 
 /**
  * @description Router tổng (Root Router) của ứng dụng.
@@ -27,5 +27,8 @@ rootRouter.use('/chapters', chapterRoutes);
 
 /** @description Phân đoạn API quản lý các câu hỏi lý thuyết (Khái niệm, Biển báo, Sa hình...). */
 rootRouter.use('/questions', questionRoutes);
+
+/** @description Phân đoạn API quản lý các vai trò và phân quyền hệ thống (Admin, Instructor, Student...). */
+rootRouter.use('/roles', roleRoutes);
 
 export default rootRouter;

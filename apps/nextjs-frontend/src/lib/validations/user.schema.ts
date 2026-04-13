@@ -10,11 +10,7 @@ export const profileSchema = z.object({
   roles: z.array(z.string()),
 });
 
-export const adminUpdateSchema = profileSchema
-  .pick({
-    fullName: true,
-    email: true
-  }) // Chỉ lấy fullName và email từ profileSchema
+
 
 export const changePasswordSchema = z.object({
   oldPassword: z.string().min(1, "Vui lòng nhập mật khẩu cũ"),
@@ -31,7 +27,6 @@ export const emailSchema = z.object({
 });
 
 // Export Types
-export type AdminUpdateFormValues = z.infer<typeof adminUpdateSchema>;
 export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
 export type ProfileFormValues = z.infer<typeof profileSchema>;
 export type EmailFormValues = z.infer<typeof emailSchema>;

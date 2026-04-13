@@ -1,4 +1,5 @@
-// 💡 Nhớ đổi tên file thành .tsx nhé!
+import { UserRoleEnum } from "@/constants/enum/use.enum";
+import { NavItem } from "@/types/sidebar.types";
 import {
   LayoutDashboard,
   FileText,
@@ -11,50 +12,70 @@ import {
   BookOpen,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
+/**
+ * NAV_ITEMS Configuration (Cấu hình danh mục điều hướng)
+ * Sử dụng cho Sidebar và Mobile Menu
+ */
+export const NAV_ITEMS: NavItem[] = [
   {
-    href: "/",
-    label: "Tổng quan",
-    icon: <LayoutDashboard className="w-5 h-5" />,
+    href: "/dashboard",
+    title: "Tổng quan",
+    label: "Dashboard",
+    icon: LayoutDashboard,
   },
   {
     href: "/dashboard/exams",
-    label: "Quản lý Đề thi",
-    icon: <FileText className="w-5 h-5" />,
+    title: "Quản lý Đề thi",
+    label: "Exams Management",
+    icon: FileText,
+    roles: [UserRoleEnum.ADMIN, UserRoleEnum.INSTRUCTOR],
   },
   {
     href: "/dashboard/history",
-    label: "Lịch sử thi",
-    icon: <History className="w-5 h-5" />,
+    title: "Lịch sử thi",
+    label: "Exam History",
+    icon: History,
   },
   {
     href: "/profile",
-    label: "Hồ sơ cá nhân",
-    icon: <UserCircle className="w-5 h-5" />,
+    title: "Hồ sơ cá nhân",
+    label: "Personal Profile",
+    icon: UserCircle,
   },
+  // --- PHÂN ĐOẠN QUẢN TRỊ (ADMIN SECTION) ---
   {
     href: "/admin/users",
-    label: "Quản lý người dùng",
-    icon: <Users className="w-5 h-5" />,
+    title: "Quản lý người dùng",
+    label: "Users Management",
+    icon: Users,
+    roles: [UserRoleEnum.ADMIN],
   },
   {
-    href: "/chapter", // Cập nhật theo yêu cầu của cậu
-    label: "Quản lý chương học",
-    icon: <BookOpen className="w-5 h-5" />, // Chapter Management
+    href: "/chapter",
+    title: "Quản lý chương học",
+    label: "Chapter Management",
+    icon: BookOpen,
+    roles: [UserRoleEnum.ADMIN, UserRoleEnum.INSTRUCTOR],
   },
   {
-    href: "/questions", // Cập nhật theo yêu cầu của cậu
-    label: "Ngân hàng câu hỏi",
-    icon: <Database className="w-5 h-5" />, // Question Bank
+    href: "/questions",
+    title: "Ngân hàng câu hỏi",
+    label: "Question Bank",
+    icon: Database,
+    roles: [UserRoleEnum.ADMIN, UserRoleEnum.INSTRUCTOR],
   },
   {
-    href: "/licenses", // Cập nhật theo yêu cầu của cậu
-    label: "Hạng bằng lái",
-    icon: <CreditCard className="w-5 h-5" />, // License/GPLX Management
+    href: "/licenses",
+    title: "Hạng bằng lái",
+    label: "License Types",
+    icon: CreditCard,
+    roles: [UserRoleEnum.ADMIN, UserRoleEnum.INSTRUCTOR],
   },
+  // ------------------------------------------
   {
     href: "/settings",
-    label: "Cài đặt",
-    icon: <Settings className="w-5 h-5" />,
+    title: "Cài đặt",
+    label: "System Settings",
+    icon: Settings,
   },
 ];

@@ -4,6 +4,7 @@ import { Result } from '@/shared/responses/api-response';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { IChapterService } from '@/domain/interfaces/services/i-chapter.service';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
+import { ChapterQueryDTO } from '@/application/dtos/request/chapter/chapter-query.request.dto';
 
 /**
  * @description Controller xử lý các yêu cầu HTTP liên quan đến quản lý Chương lý thuyết (Theory Chapters).
@@ -21,8 +22,10 @@ export class ChapterController {
      * @route GET /api/v1/chapters
      * @returns {Promise<void>} Phản hồi danh sách ChapterResponseDTO.
      */
-    public getAll = catchAsync(async (_req: Request, res: Response) => {
-        const response = await this._chapterService.getAllChapters();
+    public list = catchAsync(async (req: Request, res: Response) => {
+
+        const query = new ChapterQueryDTO(req.query as Record<string, unknown>);
+        const response = await this._chapterService.getPaginatedChapters(query);
 
         Result.ok(
             res,
@@ -98,6 +101,24 @@ export class ChapterController {
             result,
             Message.CHAPTER.RESTORE_SUCCESS,
             'CHAPTER_RESTORE_SUCCESS'
+        );
+    });
+
+
+    /**
+     * @description Lấy danh sách các chương học định dạng selection (value/label) có hỗ trợ tìm kiếm và phân trang.
+     * @route GET /api/v1/master-data/chapters/selection
+     * @param {Response} res - Đối tượng Response của Express.
+     * @returns {Promise<void>} Phản hồi danh sách chương dạng { items, meta }.
+     */
+    public getChapterSelections = catchAsync(async (_req: Request, res: Response) => {
+        const result = await this._chapterService.getChapterSelections();
+
+        Result.ok(
+            res,
+            result,
+            Message.CHAPTER.GET_SELECTION_SUCCESS,
+            'CHAPTER_SELECTION_SUCCESS'
         );
     });
 }

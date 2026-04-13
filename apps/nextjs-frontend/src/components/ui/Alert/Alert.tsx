@@ -14,6 +14,7 @@ interface AlertProps
   duration?: number; // ms (Ví dụ: 10000 = 10s)
   onClose?: () => void;
   showDot?: boolean;
+  
 }
 
 export const Alert = ({ 

@@ -4,7 +4,7 @@ import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
 import { REGEX } from "@/domain/constants/regex.constant";
 import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
-import { SystemRoles } from "@/domain/constants/roles.constant";
+import { UserRole } from "@/domain/constants/roles.constant";
 import { IUserService } from "@/domain/interfaces/services/i-user.service";
 import { UserQueryDTO } from "../dtos/request/user/user-query.request.dto";
 import { PaginatedResult } from "@/shared/types/pagination.types";
@@ -19,6 +19,11 @@ import { UpdateProfileRequestDTO } from "../dtos/request/user/update-profile.req
 import { ChangePasswordRequestDTO } from "../dtos/request/user/update-password.request.dto";
 import { ChangeStatusRequestDTO } from "../dtos/request/user/update-status.request.dto";
 import { LoginResponseDTO } from "../dtos/response/auth/auth.respone.dto";
+import { STORAGE_FOLDERS } from "@/domain/constants/storage.constant";
+import logger from '@/infrastructure/logging/winston.logger';
+import { IUserRoleRepository } from "@/domain/interfaces/repositories/i-user-role.repository";
+import { UpdateAdminRequestDTO } from "../dtos/request/user/update-admin.request.dto";
+import { PrismaClient } from "@prisma/client";
 
 /**
  * @interface IUserServiceCradle
@@ -27,8 +32,10 @@ import { LoginResponseDTO } from "../dtos/response/auth/auth.respone.dto";
  */
 export interface IUserServiceCradle {
     userRepository: IUserRepository;
+    userRoleRepository: IUserRoleRepository;
     tokenManager: ITokenManager;
     fileStorageService: IFileStorageService;
+    prisma: PrismaClient; // <--- Thêm dòng này
 }
 
 /**
@@ -39,19 +46,22 @@ export class UserService implements IUserService {
     private readonly _userRepo: IUserRepository;
     private readonly _tokenManager: ITokenManager;
     private readonly _fileStorageService: IFileStorageService;
+    private readonly _userRoleRepo: IUserRoleRepository;
+    private readonly _prisma: PrismaClient;
 
-    /**
-     * @description Khởi tạo Service với bộ công cụ chuyên biệt cho User.
-     * @param {IUserServiceCradle} cradle - Dependencies được tiêm tự động từ DI Container.
-     */
-    constructor({ userRepository, tokenManager, fileStorageService }: IUserServiceCradle) {
+    constructor({
+        userRepository,
+        userRoleRepository,
+        tokenManager,
+        fileStorageService,
+        prisma // <--- 2. Nhận từ Cradle
+    }: IUserServiceCradle) {
         this._userRepo = userRepository;
+        this._userRoleRepo = userRoleRepository;
         this._tokenManager = tokenManager;
         this._fileStorageService = fileStorageService;
+        this._prisma = prisma; // <--- 3. Gán giá trị
     }
-    // ============================================================
-    // PRIVATE HELPERS (Các hàm bổ trợ để tái sử dụng)
-    // ============================================================
 
     /**
      * Tìm kiếm người dùng đang hoạt động theo ID hoặc ném lỗi nếu không tồn tại.
@@ -76,34 +86,77 @@ export class UserService implements IUserService {
         }
     }
 
-    // ============================================================
-    // PUBLIC METHODS (Logic nghiệp vụ chính)
-    // ============================================================
-
     /**
-     * Thực hiện cập nhật hồ sơ người dùng
-     * @param {string} userId - ID của người dùng
-     * @param {UpdateProfileRequestDTO} dto - Dữ liệu cần cập nhật
-     * @returns {Promise<LoginResponseDTO>} Entity User sau khi đã cập nhật
+     * @description Thực hiện cập nhật hồ sơ người dùng (Dịch: Update user profile logic)
+     * @param {string} userId - ID của người dùng cần cập nhật
+     * @param {UpdateProfileRequestDTO} dto - Dữ liệu yêu cầu từ Client
+     * @returns {Promise<LoginResponseDTO>} DTO phản hồi sau khi cập nhật thành công
      */
     public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<LoginResponseDTO> {
-        // 1. Kiểm tra sự tồn tại của User (Sử dụng helper nội bộ)
+        // 1. Lấy Entity từ Database (Dịch: Fetch entity from DB)
         const user = await this.getActiveUserOrThrow(userId);
 
+        // Lưu lại đường dẫn ảnh cũ để xóa sau khi upload thành công (Dịch: Keep old path for cleanup)
+        const oldPicturePath = user.urlPicture;
         let newUrlPicture: string | undefined;
-        // 2. Nếu có file upload, thực hiện lưu vật lý và lấy path
+
+        // 2. Xử lý File nếu có (Dịch: Handle file upload if exists)
         if (dto.pictureFile) {
-            // Lưu vào thư mục 'avatars'
-            newUrlPicture = await this._fileStorageService.saveFile(dto.pictureFile, 'avatars');
+            // Sử dụng Constant đã định nghĩa, không dùng magic string 'avatars'
+            newUrlPicture = await this._fileStorageService.saveFile(
+                dto.pictureFile,
+                STORAGE_FOLDERS.PROFILE
+            );
         }
 
-        // 3. Thực hiện cập nhật logic thông qua Domain Entity (Rich Logic)
-        // Nếu dto.fullName undefined, Entity sẽ tự bỏ qua không update field đó
+        // 3. Thực hiện logic nghiệp vụ tại Entity (Rich Domain Model)
         user.updateProfile(dto.fullName, newUrlPicture);
 
-        // 4. Lưu lại sự thay đổi vào Database thông qua Repository
+        // 4. Persistence - Lưu vào Database
         const updatedUser = await this._userRepo.update(user);
+
+        // 5. Cleanup - Xóa ảnh cũ nếu việc cập nhật ảnh mới thành công
+        if (newUrlPicture && oldPicturePath) {
+            this._fileStorageService.deleteFile(oldPicturePath).catch((err: unknown) => {
+                logger.error(`[Cleanup] Failed to delete old avatar: ${oldPicturePath}`, err);
+            });
+        }
+
+        // 6. Mapping - Chuyển đổi Entity sang DTO để trả về
         return UserMapper.toLoginResponse(updatedUser, "", "");
+    }
+
+    /**
+     * @description API dành cho Admin cập nhật thông tin và quyền hạn người dùng.
+     * @param userId - ID của người dùng mục tiêu.
+     * @param dto - Dữ liệu cập nhật từ Admin.
+     */
+    public async updateUserByAdmin(userId: string, dto: UpdateAdminRequestDTO): Promise<void> {
+        // 1. Kiểm tra nghiệp vụ (Dùng Entity Rich Logic)
+        const user = await this._userRepo.findActiveById(userId);
+        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+
+        // 3. Kiểm tra tính hợp lệ sơ bộ của DTO trước khi xuống Service
+        if (!dto.isValid()) {
+            throw new AppError(ErrorCode.USER.UPDATE_FAILED);
+            // Hoặc dùng mã lỗi chi tiết hơn nếu ông đã định nghĩa trong DTO
+        }
+        // Cập nhật thông tin vào Entity (Validation thực hiện bên trong Entity)
+        if (dto.fullName) user.updateFullName(dto.fullName);
+
+        // 2. Chạy Transaction
+        await this._prisma.$transaction(async (tx) => {
+            // Lưu thông tin cơ bản (Cần ép kiểu tx về Prisma.TransactionClient trong Repo update)
+            await this._userRepo.update(user, tx);
+
+            // Đồng bộ hóa Role nếu Admin có gửi danh sách mới
+            if (dto.roles) {
+                await this._userRoleRepo.syncUserRoles(userId, dto.roles, tx);
+            }
+        });
+
+        // Logging hành động admin
+        console.log(`[Admin Action] User ${userId} updated successfully.`);
     }
 
     /**
@@ -302,7 +355,7 @@ export class UserService implements IUserService {
      * @description Lấy danh sách người dùng đã qua bộ lọc và ánh xạ sang DTO sạch.
      * @returns {Promise<PaginatedResult<UserResponseDTO>>} Trả về DTO thay vì Entity để bảo mật.
      */
-    public async getUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>> {
+    public async getPaginatedUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>> {
         // 1. Chuẩn hóa thông số phân trang
         const page = Number(query.page) || 1;
         const limit = Number(query.limit) || 10;
@@ -333,7 +386,7 @@ export class UserService implements IUserService {
         fullName: string;
         passwordHash: string;
     }): Promise<User> {
-        const roleData = RoleCacheService.getByName(SystemRoles.STUDENT);
+        const roleData = RoleCacheService.getByName(UserRole.STUDENT);
 
         if (!roleData) {
             throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);

@@ -7,6 +7,10 @@ import { LicenseCategoryMapper } from '@/infrastructure/database/mappers/license
 import { ILicenseCategoryService } from '@/domain/interfaces/services/i-license-category.service';
 import { CreateLicenseCategoryRequestDTO } from '../dtos/request/license-category/create-license-category.request.dto';
 import { UpdateLicenseCategoryRequestDTO } from '../dtos/request/license-category/update-license-category.request.dto';
+import { LicenseCategoryQueryDTO } from '../dtos/request/license-category/license-category-query.request.dto';
+import { PaginationUtil } from '@/shared/utils/pagination.util';
+import { PaginatedResult } from '@/shared/types/pagination.types';
+import { SelectionResponseDto } from '@/shared/responses/selection-response.dto';
 
 /**
  * @interface ILicenseCategoryServiceCradle
@@ -31,14 +35,34 @@ export class LicenseCategoryService implements ILicenseCategoryService {
     constructor({ licenseCategoryRepository }: ILicenseCategoryServiceCradle) {
         this._repo = licenseCategoryRepository;
     }
+
+    async getLicenseSelections(): Promise<SelectionResponseDto[]> {
+        const chapters = await this._repo.findAll();
+        return LicenseCategoryMapper.toSelectionList(chapters);
+    }
+
     /**
-     * Lấy danh sách hạng bằng lái.
-     * @returns {Promise<LicenseCategoryResponse[]>}
+     * @description Lấy danh sách hạng bằng lái đã qua bộ lọc (tìm kiếm/trạng thái) và ánh xạ sang DTO sạch.
+     * @param {LicenseCategoryQueryDTO} query - DTO chứa các tiêu chí lọc và thông số phân trang từ Request.
+     * @returns {Promise<PaginatedResult<LicenseCategoryResponseDTO>>} Trả về DTO thay vì Entity để đảm bảo tính đóng gói và bảo mật.
      */
-    public async getAll(): Promise<LicenseCategoryResponse[]> {
-        const categories = await this._repo.findAll();
-        // Chuyển đổi toàn bộ danh sách sang Response DTO
-        return LicenseCategoryMapper.toResponseList(categories);
+    public async getPaginatedCategories(query: LicenseCategoryQueryDTO): Promise<PaginatedResult<LicenseCategoryResponse>> {
+        // 1. Chuẩn hóa thông số phân trang (đảm bảo luôn là số dương)
+        const page = Number(query.page) || 1;
+        const limit = Number(query.limit) || 10;
+
+        // 2. Tính toán skip cho Repository (Logic phân trang tập trung tại Util)
+        const skip = PaginationUtil.getSkip(page, limit);
+
+        // 3. Truy vấn dữ liệu từ DB thông qua Repository (Nhận về Tuple [Entity[], total])
+        const [categories, total] = await this._repo.findAndCount(query, skip, limit);
+
+        // 4. ÁNH XẠ DỮ LIỆU (Mapping): Chuyển mảng Domain Entity sang mảng Response DTO sạch
+        // Sử dụng .map() để đảm bảo mọi phần tử đều đi qua "cánh cổng" Mapper
+        const categoryResponses = categories.map(category => LicenseCategoryMapper.toResponse(category));
+
+        // 5. Đóng gói kết quả cuối cùng kèm Metadata phân trang (total, page, limit, totalPages)
+        return PaginationUtil.createPaginatedResponse(categoryResponses, total, page, limit);
     }
 
     /**
@@ -46,7 +70,6 @@ export class LicenseCategoryService implements ILicenseCategoryService {
      * @param {CreateLicenseCategoryRequestDTO} dto - Dữ liệu đầu vào.
      */
     public async createCategory(dto: CreateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse> {
-        dto.isValid();
 
         const existing = await this._repo.findByName(dto.name);
         if (existing) {
@@ -94,16 +117,14 @@ export class LicenseCategoryService implements ILicenseCategoryService {
      * @returns {Promise<void>}
      */
     public async updateCategory(dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse> {
-        // 1. Tự kiểm tra định dạng dữ liệu
-        dto.isValid();
 
-        // 2. Kiểm tra sự tồn tại của hạng bằng lái
+        // 1. Kiểm tra sự tồn tại của hạng bằng lái
         const category = await this._repo.findById(dto.id);
         if (!category) {
             throw new AppError(ErrorCode.LICENSE.NOT_FOUND);
         }
 
-        // 3. Nếu tên thay đổi, kiểm tra xem tên mới đã tồn tại chưa (Unique Check)
+        // 2. Nếu tên thay đổi, kiểm tra xem tên mới đã tồn tại chưa (Unique Check)
         if (category.name !== dto.name) {
             const existingName = await this._repo.findByName(dto.name);
             if (existingName) {
@@ -111,10 +132,10 @@ export class LicenseCategoryService implements ILicenseCategoryService {
             }
         }
 
-        // 4. Sử dụng Rich Domain Model để cập nhật logic bên trong Entity
-        category.updateDetails(dto.name, dto.description);
+        // 3. Sử dụng Rich Domain Model để cập nhật logic bên trong Entity
+        category.updateDetails(dto.name, dto.description, dto.minAge);
 
-        // 5. Lưu lại thay đổi thông qua Repository
+        // 4. Lưu lại thay đổi thông qua Repository
         await this._repo.update(category);
         return LicenseCategoryMapper.toResponse(category);
     }
