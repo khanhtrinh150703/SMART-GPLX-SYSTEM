@@ -8,11 +8,10 @@ import axios from "axios";
 // Core UI & Utilities
 import { Alert } from "@/components/ui/Alert";
 import Input from "@/components/ui/Input/Input";
-import { AvatarUpload } from "@/components/features/profile/AvatarUpload";
+import { AvatarUpload } from "@/components/features/profile/components/AvatarUpload";
 
 // Business Logic & Types (Lớp nghiệp vụ và Kiểu dữ liệu)
 import { useUserStore } from "@/store/user/user.store";
-import { userService } from "@/services/user/user.service";
 import { UserRole } from "@/types/user.type";
 import { ProfileFormValues, profileSchema } from "@/lib/validations/user.schema";
 
@@ -21,6 +20,7 @@ import Button from "@/components/ui/Button/Button";
 import { ProfileSidebar } from "./ProfileSidebar";
 import ProfileRoles from "./ProfileRoles";
 import ChangePasswordModal from "./ChangePasswordModal";
+import { profileService } from "../service/profile.service";
 
 export default function ProfileForm() {
   // --- States (Trạng thái) ---
@@ -78,7 +78,7 @@ export default function ProfileForm() {
       setMessage(null);
 
       // UI Component -> Service (Luồng 3 lớp)
-      await userService.updateProfile(data);
+      await profileService.updateProfile(data);
       setMessage({ type: "success", text: "Cập nhật hồ sơ thành công!" });
     } catch (error) {
       if (axios.isAxiosError(error)) {

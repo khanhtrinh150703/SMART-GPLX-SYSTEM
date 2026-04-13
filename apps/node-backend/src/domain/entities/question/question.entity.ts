@@ -82,13 +82,18 @@ export class Question {
 
   public delete(): void {
     const { QUESTION } = ErrorCode;
+
     if (this.isCritical()) {
       throw new AppError(QUESTION.CANNOT_DELETE_CRITICAL);
     }
-
+    this._props.status = "DELETED";
     this._props.deletedAt = new Date();
   }
 
+  public isDeleted(): boolean {
+    return this._props.deletedAt != null;
+  }
+  
   public restore(): void {
     this._props.deletedAt = null;
   }

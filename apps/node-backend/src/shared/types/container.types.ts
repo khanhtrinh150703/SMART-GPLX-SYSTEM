@@ -24,6 +24,8 @@ import { ChapterController } from "@/api/controllers/chapter.controller";
 import { QuestionService } from "@/application/services/question.service";
 import { IQuestionRepository } from "@/domain/interfaces/repositories/i-question.repository";
 import { QuestionController } from "@/api/controllers/question.controller";
+import { RoleController } from "@/api/controllers/roles.controller";
+import { IUserRoleRepository } from "@/domain/interfaces/repositories/i-user-role.repository";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -64,6 +66,9 @@ export interface ICradle {
 
     /** @description Repository lưu trữ thông tin đăng ký người dùng tạm thời (Redis). */
     pendingUserRepository: IPendingUserRepository;
+    
+    /** @description Repository quản lý mối quan hệ giữa người dùng và vai trò (Bảng trung gian). */
+    userRoleRepository: IUserRoleRepository;
 
     // --- QUẢN LÝ KỸ THUẬT (MANAGERS) ---
 
@@ -107,6 +112,9 @@ export interface ICradle {
     /** @description Xử lý các yêu cầu HTTP liên quan đến người dùng (User). */
     userController: UserController;
 
+    /** @description Xử lý các yêu cầu HTTP liên quan đến vai trò (Roles). */
+    roleController: RoleController;
+
     /** @description Xử lý các yêu cầu HTTP liên quan đến hạng bằng lái. */
     licenseCategoryController: LicenseCategoryController;
 
@@ -115,4 +123,5 @@ export interface ICradle {
 
     /** @description Xử lý các yêu cầu HTTP liên quan đến câu hỏi. */
     quenstionController: QuestionController;
+
 }

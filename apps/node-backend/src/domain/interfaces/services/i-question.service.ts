@@ -1,6 +1,9 @@
 import { CreateQuestionRequestDto } from "@/application/dtos/request/question/create-question.request.dto";
+import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
 import { UpdateQuestionRequestDto } from "@/application/dtos/request/question/update-question.request.dto";
-import { QuestionResponseDto } from "@/application/dtos/response/question/question.respone.dto";
+import { QuestionAdminResponseDTO } from "@/application/dtos/response/question/admin-question.respone.dto";
+import { QuestionResponseDTO } from "@/application/dtos/response/question/question.respone.dto";
+import { PaginatedResult } from "@/shared/types/pagination.types";
 
 /**
  * @interface IQuestionService
@@ -11,31 +14,31 @@ export interface IQuestionService {
   /**
    * @description Tiếp nhận DTO, thực hiện quy trình tạo mới câu hỏi và lưu trữ.
    * @param {CreateQuestionRequestDto} dto - Dữ liệu yêu cầu từ Client.
-   * @returns {Promise<QuestionResponseDto>} DTO phản hồi chứa thông tin câu hỏi vừa tạo.
+   * @returns {Promise<QuestionResponseDTO>} DTO phản hồi chứa thông tin câu hỏi vừa tạo.
    */
-  createQuestion(dto: CreateQuestionRequestDto): Promise<QuestionResponseDto>;
+  createQuestion(dto: CreateQuestionRequestDto): Promise<QuestionResponseDTO>;
 
   /**
    * @description Cập nhật thông tin chi tiết của một câu hỏi hiện có.
    * @param {string} id - ID của câu hỏi cần cập nhật.
    * @param {UpdateQuestionRequestDto} dto - Dữ liệu cập nhật mới.
-   * @returns {Promise<QuestionResponseDto>} DTO phản hồi sau khi cập nhật thành công.
+   * @returns {Promise<QuestionResponseDTO>} DTO phản hồi sau khi cập nhật thành công.
    */
-  updateQuestion(id: string, dto: UpdateQuestionRequestDto): Promise<QuestionResponseDto>;
+  updateQuestion(id: string, dto: UpdateQuestionRequestDto): Promise<QuestionResponseDTO>;
 
   /**
    * @description Tìm kiếm tất cả câu hỏi thuộc về một chương (Chapter) cụ thể.
    * @param {string} chapterId - ID của chương lý thuyết.
    * @returns {Promise<QuestionResponseDto[]>} Danh sách DTO các câu hỏi tìm được.
    */
-  getQuestionsByChapter(chapterId: string): Promise<QuestionResponseDto[]>;
+  getQuestionsByChapter(chapterId: string): Promise<QuestionResponseDTO[]>;
 
   /**
    * @description Lấy thông tin chi tiết một câu hỏi để hiển thị hoặc chỉnh sửa.
    * @param {string} id - ID của câu hỏi.
-   * @returns {Promise<QuestionResponseDto | null>} DTO chi tiết hoặc null nếu không tồn tại.
+   * @returns {Promise<QuestionResponseDTO | null>} DTO chi tiết hoặc null nếu không tồn tại.
    */
-  getQuestionById(id: string): Promise<QuestionResponseDto | null>;
+  getQuestionById(id: string): Promise<QuestionResponseDTO | null>;
 
   /**
    * @description Xóa mềm câu hỏi sau khi đã kiểm tra logic nghiệp vụ tại Entity.
@@ -47,7 +50,14 @@ export interface IQuestionService {
   /**
    * @description Khôi phục câu hỏi đã xóa và trả về dữ liệu mới nhất để cập nhật UI.
    * @param id - ID của câu hỏi cần khôi phục.
-   * @returns {Promise<QuestionResponseDto>} DTO của câu hỏi sau khi hồi sinh.
+   * @returns {Promise<QuestionResponseDTO>} DTO của câu hỏi sau khi hồi sinh.
    */
-  restoreQuestion(id: string): Promise<QuestionResponseDto>;
+  restoreQuestion(id: string): Promise<QuestionResponseDTO>;
+
+  /**
+   * @description Lấy danh sách câu hỏi lý thuyết có phân trang, hỗ trợ bộ lọc kết hợp và tìm kiếm.
+   * @param {QuestionsAdminQueryDto} query - Tham số truy vấn bao gồm phân trang (page, limit) và các bộ lọc (chapterId, licenseCategoryId, difficulty, isCritical, search).
+   * @returns {Promise<PaginatedResult<QuestionAdminResponseDTO>>} Kết quả phân trang chứa danh sách Question đã được ánh xạ thông tin đầy đủ.
+   */
+  getPaginatedQuestions(query: QuestionsAdminQueryDto): Promise<PaginatedResult<QuestionAdminResponseDTO>>
 }

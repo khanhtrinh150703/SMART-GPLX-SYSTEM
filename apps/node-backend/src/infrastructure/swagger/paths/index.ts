@@ -3,6 +3,7 @@ import { userPaths } from './user.paths';
 import { licensePaths } from './license-category.paths';
 import { chapterPaths } from './chapter.paths';
 import { questionPaths } from './question.paths';
+import { selectionPaths } from './selection.paths';
 
 
 export const paths = {
@@ -11,4 +12,5 @@ export const paths = {
   ...licensePaths,
   ...chapterPaths,
   ...questionPaths,
+  ...selectionPaths,
 };

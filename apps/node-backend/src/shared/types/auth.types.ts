@@ -1,8 +1,9 @@
+import { UserRole } from '@/domain/constants/roles.constant';
 import { Request } from 'express';
 
 export class TokenPayload {
   public readonly userId!: string;
-  public readonly role!: string;
+  public readonly roles!: UserRole[];
   public readonly jti!: string;
   public readonly deviceId!: string;
 

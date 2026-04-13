@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { IChapterRepository } from '@/domain/interfaces/repositories/i-chapter.repository';
 import { Chapter } from '@/domain/entities/chapter/chapter.entity';
 import { ChapterMapper } from '@/infrastructure/database/mappers/chapter.mapper';
 import { IChapterRecord, PrismaChapter } from '@/infrastructure/persistence/chapter.record';
+import { ChapterQueryDTO } from '@/application/dtos/request/chapter/chapter-query.request.dto';
 
 /**
  * @interface IMySQLChapterRepositoryCradle
@@ -126,6 +127,80 @@ export class MySQLChapterRepository implements IChapterRepository {
 
     // Nếu count > 0 nghĩa là có tồn tại
     return count > 0;
+  }
+
+  /**
+   * @description Tìm kiếm và phân trang Chương bài học (Sử dụng gán thủ công để đảm bảo Type-safe)
+   * (Search and paginate Chapters with explicit assignment for type-safety)
+   */
+  /**
+    * @description Tìm kiếm và phân trang chương học (Dịch: Find and count chapters with pagination)
+    * Sử dụng gán thủ công để đảm bảo Type-safe và xử lý logic All/Active/Deleted.
+    */
+  public async findAndCount(
+    query: ChapterQueryDTO,
+    skip: number,
+    limit: number
+  ): Promise<[Chapter[], number]> {
+    // 1. Khai báo kiểu WhereInput chuẩn của Prisma (Dịch: Initialize Prisma WhereInput)
+    const where: Prisma.ChapterWhereInput = {};
+
+    // --- 2. LOGIC TRẠNG THÁI (Status Tabs - Dịch: Tab status logic) ---
+    // Áp dụng case đặc biệt 'all' để lấy sạch sành sanh
+    if (query.status === 'all') {
+      // Do nothing -> Fetch everything (including deleted)
+    } else if (query.status === 'active') {
+      where.deletedAt = null;
+    } else if (query.status === 'deleted') {
+      where.deletedAt = { not: null };
+    }
+
+    // --- 3. GÁN THỦ CÔNG CÁC TRƯỜNG ĐẶC THÙ (Dịch: Specific field assignment) ---
+    if (query.orderIndex !== undefined) {
+      where.orderIndex = Number(query.orderIndex);
+    }
+
+    // --- 4. SEARCH TỔNG QUÁT (Dịch: General Search Logic) ---
+    // Dùng OR để search đồng thời cả Tên và Mô tả
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search } },
+        { description: { contains: query.search } },
+      ];
+    }
+
+    // --- 5. XỬ LÝ SORT FIELD ---
+    const sortField = query.sortBy === 'status' ? 'deletedAt' : (query.sortBy || 'orderIndex');
+    const sortOrder = query.sortOrder || 'asc';
+
+    // --- 6. THỰC THI TRUY VẤN ---
+    const [rawRecords, total] = await this._prisma.$transaction([
+      this._prisma.chapter.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [
+          {
+            // 1. Tiêu chí chính: Theo UI Admin chọn (Dịch: Primary Criteria)
+            [sortField]: sortOrder
+          },
+          {
+            // 2. Tiêu chí phụ: Phân xử khi tiêu chí chính bị trùng (Dịch: Tie-breaker)
+            // Luôn xếp theo tên để Admin dễ tìm
+            name: 'asc'
+          },
+        ],
+      }),
+      this._prisma.chapter.count({ where }),
+    ]);
+
+    // --- 7. MAPPING & RETURN ---
+    // Biến Database Record thành Domain Entity
+    const domainEntities = rawRecords.map((record) =>
+      ChapterMapper.toDomain(record as unknown as IChapterRecord)
+    );
+
+    return [domainEntities, total];
   }
 
   public async countQuestions(id: string): Promise<number> {

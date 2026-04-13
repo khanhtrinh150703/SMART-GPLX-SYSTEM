@@ -29,9 +29,3 @@ export interface IUpdateProfileResponse {
   refreshToken: string; // Vé làm mới mới
 }
 
-// UserState - Trạng thái lưu trữ trong Store (Zustand)
-export interface UserState {
-  user: User | null;
-  setUser: (user: User) => void;
-  clearUser: () => void;
-}

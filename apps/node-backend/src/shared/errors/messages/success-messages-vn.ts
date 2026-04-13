@@ -21,6 +21,8 @@ export class Message {
    */
   static readonly USER = {
     UPDATE_SUCCESS: 'Cập nhật thông tin người dùng thành công.',
+    FETCH_SUCCESS: 'Lấy danh sách người dùng thành công.',
+    ADMIN_UPDATE_SUCCESS: 'Quản trị viên đã cập nhật thông tin tài khoản thành công.',
     PASSWORD_CHANGED: 'Thay đổi mật khẩu thành công.',
     STATUS_UPDATED: 'Cập nhật trạng thái người dùng thành công.',
     DELETE_SUCCESS: 'Xóa tài khoản thành công.',
@@ -41,7 +43,8 @@ export class Message {
     UPDATE_SUCCESS: 'Cập nhật thông tin hạng bằng lái thành công.',
     DELETE_SUCCESS: 'Xóa hạng bằng lái thành công.',
     FETCH_SUCCESS: 'Lấy danh sách hạng bằng lái thành công.',
-    RESTORE_SUCCESS: 'Khôi phục bằng lái bằng lái thành công.',
+    RESTORE_SUCCESS: 'Khôi phục hạng bằng lái thành công.',
+    GET_SELECTION_SUCCESS: 'Lấy danh sách hạng bằng lái thành công.',
   } as const;
 
   static readonly CHAPTER = {
@@ -50,7 +53,8 @@ export class Message {
     DELETE_SUCCESS: 'Xóa chương lý thuyết thành công.',
     FETCH_SUCCESS: 'Lấy danh sách chương lý thuyết thành công.',
     RESTORE_SUCCESS: 'Khôi phục chương lý thuyết thành công.',
-  } as const
+    GET_SELECTION_SUCCESS: 'Lấy danh sách chương lý thuyết thành công.',
+  } as const;
 
   static readonly QUESTION = {
     CREATE_SUCCESS: 'Thêm mới câu hỏi thành công.',
@@ -62,4 +66,14 @@ export class Message {
     IMPORT_SUCCESS: 'Nhập danh sách câu hỏi từ file thành công.',
     STATUS_UPDATE_SUCCESS: 'Cập nhật trạng thái câu hỏi thành công.',
   } as const;
+
+  static readonly ROLE = {
+    FETCH_SUCCESS: 'Lấy danh sách vai trò thành công.',
+    FETCH_SELECTION_SUCCESS: 'Lấy danh sách lựa chọn vai trò thành công.',
+    CREATE_SUCCESS: 'Thêm mới vai trò thành công.',
+    UPDATE_SUCCESS: 'Cập nhật thông tin vai trò thành công.',
+    DELETE_SUCCESS: 'Xóa vai trò thành công.',
+    NOT_FOUND: 'Không tìm thấy vai trò yêu cầu.',
+    ALREADY_EXISTS: 'Tên vai trò này đã tồn tại trên hệ thống.',
+  };
 }

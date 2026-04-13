@@ -1,11 +1,13 @@
 import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
 import { User } from '@/domain/entities/user/user.entity';
+import { Prisma } from '@prisma/client';
 
 /**
  * Interface định nghĩa các quy ước giao tiếp với dữ liệu User.
  * Tuân thủ nguyên tắc Dependency Inversion: Tầng Domain không phụ thuộc vào Database cụ thể.
  */
 export interface IUserRepository {
+  
   /**
    * @description Lấy danh sách user có phân trang và lọc
    * @param filter Các tiêu chí lọc (role, status, search keyword)
@@ -13,78 +15,75 @@ export interface IUserRepository {
    * @param take Số bản ghi lấy ra
    */
   findAndCount(filter: UserQueryDTO, skip: number, take: number): Promise<[User[], number]>;
+
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng Email.
+   * @description Tìm kiếm người dùng đang hoạt động bằng Email.
    * @param {string} email
    * @returns {Promise<User | null>}
    */
   findActiveByEmail(email: string): Promise<User | null>;
 
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng Username.
+   * @description Tìm kiếm người dùng đang hoạt động bằng Username.
    * @param {string} username
    * @returns {Promise<User | null>}
    */
   findActiveByUsername(username: string): Promise<User | null>;
 
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng ID (UUID).
+   * @description Tìm kiếm người dùng đang hoạt động bằng ID (UUID).
    * @param {string} id
    * @returns {Promise<User | null>}
    */
   findActiveById(id: string): Promise<User | null>;
 
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng một trong hai: Email hoặc Username.
-   * Thường dùng cho chức năng Đăng nhập linh hoạt.
+   * @description Tìm kiếm người dùng đang hoạt động bằng một trong hai: Email hoặc Username.
    * @param {string} identifier - Có thể là Email hoặc Username.
    * @returns {Promise<User | null>}
    */
   findActiveByIdentifier(identifier: string): Promise<User | null>;
 
-
-
   /**
-   * Tìm kiếm đích danh bằng Username và Email trên toàn bộ Database (Bao gồm cả đã xóa).
+   * @description Tìm kiếm đích danh bằng Username và Email trên toàn bộ Database (Bao gồm cả đã xóa).
    * @param {string} username 
    * @returns {Promise<User | null>}
    */
   findExistingInSystem(email: string, username: string): Promise<User[]>;
 
-
   /**
-   * Tìm kiếm đích danh bằng Username trên toàn bộ Database (Bao gồm cả đã xóa).
+   * @description Tìm kiếm đích danh bằng Username trên toàn bộ Database (Bao gồm cả đã xóa).
    * @param {string} username 
    * @returns {Promise<User | null>}
    */
   findByUsernameInSystem(username: string): Promise<User | null>;
 
-  
   /**
-   * Tìm kiếm người dùng đang hoạt động bằng một trong hai: Email hoặc Username.
-   * Thường dùng cho chức năng Đăng nhập linh hoạt.
+   * @description Tìm kiếm người dùng đang hoạt động bằng một trong hai: Email hoặc Username.
    * @param {string} identifier - Có thể là Email hoặc Username.
    * @returns {Promise<User | null>}
    */
   findByIdInSystem(identifier: string): Promise<User | null>;
 
   /**
-   * Tìm kiếm người dùng bằng Email trên toàn bộ Database (Bao gồm cả đã xóa).
+   * @description Tìm kiếm người dùng bằng Email trên toàn bộ Database (Bao gồm cả đã xóa).
    * @param {string} email 
    * @returns {Promise<User | null>}
    */
   findByEmailInSystem(email: string): Promise<User | null>;
+
   /**
-   * Lưu một người dùng mới vào hệ thống.
+   * @description Lưu một người dùng mới vào hệ thống.
    * @param {User} user - Domain Entity của User.
    * @returns {Promise<User>} - Trả về Entity sau khi tạo thành công.
    */
   create(user: User): Promise<User>;
 
   /**
-   * Cập nhật thông tin người dùng hiện có.
+   * @description Cập nhật thông tin người dùng hiện có.
    * @param {User} user - Domain Entity chứa dữ liệu đã thay đổi.
+   * @param {Prisma.TransactionClient} [tx] - (Tùy chọn) Client của transaction đang thực thi.
    * @returns {Promise<User>} - Trả về Entity sau khi cập nhật thành công.
    */
-  update(user: User): Promise<User>;
+  update(user: User, tx?: Prisma.TransactionClient): Promise<User>;
 }

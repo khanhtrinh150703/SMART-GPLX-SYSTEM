@@ -1,3 +1,4 @@
+import { LicenseCategoryQueryDTO } from "@/application/dtos/request/license-category/license-category-query.request.dto";
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 
 /**
@@ -73,5 +74,22 @@ export interface ILicenseCategoryRepository {
    */
   restore(id: string): Promise<void>;
 
+  /**
+   * @description Tìm kiếm và đếm tổng số lượng hạng bằng lái có phân trang.
+   * @param {LicenseCategoryQueryDTO} filter - Bộ lọc tìm kiếm.
+   * @param {number} skip - Số bản ghi bỏ qua.
+   * @param {number} take - Số bản ghi lấy ra.
+   */
+  findAndCount(
+    filter: LicenseCategoryQueryDTO,
+    skip: number,
+    take: number
+  ): Promise<[LicenseCategory[], number]>;
+
+  /**
+   * @description Kiểm tra sự tồn tại của một bản ghi trong hệ thống dựa trên ID.
+   * @param {string} id - Mã định danh duy nhất của bản ghi cần kiểm tra.
+   * @returns {Promise<boolean>} Trả về `true` nếu bản ghi tồn tại, ngược lại trả về `false`.
+   */
   exists(id: string): Promise<boolean>;
 }

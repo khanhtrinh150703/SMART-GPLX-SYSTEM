@@ -1,7 +1,7 @@
-// src/app/error.tsx
-'use client';
+'use client'; // BẮT BUỘC: Để nhận hàm reset() từ Next.js
 
-import { GlobalErrorView } from "@/components/common/Errors/GlobalErrorView";
+import { useEffect } from 'react';
+import { GlobalErrorView } from '@/components/common/Errors/GlobalErrorView';
 
 export default function Error({
   error,
@@ -10,6 +10,9 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  // 💡 Mượn xác hoàn hồn: Gọi giao diện từ kho Components
+  useEffect(() => {
+    console.error("Critical System Error:", error);
+  }, [error]);
+
   return <GlobalErrorView error={error} reset={reset} />;
 }

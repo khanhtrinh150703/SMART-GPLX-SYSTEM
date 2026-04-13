@@ -1,25 +1,31 @@
 import request from 'supertest';
 import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
-import { LICENSE_ENDPOINTS } from '../../test.data'; // Đảm bảo đường dẫn import đúng
+import { LICENSE_ENDPOINTS } from '../../test.data';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
 
-// Giả định helper cho Auth
-// const getAuthHeader = () => ({ Authorization: `Bearer test-admin-token` });
+// Helper để tạo Header Auth nhanh
+const getAuthHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-
-export const licenseSteps = () => {
+/**
+ * @param getAdminToken - Hàm callback để lấy token Admin tại thời điểm thực thi test
+ */
+export const licenseSteps = (
+    getAdminToken: () => string,
+    getRegularToken: () => string
+) => {
     describe('📂 License Category Management API Suite', () => {
         let testCategoryId: string;
 
-        // ==========================================
-        // KỊCH BẢN: TẠO MỚI HẠNG BẰNG LÁI
-        // ==========================================
+        // Tự động lấy token mỗi khi cần sử dụng
+        // Việc gọi hàm getAdminToken() đảm bảo token đã được gán giá trị từ beforeAll ở file Main
+
         describe('📝 Kịch bản: Tạo mới hạng bằng lái', () => {
             it('✅ Nên tạo thành công khi dữ liệu hợp lệ (VD: Hạng B2)', async () => {
                 const res = await request(app)
-                    .post(LICENSE_ENDPOINTS.CREATE) // Sử dụng .CREATE (là API_BASE.LICENSE)
+                    .post(LICENSE_ENDPOINTS.CREATE)
+                    .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
                     .send({
                         name: 'B2',
                         description: 'Hạng bằng lái xe ô tô chở người đến 9 chỗ.'
@@ -27,13 +33,13 @@ export const licenseSteps = () => {
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                // Kiểm tra code và message từ file hằng số
                 expect(res.body.message).toBe(Message.LICENSE.CREATE_SUCCESS);
             });
 
             it('❌ Nên trả về lỗi 409 khi tên hạng bằng đã tồn tại', async () => {
                 const res = await request(app)
                     .post(LICENSE_ENDPOINTS.CREATE)
+                    .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
                     .send({
                         name: 'B2',
                         description: 'Mô tả trùng lặp.'
@@ -43,34 +49,37 @@ export const licenseSteps = () => {
             });
         });
 
-        // ==========================================
-        // KỊCH BẢN: TRUY VẤN DANH SÁCH
-        // ==========================================
         describe('🔍 Kịch bản: Lấy danh sách hạng bằng', () => {
             it('✅ Nên lấy danh sách thành công và chứa hạng bằng vừa tạo', async () => {
                 const res = await request(app)
-                    .get(LICENSE_ENDPOINTS.FETCH_ALL);
+                    .get(LICENSE_ENDPOINTS.FETCH_ALL)
+                    .set(getAuthHeader(getAdminToken())); // GỌI HÀM Ở ĐÂY
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                expect(Array.isArray(res.body.data)).toBe(true);
-                const data = res.body.data as LicenseCategoryResponse[];
 
+                const data = res.body.data.data as LicenseCategoryResponse[];
                 const createdItem = data.find((item) => item.name === 'B2');
 
+                expect(createdItem).toBeDefined();
                 testCategoryId = createdItem!.id;
-                expect(testCategoryId).toBeDefined();
+            });
+            it('🚫 Nên bị từ chối (403) khi User thường cố gắng tạo bằng', async () => {
+                const res = await request(app)
+                    .post(LICENSE_ENDPOINTS.CREATE)
+                    // GỌI HÀM getRegularToken()
+                    .set(getAuthHeader(getRegularToken()))
+                    .send({ name: 'Chương giả mạo' });
+
+                expect(res.status).toBe(403);
             });
         });
 
-        // ==========================================
-        // KỊCH BẢN: CẬP NHẬT THÔNG TIN
-        // ==========================================
         describe('🔄 Kịch bản: Cập nhật hạng bằng lái', () => {
             it('✅ Nên cập nhật thành công khi thay đổi mô tả', async () => {
-                // Gọi hàm .UPDATE(id) thay vì cộng chuỗi
                 const res = await request(app)
-                    .put(LICENSE_ENDPOINTS.UPDATE(testCategoryId))
+                    .patch(LICENSE_ENDPOINTS.UPDATE(testCategoryId))
+                    .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
                     .send({
                         name: 'B2',
                         description: 'Mô tả đã được chỉnh sửa chuẩn xác hơn.'
@@ -81,44 +90,34 @@ export const licenseSteps = () => {
             });
         });
 
-        // ==========================================
-        // KỊCH BẢN: XÓA VÀ KHÔI PHỤC (SOFT DELETE & RESTORE)
-        // ==========================================
         describe('🔒 Kịch bản: Xóa mềm và Khôi phục (Unlock)', () => {
             it('✅ Nên xóa mềm thành công (deleted_at != null)', async () => {
-                // Gọi hàm .DELETE(id)
                 const res = await request(app)
-                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId));
+                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId))
+                    .set(getAuthHeader(getAdminToken())); // GỌI HÀM Ở ĐÂY
 
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe(Message.LICENSE.DELETE_SUCCESS);
             });
 
-            it('✅ Nên xóa mềm không thành công (deleted_at != null)', async () => {
-                // Gọi hàm .DELETE(id)
+            it('❌ Nên trả về lỗi 404 khi cố xóa một ID không tồn tại hoặc đã bị xóa', async () => {
                 const res = await request(app)
-                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId));
+                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId))
+                    .set(getAuthHeader(getAdminToken())); // GỌI HÀM Ở ĐÂY
 
                 expect(res.status).toBe(404);
             });
-            // it('❌ Nên trả về lỗi 403 khi xóa hạng bằng đang có dữ liệu liên quan (Constraint)', async () => {
-            //     const res = await request(app)
-            //         .delete(LICENSE_ENDPOINTS.DELETE('used-id-constant'))
-            //         .set(getAuthHeader());
-
-            //     expect(res.status).toBe(403);
-            // });
 
             it('✅ Nên khôi phục (Restore) thành công hạng bằng đã xóa', async () => {
-                // Gọi hàm .RESTORE(id)
                 const res = await request(app)
-                    .patch(LICENSE_ENDPOINTS.RESTORE(testCategoryId));
+                    .patch(LICENSE_ENDPOINTS.RESTORE(testCategoryId))
+                    .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
+                    .send();
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                // Đảm bảo Message.LICENSE.RESTORE_SUCCESS đã được định nghĩa trong file vn.ts
                 expect(res.body.message).toBe(Message.LICENSE.RESTORE_SUCCESS);
             });
         });
     });
-}
+};

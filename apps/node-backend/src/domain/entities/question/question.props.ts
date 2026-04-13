@@ -1,7 +1,8 @@
+// domain/entities/question/question.props.ts
+
 import { AnswerProps } from "./answer.props";
-/**
- * @description Định nghĩa các thuộc tính của đối tượng Câu hỏi (Question)
- */
+import { QuestionStatus } from "./question.status";
+
 export interface QuestionProps {
   id?: string;
   chapterId: string;
@@ -11,6 +12,16 @@ export interface QuestionProps {
   isCritical: boolean;
   answers: AnswerProps[];
   licenseCategoryIds: string[];
+  
+  status: QuestionStatus
+  // --- BỔ SUNG CÁC TRƯỜNG DÀNH CHO HIỂN THỊ (ENRICHED DATA) ---
+  /** @description Tên chương học (Dịch: Name of the chapter) */
+  chapterName?: string;
+
+  /** @description Danh sách tên các hạng bằng lái (Dịch: Names of the license categories) */
+  licenseCategoryNames?: string[];
+  // ----------------------------------------------------------
+
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt: Date | null;

@@ -38,5 +38,10 @@ export interface IAuthService {
    */
   resetPassword(dto: ResetPasswordRequestDTO): Promise<void>;
 
+  /**
+   * @description Thực hiện làm mới cặp mã xác thực (Access & Refresh Token) bằng Refresh Token.
+   * @param {RefreshTokenRequestDTO} dto - Đối tượng chứa mã Refresh Token hợp lệ.
+   * @returns {Promise<Tokens>} Trả về một "Promise" chứa cặp mã xác thực mới (Access Token & Refresh Token).
+   */
   refresh(dto: RefreshTokenRequestDTO): Promise<Tokens>;
 }

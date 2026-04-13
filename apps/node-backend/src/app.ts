@@ -11,7 +11,7 @@ import { apiMonitor } from "./api/middlewares/monitor.middleware";
 import logger from "./infrastructure/logging/winston.logger";
 
 const app = express();
-const uploadPath = path.join(__dirname, '..', 'uploads');
+const uploadPath = path.resolve(process.env.UPLOAD_DIR || 'public/uploads');
 
 // =========================================================
 // 1. SECURITY & PARSING (Bảo mật & Phân tích dữ liệu)
@@ -19,6 +19,7 @@ const uploadPath = path.join(__dirname, '..', 'uploads');
 
 // Cấu hình CORS (Cross-Origin Resource Sharing - Chia sẻ tài nguyên chéo nguồn gốc)
 // Đặt ở trên cùng để "mở cửa" cho trình duyệt trước khi làm bất cứ việc gì khác
+
 
 app.set('trust proxy', true);
 
