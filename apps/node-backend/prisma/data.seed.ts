@@ -13,6 +13,22 @@ export const roles = [
     { name: 'STUDENT', description: 'Học viên/Thí sinh' },
 ];
 
+export const adminUser = {
+    username: 'admin',
+    email: 'admin@smartgplx.com',
+    password: 'AdminPassword123@', 
+    fullName: 'Quản trị viên hệ thống',
+    phoneNumber: '0999999999',
+};
+
+export const testUser = {
+    username: 'testuser',
+    email: 'testuser@smartgplx.com',
+    password: 'UserPassword123@', 
+    fullName: 'Người dùng thử nghiệm',
+    phoneNumber: '0988888888',
+};
+
 export const licenses = [
     {
         name: 'A1',

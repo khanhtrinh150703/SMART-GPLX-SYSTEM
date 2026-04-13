@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils/utils";
 import { questionFormVariants as v } from "./variants/question-modal.variants";
 import { DIFFICULTY_OPTIONS } from "./question.config";
 import Image from "next/image";
+import { Select } from "@/components/ui/Select/Select";
 
 // Interface for shared props using Generic T
 // (Giao diện cho các thuộc tính dùng chung sử dụng Generic T)
@@ -114,18 +115,13 @@ export function QuestionFormFields<T extends FieldValues>({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className={v.inputGroup}>
-            <label className={v.label}>Chủ đề chương</label>
-            <select
+            <Select
+              label="Chủ đề chương (Chapter Topic)"
               {...register("chapterId" as Path<T>)}
-              className={cn(v.inputField, "h-14 px-4")}
-            >
-              <option value="">-- Chọn chương --</option>
-              {options.chapters.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+              options={options.chapters}
+              error={errors.chapterId?.message as string}
+              className="shadow-sm"
+            />
           </div>
 
           <div className={v.inputGroup}>

@@ -46,7 +46,7 @@ export const jwtUtil = {
       // 2. Đúc dữ liệu vào class duy nhất tại đây
       return new TokenPayload({
         userId: decoded.userId,
-        role: decoded.role,
+        roles: decoded.roles || decoded.role || [],
         jti: decoded.jti,
         deviceId: decoded.deviceId,
         exp: decoded.exp,

@@ -19,4 +19,12 @@ export const masterService = {
     const response = await masterApi.getLicenseCategorySelection();
     return response.data;
   },
+
+   /**
+   * Lấy danh sách roles
+   */
+  async getRoleSelection() {
+    const response = await masterApi.getRoleSelection();
+    return response.data;
+  },
 };

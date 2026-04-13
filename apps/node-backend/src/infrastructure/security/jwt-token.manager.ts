@@ -6,7 +6,7 @@ import { REDIS_CONSTANTS } from '@/domain/constants/redis.constant';
 import { JWT_CONSTANTS, TIME_CONSTANTS } from '@/domain/constants/time.constants';
 import { User } from '@/domain/entities/user/user.entity';
 import { randomUUID } from 'node:crypto';
-import { SystemRoles } from '@/domain/constants/roles.constant';
+import { UserRole } from '@/domain/constants/roles.constant';
 import { ICradle } from '@/shared/types/container.types';
 
 /**
@@ -34,13 +34,16 @@ export class JwtTokenManager implements ITokenManager {
    */
   public async generateAndStoreTokens(user: User): Promise<Tokens> {
 
-    const primaryRole = user.roles.length > 0 ? user.roles[0].name : SystemRoles.STUDENT;
+    const userRoles = user.roles.map(r => r.name as UserRole);
+
+    // Nếu user không có role nào, mặc định gán role STUDENT (tùy theo nghiệp vụ của bạn)
+    const finalRoles = userRoles.length > 0 ? userRoles : [UserRole.STUDENT];
 
     const jti = randomUUID();
     // 2. Chuẩn bị Payload sạch sẽ
     const payload = new TokenPayload({
       userId: user.id,
-      role: primaryRole,
+      roles: finalRoles,
       jti: jti,
     });
 

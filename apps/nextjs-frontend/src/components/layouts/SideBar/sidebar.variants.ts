@@ -18,13 +18,34 @@ export const sidebarVariants = cva(
 );
 
 // 2. Biến thể cho từng Item (Active/Inactive)
+// export const sidebarItemVariants = cva(
+//   "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 group",
+//   {
+//     variants: {
+//       status: {
+//         inactive: "text-slate-400 hover:bg-slate-800/50 hover:text-white",
+//         active: "bg-emerald-600/10 text-emerald-500 shadow-sm", // Màu thương hiệu Smart-GPLX
+//       },
+//     },
+//     defaultVariants: {
+//       status: "inactive",
+//     },
+//   }
+// );
+
 export const sidebarItemVariants = cva(
-  "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 group",
+  "group flex items-center gap-4 px-6 py-3 transition-all duration-500 relative select-none active:scale-[0.95]",
   {
     variants: {
       status: {
-        inactive: "text-slate-400 hover:bg-slate-800/50 hover:text-white",
-        active: "bg-emerald-600/10 text-emerald-500 shadow-sm", // Màu thương hiệu Smart-GPLX
+        active: [
+          "bg-transparent", // Trong suốt hoàn toàn
+          "text-emerald-400 font-bold",
+        ],
+        inactive: [
+          "bg-transparent",
+          "text-slate-400/70 hover:text-emerald-300",
+        ],
       },
     },
     defaultVariants: {

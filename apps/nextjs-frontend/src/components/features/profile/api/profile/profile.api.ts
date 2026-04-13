@@ -30,7 +30,7 @@ export const profileApi = {
    */
   changePassword: async (data: UserChangePassword): Promise<StandardResponse<null>> => {
     const response = await axiosClient.patch<StandardResponse<null>>(
-      ENDPOINTS.USER.CHANGEPASSWORD,
+      ENDPOINTS.USER.CHANGE_PASSWORD,
       data
     );
     return response.data;

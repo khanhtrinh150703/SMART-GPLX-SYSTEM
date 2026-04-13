@@ -2,45 +2,25 @@ import { container } from "@/shared/utils/container";
 import { Router } from "express";
 import { QuestionController } from "../controllers/question.controller";
 import { upload } from "../middlewares/upload.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { UserRole } from "@/domain/constants/roles.constant";
+import { authorizeRoles } from "../middlewares/role.middleware";
 
 const router = Router();
 
 // Lấy controller từ Dependency Injection Container (Awilix Proxy)
 const questionController = container.resolve("questionController") as QuestionController;
 
-/**
- * @description Tạo mới một câu hỏi cùng các phương án trả lời.
- * @route POST /api/v1/questions
- * @access Private (Admin)
- */
-router.post(
-  '/',
-  upload.fields([
-    { name: 'imageFile', maxCount: 1 },    // Khớp với key imageFile từ FE
-    { name: 'answerImages', maxCount: 10 } // Khớp với key answerImages từ FE
-  ]),
-  questionController.create
-);
+// Cấu hình upload dùng chung cho Question (Tránh lặp lại cấu hình fields)
+const questionUpload = upload.fields([
+  { name: 'imageFile', maxCount: 1 },    // Khớp với key imageFile từ FE
+  { name: 'answerImages', maxCount: 10 } // Khớp với key answerImages từ FE
+]);
 
-/**
- * @description Lấy danh sách toàn bộ câu hỏi với bộ lọc và phân trang (Dịch: Get all questions with filters and pagination)
- * @route GET /api/v1/questions
- * @access Private (Admin Only) - Yêu cầu Token và quyền Quản trị viên
- */
-router.get("/", questionController.list);
-
-/**
- * @description Cập nhật thông tin câu hỏi và nội dung các đáp án.
- * @route PUT /api/v1/questions/:id
- * @access Private (Admin)
- */
-router.put(
-  "/:id", upload.fields([
-    { name: 'imageFile', maxCount: 1 },    // Khớp với key imageFile từ FE
-    { name: 'answerImages', maxCount: 10 } // Khớp với key answerImages từ FE
-  ]),
-  questionController.update
-);
+// ============================================================================
+// NHÓM 1: CÔNG KHAI (PUBLIC SCOPE)
+// Các route này không cần authMiddleware để học viên có thể vào xem/ôn tập.
+// ============================================================================
 
 /**
  * @description Lấy thông tin chi tiết của một câu hỏi theo ID.
@@ -56,12 +36,45 @@ router.get("/:id", questionController.getById);
  */
 router.get("/chapter/:chapterId", questionController.getByChapter);
 
+// ============================================================================
+// NHÓM 2: QUẢN LÝ (ADMIN & INSTRUCTOR SCOPE)
+// Tất cả các route bên dưới dòng này đều yêu cầu Đăng nhập + Quyền hạn cao.
+// ============================================================================
+
+router.use(authMiddleware);
+router.use(authorizeRoles(UserRole.ADMIN, UserRole.INSTRUCTOR));
+
 /**
- * @description Xóa (xóa mềm) câu hỏi khỏi hệ thống.
- * @route DELETE /api/v1/questions/:id
- * @access Private (Admin)
+ * Quản lý danh sách câu hỏi tại root path "/"
  */
-router.delete("/:id", questionController.delete);
+router.route("/")
+  /**
+   * @description Lấy danh sách toàn bộ câu hỏi với bộ lọc và phân trang.
+   * @route GET /api/v1/questions
+   */
+  .get(questionController.list)
+  
+  /**
+   * @description Tạo mới một câu hỏi cùng các phương án trả lời.
+   * @route POST /api/v1/questions
+   */
+  .post(questionUpload, questionController.create);
+
+/**
+ * Quản lý chi tiết câu hỏi tại path "/:id"
+ */
+router.route("/:id")
+  /**
+   * @description Cập nhật thông tin câu hỏi và nội dung các đáp án.
+   * @route PUT /api/v1/questions/:id
+   */
+  .put(questionUpload, questionController.update)
+  
+  /**
+   * @description Xóa (xóa mềm) câu hỏi khỏi hệ thống.
+   * @route DELETE /api/v1/questions/:id
+   */
+  .delete(questionController.delete);
 
 /**
  * @description Khôi phục lại câu hỏi đã bị xóa mềm trước đó.
@@ -69,6 +82,5 @@ router.delete("/:id", questionController.delete);
  * @access Private (Admin)
  */
 router.patch("/:id/restore", questionController.restore);
-
 
 export default router;

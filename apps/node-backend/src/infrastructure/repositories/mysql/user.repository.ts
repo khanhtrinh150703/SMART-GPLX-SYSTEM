@@ -149,15 +149,25 @@ export class MySQLUserRepository implements IUserRepository {
     return this._toDomain(raw) as User;
   }
 
-  async update(user: User): Promise<User> {
+  /**
+   * @description Cập nhật thông tin User. 
+   * Hỗ trợ nhận vào Transaction client để đảm bảo tính nguyên tử.
+   */
+  public async update(user: User, tx?: Prisma.TransactionClient): Promise<User> {
+    // 1. Chọn Client: Nếu có tx từ Service thì dùng, không thì dùng prisma mặc định
+    const client = tx || this._prisma;
+
     const data = UserMapper.toPersistence(user);
-    const raw = await this._prisma.user.update({
+
+    // 2. Thực thi Update
+    const raw = await client.user.update({
       where: { id: user.id },
       data: {
         ...data,
+        // Sử dụng Nested Writes của Prisma để xử lý Role
         userRoles: {
-          deleteMany: {},
-          create: user.roles.map(role => ({ roleId: role.id }))
+          deleteMany: {}, // Xóa hết liên kết cũ
+          create: user.roles.map(role => ({ roleId: role.id })) // Tạo liên kết mới
         }
       },
       include: this._userInclude,

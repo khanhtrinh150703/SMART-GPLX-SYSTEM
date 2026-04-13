@@ -30,7 +30,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* 3. NỘI DUNG CHÍNH: Tự động co giãn theo Sidebar */}
       <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative">
-        <Header onOpenSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <Header 
+          isOpen={isSidebarOpen} 
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+        />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           <QueryProvider>

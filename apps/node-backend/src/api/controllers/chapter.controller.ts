@@ -121,5 +121,4 @@ export class ChapterController {
             'CHAPTER_SELECTION_SUCCESS'
         );
     });
-
 }

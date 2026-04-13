@@ -2,6 +2,8 @@ import { IRoleService } from "@/domain/interfaces/services/i-role.service";
 import { IRoleRepository } from "@/domain/interfaces/repositories/i-role.repository";
 import { Role } from "@/domain/entities/role/role.entity";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { RoleMapper } from "@/infrastructure/database/mappers/role.mapper";
+import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 
 /**
  * @interface IRoleServiceCradle
@@ -27,6 +29,11 @@ export class RoleService implements IRoleService {
     constructor({ roleRepository }: IRoleServiceCradle) {
         // Gán trực tiếp từ Cradle chuyên biệt, không dùng ICradle tổng
         this._roleRepo = roleRepository;
+    }
+
+    public async getRoleSelections(): Promise<SelectionResponseDto[]> {
+        const chapters = await this._roleRepo.findAll();
+        return RoleMapper.toSelectionList(chapters);
     }
 
     /**

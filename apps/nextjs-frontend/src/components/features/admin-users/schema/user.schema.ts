@@ -1,3 +1,4 @@
+import { UserRoleEnum } from "@/constants/enum/use.enum";
 import { emailField, fullNameField, userNameField } from "@/lib/validations/common";
 import { z } from "zod";
 
@@ -27,13 +28,13 @@ export const createUserSchema = userBaseSchema.refine(
 
 // --- 3. TẠO ADMIN UPDATE SCHEMA (Bốc từ lõi ra) ---
 // Bây giờ .pick() sẽ chạy mượt mà vì userBaseSchema vẫn là ZodObject
-export const adminUpdateSchema = userBaseSchema
-  .pick({
-    fullName: true,
-    email: true,
-  })
-  .partial(); // Admin có thể chỉ sửa 1 trong 2 hoặc cả 2
+export const updateAdminRequestSchema = z.object({
+  fullName: z.string().min(2, "Họ tên quá ngắn (Full name too short)"),
+  
+  // 💡 Chấp nhận mảng các ID vai trò
+  roles: z.array(z.string()).min(1, "Chọn ít nhất một vai trò (Select at least one role)"),
+});
 
 // --- 4. TRÍCH XUẤT TYPE ---
 export type CreateUserPayload = z.infer<typeof createUserSchema>;
-export type AdminUpdatePayload = z.infer<typeof adminUpdateSchema>;
+export type AdminUpdatePayload = z.infer<typeof updateAdminRequestSchema>;

@@ -1,6 +1,7 @@
 import { UserResponseDTO } from "@/types/user-respone";
 import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { TableColumnFactory } from "@/components/common/Generic-Table/table-column.factory";
+import { cn } from "@/lib/utils/utils";
 
 /**
  * @description Định nghĩa các cột cho bảng Người dùng sử dụng Factory dùng chung.
@@ -55,19 +56,44 @@ export const getUserColumns = (
     header: "Vai trò",
     sortable: true,
     sortKey: "roles",
-    accessor: (user) => (
-      <div className="flex flex-wrap gap-1 justify-center">
-        {user.roles.map((role) => (
-          <span
-            key={role.id}
-            className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 text-[9px] font-bold uppercase border border-slate-200"
-          >
-            {role.name}
-          </span>
-        ))}
-      </div>
-    ),
-    className: "text-center w-36",
+    accessor: (user) => {
+      const getRoleStyles = (roleName: string) => {
+        switch (roleName.toUpperCase()) {
+          case "ADMIN":
+            return "bg-rose-50 text-rose-600 border-rose-100";
+          case "INSTRUCTOR":
+            return "bg-emerald-50 text-emerald-600 border-emerald-100";
+          default:
+            return "bg-blue-50 text-blue-600 border-blue-100";
+        }
+      };
+
+      return (
+        <div className="flex items-center justify-center gap-1.5 flex-nowrap">
+          {/* 💡 Chỉ hiện tối đa 1 Role chính nếu không đủ chỗ, hoặc 2 cái cực nhỏ */}
+          {user.roles.slice(0, 2).map((role) => (
+            <span
+              key={role.id}
+              className={cn(
+                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase border whitespace-nowrap",
+                getRoleStyles(role.name),
+              )}
+            >
+              {role.name}
+            </span>
+          ))}
+
+          {/* Nếu có hơn 2 role, hiện dấu cộng tinh tế */}
+          {user.roles.length > 2 && (
+            <span className="text-[9px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-100">
+              +{user.roles.length - 2}
+            </span>
+          )}
+        </div>
+      );
+    },
+    // 💡 Quan trọng: Tăng nhẹ width của cột để chứa đủ 2 nhãn nằm ngang
+    className: "text-center w-48 min-w-[180px]",
   },
 
   // 5. Cột Trạng thái

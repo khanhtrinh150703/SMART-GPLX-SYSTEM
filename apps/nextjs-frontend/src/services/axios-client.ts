@@ -36,54 +36,61 @@ axiosClient.interceptors.request.use(
 );
 
 // 2. Response Interceptor: Nơi xử lý "Hồi sinh" Token
+/**
+ * Response Interceptor: Centralized Error Handling & Token Resurrection
+ * (Bộ chặn phản hồi: Xử lý lỗi tập trung và Hồi sinh Token)
+ */
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Kiểm tra nếu không có response (Lỗi mạng thực sự)
-    if (!error.response) {
-      console.error("LỖI MẠNG HOẶC CORS:", error.message);
+    if (originalRequest._ignoreError) {
       return Promise.reject(error);
     }
 
-    /**
-     * Logic Silent Refresh:
-     * 1. Lỗi 401 (Unauthorized)
-     * 2. Request này chưa từng được thử refresh trước đó (_retry = true)
-     */
-    if (error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Đánh dấu để tránh lặp vô hạn
+    // 1. Network Error handling (Xử lý mất mạng)
+    if (!error.response) {
+      window.location.replace("/error/network");
+      return Promise.reject(error);
+    }
+
+    const { status } = error.response;
+
+    // 2. Critical Infrastructure Errors (403, 404, 500...)
+    const criticalErrors = [403, 404, 500, 502, 503];
+
+    if (criticalErrors.includes(status)) {
+      window.location.replace(`/error/${status}`);
+      return Promise.reject(error);
+    }
+
+    // 3. Logic Silent Refresh (401)
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
       try {
         const refreshToken = useUserStore.getState().refreshToken;
 
-        // Nếu không có cả Refresh Token thì "tiễn khách" luôn
         if (!refreshToken) {
-          useUserStore.getState().logout();
+          handleForceLogout();
           return Promise.reject(error);
         }
 
-        // Gọi API Refresh (Dùng chính axiosClient hoặc một instance axios mới để tránh dính Interceptor)
-        const res = await axios.post(`${axiosClient.defaults.baseURL}/auth/refresh-token`, {
-          refreshToken: refreshToken
+        // Gọi API Refresh với instance axios mới (không dùng interceptor này)
+        const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {
+          refreshToken
         });
 
-        // Bóc tách theo cấu trúc data.data mà mình đã chốt
         const { accessToken, refreshToken: newRefreshToken } = res.data.data;
-
-        // Cập nhật vào Store
         useUserStore.getState().setTokens(accessToken, newRefreshToken);
 
-        // Gắn token mới vào request cũ và gọi lại
+        // Thử lại request cũ với token mới
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return axiosClient(originalRequest);
 
       } catch (refreshError) {
-        // Nếu refresh cũng lỗi (hết hạn nốt) -> Logout sạch sẽ
-        console.error("Refresh token expired or invalid");
-        useUserStore.getState().logout();
-        window.location.href = '/login'; // Ép về trang login
+        handleForceLogout();
         return Promise.reject(refreshError);
       }
     }
@@ -91,5 +98,11 @@ axiosClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+const handleForceLogout = () => {
+  useUserStore.getState().logout();
+  // 💡 Ép về Login và xóa lịch sử để không Back lại Dashboard được
+  window.location.replace('/login');
+};
 
 export default axiosClient;

@@ -6,6 +6,7 @@ import { ChangePasswordRequestDTO } from "@/application/dtos/request/user/update
 import { ChangeStatusRequestDTO } from "@/application/dtos/request/user/update-status.request.dto";
 import { LoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
 import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
+import { UpdateAdminRequestDTO } from "@/application/dtos/request/user/update-admin.request.dto";
 
 /**
  * @description Interface định nghĩa các nghiệp vụ cốt lõi quản lý người dùng (User Domain).
@@ -101,6 +102,14 @@ export interface IUserService {
    */
   getPaginatedUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>>;
 
+  /**
+   * @description Admin thực hiện cập nhật thông tin và quyền hạn của người dùng khác.
+   * @param {string} userId - ID của người dùng mục tiêu.
+   * @param {UpdateAdminRequestDTO} dto - Dữ liệu cập nhật (fullName, roles...).
+   * @returns {Promise<void>}
+   */
+  updateUserByAdmin(userId: string, dto: UpdateAdminRequestDTO): Promise<void>;
+  
   /**
    * @description Khởi tạo một người dùng mới vào hệ thống với các quyền mặc định.
    * @param {Object} data - Dữ liệu khởi tạo người dùng cơ bản.

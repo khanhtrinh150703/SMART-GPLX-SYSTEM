@@ -64,3 +64,4 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
     throw new AppError(ErrorCode.AUTH.UNAUTHORIZED);
   }
 });
+

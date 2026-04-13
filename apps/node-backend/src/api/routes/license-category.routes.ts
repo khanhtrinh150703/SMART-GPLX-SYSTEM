@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { container } from '@/shared/utils/container';
 import { LicenseCategoryController } from '../controllers/license-category.controller';
-// import { authMiddleware } from '../middlewares/auth.middleware';
-// import { roleMiddleware } from '../middlewares/role.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { authorizeRoles } from '../middlewares/role.middleware';
+import { UserRole } from '@/domain/constants/roles.constant';
 
 const router = Router();
 
@@ -12,40 +13,63 @@ const router = Router();
  */
 const licenseController = container.resolve<LicenseCategoryController>('licenseCategoryController');
 
-/**
- * @description Lấy danh sách các hạng bằng lái có hỗ trợ tìm kiếm và phân trang.
- * @route GET /api/v1/license-categories
- * @access Private (Admin/Staff)
- */
-router.get('/', licenseController.list);
+// ============================================================================
+// CHẤU HÌNH CHUNG: TẤT CẢ ROUTE ĐỀU YÊU CẦU ĐĂNG NHẬP
+// ============================================================================
+router.use(authMiddleware);
+
+// ============================================================================
+// NHÓM 1: QUYỀN HẠN CHIA SẺ (ADMIN & INSTRUCTOR)
+// Đặt lên trên trước khi áp dụng "thiết quân luật" chỉ Admin.
+// ============================================================================
 
 /**
  * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) cho dropdown.
  * @route GET /api/v1/license-categories/selection
  * @access Private (User/Admin)
  */
-router.get('/selection', licenseController.getLicenseSelections);
+router.get(
+    '/selection',
+    authorizeRoles(UserRole.ADMIN, UserRole.INSTRUCTOR),
+    licenseController.getLicenseSelections
+);
+
+// ============================================================================
+// NHÓM 2: CHỈ DÀNH CHO QUẢN LÝ
+// ============================================================================
+router.use(authorizeRoles(UserRole.ADMIN, UserRole.INSTRUCTOR),);
 
 /**
- * @description Tạo mới một hạng bằng lái xe.
- * @route POST /api/v1/license-categories
- * @access Private (Admin)
+ * Nhóm các hành động thao tác trên root path "/"
  */
-router.post('/', licenseController.store);
+router.route('/')
+    /**
+     * @description Lấy danh sách các hạng bằng lái có hỗ trợ tìm kiếm và phân trang.
+     * @route GET /api/v1/license-categories
+     */
+    .get(licenseController.list)
+
+    /**
+     * @description Tạo mới một hạng bằng lái xe.
+     * @route POST /api/v1/license-categories
+     */
+    .post(licenseController.store);
 
 /**
- * @description Cập nhật thông tin chi tiết của một hạng bằng lái theo ID.
- * @route PATCH /api/v1/license-categories/:id
- * @access Private (Admin)
+ * Nhóm các hành động thao tác dựa trên ID ":id"
  */
-router.patch('/:id', licenseController.update);
+router.route('/:id')
+    /**
+     * @description Cập nhật thông tin chi tiết của một hạng bằng lái theo ID.
+     * @route PATCH /api/v1/license-categories/:id
+     */
+    .patch(licenseController.update)
 
-/**
- * @description Xóa (xóa mềm) một hạng bằng lái khỏi hệ thống.
- * @route DELETE /api/v1/license-categories/:id
- * @access Private (Admin)
- */
-router.delete('/:id', licenseController.delete);
+    /**
+     * @description Xóa (xóa mềm) một hạng bằng lái khỏi hệ thống.
+     * @route DELETE /api/v1/license-categories/:id
+     */
+    .delete(licenseController.delete);
 
 /**
  * @description Khôi phục lại hạng bằng lái đã bị xóa mềm trước đó.

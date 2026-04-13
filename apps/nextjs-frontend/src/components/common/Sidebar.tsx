@@ -1,13 +1,13 @@
-// src/components/ui/sidebar/Sidebar.tsx
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import SidebarLogo from "../layouts/SideBar/SidebarLogo";
+import SidebarItem from "../layouts/SideBar/SidebarItem";
 import { sidebarVariants } from "@/components/layouts/SideBar/sidebar.variants";
 import { NAV_ITEMS } from "@/components/layouts/SideBar/sidebar.constants";
-import SidebarItem from "../layouts/SideBar/SidebarItem";
+import { useAuthRole } from "@/hooks/use-auth-role"; // Hook "xịn" của bạn
 
 interface SidebarProps {
   className?: string;
@@ -15,13 +15,20 @@ interface SidebarProps {
   setIsOpen: (val: boolean) => void;
 }
 
-export default function Sidebar({
-  className,
-  isOpen,
-  setIsOpen,
-}: SidebarProps) {
+export default function Sidebar({ className, isOpen, setIsOpen }: SidebarProps) {
+  const { userRoles } = useAuthRole();
+
+  const filteredNavItems = useMemo(() => {
+    return NAV_ITEMS.filter((item) => {
+      if (!item.roles || item.roles.length === 0) return true;
+      
+      return userRoles.some((role) => item.roles?.includes(role));
+    });
+  }, [userRoles]);
+
   return (
     <>
+      {/* Overlay - Giữ nguyên logic đóng mở */}
       <div
         className={cn(
           "fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-all duration-300 lg:hidden",
@@ -33,39 +40,38 @@ export default function Sidebar({
       <aside
         className={cn(
           sidebarVariants({ theme: "dark" }),
-          "fixed lg:relative top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out flex flex-col shadow-2xl overflow-hidden",
-          isOpen
-            ? "translate-x-0 w-72"
-            : "-translate-x-full lg:translate-x-0 w-0 lg:w-0",
+          "fixed lg:relative top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out flex flex-col",
+          "overflow-hidden",
+          isOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 w-0 lg:w-0",
           className,
         )}
       >
+        {/* Header - Logo */}
         <div className="flex items-center justify-between px-6 h-24 shrink-0 border-b border-white/5">
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full flex items-center justify-center">
             <SidebarLogo />
           </div>
-
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95 lg:hidden" // Trên PC thì nút này có thể ẩn nếu ông thích
-          >
-            <X size={20} />
+          <button onClick={() => setIsOpen(false)} className="lg:hidden">
+            <X size={20} className="text-slate-500" />
           </button>
         </div>
 
-        {/* Menu Items: Thêm opacity-0 khi đóng để không bị lỗi chữ đè */}
-        <nav
-          className={cn(
-            "flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar transition-opacity duration-200",
-            !isOpen && "opacity-0",
-          )}
-        >
-          {NAV_ITEMS.map((item) => (
-            <SidebarItem key={item.href} {...item} />
+        {/* 🚀 NAV SECTION: Dùng danh sách đã được lọc logic ở trên */}
+        <nav className={cn(
+          "flex-1 px-4 py-6 space-y-2 overflow-y-auto transition-opacity",
+          !isOpen && "opacity-0"
+        )}>
+          {filteredNavItems.map((item) => (
+            <SidebarItem 
+              key={item.href} 
+              href={item.href}
+              title={item.title} // Chú ý: Dùng title VN như NAV_ITEMS mới
+              icon={item.icon}
+            />
           ))}
         </nav>
 
-        {/* Footer Info */}
+        {/* Footer */}
         <div className={cn("p-4 transition-opacity", !isOpen && "opacity-0")}>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">

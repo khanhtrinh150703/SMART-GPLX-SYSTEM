@@ -19,37 +19,16 @@ export const userAdminService = {
     return await userAdminApi.getAll(params);
   },
 
-  /**
-   * Admin cập nhật thông tin cho người dùng bất kỳ.
-   * (Admin updates information for any specific user)
+/**
+   * Admin cập nhật thông tin học viên (JSON Mode).
+   * @param userId - ID của học viên cần sửa.
+   * @param data - Dữ liệu bao gồm fullName và roles[].
    */
   updateProfileAdmin: async (
     userId: string,
     data: AdminUpdatePayload
   ): Promise<StandardResponse<IUpdateProfileResponse>> => {
-    
-    // 1. Chuyển đổi dữ liệu sang FormData (Data Transformation)
-    const formData = new FormData();
-    
-    // Kiểm tra và append dữ liệu nếu tồn tại
-    if (data.fullName !== undefined) {
-      formData.append("fullName", data.fullName);
-    }
-
-    // Nếu sau này bạn mở rộng thêm ảnh đại diện cho Admin sửa:
-    // if (data.urlPicture instanceof File) {
-    //   formData.append("pictureFile", data.urlPicture);
-    // }
-
-    // 2. Gọi lớp API thực hiện PATCH request
-    const response = await userAdminApi.updateUser(userId, formData);
-
-    /**
-     * 3. Lưu ý về Side Effect:
-     * Ở đây không cập nhật Zustand của Admin (useUserStore) 
-     * vì Admin đang sửa thông tin của người dùng khác.
-     */
-    
+    const response = await userAdminApi.updateUserByAdmin(userId, data);
     return response;
   },
 
@@ -66,4 +45,5 @@ export const userAdminService = {
   restoreUser: async (id: string): Promise<StandardResponse<null>> => {
     return await userAdminApi.restore(id);
   },
+
 };

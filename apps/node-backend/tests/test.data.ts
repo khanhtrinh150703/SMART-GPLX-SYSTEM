@@ -72,6 +72,16 @@ export const TEST_ACCOUNT = {
   wrongPassword: 'WrongPassword123!',
 } as const;
 
+
+export const ADMIN_ACCOUNT = {
+  username: 'admin',
+  password: 'AdminPassword123@'
+}
+
+export const NORMAL_ACCOUNT = {
+  username: 'testuser',
+  password: 'UserPassword123@'
+}
 // ==================== TEST UPDATE DATA ====================
 export const TEST_UPDATE_DATA = {
   fullName: 'Trinh Cậu Vàng V2',

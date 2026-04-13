@@ -100,6 +100,7 @@ export default function AdminUserManagementPage() {
     handleUnlock,
     handleRestore,
     handleUpdate,
+    roleOptions = []
   } = useUsers(getApiParams() as UserQueryDTO);
 
   // --- 6. HANDLERS ---
@@ -130,7 +131,6 @@ export default function AdminUserManagementPage() {
     try {
       setMessage(null);
       await handleUpdate.mutateAsync({ id: selectedUser.id, data });
-      
       setIsEditModalOpen(false);
       setSelectedUser(null);
       setMessage({ intent: "success", text: "Cập nhật thành công!" });
@@ -329,10 +329,11 @@ export default function AdminUserManagementPage() {
         onClose={() => {
           setIsEditModalOpen(false);
           setSelectedUser(null);
-        }}
+        } }
         onSave={handleUpdateUser}
-        isLoading={isUpdating}
-      />
+        isLoading={isUpdating} 
+        roleOptions={roleOptions}      
+        />
 
       <BaseConfirmModal
         isOpen={isDeleteModalOpen}

@@ -40,6 +40,15 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.REGISTER_FAILED]: 'Quá trình đăng ký gặp lỗi, vui lòng kiểm tra lại.',
     [ErrorCode.USER.UPDATE_FAILED]: 'Cập nhật thông tin không thành công.',
     [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
+    [ErrorCode.USER.NAME_REQUIRED]: 'Họ và tên không được để trống.',
+    [ErrorCode.USER.NAME_TOO_SHORT]: 'Họ tên quá ngắn, vui lòng nhập tối thiểu 2 ký tự.',
+    [ErrorCode.USER.NAME_TOO_LONG]: 'Họ tên quá dài, tối đa không quá 100 ký tự.',
+    [ErrorCode.USER.NAME_INVALID]: 'Họ tên chứa ký tự không hợp lệ.',
+    [ErrorCode.USER.STATUS_INVALID]: 'Trạng thái tài khoản không hợp lệ.',
+    [ErrorCode.USER.ROLES_REQUIRED]: 'Người dùng phải được gán ít nhất một vai trò.',
+    [ErrorCode.USER.INVALID_ROLE_ID]: 'Một hoặc nhiều vai trò được chọn không tồn tại trên hệ thống.',
+    [ErrorCode.USER.AVATAR_TOO_LARGE]: 'Dung lượng ảnh đại diện không được vượt quá 5MB.',
+    [ErrorCode.USER.AVATAR_INVALID_TYPE]: 'Định dạng tệp không hỗ trợ. Vui lòng sử dụng JPG, PNG hoặc WEBP.',
 
     // === SMART-GPLX (EXAM & AI) ===
     [ErrorCode.EXAM.NOT_FOUND]: 'Đề thi không tồn tại hoặc đã bị gỡ bỏ.',

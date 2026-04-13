@@ -145,8 +145,6 @@ export class MySQLChapterRepository implements IChapterRepository {
     // 1. Khai báo kiểu WhereInput chuẩn của Prisma (Dịch: Initialize Prisma WhereInput)
     const where: Prisma.ChapterWhereInput = {};
 
-    console.log(query)
-
     // --- 2. LOGIC TRẠNG THÁI (Status Tabs - Dịch: Tab status logic) ---
     // Áp dụng case đặc biệt 'all' để lấy sạch sành sanh
     if (query.status === 'all') {

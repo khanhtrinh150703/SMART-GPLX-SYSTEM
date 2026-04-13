@@ -11,7 +11,7 @@ const router = Router();
 const authController = container.resolve('authController') as AuthController;
 
 // ============================================================================
-// AUTHENTICATION ROUTES (QUẢN LÝ XÁC THỰC)
+// 1. FLOW ĐĂNG KÝ (SIGNUP/REGISTER)
 // ============================================================================
 
 /**
@@ -29,6 +29,17 @@ router.post('/register/init', authController.signUpInit);
 router.post('/register/verify', authController.signUpVerify);
 
 /**
+ * @description Gửi lại mã OTP xác thực trong trường hợp người dùng chưa nhận được hoặc mã hết hạn.
+ * @route POST /api/v1/auth/resend-otp
+ * @access Public
+ */
+router.post('/resend-otp', authController.resendOtp);
+
+// ============================================================================
+// 2. FLOW ĐĂNG NHẬP & QUẢN LÝ TOKEN (SESSION MANAGEMENT)
+// ============================================================================
+
+/**
  * @description Đăng nhập hệ thống và cấp cặp mã thông báo Access Token & Refresh Token.
  * @route POST /api/v1/auth/login
  * @access Public
@@ -36,11 +47,11 @@ router.post('/register/verify', authController.signUpVerify);
 router.post('/login', authController.login);
 
 /**
- * @description Gửi lại mã OTP xác thực trong trường hợp người dùng chưa nhận được hoặc mã hết hạn.
- * @route POST /api/v1/auth/resend-otp
- * @access Public
+ * @description Cấp mới Access Token bằng Refresh Token khi mã cũ đã hết hạn.
+ * @route POST /api/v1/auth/refresh-token
+ * @access Public (Requires Refresh Token in Body/Cookie)
  */
-router.post('/resend-otp', authController.resendOtp);
+router.post('/refresh-token', authController.refreshToken);
 
 /**
  * @description Đăng xuất, vô hiệu hóa Access Token và xóa session/refresh token tương ứng.
@@ -48,6 +59,10 @@ router.post('/resend-otp', authController.resendOtp);
  * @access Private (Authenticated User)
  */
 router.post('/logout', authMiddleware, authController.logout);
+
+// ============================================================================
+// 3. FLOW QUÊN MẬT KHẨU (PASSWORD RECOVERY)
+// ============================================================================
 
 /**
  * @description Yêu cầu khôi phục mật khẩu bằng cách gửi mã OTP xác nhận qua Email.
@@ -62,12 +77,5 @@ router.post('/forgot-password', authController.forgotPassword);
  * @access Public
  */
 router.post('/reset-password', authController.resetPassword);
-
-/**
- * @description Cấp mới Access Token bằng Refresh Token khi mã cũ đã hết hạn.
- * @route POST /api/v1/auth/refresh-token
- * @access Public (Requires Refresh Token in Body/Cookie)
- */
-router.post('/refresh-token', authController.refreshToken);
 
 export default router;

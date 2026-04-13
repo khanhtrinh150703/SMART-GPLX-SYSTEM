@@ -37,5 +37,23 @@ export const selectionPaths = {
                 }
             }
         }
+    },
+
+     [`${API_CONSTANTS.API_BASE}/roles/selection`]: {
+        get: {
+            tags: ['Selection Data'],
+            summary: 'Lấy danh sách chức vụ (Rút gọn cho Dropdown)',
+            description: 'Chỉ trả về id (value) và code (label) của các vai trò/chức vụ.',
+            responses: {
+                200: {
+                    description: 'Thành công',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/SelectionListResponse' }
+                        }
+                    }
+                }
+            }
+        }
     }
 };

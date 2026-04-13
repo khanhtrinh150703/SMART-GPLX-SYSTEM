@@ -5,6 +5,7 @@ import { PaginatedResult } from '@/types/paginaton.type';
 import { UserQueryDTO } from '@/types/query-user';
 import { UserResponseDTO } from '@/types/user-respone';
 import { IUpdateProfileResponse } from '@/types/user.type';
+import { AdminUpdatePayload } from '../schema/user.schema';
 
 /**
  * User Admin API: Quản trị viên quản lý danh sách người dùng.
@@ -27,14 +28,10 @@ export const userAdminApi = {
    * Admin cập nhật thông tin cho một người dùng bất kỳ.
    * (Admin updates info for a specific user)
    */
-  updateUser: async (userId: string, formData: FormData): Promise<StandardResponse<IUpdateProfileResponse>> => {
-    const response = await axiosClient.patch<StandardResponse<IUpdateProfileResponse>>(
-      `${ENDPOINTS.USER.UPDATE_PROFILE_ADMIN}/${userId}`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        transformRequest: (data) => data,
-      }
+  updateUserByAdmin: async (userId: string, data: AdminUpdatePayload): Promise<StandardResponse<IUpdateProfileResponse>> => {
+    const response = await axiosClient.put<StandardResponse<IUpdateProfileResponse>>(
+      ENDPOINTS.USER.UPDATE_BY_ADMIN(userId),
+      data
     );
     return response.data;
   },
