@@ -3,8 +3,7 @@ import { container } from '@/shared/utils/container';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { UserController } from '../controllers/user.controller';
 import { upload } from '../middlewares/upload.middleware';
-import { UserRole } from '@/domain/constants/roles.constant';
-import { authorizeRoles } from '../middlewares/role.middleware';
+import { requirePermission } from '../middlewares/permission.middleware';
 
 const router = Router();
 
@@ -44,11 +43,8 @@ router.patch('/me/password', userController.changePassword);
 // NHÓM 2: QUẢN TRỊ (ADMIN SCOPE)
 // ============================================================================
 
-/**
- * Kể từ đây, tất cả các route đều yêu cầu quyền ADMIN.
- * Ta chặn "vòng gửi xe" bằng một dòng duy nhất thay vì lặp lại ở từng route.
- */
-router.use(authorizeRoles(UserRole.ADMIN));
+
+router.use(requirePermission('users:manage'));
 
 /**
  * @description Lấy danh sách toàn bộ người dùng với các bộ lọc, tìm kiếm và phân trang.

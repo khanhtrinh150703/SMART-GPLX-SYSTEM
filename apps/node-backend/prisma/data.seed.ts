@@ -1,10 +1,30 @@
 export const permissions = [
-    { name: 'user:read', description: 'Xem thông tin người dùng' },
-    { name: 'user:write', description: 'Sửa thông tin người dùng' },
-    { name: 'user:delete', description: 'Xóa người dùng' },
-    { name: 'exam:manage', description: 'Quản lý bộ đề thi (Admin/GV)' },
-    { name: 'exam:take', description: 'Được phép làm bài thi (Học viên)' },
-    { name: 'admin:all', description: 'Toàn quyền hệ thống' },
+  // 👤 Quản lý người dùng
+  { name: 'users:read', description: 'Xem danh sách người dùng' },
+  { name: 'users:manage', description: 'Thêm, sửa, khóa tài khoản người dùng' },
+  { name: 'profile:manage', description: 'Cập nhật thông tin cá nhân của chính mình' },
+
+  // 📚 Ngân hàng câu hỏi
+  { name: 'questions:read', description: 'Xem ngân hàng câu hỏi' },
+  { name: 'questions:write', description: 'Thêm/Sửa câu hỏi và đáp án' },
+  { name: 'questions:import', description: 'Import câu hỏi từ file Excel' },
+  { name: 'questions:delete', description: 'Xóa câu hỏi' },
+
+  // 📖 Chương học & Mẹo thi (Tách Read để Student còn vào học được)
+  { name: 'chapters:read', description: 'Xem nội dung bài học' },
+  { name: 'chapters:manage', description: 'Quản lý (Thêm/Sửa/Xóa) chương học và mẹo thi' },
+
+  // 🪪 Hạng bằng lái
+  { name: 'licenses:read', description: 'Xem danh sách các hạng bằng lái' },
+  { name: 'licenses:manage', description: 'Quản lý thông tin các hạng bằng (A1, B2, C...)' },
+
+  // 📝 Đề thi & Kết quả
+  { name: 'exams:manage', description: 'Tạo và cấu trúc bộ đề thi' },
+  { name: 'exams:take', description: 'Thực hiện bài thi thử' },
+  { name: 'results:read', description: 'Xem lịch sử và kết quả thi' },
+
+  // 🔑 Quyền tối thượng
+  { name: 'admin:all', description: 'Toàn quyền hệ thống (Bypass mọi kiểm tra)' },
 ];
 
 export const roles = [
@@ -27,6 +47,23 @@ export const testUser = {
     password: 'UserPassword123@', 
     fullName: 'Người dùng thử nghiệm',
     phoneNumber: '0988888888',
+};
+
+export const testInstructor = {
+    username: 'testinstructor',
+    email: 'instructor@smartgplx.com',
+    password: 'InstructorPassword123@', 
+    fullName: 'Giảng viên hướng dẫn',
+    phoneNumber: '0977777777',
+    role: 'INSTRUCTOR', 
+};
+
+export const testUserTemp = {
+    username: 'testusertemp',
+    email: 'temp@smartgplx.com',
+    password: 'TempPassword123@', 
+    fullName: 'Học viên dự phòng',
+    phoneNumber: '0966666666',
 };
 
 export const licenses = [

@@ -99,6 +99,7 @@ export class UserMapper {
         name: r.name,
         displayName: r.description
       })),
+      permissions: user.getAllPermissionNames(),
     };
   }
 

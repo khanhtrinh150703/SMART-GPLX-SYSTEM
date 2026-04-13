@@ -7,7 +7,7 @@ import SidebarLogo from "../layouts/SideBar/SidebarLogo";
 import SidebarItem from "../layouts/SideBar/SidebarItem";
 import { sidebarVariants } from "@/components/layouts/SideBar/sidebar.variants";
 import { NAV_ITEMS } from "@/components/layouts/SideBar/sidebar.constants";
-import { useAuthRole } from "@/hooks/use-auth-role"; // Hook "xịn" của bạn
+import { useUserStore } from "@/store/user/user.store"; // 👈 Lấy trực tiếp từ Store cho chuẩn
 
 interface SidebarProps {
   className?: string;
@@ -15,17 +15,33 @@ interface SidebarProps {
   setIsOpen: (val: boolean) => void;
 }
 
-export default function Sidebar({ className, isOpen, setIsOpen }: SidebarProps) {
-  const { userRoles } = useAuthRole();
+export default function Sidebar({
+  className,
+  isOpen,
+  setIsOpen,
+}: SidebarProps) {
+  const _hasHydrated = useUserStore((state) => state._hasHydrated);
+  const { permissions } = useUserStore();
 
   const filteredNavItems = useMemo(() => {
     return NAV_ITEMS.filter((item) => {
-      if (!item.roles || item.roles.length === 0) return true;
-      
-      return userRoles.some((role) => item.roles?.includes(role));
-    });
-  }, [userRoles]);
+      // ✅ TRƯỜNG HỢP 1: Menu công khai (Dashboard, Hồ sơ...)
+      // Nếu không yêu cầu quyền cụ thể, cho hiện luôn
+      if (!item.requiredPermission) return true;
 
+      // ✅ TRƯỜNG HỢP 2: Quyền tối thượng (Super Admin)
+      // Nếu User có vé "admin:all", mở khóa tất cả menu không cần check thêm
+      if (permissions.includes("admin:all")) return true;
+
+      // ✅ TRƯỜNG HỢP 3: Check "vé" cụ thể
+      // Kiểm tra xem mã quyền yêu cầu của Menu có nằm trong túi của User không
+      return permissions.includes(item.requiredPermission);
+    });
+  }, [permissions]); // 🚀 Chỉ tính toán lại khi bộ quyền trong Store thay đổi
+
+  if (!_hasHydrated) {
+    return <aside className="... animate-pulse bg-slate-100" />;
+  }
   return (
     <>
       {/* Overlay - Giữ nguyên logic đóng mở */}
@@ -42,7 +58,9 @@ export default function Sidebar({ className, isOpen, setIsOpen }: SidebarProps) 
           sidebarVariants({ theme: "dark" }),
           "fixed lg:relative top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out flex flex-col",
           "overflow-hidden",
-          isOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 w-0 lg:w-0",
+          isOpen
+            ? "translate-x-0 w-72"
+            : "-translate-x-full lg:translate-x-0 w-0 lg:w-0",
           className,
         )}
       >
@@ -57,13 +75,16 @@ export default function Sidebar({ className, isOpen, setIsOpen }: SidebarProps) 
         </div>
 
         {/* 🚀 NAV SECTION: Dùng danh sách đã được lọc logic ở trên */}
-        <nav className={cn(
-          "flex-1 px-4 py-6 space-y-2 overflow-y-auto transition-opacity",
-          !isOpen && "opacity-0"
-        )}>
+        <nav
+          className={cn(
+            "flex-1 px-4 py-6 space-y-2 overflow-y-auto transition-opacity",
+            "custom-scrollbar",
+            !isOpen && "opacity-0",
+          )}
+        >
           {filteredNavItems.map((item) => (
-            <SidebarItem 
-              key={item.href} 
+            <SidebarItem
+              key={item.href}
               href={item.href}
               title={item.title} // Chú ý: Dùng title VN như NAV_ITEMS mới
               icon={item.icon}

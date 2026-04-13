@@ -70,7 +70,8 @@
     "db:seed": "dotenv -e .env -- prisma db seed",
     "db:seed:test": "dotenv -e .env.local -- prisma db seed",
     "db:seed:cicd": "dotenv -e .env.test -- prisma db seed",
-    "db:see" : "npx prisma studio"
+    "db:see" : "npx prisma studio",
+    "type-check": "tsc --noEmit"
   },
   "prisma": {
     "seed": "npx tsx -r tsconfig-paths/register prisma/seed.ts"

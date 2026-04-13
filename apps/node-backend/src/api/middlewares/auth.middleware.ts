@@ -25,7 +25,7 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
     // 2. Kiểm tra chữ ký và giải mã Token
     // Payload sẽ chứa: { userId, role, jti, deviceId... }
     const payload = jwtUtil.verifyAccessToken(token);
-
+    
     // 3. Kiểm tra JTI trong Redis (Session Validation)
     // Lấy tokenRepository từ DI Container gắn kèm trong Request
     const tokenRepo = container.resolve('tokenRepository') as RedisTokenRepository;

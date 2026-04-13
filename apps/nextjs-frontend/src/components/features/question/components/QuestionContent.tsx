@@ -23,6 +23,7 @@ import { questionToolbarVariants as variants } from "./variants/question-toolbar
 import { CreateQuestionModal } from "./CreateQuestionModal";
 import { EditQuestionModal } from "./EditQuestionModal";
 import BaseConfirmModal from "@/components/common/Modals/BaseConfirmModal";
+import SplashScreen from "@/components/common/Loaders/SplashScreen";
 
 export function QuestionsContent() {
   const {
@@ -209,7 +210,13 @@ export function QuestionsContent() {
     }
   };
 
-  if (!isMounted) return null;
+  // 🚀 5. RENDER LOGIC
+  // Sử dụng isFetching từ hook useQuestions và icon đã có sẵn
+  if (!isMounted || (isFetching && questions.length === 0)) {
+    return (
+      <SplashScreen variant="question" />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">

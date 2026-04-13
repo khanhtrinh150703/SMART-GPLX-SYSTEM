@@ -42,12 +42,12 @@ export const jwtUtil = {
     try {
       // 1. Cố gắng giải mã (Nếu token dị dạng hoặc hết hạn, nó sẽ văng lỗi ngay dòng này)
       const decoded = jwt.verify(token, secret) as JwtPayload;
-
       // 2. Đúc dữ liệu vào class duy nhất tại đây
       return new TokenPayload({
         userId: decoded.userId,
         roles: decoded.roles || decoded.role || [],
         jti: decoded.jti,
+        permissions: decoded.permissions,
         deviceId: decoded.deviceId,
         exp: decoded.exp,
         iat: decoded.iat

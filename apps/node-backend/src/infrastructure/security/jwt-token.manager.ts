@@ -34,16 +34,25 @@ export class JwtTokenManager implements ITokenManager {
    */
   public async generateAndStoreTokens(user: User): Promise<Tokens> {
 
+    // 1. Trích xuất tên các Role
     const userRoles = user.roles.map(r => r.name as UserRole);
-
-    // Nếu user không có role nào, mặc định gán role STUDENT (tùy theo nghiệp vụ của bạn)
     const finalRoles = userRoles.length > 0 ? userRoles : [UserRole.STUDENT];
+
+    // 2. 🚀 TRÍCH XUẤT PERMISSIONS (Phép màu ở đây)
+    // Gộp tất cả permissions của tất cả roles lại thành 1 mảng string phẳng
+    const allPermissions = user.roles.flatMap(role =>
+      role.permissions.map(p => p.name)
+    );
+
+    // Loại bỏ quyền trùng lặp (Ví cả Admin và Instructor đều có quyền 'questions:read')
+    const uniquePermissions = [...new Set(allPermissions)];
 
     const jti = randomUUID();
     // 2. Chuẩn bị Payload sạch sẽ
     const payload = new TokenPayload({
       userId: user.id,
       roles: finalRoles,
+      permissions: uniquePermissions,
       jti: jti,
     });
 

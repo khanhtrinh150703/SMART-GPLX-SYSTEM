@@ -20,6 +20,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Smart GPLX System | Hệ thống đào tạo lái xe thông minh",
   description: "Hệ thống sát hạch và quản lý giấy phép lái xe tích hợp AI.",
+  icons: {
+    icon: "/Smart.png", 
+  },
 };
 
 /**
@@ -37,7 +40,7 @@ export default function RootLayout({
         className={cn(
           "min-h-screen bg-slate-50 font-sans text-slate-900 antialiased",
           inter.variable, // Truyền biến phông chữ vào CSS
-          inter.className // Áp dụng trực tiếp phông chữ Inter cho body
+          inter.className, // Áp dụng trực tiếp phông chữ Inter cho body
         )}
       >
         {children}

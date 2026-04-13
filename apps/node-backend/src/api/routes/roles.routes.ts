@@ -1,9 +1,8 @@
 import { container } from "@/shared/utils/container";
 import { Router } from "express";
 import { RoleController } from "../controllers/roles.controller";
-import { authorizeRoles } from "../middlewares/role.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { UserRole } from "@/domain/constants/roles.constant";
+import { requirePermission } from "../middlewares/permission.middleware";
 
 const router = Router();
 
@@ -20,7 +19,7 @@ const roleController = container.resolve('roleController') as RoleController;
  * Tất cả các route trong file này mặc định yêu cầu Login + quyền ADMIN.
  */
 router.use(authMiddleware);
-router.use(authorizeRoles(UserRole.ADMIN));
+router.use(requirePermission('roles:manage'));
 
 /**
  * @description Lấy danh sách vai trò rút gọn (ID và Name) phục vụ hiển thị trên các ô chọn (Dropdown/Selection).

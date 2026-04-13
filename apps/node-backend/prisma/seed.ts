@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role, User, Permission } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import {
   chapters,
@@ -6,125 +6,123 @@ import {
   permissions,
   roles,
   adminUser,
-  testUser
+  testUser,
+  testInstructor,
+  testUserTemp
 } from './data.seed';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('🌱 Đang bắt đầu quá trình Seed dữ liệu...');
+/**
+ * Interface cho dữ liệu User đầu vào từ data.seed
+ */
+interface ISeedUser {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber: string;
+}
 
-  // 1. Seed Permissions
-  console.log('- Đang nạp Permissions...');
+/**
+ * Hàm hỗ trợ tạo/cập nhật User với Strict Typing
+ */
+async function upsertUser(userData: ISeedUser, saltRounds: number): Promise<User> {
+  const passwordHash = await bcrypt.hash(userData.password, saltRounds);
+  return await prisma.user.upsert({
+    where: { email: userData.email },
+    update: { passwordHash },
+    create: {
+      username: userData.username,
+      email: userData.email,
+      phoneNumber: userData.phoneNumber,
+      passwordHash: passwordHash,
+      fullName: userData.fullName,
+      status: 'active',
+    },
+  });
+}
+
+/**
+ * Hàm hỗ trợ gán nhiều Role cho một User (Sử dụng Type từ Prisma)
+ */
+async function assignRolesToUser(userId: string, roleNames: string[], allRoles: Role[]): Promise<void> {
+  for (const roleName of roleNames) {
+    const role = allRoles.find((r: Role) => r.name === roleName);
+    if (role) {
+      await prisma.userRole.upsert({
+        where: { userId_roleId: { userId, roleId: role.id } },
+        update: {},
+        create: { userId, roleId: role.id },
+      });
+    }
+  }
+}
+
+async function main(): Promise<void> {
+  console.log('🌱 --- BẮT ĐẦU QUÁ TRÌNH SEED DỮ LIỆU ---');
+  const saltRounds = 10;
+
+  // 1. Nạp Permissions & Roles
+  console.log('📦 1. Đang nạp danh mục hệ thống (Permissions & Roles)...');
   for (const p of permissions) {
-    await prisma.permission.upsert({
-      where: { name: p.name },
-      update: {},
-      create: p,
-    });
+    await prisma.permission.upsert({ where: { name: p.name }, update: {}, create: p });
   }
-
-  // 2. Seed Roles
-  console.log('- Đang nạp Roles...');
   for (const r of roles) {
-    await prisma.role.upsert({
-      where: { name: r.name },
-      update: {},
-      create: r,
-    });
+    await prisma.role.upsert({ where: { name: r.name }, update: {}, create: r });
   }
 
-  // 3. Mapping: Gán Permission cho Role
-  console.log('- Đang thiết lập quyền cho từng Role...');
-  const allPerms = await prisma.permission.findMany();
-  const allRoles = await prisma.role.findMany();
+  const allPerms: Permission[] = await prisma.permission.findMany();
+  const allRoles: Role[] = await prisma.role.findMany();
 
-  const getPermId = (name: string) => allPerms.find((p) => p.name === name)!.id;
-  const getRoleId = (name: string) => allRoles.find((r) => r.name === name)!.id;
+  // 2. Mapping Role - Permission
+  console.log('🔗 2. Đang thiết lập ma trận quyền hạn (RBAC)...');
+  const studentPerms: string[] = ['exams:take', 'profile:manage', 'results:read'];
+  const instructorPerms: string[] = [
+    ...studentPerms,
+    'chapters:read', 'licenses:read', 'questions:read', 'questions:write',
+    'questions:import', 'questions:delete', 'chapters:manage', 'licenses:manage', 'exams:manage',
+  ];
 
   const roleMapping = [
-    { roleId: getRoleId('ADMIN'), permissions: allPerms.map(p => p.id) },
-    {
-      roleId: getRoleId('INSTRUCTOR'),
-      permissions: [getPermId('exam:manage'), getPermId('user:read'), getPermId('exam:take')]
-    },
-    {
-      roleId: getRoleId('STUDENT'),
-      permissions: [getPermId('exam:take')]
-    },
+    { name: 'ADMIN', perms: allPerms.map((p: Permission) => p.name) },
+    { name: 'INSTRUCTOR', perms: instructorPerms },
+    { name: 'STUDENT', perms: studentPerms },
   ];
 
   for (const mapping of roleMapping) {
-    for (const pId of mapping.permissions) {
+    const role = allRoles.find((r: Role) => r.name === mapping.name);
+    if (!role) continue;
+
+    for (const permName of mapping.perms) {
+      const perm = allPerms.find((p: Permission) => p.name === permName);
+      if (!perm) continue;
+
       await prisma.rolePermission.upsert({
-        where: { roleId_permissionId: { roleId: mapping.roleId, permissionId: pId } },
+        where: { roleId_permissionId: { roleId: role.id, permissionId: perm.id } },
         update: {},
-        create: { roleId: mapping.roleId, permissionId: pId },
+        create: { roleId: role.id, permissionId: perm.id },
       });
     }
   }
 
-  // 4. LOGIC TẠO ADMIN (Để trực tiếp tại đây)
-  console.log('- Đang cấu hình tài khoản Admin...');
-  const saltRounds = 10;
-  const hashedAdminPassword = await bcrypt.hash(adminUser.password, saltRounds);
+  // 3. Nạp Users & Gán Roles
+  console.log('👤 3. Đang khởi tạo danh sách người dùng mẫu...');
+  
+  const adminDoc = await upsertUser(adminUser, saltRounds);
+  await assignRolesToUser(adminDoc.id, ['ADMIN'], allRoles);
 
-  const user = await prisma.user.upsert({
-    where: { email: adminUser.email },
-    update: { passwordHash: hashedAdminPassword },
-    create: {
-      username: adminUser.username,
-      email: adminUser.email,
-      phoneNumber: adminUser.phoneNumber,
-      passwordHash: hashedAdminPassword,
-      fullName: adminUser.fullName,
-      status: 'active',
-    },
-  });
+  const studentDoc = await upsertUser(testUser, saltRounds);
+  await assignRolesToUser(studentDoc.id, ['STUDENT'], allRoles);
 
-  // Gán Role Admin cho User vừa tạo
-  await prisma.userRole.upsert({
-    where: { userId_roleId: { userId: user.id, roleId: getRoleId('ADMIN') } },
-    update: {},
-    create: { userId: user.id, roleId: getRoleId('ADMIN') },
-  });
+  const instructorDoc = await upsertUser(testInstructor, saltRounds);
+  await assignRolesToUser(instructorDoc.id, ['INSTRUCTOR'], allRoles);
 
-  // --- Cấu hình tài khoản Student (Học viên) ---
-  console.log('- Đang cấu hình tài khoản Student...');
-  const hashedUserPassword = await bcrypt.hash(testUser.password, saltRounds);
+  const tempUserDoc = await upsertUser(testUserTemp, saltRounds);
+  await assignRolesToUser(tempUserDoc.id, ['STUDENT', 'INSTRUCTOR'], allRoles);
 
-  const student = await prisma.user.upsert({
-    where: { email: testUser.email },
-    update: { passwordHash: hashedUserPassword },
-    create: {
-      username: testUser.username,
-      email: testUser.email,
-      phoneNumber: testUser.phoneNumber,
-      passwordHash: hashedUserPassword,
-      fullName: testUser.fullName,
-      status: 'active',
-    },
-  });
-
-  // Gán Role STUDENT cho User vừa tạo
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: {
-        userId: student.id,
-        roleId: getRoleId('STUDENT') // Giả định role key của bạn là 'STUDENT'
-      }
-    },
-    update: {},
-    create: {
-      userId: student.id,
-      roleId: getRoleId('STUDENT')
-    },
-  });
-
-  console.log('✅ Đã nạp xong tài khoản Admin và Student!');
-
-  // 5. Seed Licenses
-  console.log('- Đang nạp Hạng bằng lái...');
+  // 4. Nạp Dữ liệu nghiệp vụ
+  console.log('📚 4. Đang nạp dữ liệu nghiệp vụ (Licenses & Chapters)...');
   for (const l of licenses) {
     await prisma.licenseCategory.upsert({
       where: { name: l.name },
@@ -132,9 +130,6 @@ async function main() {
       create: l,
     });
   }
-
-  // 6. Seed Chapters
-  console.log('- Đang nạp danh mục Chương...');
   for (const c of chapters) {
     await prisma.chapter.upsert({
       where: { name: c.name },
@@ -143,12 +138,12 @@ async function main() {
     });
   }
 
-  console.log('✅ Seed dữ liệu hoàn tất!');
+  console.log('✨ --- NẠP DỮ LIỆU SEED THÀNH CÔNG ---');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Lỗi Seed:', e);
+  .catch((e: Error) => {
+    console.error('❌ Lỗi Seed:', e.message);
     process.exit(1);
   })
   .finally(async () => {

@@ -1,20 +1,54 @@
 import React from "react";
-import { Loader2, ShieldCheck, LucideIcon } from "lucide-react";
+import { 
+  Loader2, ShieldCheck, LucideIcon, 
+  BookOpen, FileQuestion, IdCard, 
+  Users, UserCircle 
+} from "lucide-react";
 
-/**
- * Thuộc tính của SplashScreen (English: SplashScreen Props)
- * @param {string} message - Lời nhắn hiển thị khi đang tải (Mặc định: Đang tải dữ liệu hệ thống...)
- * @param {LucideIcon} icon - Biểu tượng hiển thị ở giữa (Mặc định: ShieldCheck)
- */
-interface SplashScreenProps {
-  message?: string;
-  icon?: LucideIcon;
+// 1. Định nghĩa các kiểu màn hình chờ có trong hệ thống
+export type SplashVariant = "default" | "chapter" | "question" | "license" | "user" | "profile";
+
+interface SplashConfig {
+  message: string;
+  icon: LucideIcon;
 }
 
-export default function SplashScreen({
-  message = "Đang tải dữ liệu hệ thống...",
-  icon: Icon = ShieldCheck,
-}: SplashScreenProps) {
+// 2. Gom Icon và Message vào một bản đồ cấu hình
+const VARIANT_MAP: Record<SplashVariant, SplashConfig> = {
+  default: {
+    message: "Đang tải dữ liệu hệ thống...",
+    icon: ShieldCheck,
+  },
+  chapter: {
+    message: "Đang tải danh sách chương học...",
+    icon: BookOpen,
+  },
+  question: {
+    message: "Đang chuẩn bị bộ câu hỏi...",
+    icon: FileQuestion,
+  },
+  license: {
+    message: "Đang tải thông tin hạng bằng lái...",
+    icon: IdCard,
+  },
+  user: {
+    message: "Đang tải danh sách học viên...",
+    icon: Users,
+  },
+  profile: {
+    message: "Đang tải hồ sơ của bạn...",
+    icon: UserCircle,
+  },
+};
+
+interface SplashScreenProps {
+  variant?: SplashVariant;
+}
+
+export default function SplashScreen({ variant = "default" }: SplashScreenProps) {
+  // Lấy cấu hình dựa trên variant truyền vào
+  const { message, icon: Icon } = VARIANT_MAP[variant];
+
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-[70vh] animate-in fade-in duration-500">
       <div className="flex flex-col items-center gap-5">
