@@ -144,7 +144,7 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     // DỌN DẸP DATABASE
     // =========================================================================
     afterAll(async () => {
-        await cleanupDB();
         console.log("✅ Teardown hoàn tất: Database đã được dọn dẹp.");
+        await cleanupDB();
     });
 });
