@@ -23,6 +23,10 @@ export const permissions = [
     { name: 'exams:take', description: 'Thực hiện bài thi thử' },
     { name: 'results:read', description: 'Xem lịch sử và kết quả thi' },
 
+    // 🕸️ Ma trận đề thi (Cấu trúc phân bổ câu hỏi)
+    { name: 'matrices:read', description: 'Xem cấu trúc ma trận đề thi' },
+    { name: 'matrices:manage', description: 'Quản lý (Thêm/Sửa/Xóa) ma trận đề thi' },
+    
     // 🔑 Quyền tối thượng
     { name: 'admin:all', description: 'Toàn quyền hệ thống (Bypass mọi kiểm tra)' },
 ];

@@ -4,7 +4,7 @@ import app from '@/app';
 import { CHAPTER_ENDPOINTS, CHAPTER_PAYLOAD } from '../../test.data';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { ErrorCode } from '@/shared/errors';
-import { ChapterResponseDTO } from '@/application/dtos/response/chapter/chapter.dto.respone';
+import { ChapterResponseDTO } from '@/application/dtos/response/chapter/chapter.respone.dto';
 
 export const chapterSteps = (
     getAdminToken: () => string,

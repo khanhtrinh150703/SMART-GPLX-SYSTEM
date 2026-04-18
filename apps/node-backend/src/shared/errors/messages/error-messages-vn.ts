@@ -14,6 +14,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 'Yêu cầu xử lý quá thời gian quy định, vui lòng thử lại.',
     [ErrorCode.SYSTEM.CONFIG_ERROR]: "Hệ thống gặp sự cố về cấu hình kỹ thuật. Vui lòng liên hệ bộ phận kỹ thuật.",
     [ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED]: "Kích thước tệp tin vượt quá giới hạn cho phép.",
+    [ErrorCode.SYSTEM.INVALID_INPUT]: 'Dữ liệu đầu vào không hợp lệ hoặc không đúng định dạng. Vui lòng kiểm tra lại các trường thông tin.',
 
     // === AUTHENTICATION & AUTHORIZATION (AUTH) ===
     [ErrorCode.AUTH.UNAUTHORIZED]: 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.',
@@ -115,7 +116,6 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
     [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
 
-
     // IMPORT
     [ErrorCode.IMPORT.JOB_NOT_FOUND]: 'Không tìm thấy phiên làm việc (Import Job). Có thể phiên đã hết hạn.',
     [ErrorCode.IMPORT.JOB_INVALID_STATUS]: 'Trạng thái của phiên làm việc không hợp lệ để thực hiện thao tác này.',
@@ -124,4 +124,12 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.IMPORT.FILE_MISSING]: 'Không tìm thấy tập tin yêu cầu hoặc tập tin đã bị xóa khỏi hệ thống.',
     [ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED]: 'Kích thước của mảnh dữ liệu (chunk) vượt quá giới hạn cho phép của hệ thống.',
     [ErrorCode.IMPORT.SESSION_EXPIRED]: 'Phiên nhập liệu đã hết hạn do quá thời gian quy định. Vui lòng khởi tạo lại quy trình.',
+
+    // --- MATRIX MESSAGES ---
+    [ErrorCode.MATRIX.NO_DETAILS]: 'Cấu trúc ma trận không có nội dung chi tiết. Vui lòng bổ sung ít nhất một phần chi tiết cho ma trận.',
+    [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 'Tổng tỷ lệ phần trăm của các phần trong ma trận phải bằng 100%. Vui lòng kiểm tra lại thiết lập.',
+    [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 'Điểm đạt (điểm sàn) không hợp lệ. Điểm sàn không được vượt quá tổng số câu hỏi có trong ma trận.',
+    [ErrorCode.MATRIX.NOT_FOUND]: 'Dữ liệu ma trận không tồn tại hoặc đã bị xóa khỏi hệ thống. Vui lòng tải lại trang.',
+    [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 'Mỗi chương học chỉ được xuất hiện một lần trong ma trận. Vui lòng kiểm tra lại danh sách chi tiết.',
+    [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 'Không thể khôi phục ma trận này vì hạng bằng lái tương ứng đã có một ma trận khác đang hoạt động.',
 };

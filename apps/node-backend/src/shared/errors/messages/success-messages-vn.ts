@@ -3,6 +3,15 @@
  * (Success / Info Messages) trả về cho Client.
  */
 export class Message {
+
+  /**
+   * Thông báo chung cho hệ thống (System)
+   */
+  static readonly SYSTEM = {
+    ACTION_SUCCESS: 'Thao tác thực hiện thành công.',
+    DATA_RETRIEVED: 'Lấy dữ liệu thành công.',
+  } as const;
+
   /**
    * Thông báo liên quan đến luồng Xác thực (Authentication)
    */
@@ -28,14 +37,6 @@ export class Message {
     DELETE_SUCCESS: 'Xóa tài khoản thành công.',
     RESTORE_SUCCESS: 'Khôi phục tài khoản thành công',
     FETCH_USER: 'Lấy danh sách người dùng thành công',
-  } as const;
-
-  /**
-   * Thông báo chung cho hệ thống (System)
-   */
-  static readonly SYSTEM = {
-    ACTION_SUCCESS: 'Thao tác thực hiện thành công.',
-    DATA_RETRIEVED: 'Lấy dữ liệu thành công.',
   } as const;
 
   static readonly LICENSE = {
@@ -76,10 +77,19 @@ export class Message {
     NOT_FOUND: 'Không tìm thấy vai trò yêu cầu.',
     ALREADY_EXISTS: 'Tên vai trò này đã tồn tại trên hệ thống.',
   };
+
   static readonly IMPORT = {
     INIT_SUCCESS: 'Phiên làm việc đã được khởi tạo',
     CHUNK_UPLOAD_SUCCESS: (index: number | string) => `Đã nhận thành công mảnh dữ liệu thứ ${index}`,
     COMPLETE_SUCCESS: 'Tất cả các mảnh đã được nhận. Hệ thống đang tiến hành xử lý ngầm.',
     STATUS_SUCCESS: 'Lấy trạng thái tiến độ thành công.'
   }
+
+  static readonly MATRIX = {
+    CREATE_SUCCESS: 'Tạo ma trận đề thi thành công.',
+    FETCH_SUCCESS: 'Lấy thông tin ma trận đề thi thành công.',
+    UPDATE_SUCCESS: 'Cập nhật cấu trúc ma trận đề thi thành công.',
+    DELETE_SUCCESS: 'Xóa ma trận đề thi thành công.',
+    RESTORE_SUCCESS: 'Khôi phục ma trận đề thi thành công.',
+  };
 }

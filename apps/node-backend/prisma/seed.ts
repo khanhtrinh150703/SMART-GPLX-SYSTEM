@@ -76,12 +76,13 @@ async function main(): Promise<void> {
   const allRoles: Role[] = await prisma.role.findMany();
 
   // 2. Mapping Role - Permission
-  console.log('🔗 2. Đang thiết lập ma trận quyền hạn (RBAC)...');
+  console.log('🔗 2. Đang thiết lập ma trận quyền hạn (PBAC)...');
   const studentPerms: string[] = ['exams:take', 'profile:manage', 'results:read'];
   const instructorPerms: string[] = [
     ...studentPerms,
     'chapters:read', 'licenses:read', 'questions:read', 'questions:write',
-    'questions:import', 'questions:delete', 'chapters:manage', 'licenses:manage', 'exams:manage',
+    'questions:import', 'questions:delete', 'chapters:manage', 'licenses:manage', 'exams:manage', 'matrices:read', 
+    'matrices:manage'
   ];
 
   const roleMapping = [

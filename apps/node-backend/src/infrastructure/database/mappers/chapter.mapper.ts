@@ -1,4 +1,4 @@
-import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.dto.respone";
+import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterRecord } from "@/infrastructure/persistence/chapter.record";
 import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
@@ -11,7 +11,6 @@ export class ChapterMapper {
 
   /**
    * @description Ánh xạ dữ liệu từ bản ghi cơ sở dữ liệu (Persistence Model) sang thực thể nghiệp vụ (Domain Entity).
-   * Đảm bảo tính nhất quán của dữ liệu khi đi từ hạ tầng vào lõi nghiệp vụ.
    * @param {IChapterRecord} raw - Bản ghi thô trích xuất từ cơ sở dữ liệu.
    * @returns {Chapter} Thực thể Domain Chapter.
    */
@@ -30,7 +29,6 @@ export class ChapterMapper {
 
   /**
    * @description Chuyển đổi thực thể nghiệp vụ sang định dạng lưu trữ bền vững (Persistence Model).
-   * Chuẩn bị dữ liệu để thực hiện các thao tác Create/Update thông qua Prisma ORM.
    * @param {Chapter} chapter - Thực thể Domain chứa dữ liệu mới nhất.
    * @returns {object} Đối tượng sẵn sàng để lưu trữ vào Database.
    */

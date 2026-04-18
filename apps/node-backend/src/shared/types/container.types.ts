@@ -1,12 +1,6 @@
 import { AuthController } from "@/api/controllers/auth.controller";
 import { LicenseCategoryController } from "@/api/controllers/license-category.controller";
 import { UserController } from "@/api/controllers/user.controller";
-import { AuthService } from "@/application/services/auth.service";
-import { LicenseCategoryService } from "@/application/services/license-category.service";
-import { OtpService } from "@/application/services/otp.service";
-import { RegistrationService } from "@/application/services/registration.service";
-import { RoleService } from "@/application/services/role.service";
-import { UserService } from "@/application/services/user.service";
 import { IEmailService } from "@/domain/interfaces/external/i-email.service";
 import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
 import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
@@ -19,9 +13,7 @@ import { ILicenseCategoryRepository } from "@/domain/interfaces/repositories/i-l
 import { PrismaClient } from "@prisma/client";
 import { Redis } from 'ioredis';
 import { IChapterRepository } from "@/domain/interfaces/repositories/i-chapter.repository";
-import { ChapterService } from "@/application/services/chapter.service";
 import { ChapterController } from "@/api/controllers/chapter.controller";
-import { QuestionService } from "@/application/services/question.service";
 import { IQuestionRepository } from "@/domain/interfaces/repositories/i-question.repository";
 import { QuestionController } from "@/api/controllers/question.controller";
 import { RoleController } from "@/api/controllers/roles.controller";
@@ -29,12 +21,23 @@ import { IUserRoleRepository } from "@/domain/interfaces/repositories/i-user-rol
 import { IImportJobRepository } from "@/domain/interfaces/repositories/i-import-job.repository";
 import { ITempStorageService } from "@/domain/interfaces/external/i-temp-storage.service";
 import { ImportController } from "@/api/controllers/import.controller";
-import { ImportService } from "@/application/services/import.service";
 import { IZipService } from "@/domain/interfaces/services/i-zip.service";
 import { IExcelService } from "@/domain/interfaces/services/i-excel.service";
 import { IImportProcessorService } from "@/domain/interfaces/services/i-import-processor.service";
 import { IImportQueue } from "@/domain/interfaces/queues/i-import.queue";
 import { ImportWorker } from "@/infrastructure/workers/import.worker";
+import { IUserService } from "@/domain/interfaces/services/i-user.service";
+import { IOtpService } from "@/domain/interfaces/services/i-otp.service";
+import { IAuthService } from "@/domain/interfaces/services/i-auth.service";
+import { ILicenseCategoryService } from "@/domain/interfaces/services/i-license-category.service";
+import { IChapterService } from "@/domain/interfaces/services/i-chapter.service";
+import { IQuestionService } from "@/domain/interfaces/services/i-question.service";
+import { IRegistrationService } from "@/domain/interfaces/services/i-registration.service";
+import { IRoleService } from "@/domain/interfaces/services/i-role.service";
+import { IImportService } from "@/domain/interfaces/services/i-import.service";
+import { IExamMatrixRepository } from "@/domain/interfaces/repositories/i-exam-matrix.repository";
+import { ExamMatrixController } from "@/api/controllers/exam-matrix.controller";
+import { IExamMatrixService } from "@/domain/interfaces/services/i-exam-matrix.service";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -82,6 +85,9 @@ export interface ICradle {
     /** @description Kho lưu trữ và quản trị trạng thái các phiên nhập dữ liệu (Persistence/Database). */
     importJobRepository: IImportJobRepository;
 
+    /** @description Kho lưu trữ và quản trị trạng thái các ma trận đề thi (Persistence/Database). */
+    examMatrixRepository: IExamMatrixRepository;
+
     // --- QUẢN LÝ KỸ THUẬT (MANAGERS) ---
 
     /** @description Quản lý vòng đời JWT, ký và xác thực mã thông báo. */
@@ -90,32 +96,35 @@ export interface ICradle {
     // --- NGHIỆP VỤ ỨNG DỤNG (APPLICATION SERVICES) ---
 
     /** @description Điều phối nghiệp vụ liên quan đến người dùng và hồ sơ cá nhân. */
-    userService: UserService;
+    userService: IUserService;
 
     /** @description Xử lý logic sinh mã, gửi và xác thực OTP. */
-    otpService: OtpService;
+    otpService: IOtpService;
 
     /** @description Điều phối luồng xác thực, đăng nhập và bảo mật tài khoản. */
-    authService: AuthService;
+    authService: IAuthService;
 
     /** @description Quản lý nghiệp vụ cho các loại hạng bằng lái. */
-    licenseCategoryService: LicenseCategoryService;
+    licenseCategoryService: ILicenseCategoryService;
 
     /** @description Quản lý nghiệp vụ cho các loại hạng bằng lái. */
-    chapterService: ChapterService;
+    chapterService: IChapterService;
 
     /** @description Quản lý nghiệp vụ cho câu hỏi. */
-    questionService: QuestionService;
+    questionService: IQuestionService;
 
     /** @description Điều phối quy trình đăng ký tài khoản người dùng mới. */
-    registrationService: RegistrationService;
+    registrationService: IRegistrationService;
 
     /** @description Quản lý nghiệp vụ liên quan đến vai trò hệ thống. */
-    roleService: RoleService;
+    roleService: IRoleService;
 
     /** @description Dịch vụ điều phối và quản lý toàn bộ tiến trình nhập liệu (Import Orchestration). */
-    importService: ImportService;
+    importService: IImportService;
 
+    /** @description Dịch vụ điều phối nghiệp vụ và quản lý vòng đời Ma trận đề thi (Exam Matrix Orchestration). */
+    examMatrixService: IExamMatrixService;
+    
     /** @description Dịch vụ quản lý và lưu trữ tệp tin (Local/Cloud Storage). */
     fileStorageService: IFileStorageService;
 
@@ -159,4 +168,7 @@ export interface ICradle {
 
     /** @description Xử lý các yêu cầu HTTP liên quan đến quy trình nhập liệu (Import). */
     importController: ImportController;
+
+    /** @description Xử lý các yêu cầu HTTP liên quan đến ma trận đề thi (Exam Matrix). */
+    examMatrixController: ExamMatrixController;
 }

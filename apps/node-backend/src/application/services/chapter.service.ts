@@ -3,7 +3,7 @@ import { ErrorCode } from "@/shared/errors/error-codes";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterService } from "@/domain/interfaces/services/i-chapter.service";
 import { AppError } from "@/shared/errors/error-app";
-import { ChapterResponseDTO } from "../dtos/response/chapter/chapter.dto.respone";
+import { ChapterResponseDTO } from "../dtos/response/chapter/chapter.respone.dto";
 import { ChapterMapper } from "@/infrastructure/database/mappers/chapter.mapper";
 import { CreateChapterRequestDTO } from "../dtos/request/chapter/create-chapter.request.dto";
 import { UpdateChapterRequestDTO } from "../dtos/request/chapter/update-chapter.request.dto";

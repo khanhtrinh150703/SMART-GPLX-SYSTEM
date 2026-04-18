@@ -4,7 +4,8 @@ import { licensePaths } from './license-category.paths';
 import { chapterPaths } from './chapter.paths';
 import { questionPaths } from './question.paths';
 import { selectionPaths } from './selection.paths';
-import { importPaths } from './import.swagger';
+import { importPaths } from './import.paths';
+import { examMatrixPaths } from './exam-matrix.paths';
 
 
 export const paths = {
@@ -15,4 +16,5 @@ export const paths = {
   ...questionPaths,
   ...selectionPaths,
   ...importPaths,
+  ...examMatrixPaths,
 };

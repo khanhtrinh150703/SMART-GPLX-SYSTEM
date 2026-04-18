@@ -8,8 +8,6 @@ import {
   AUTH_ENDPOINTS,
   TEST_ACCOUNT,
   INVALID_TEST_DATA,
-  TEST_EMAIL,
-  NEW_PASSWORD,
   Message,
   ErrorCode,
   ErrorStatus,
@@ -200,11 +198,11 @@ export const authSteps = () => {
       it('Nên báo lỗi TOO_MANY_REQUESTS khi nhấn gửi lại quá nhanh', async () => {
         await request(app)
           .post(AUTH_ENDPOINTS.FORGOT_PASSWORD)
-          .send({ email: TEST_EMAIL });
+          .send({ email: TEST_ACCOUNT.email });
 
         const response = await request(app)
           .post(AUTH_ENDPOINTS.FORGOT_PASSWORD)
-          .send({ email: TEST_EMAIL });
+          .send({ email: TEST_ACCOUNT.email });
 
         expect(response.body.code).toBe(ErrorCode.SYSTEM.TOO_MANY_REQUESTS);
       });
@@ -215,9 +213,9 @@ export const authSteps = () => {
         const response = await request(app)
           .post(AUTH_ENDPOINTS.RESET_PASSWORD)
           .send({
-            email: TEST_EMAIL,
+            email: TEST_ACCOUNT.email,
             otp: '000000',
-            newPassword: NEW_PASSWORD,
+            newPassword: TEST_ACCOUNT.newPassword,
           });
 
         expect(response.body.code).toBe(ErrorCode.AUTH.OTP_INVALID);
@@ -229,9 +227,9 @@ export const authSteps = () => {
         const response = await request(app)
           .post(AUTH_ENDPOINTS.RESET_PASSWORD)
           .send({
-            email: TEST_EMAIL,
+            email: TEST_ACCOUNT.email,
             otp: otpCode,
-            newPassword: NEW_PASSWORD,
+            newPassword: TEST_ACCOUNT.newPassword,
           });
 
         expect(response.status).toBe(200);
@@ -241,7 +239,7 @@ export const authSteps = () => {
       it('Nên đăng nhập thành công với mật khẩu mới', async () => {
         const loginResponse = await request(app)
           .post(AUTH_ENDPOINTS.LOGIN)
-          .send({ username: TEST_EMAIL, password: NEW_PASSWORD });
+          .send({ username: TEST_ACCOUNT.email, password: TEST_ACCOUNT.newPassword });
 
         expect(loginResponse.status).toBe(200);
       });
@@ -252,9 +250,9 @@ export const authSteps = () => {
         const response = await request(app)
           .post(AUTH_ENDPOINTS.RESET_PASSWORD)
           .send({
-            email: TEST_EMAIL,
+            email: TEST_ACCOUNT.email,
             otp: '123456',
-            newPassword: NEW_PASSWORD,
+            newPassword: TEST_ACCOUNT.newPassword,
           });
 
         expect(response.body.code).toBe(ErrorCode.AUTH.OTP_EXPIRED);
@@ -271,8 +269,8 @@ export const authSteps = () => {
       const loginRes = await request(app)
         .post(AUTH_ENDPOINTS.LOGIN)
         .send({
-          username: TEST_EMAIL,
-          password: NEW_PASSWORD
+          username: TEST_ACCOUNT.email,
+          password: TEST_ACCOUNT.newPassword
         });
 
       validRefreshToken = loginRes.body.data?.refreshToken || '';

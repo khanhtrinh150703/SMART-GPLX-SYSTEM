@@ -118,7 +118,8 @@ model Chapter {
   // Quan hệ
   questions      Question[]
   userWeaknesses UserWeakness[]
-
+  examMatrixDetails  ExamMatrixDetail[]
+  
   @@map("chapters")
 }
 
@@ -139,6 +140,7 @@ model Question {
   licenseLinks   QuestionLicenseCategory[]
   aiExplanation  AiExplanation?
   attemptDetails AttemptDetail[]
+  examQuestions   ExamQuestion[]
 
   @@index([chapterId])
   @@map("questions")
@@ -192,19 +194,58 @@ model QuestionArchive {
 // ==========================================
 
 model ExamMatrix {
-  id                String   @id @default(uuid()) @db.VarChar(36)
-  licenseCategoryId String   @unique @map("license_category_id") @db.VarChar(36)
-  totalQuestions    Int      @map("total_questions")
-  passingScore      Int      @map("passing_score")
-  durationMinutes   Int      @map("duration_minutes")
-  rulesConfig       Json     @map("rules_config")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                String       @id @default(uuid()) @db.VarChar(36)
+  licenseCategoryId String       @unique @map("license_category_id") @db.VarChar(36)
+  totalQuestions    Int          @map("total_questions")
+  passingScore      Int          @map("passing_score")
+  durationMinutes   Int          @map("duration_minutes")
+  minCriticalQuestions Int       @default(1) @map("min_critical_questions") // US-026
   deletedAt         DateTime? @map("deleted_at")
 
-  licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
+  licenseCategory   LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
+  details           ExamMatrixDetail[]
+  exams             Exam[]
 
   @@map("exam_matrices")
+}
+
+model ExamMatrixDetail {
+  id            String     @id @default(uuid()) @db.VarChar(36)
+  examMatrixId  String     @map("exam_matrix_id") @db.VarChar(36)
+  chapterId     String     @map("chapter_id") @db.VarChar(36)
+  percentage    Int        @map("percentage")
+
+  examMatrix    ExamMatrix @relation(fields: [examMatrixId], references: [id], onDelete: Cascade)
+  chapter       Chapter    @relation(fields: [chapterId], references: [id])
+
+  @@unique([examMatrixId, chapterId])
+  @@map("exam_matrix_details")
+}
+
+model Exam {
+  id           String       @id @default(uuid()) @db.VarChar(36)
+  examMatrixId String       @map("exam_matrix_id") @db.VarChar(36)
+  name         String       @db.VarChar(255)
+  isFixed      Boolean      @default(false) @map("is_fixed")
+  deletedAt    DateTime? @map("deleted_at")
+
+  examMatrix   ExamMatrix   @relation(fields: [examMatrixId], references: [id])
+  questions    ExamQuestion[]
+
+  @@map("exams")
+}
+
+model ExamQuestion {
+  examId     String @map("exam_id") @db.VarChar(36)
+  questionId String @map("question_id") @db.VarChar(36)
+  correctAnswer Int @map("correct_answer") 
+  
+  isCritical    Boolean @default(false) @map("is_critical")
+  exam       Exam     @relation(fields: [examId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@id([examId, questionId])
+  @@map("exam_questions")
 }
 
 // ==========================================

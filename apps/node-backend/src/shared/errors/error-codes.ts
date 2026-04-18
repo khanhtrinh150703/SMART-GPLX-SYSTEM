@@ -8,7 +8,8 @@ export const ErrorCode = {
      */
     SYSTEM: {
         SUCCESS: 'SYS_000',             // Thao tác thành công
-        FILE_SIZE_EXCEEDED: 'SYS_001', // Mã lỗi chung cho mọi loại file vượt dung lượng
+        INVALID_INPUT: 'SYS_400',       // Dữ liệu đầu vào không hợp lệ hoặc sai định dạng
+        FILE_SIZE_EXCEEDED: 'SYS_001',  // Mã lỗi chung cho mọi loại file vượt dung lượng
         INTERNAL_ERROR: 'SYS_500',      // Lỗi server không xác định
         SERVICE_UNAVAILABLE: 'SYS_503', // Bảo trì
         DATABASE_ERROR: 'SYS_504',      // Lỗi truy vấn DB
@@ -149,6 +150,14 @@ export const ErrorCode = {
         FILE_MISSING: 'IMP_005',         // FILE_MISSING
         CHUNK_SIZE_EXCEEDED: 'IMP_006',  // CHUNK_SIZE_EXCEEDED
         SESSION_EXPIRED: 'IMP_007',      // IMPORT_SESSION_EXPIRED
+    },
+    MATRIX: {
+        NO_DETAILS: "MATRIX_NO_DETAILS",
+        INVALID_PERCENTAGE: "INVALID_MATRIX_PERCENTAGE",
+        INVALID_PASSING_SCORE: "INVALID_PASSING_SCORE",
+        NOT_FOUND: "MATRIX_NOT_FOUND",
+        DUPLICATE_CHAPTER: "DUPLICATE_CHAPTER_IN_MATRIX",
+        RESTORE_FAILED_DUPLICATE: "RESTORE_FAILED_DUPLICATE",
     }
 } as const;
 

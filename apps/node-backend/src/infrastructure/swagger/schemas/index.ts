@@ -5,6 +5,7 @@ import { licenseSchemas } from './license.schemas';
 import { chapterSchemas } from './chapter.chemas';
 import { questionSchemas } from './question.schemas';
 import { importSchemas } from './import.schemas';
+import { examMatrixSchemas } from './exam-matrix.schemas';
 
 export const schemas = {
   ...commonSchemas,
@@ -15,4 +16,5 @@ export const schemas = {
   ...questionSchemas,
   ...commonSchemas,
   ...importSchemas,
+  ...examMatrixSchemas
 };

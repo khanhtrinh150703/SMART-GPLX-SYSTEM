@@ -36,6 +36,9 @@ import { ImportProcessorService } from '@/application/services/import-processor.
 import { ImportQueue } from '@/infrastructure/queues/import.queue';
 import { ImportWorker } from '@/infrastructure/workers/import.worker';
 import prisma from '../../../prisma/prisma';
+import { MySQLExamMatrixRepository } from '@/infrastructure/repositories/mysql/exam-matrix/exam-matrix.repository';
+import { ExamMatrixService } from '@/application/services/exam-matrix.service';
+import { ExamMatrixController } from '@/api/controllers/exam-matrix.controller';
 /**
  * @description Khởi tạo Dependency Injection (DI) Container sử dụng thư viện Awilix.
  * Cơ chế PROXY được kích hoạt để hỗ trợ tự động giải quyết (resolve) các phụ thuộc linh hoạt thông qua ICradle.
@@ -63,6 +66,7 @@ container.register({
     questionRepository: asClass(MySQLQuestionRepository).singleton(),
     otpRepository: asClass(RedisOtpRepository).singleton(),
     importJobRepository: asClass(MySQLImportRepository).singleton(),
+    examMatrixRepository: asClass(MySQLExamMatrixRepository).singleton(),
 
     // --- TẦNG TIỆN ÍCH & BẢO MẬT (SECURITY & EXTERNAL SERVICES) ---
     tokenManager: asClass(JwtTokenManager).singleton(),
@@ -81,6 +85,7 @@ container.register({
     questionService: asClass(QuestionService).singleton(),
     importService: asClass(ImportService).singleton(),
     zipService: asClass(ZipService).singleton(),
+    examMatrixService: asClass(ExamMatrixService).singleton(),
     excelService: asClass(ExcelService).singleton(),
     importProcessorService: asClass(ImportProcessorService).singleton(),
     importQueue: asClass(ImportQueue).singleton(),
@@ -93,5 +98,7 @@ container.register({
     licenseCategoryController: asClass(LicenseCategoryController).singleton(),
     chapterController: asClass(ChapterController).singleton(),
     questionController: asClass(QuestionController).singleton(),
-    importController: asClass(ImportController).singleton()
+    importController: asClass(ImportController).singleton(),
+    examMatrixController: asClass(ExamMatrixController).singleton(),
+    
 });

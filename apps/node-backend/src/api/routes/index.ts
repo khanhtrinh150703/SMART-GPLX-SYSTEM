@@ -6,6 +6,7 @@ import chapterRoutes from './chapter.routes';
 import questionRoutes from './quesion.routes'; 
 import roleRoutes from './roles.routes'
 import importRoutes from './import.routes';
+import examMatrixRoutes from './exam-matrix.routes';
 
 /**
  * @description Router tổng (Root Router) của ứng dụng.
@@ -34,5 +35,8 @@ rootRouter.use('/roles', roleRoutes);
 
 /** @description Phân đoạn API quản lý quy trình nhập dữ liệu hệ thống (Khởi tạo, Tải mảnh, Hoàn tất...). */
 rootRouter.use('/import', importRoutes);
+
+/** @description Phân đoạn API quản lý ma trận đề thi (Cấu trúc, Tỷ lệ phần trăm, Điểm sàn...). */
+rootRouter.use('/exam-matrices', examMatrixRoutes);
 
 export default rootRouter;

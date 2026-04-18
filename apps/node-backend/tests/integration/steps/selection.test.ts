@@ -103,13 +103,5 @@ export const selectionSteps = (
             expect(response.body.code).toBe(ErrorCode.AUTH.INVALID_TOKEN);
         });
 
-        it('✅ Nên đăng xuất thành công và vô hiệu hóa session', async () => {
-            const res = await request(app)
-                .post(AUTH_ENDPOINTS.LOGOUT)
-                .set(getAuthHeader(getAdminToken()));
-
-            expect(res.status).toBe(200);
-            expect(res.body.success).toBe(true);
-        });
     });
 };

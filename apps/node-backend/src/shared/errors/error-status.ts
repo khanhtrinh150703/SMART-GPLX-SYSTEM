@@ -14,6 +14,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 408,        // Request Timeout
     [ErrorCode.SYSTEM.CONFIG_ERROR]: 500,        // Request Timeout
     [ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED]: 400,        // Request Timeout
+    [ErrorCode.SYSTEM.INVALID_INPUT]: 400, // Bad Request
 
 
     // --- AUTHENTICATION & AUTHORIZATION ---
@@ -85,7 +86,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
 
     [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 400,
     [ErrorCode.VALIDATION.AGE_INVALID]: 400,
-    
+
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 400,
     [ErrorCode.LICENSE.NOT_FOUND]: 404,
@@ -122,4 +123,12 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.IMPORT.FILE_MISSING]: 400,  // Bad Request
     [ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED]: 400,  // Bad Request
     [ErrorCode.IMPORT.SESSION_EXPIRED]: 410, // Gone (Tài nguyên không còn tồn tại do hết hạn)
+
+    // --- MATRIX ERRORS ---
+    [ErrorCode.MATRIX.NO_DETAILS]: 400, // Bad Request (Ma trận phải có ít nhất một chi tiết)
+    [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 400, // Bad Request (Tổng phần trăm của các chi tiết phải bằng 100%)
+    [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 400, // Bad Request (Điểm sàn không được lớn hơn tổng số câu hỏi)
+    [ErrorCode.MATRIX.NOT_FOUND]: 404, // Not Found (Không tìm thấy ma trận trong hệ thống)
+    [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 409, // Conflict (Xung đột do dữ liệu đã tồn tại hoặc trùng lặp)
+    [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 409, // Conflict (Xung đột trạng thái dữ liệu)
 };

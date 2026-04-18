@@ -32,7 +32,6 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
 
     const deviceId = payload.deviceId || 'default';
     const redisKey = `${REDIS_CONSTANTS.ACCESS_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
-
     // Kiểm tra xem Key này có còn tồn tại trong Redis không
     const isValidSession = await tokenRepo.exists(redisKey);
     
