@@ -1,6 +1,6 @@
 // file: chapter-config.tsx
 
-import { Chapter } from "@/types/chapter.types";
+import { Chapter } from "@/components/features/chapter/types/chapter.types";
 import { StatusOption } from "@/types/types";
 
 // 1. Định nghĩa kiểu dữ liệu Chapter (Interface)

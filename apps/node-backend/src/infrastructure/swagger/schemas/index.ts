@@ -4,6 +4,7 @@ import { userSchemas } from './user.schemas';
 import { licenseSchemas } from './license.schemas';
 import { chapterSchemas } from './chapter.chemas';
 import { questionSchemas } from './question.schemas';
+import { importSchemas } from './import.schemas';
 
 export const schemas = {
   ...commonSchemas,
@@ -13,4 +14,5 @@ export const schemas = {
   ...chapterSchemas,
   ...questionSchemas,
   ...commonSchemas,
+  ...importSchemas,
 };

@@ -11,6 +11,7 @@ import { AppError, ErrorCode } from '@/shared/errors';
 export class FileStorageService implements IFileStorageService {
   // Lấy đường dẫn từ biến môi trường, mặc định là 'public/uploads' nếu không có cấu hình
   private readonly _uploadRoot = process.env.UPLOAD_DIR || 'public/uploads';
+  private readonly _tempBaseDir = path.resolve(process.cwd(), 'temp');
 
   async saveFile(file: IUploadedFile, folder: StorageFolder): Promise<string> {
     // Sử dụng path.resolve để đảm bảo đường dẫn luôn chuẩn xác
@@ -53,4 +54,37 @@ export class FileStorageService implements IFileStorageService {
       throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
     });
   }
+
+  /**
+   * @description Lưu file từ một đường dẫn vật lý tạm thời sang thư mục lưu trữ chính thức.
+   * @param localPath - Đường dẫn tới file ảnh trong thư mục ZIP vừa giải nén.
+   * @param folder - Tên thư mục con (VD: 'questions', 'answers').
+   * @returns URL tương đối để lưu vào Database.
+   */
+  public async saveFromLocalPath(localPath: string, folder: string): Promise<string> {
+    // 1. Kiểm tra tồn tại (Dùng .catch để ném lỗi cụ thể mà không cần khối try-catch)
+    await fs.access(localPath).catch(() => {
+      throw new AppError(ErrorCode.FILE.NOT_FOUND);
+    });
+
+    // 2. Tạo thư mục đích
+    const targetDir = path.join(this._uploadRoot, folder);
+    await fs.mkdir(targetDir, { recursive: true }).catch((err) => {
+      throw new AppError(ErrorCode.FILE.UPLOAD_FAILED, `Không thể tạo thư mục: ${err.message}`);
+    });
+
+    // 3. Chuẩn bị định danh duy nhất (UUID)
+    const extension = path.extname(localPath);
+    const uniqueFilename = `${crypto.randomUUID()}${extension}`;
+    const targetPath = path.join(targetDir, uniqueFilename);
+
+    // 4. Copy file (Dùng .catch để xử lý lỗi vật lý như đầy ổ cứng/quyền ghi)
+    await fs.copyFile(localPath, targetPath).catch((err) => {
+      throw new AppError(ErrorCode.FILE.UPLOAD_FAILED, `Lỗi copy file: ${err.message}`);
+    });
+
+    // 5. Trả về đường dẫn chuẩn (Dịch: Return normalized relative path)
+    return `/${path.join(folder, uniqueFilename).replace(/\\/g, '/')}`;
+  }
+
 }

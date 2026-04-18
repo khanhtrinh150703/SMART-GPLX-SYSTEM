@@ -6,6 +6,7 @@ export interface IChapterProps {
   name: string;
   description: string | null;
   orderIndex: number;
+  code: string;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date | null;

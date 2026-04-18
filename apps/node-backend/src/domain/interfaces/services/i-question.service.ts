@@ -1,4 +1,5 @@
 import { CreateQuestionRequestDto } from "@/application/dtos/request/question/create-question.request.dto";
+import { ImportQuestionCommand } from "@/application/dtos/request/question/import-question.command";
 import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
 import { UpdateQuestionRequestDto } from "@/application/dtos/request/question/update-question.request.dto";
 import { QuestionAdminResponseDTO } from "@/application/dtos/response/question/admin-question.respone.dto";
@@ -60,4 +61,11 @@ export interface IQuestionService {
    * @returns {Promise<PaginatedResult<QuestionAdminResponseDTO>>} Kết quả phân trang chứa danh sách Question đã được ánh xạ thông tin đầy đủ.
    */
   getPaginatedQuestions(query: QuestionsAdminQueryDto): Promise<PaginatedResult<QuestionAdminResponseDTO>>
+
+  /**
+   * @description Thực hiện tạo câu hỏi hàng loạt từ dữ liệu nhập (Import).
+   * @param {ImportQuestionCommand} cmd - Đối tượng chứa dữ liệu câu hỏi đã qua xử lý.
+   * @returns {Promise<void>}
+   */
+  createFromImport(cmd: ImportQuestionCommand): Promise<void>;
 }

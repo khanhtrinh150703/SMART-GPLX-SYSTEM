@@ -14,6 +14,7 @@ import { PaginatedResult } from "@/shared/types/pagination.types";
 import { QuestionsAdminQueryDto } from "../dtos/request/question/question-query.request.dto";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { QuestionAdminResponseDTO } from "../dtos/response/question/admin-question.respone.dto";
+import { ImportQuestionCommand } from "../dtos/request/question/import-question.command";
 
 export interface IQuestionServiceCradle {
   questionRepository: IQuestionRepository;
@@ -98,6 +99,68 @@ export class QuestionService implements IQuestionService {
 
     // 6. Trả về kết quả đã được ánh xạ (Return mapped response)
     return QuestionMapper.toResponse(savedEntity);
+  }
+
+  /**
+   * @description Tạo câu hỏi từ tiến trình Import (Create question from Import process)
+   * Hàm này xử lý ảnh từ đường dẫn vật lý (local path) thay vì bộ đệm Multer (Multer buffer).
+   */
+  public async createFromImport(cmd: ImportQuestionCommand): Promise<void> {
+
+    // 1. Không gọi _validateRelations ở đây nữa (No relation validation here)
+    // Lý do: Các ID này đã được MasterDataCacheService tra cứu và đảm bảo tồn tại 100% 
+    // từ lúc ở ImportProcessorService rồi. Việc query lại DB là tốn tài nguyên vô ích.
+
+    // 2. Upload ảnh chính của câu hỏi từ file giải nén (Upload main question image from extracted local file)
+    let questionImageUrl: string | null = null;
+    if (cmd.imageLocalPath) {
+      questionImageUrl = await this._fileStorageService.saveFromLocalPath(
+        cmd.imageLocalPath,
+        STORAGE_FOLDERS.QUESTION
+      );
+    }
+
+    // 3. Upload song song ảnh của các đáp án (Parallel upload for answer images)
+    const answersWithUrls = await Promise.all(
+      cmd.answers.map(async (ans) => {
+        let answerUrl: string | null = null;
+
+        // Xử lý ảnh từ đường dẫn local (Process image from local path)
+        if (ans.imageLocalPath) {
+          answerUrl = await this._fileStorageService.saveFromLocalPath(
+            ans.imageLocalPath,
+            STORAGE_FOLDERS.ANSWER
+          );
+        }
+
+        return {
+          content: ans.content,
+          isCorrect: ans.isCorrect,
+          imageUrl: answerUrl, // URL bền vững sau khi upload (Persistent URL)
+          deletedAt: null
+        };
+      })
+    );
+
+    // 4. Khởi tạo Entity (Reconstitute Entity)
+    const questionEntity = Question.reconstitute({
+      chapterId: cmd.chapterId,
+      content: cmd.content,
+      imageUrl: questionImageUrl,
+      isCritical: cmd.isCritical,
+      answers: answersWithUrls,
+      licenseCategoryIds: cmd.categoryId,
+      difficultyLevel: cmd.difficultyLevel,
+      status: 'ACTIVE', 
+      deletedAt: null
+    });
+
+    // 5. Lưu vào Database (Persistence)
+    await this._questionRepo.create(questionEntity);
+
+    // 6. Không cần return (No return needed)
+    // Trong luồng Worker Import, ta không cần trả về QuestionResponseDTO để gửi cho Frontend.
+    // Việc trả về void giúp tiết kiệm bộ nhớ (RAM) khi chạy vòng lặp hàng nghìn câu.
   }
 
   /**

@@ -24,6 +24,7 @@ import { CreateQuestionModal } from "./CreateQuestionModal";
 import { EditQuestionModal } from "./EditQuestionModal";
 import BaseConfirmModal from "@/components/common/Modals/BaseConfirmModal";
 import SplashScreen from "@/components/common/Loaders/SplashScreen";
+import { GenericPagination } from "@/components/common/Pagination/GenericPagination";
 
 export function QuestionsContent() {
   const {
@@ -213,9 +214,7 @@ export function QuestionsContent() {
   // 🚀 5. RENDER LOGIC
   // Sử dụng isFetching từ hook useQuestions và icon đã có sẵn
   if (!isMounted || (isFetching && questions.length === 0)) {
-    return (
-      <SplashScreen variant="question" />
-    );
+    return <SplashScreen variant="question" />;
   }
 
   return (
@@ -360,6 +359,26 @@ export function QuestionsContent() {
         />
       </div>
 
+      {/* SECTION: PAGINATION (Phân đoạn: Phân trang)  */}
+
+      <div className="flex flex-col md:flex-row justify-end items-center gap-4 px-6 pb-10">
+        <GenericPagination
+          meta={{
+            // 1. Lấy trang hiện tại từ URL (Current Page)
+            page: Number(searchParams.get("page")) || 1,
+            limit: 10,
+            // 2. SỬ DỤNG ĐÚNG BIẾN 'pagination' (Correct Variable Reference)
+            // Sử dụng Nullish Coalescing (??) để tránh lỗi khi data chưa về
+            total: pagination?.total ?? 0,
+            totalPages: pagination?.totalPages ?? 0,
+            hasNextPage: pagination?.hasNextPage ?? false,
+            hasPreviousPage: pagination?.hasPreviousPage ?? false,
+          }}
+          // 3. SỬ DỤNG ĐÚNG HÀM ĐIỀU HƯỚNG (Correct Navigation Function)
+          onPageChange={(page) => updateMultipleUrlParams({ page })}
+        />
+      </div>
+      
       {/* Modals */}
       <CreateQuestionModal
         isOpen={isCreateModalOpen}

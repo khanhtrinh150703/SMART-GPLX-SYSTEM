@@ -13,7 +13,6 @@ import { RegistrationService } from '@/application/services/registration.service
 import { RedisPendingUserRepository } from '@/infrastructure/repositories/redis/redis-pending-user.repository';
 import { NodemailerService } from '@/infrastructure/external-services/mailer/mailer.service';
 import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis-otp.repository';
-import prisma from '../../../prisma/prisma';
 import { redisClient } from '@/infrastructure/database/redis/redis.client';
 import { OtpService } from '@/application/services/otp.service';
 import { FileStorageService } from '@/infrastructure/external-services/file-storage.service';
@@ -27,7 +26,16 @@ import { QuestionService } from '@/application/services/question.service';
 import { QuestionController } from '@/api/controllers/question.controller';
 import { RoleController } from '@/api/controllers/roles.controller';
 import { MySQLUserRoleRepository } from '@/infrastructure/repositories/mysql/user-role.repository';
-
+import { TempStorageService } from '@/infrastructure/external-services/temp-storage.service';
+import { MySQLImportRepository } from '@/infrastructure/repositories/mysql/import.repository';
+import { ImportController } from '@/api/controllers/import.controller';
+import { ImportService } from '@/application/services/import.service';
+import { ZipService } from '@/application/services/zip.service';
+import { ExcelService } from '@/application/services/excel.service';
+import { ImportProcessorService } from '@/application/services/import-processor.service';
+import { ImportQueue } from '@/infrastructure/queues/import.queue';
+import { ImportWorker } from '@/infrastructure/workers/import.worker';
+import prisma from '../../../prisma/prisma';
 /**
  * @description Khởi tạo Dependency Injection (DI) Container sử dụng thư viện Awilix.
  * Cơ chế PROXY được kích hoạt để hỗ trợ tự động giải quyết (resolve) các phụ thuộc linh hoạt thông qua ICradle.
@@ -44,7 +52,6 @@ container.register({
     // --- TẦNG CƠ SỞ (DATA SOURCES & CLIENTS) ---
     prisma: asValue(prisma),
     redisClient: asValue(redisClient),
-
     // --- TẦNG HẠ TẦNG (INFRASTRUCTURE LAYER - REPOSITORIES) ---
     userRepository: asClass(MySQLUserRepository).singleton(),
     tokenRepository: asClass(RedisTokenRepository).singleton(),
@@ -55,11 +62,13 @@ container.register({
     chapterRepository: asClass(MySQLChapterRepository).singleton(),
     questionRepository: asClass(MySQLQuestionRepository).singleton(),
     otpRepository: asClass(RedisOtpRepository).singleton(),
+    importJobRepository: asClass(MySQLImportRepository).singleton(),
 
     // --- TẦNG TIỆN ÍCH & BẢO MẬT (SECURITY & EXTERNAL SERVICES) ---
     tokenManager: asClass(JwtTokenManager).singleton(),
     emailService: asClass(NodemailerService).singleton(),
     fileStorageService: asClass(FileStorageService).singleton(),
+    tempStorageService: asClass(TempStorageService).singleton(),
 
     // --- TẦNG NGHIỆP VỤ (APPLICATION LAYER - SERVICES) ---
     userService: asClass(UserService).singleton(),
@@ -70,7 +79,12 @@ container.register({
     chapterService: asClass(ChapterService).singleton(),
     roleService: asClass(RoleService).singleton(),
     questionService: asClass(QuestionService).singleton(),
-
+    importService: asClass(ImportService).singleton(),
+    zipService: asClass(ZipService).singleton(),
+    excelService: asClass(ExcelService).singleton(),
+    importProcessorService: asClass(ImportProcessorService).singleton(),
+    importQueue: asClass(ImportQueue).singleton(),
+    importWorker: asClass(ImportWorker).singleton(),
 
     // --- TẦNG GIAO TIẾP (API LAYER - CONTROLLERS) ---
     userController: asClass(UserController).singleton(),
@@ -79,4 +93,5 @@ container.register({
     licenseCategoryController: asClass(LicenseCategoryController).singleton(),
     chapterController: asClass(ChapterController).singleton(),
     questionController: asClass(QuestionController).singleton(),
+    importController: asClass(ImportController).singleton()
 });

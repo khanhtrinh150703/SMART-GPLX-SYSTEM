@@ -108,8 +108,9 @@ model LicenseCategory {
 model Chapter {
   id          String    @id @default(uuid()) @db.VarChar(36)
   name        String    @db.VarChar(255) @unique
-  description String?   @db.Text // Lưu mô tả chi tiết của chương
-  orderIndex  Int       @default(0) @map("order_index") // Thứ tự hiển thị (Của Cậu Vàng đây)
+  description String?   @db.Text 
+  code        String     @unique
+  orderIndex  Int       @default(0) @map("order_index") 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -272,4 +273,19 @@ model UserWeakness {
 
   @@index([userId])
   @@map("user_weaknesses")
+}
+
+model ImportJob {
+  id                String   @id @default(uuid())
+  fileName          String   @map("file_name")
+  totalSize         Int      @map("total_size")
+  totalChunks       Int      @map("total_chunks") // Chính là expectedChunks
+  chunkSizeLimit    Int      @map("chunk_size_limit") // Giới hạn mỗi mảnh
+  status            String
+  resultData        Json?    @map("result_data")
+  expiresAt         DateTime @map("expires_at") // Thời gian hết hạn folder /temp/
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("import_jobs")
 }

@@ -125,7 +125,7 @@ export class RegistrationService implements IRegistrationService {
    * @param {RegisterDTO} dto - Dữ liệu cần kiểm tra.
    */
   private validate(dto: RegisterRequestDTO): void {
-    if (!dto.isEmail()) throw new AppError(ErrorCode.VALIDATION.INVALID_EMAIL);
-    if (!dto.isPassword()) throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
+    if (!dto.isEmail()) throw new AppError(ErrorCode.VALIDATION.EMAIL_INVALID);
+    if (!dto.isPassword()) throw new AppError(ErrorCode.VALIDATION.PASSWORD_INVALID);
   }
 }

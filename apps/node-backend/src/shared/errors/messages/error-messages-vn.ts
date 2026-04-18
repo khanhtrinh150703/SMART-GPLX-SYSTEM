@@ -13,7 +13,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 'Bạn thao tác quá nhanh, vui lòng đợi một lát.',
     [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 'Yêu cầu xử lý quá thời gian quy định, vui lòng thử lại.',
     [ErrorCode.SYSTEM.CONFIG_ERROR]: "Hệ thống gặp sự cố về cấu hình kỹ thuật. Vui lòng liên hệ bộ phận kỹ thuật.",
-
+    [ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED]: "Kích thước tệp tin vượt quá giới hạn cho phép.",
 
     // === AUTHENTICATION & AUTHORIZATION (AUTH) ===
     [ErrorCode.AUTH.UNAUTHORIZED]: 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.',
@@ -29,8 +29,6 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 'Liên kết đăng ký đã hết hạn hoặc không còn tồn tại, vui lòng thực hiện lại quy trình đăng ký.',
     [ErrorCode.AUTH.MISSING_FIELDS]: "Vui lòng nhập đầy đủ các thông tin bắt buộc.",
     [ErrorCode.AUTH.INVALID_TOKEN]: "Mã xác thực không hợp lệ",
-
-
 
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',
@@ -61,43 +59,49 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.FILE.UPLOAD_FAILED]: 'Tải tệp lên thất bại, vui lòng kiểm tra kết nối.',
     [ErrorCode.FILE.TOO_LARGE]: 'Kích thước tệp quá lớn, vui lòng chọn tệp nhẹ hơn.',
     [ErrorCode.FILE.INVALID_TYPE]: 'Định dạng tệp không hỗ trợ (Chỉ nhận .jpg, .png, .jpeg).',
+    [ErrorCode.FILE.NOT_FOUND]: 'Tệp tin yêu cầu không tồn tại hoặc đã bị xóa khỏi hệ thống.',
 
     // === DATA VALIDATION (VAL) ===
-    [ErrorCode.VALIDATION.INVALID_EMAIL]: 'Email không đúng định dạng (ví dụ: name@gmail.com).',
-    [ErrorCode.VALIDATION.INVALID_PASSWORD]: 'Mật khẩu cần ít nhất 8 ký tự, bao gồm chữ và số.',
-    [ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH]: 'Mật khẩu xác nhận không trùng khớp.',
-    [ErrorCode.VALIDATION.MISSING_FIELD]: 'Vui lòng điền đầy đủ các thông tin bắt buộc.',
-    [ErrorCode.VALIDATION.INVALID_FORMAT]: 'Dữ liệu không đúng định dạng yêu cầu.',
-    [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu nhập vào không hợp lệ.',
-    [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được giống mật khẩu cũ.',
-    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 'Mật khẩu cũ không chính xác.',
-
-    // --- VALIDATION ---
+    // --- VALIDATION (0xx: General) ---
+    [ErrorCode.VALIDATION.REQUIRED]: 'Trường dữ liệu này là bắt buộc.',
     [ErrorCode.VALIDATION.ID_REQUIRED]: 'ID định danh không được để trống.',
-    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 'Refresh Token là bắt buộc và không được để trống.',
-    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 'Định dạng Refresh Token không hợp lệ hoặc quá ngắn.',
+    [ErrorCode.VALIDATION.NAME_REQUIRED]: 'Vui lòng nhập tên.',
+    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Vui lòng nhập mô tả.',
+    [ErrorCode.VALIDATION.INVALID_FORMAT]: 'Dữ liệu không đúng định dạng yêu cầu.',
+    [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu không hợp lệ.',
 
+    // --- VALIDATION (1xx: Identity) ---
+    [ErrorCode.VALIDATION.EMAIL_INVALID]: 'Địa chỉ email không hợp lệ (ví dụ: name@example.com).',
+    [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 'Tên có độ dài không phù hợp.',
+    [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên chứa ký tự không hợp lệ.',
+    [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả quá dài, vui lòng rút gọn.',
+
+    // --- VALIDATION (2xx: Security) ---
+    [ErrorCode.VALIDATION.PASSWORD_INVALID]: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm cả chữ và số.',
+    [ErrorCode.VALIDATION.PASSWORD_CONFIRM_MISMATCH]: 'Mật khẩu xác nhận không trùng khớp.',
+    [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được trùng với mật khẩu cũ.',
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 'Phiên làm việc đã hết hạn hoặc thiếu mã làm mới (Refresh Token).',
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID]: 'Mã làm mới không hợp lệ hoặc không đúng định dạng.',
+
+    // --- VALIDATION (3xx: Specific) ---
+    [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số nguyên.',
+    [ErrorCode.VALIDATION.AGE_INVALID]: 'Độ tuổi không hợp lệ (phải từ 18 tuổi trở lên).',
 
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
     [ErrorCode.LICENSE.NOT_FOUND]: 'Không tìm thấy hạng bằng lái yêu cầu.',
     [ErrorCode.LICENSE.IS_IN_USE]: 'Không thể xóa: Đang có câu hỏi hoặc đề thi thuộc hạng bằng này.',
     [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
-    [ErrorCode.VALIDATION.NAME_REQUIRED]: 'Tên hạng bằng lái không được để trống.',
-    [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 'Tên hạng bằng lái phải có độ dài từ 1 đến 10 ký tự.',
-    [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên hạng bằng lái chỉ được chứa chữ cái in hoa và chữ số (VD: A1, B2).',
-    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Mô tả hạng bằng lái không được để trống.',
-    [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả không được vượt quá 500 ký tự.',
-    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số.',
-    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 'Độ tuổi yêu cầu không hợp lệ (>=18).',
 
     // === CHAPTER (CHƯƠNG LÝ THUYẾT) ===
     [ErrorCode.CHAPTER.NOT_FOUND]: 'Không tìm thấy chương lý thuyết yêu cầu.',
-    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 'Tên chương lý thuyết này đã tồn tại trong hệ thống.',
+    [ErrorCode.CHAPTER.NAME_ALREADY_EXISTS]: 'Tên chương này đã tồn tại trong hệ thống.',
+    [ErrorCode.CHAPTER.CODE_ALREADY_EXISTS]: 'Mã chương (Code) này đã được sử dụng.',
     [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 'Không thể xóa chương này vì đang có dữ liệu câu hỏi liên quan.',
     [ErrorCode.CHAPTER.CREATE_FAILED]: 'Quá trình tạo mới chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
+    [ErrorCode.CHAPTER.INVALID_DESCRIPTION]: 'Mô tả chương không được để trống hoặc chỉ chứa khoảng trắng.',
 
     // --- QUESTION ---
     [ErrorCode.QUESTION.NOT_FOUND]: 'Câu hỏi không tồn tại trong hệ thống.',
@@ -110,4 +114,14 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.QUESTION.ALREADY_EXISTS]: 'Nội dung câu hỏi này đã tồn tại trong hệ thống.',
     [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
     [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
+
+
+    // IMPORT
+    [ErrorCode.IMPORT.JOB_NOT_FOUND]: 'Không tìm thấy phiên làm việc (Import Job). Có thể phiên đã hết hạn.',
+    [ErrorCode.IMPORT.JOB_INVALID_STATUS]: 'Trạng thái của phiên làm việc không hợp lệ để thực hiện thao tác này.',
+    [ErrorCode.IMPORT.INVALID_CHUNK_INDEX]: 'Thứ tự mảnh dữ liệu (chunk index) không đúng hoặc bị trùng lặp.',
+    [ErrorCode.IMPORT.EXTRACT_FAILED]: 'Thứ tự mảnh dữ liệu (chunk index) không đúng hoặc bị trùng lặp.',
+    [ErrorCode.IMPORT.FILE_MISSING]: 'Không tìm thấy tập tin yêu cầu hoặc tập tin đã bị xóa khỏi hệ thống.',
+    [ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED]: 'Kích thước của mảnh dữ liệu (chunk) vượt quá giới hạn cho phép của hệ thống.',
+    [ErrorCode.IMPORT.SESSION_EXPIRED]: 'Phiên nhập liệu đã hết hạn do quá thời gian quy định. Vui lòng khởi tạo lại quy trình.',
 };

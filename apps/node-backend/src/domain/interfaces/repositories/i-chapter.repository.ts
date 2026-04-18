@@ -74,4 +74,11 @@ export interface IChapterRepository {
   * @returns {Promise<boolean>} Trả về `true` nếu bản ghi tồn tại, ngược lại trả về `false`.
   */
   exists(id: string): Promise<boolean>;
+
+  /**
+   * @description Tìm kiếm một chương dựa trên mã định danh định nghĩa sẵn (code).
+   * @param {string} code - Mã chương dùng để ánh xạ (ví dụ: "1", "1.1", "6").
+   * @returns {Promise<Chapter | null>} Trả về Entity nếu tìm thấy, ngược lại trả về `null`.
+   */
+  findByCode(code: string): Promise<Chapter | null>;
 }

@@ -8,7 +8,8 @@ export interface IChapterRecord {
   id: string;
   name: string;
   description: string | null;
-  orderIndex: number; // Thường DB dùng snake_case
+  orderIndex: number;
+  code: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;

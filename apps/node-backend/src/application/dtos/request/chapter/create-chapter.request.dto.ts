@@ -8,5 +8,7 @@ export interface CreateChapterRequestDTO {
   description?: string;
   /** @property {number} orderIndex - Thứ tự sắp xếp của chương trong danh sách. */
   orderIndex: number;
+
+  code: string;
 }
 

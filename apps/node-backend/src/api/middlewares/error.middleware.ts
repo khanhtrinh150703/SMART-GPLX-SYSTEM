@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ErrorCode, AppError, ErrorStatus, ErrorMessages } from '@/shared/errors';
 import { Result } from '@/shared/responses/api-response';
+import multer from 'multer';
 
 export const globalErrorHandler = (
   err: AppError,
@@ -29,4 +30,32 @@ export const globalErrorHandler = (
     systemErrorCode, 
     systemMessage
   );
+};
+
+/**
+ * @description Middleware bọc lỗi Multer dùng chung cho toàn hệ thống.
+ * (Dịch: Global Multer error handling wrapper)
+ */
+export const validateFileSize = (uploadMiddleware: RequestHandler): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    uploadMiddleware(req, res, (err: unknown) => {
+      // 1. Nếu là lỗi từ Multer
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          // Trả về mã lỗi chung thay vì mã lỗi riêng của Import
+          // (Dịch: Return generic size error code)
+          return next(new AppError(ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED));
+        }
+        return next(new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR, err.message));
+      }
+
+      // 2. Nếu là lỗi logic khác (ví dụ từ fileFilter)
+      if (err instanceof Error) {
+        return next(err);
+      }
+
+      // 3. Nếu không có lỗi, tiếp tục (Dịch: Proceed if no error)
+      next();
+    });
+  };
 };

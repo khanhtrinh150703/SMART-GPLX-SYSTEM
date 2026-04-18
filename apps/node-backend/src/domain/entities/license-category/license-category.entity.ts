@@ -62,13 +62,13 @@ export class LicenseCategory {
     }
 
     if (minAge === undefined || minAge === null || typeof minAge !== 'number' || Number.isNaN(minAge)) {
-      throw new AppError(ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER); // "Độ tuổi phải là một con số hợp lệ."
+      throw new AppError(ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER);
     }
 
     if (minAge < 18) {
-      throw new AppError(ErrorCode.VALIDATION.MIN_AGE_INVALID); // "Độ tuổi tối thiểu không được nhỏ hơn 18."
+      throw new AppError(ErrorCode.VALIDATION.AGE_INVALID);
     }
-
+    
     // Gán giá trị sau khi đã validate và trim
     this._name = trimmedName;
     this._description = trimmedDescription;

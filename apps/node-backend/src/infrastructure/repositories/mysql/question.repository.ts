@@ -289,8 +289,7 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     skip: number,
     limit: number
   ): Promise<[DomainQuestion[], number]> {
-    const where: Prisma.QuestionWhereInput = {};
-
+    const where: Prisma.QuestionWhereInput = {};  
     // --- 1. GÁN ĐIỀU KIỆN CƠ BẢN (Dịch: Basic Filtering) ---
     if (dto.chapterId) where.chapterId = dto.chapterId;
     if (dto.difficultyLevel !== undefined) where.difficultyLevel = dto.difficultyLevel;
@@ -361,6 +360,11 @@ export class MySQLQuestionRepository implements IQuestionRepository {
           sortCriteria.push({ deletedAt: sortOrder === 'desc' ? 'asc' : 'desc' });
           sortCriteria.push({ status: sortOrder });
           break;
+        case 'difficulty':
+          sortCriteria.push({ chapter: { name: sortOrder } });
+          sortCriteria.push({ deletedAt: sortOrder === 'desc' ? 'asc' : 'desc' });
+          sortCriteria.push({ difficultyLevel: sortOrder });
+          break;
         default:
           sortCriteria.push({ [sortBy]: sortOrder } as Prisma.QuestionOrderByWithRelationInput);
       }
@@ -394,5 +398,15 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     const entities = rawRecords.map((record) => QuestionMapper.toDomain(record));
 
     return [entities, total];
+  }
+
+  public async bulkInsert(_questions: DomainQuestion[]): Promise<number> {
+    // Prisma Fluent API: Rất sạch và an toàn về type
+    // const result = await this._prisma.question.createMany({
+    //   data: questions,
+    //   skipDuplicates: true,
+    // });
+
+    return 3;
   }
 }

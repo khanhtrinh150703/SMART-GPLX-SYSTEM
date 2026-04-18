@@ -68,4 +68,12 @@ export interface IQuestionRepository {
     skip: number,
     take: number
   ): Promise<[Question[], number]>
+
+
+  /**
+   * @description Chèn hàng loạt câu hỏi vào Database
+   * @param {any[]} questions - Danh sách câu hỏi đã qua xử lý mapping
+   * @returns {Promise<number>} Số lượng bản ghi đã được tạo thành công
+   */
+  bulkInsert(questions: Question[]): Promise<number>;
 }

@@ -8,7 +8,7 @@ import { performSmartNavigateBack } from "@/utils/navigation";
 import { containerVariants, iconBoxVariants } from "./global-error.variants";
 
 // 🚀 TRIỆU HỒI: Bộ 3 nút bấm quyền lực
-import { ReloadButton } from "../Navigation/ReloadButton";
+import { ReloadToPreviousButton } from "../Navigation/ReloadButton";
 import { NavigationBackButton } from "../Navigation/NavigationBackButton";
 import { HomeNavigationButton } from "../Navigation/HomeNavigationButton";
 
@@ -66,7 +66,7 @@ export const NetworkErrorView = () => {
         {/* Hàng nút chính: Thử lại & Quay lại */}
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Nút Reload: Icon xoay 180 độ khi hover */}
-          <ReloadButton />
+          <ReloadToPreviousButton />
 
           {/* Nút Back: Icon thụt lùi và nhún nhảy + Logic Smart Back của ông */}
           <NavigationBackButton onClick={onBackClick} />

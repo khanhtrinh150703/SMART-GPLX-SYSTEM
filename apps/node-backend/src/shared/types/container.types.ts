@@ -26,6 +26,15 @@ import { IQuestionRepository } from "@/domain/interfaces/repositories/i-question
 import { QuestionController } from "@/api/controllers/question.controller";
 import { RoleController } from "@/api/controllers/roles.controller";
 import { IUserRoleRepository } from "@/domain/interfaces/repositories/i-user-role.repository";
+import { IImportJobRepository } from "@/domain/interfaces/repositories/i-import-job.repository";
+import { ITempStorageService } from "@/domain/interfaces/external/i-temp-storage.service";
+import { ImportController } from "@/api/controllers/import.controller";
+import { ImportService } from "@/application/services/import.service";
+import { IZipService } from "@/domain/interfaces/services/i-zip.service";
+import { IExcelService } from "@/domain/interfaces/services/i-excel.service";
+import { IImportProcessorService } from "@/domain/interfaces/services/i-import-processor.service";
+import { IImportQueue } from "@/domain/interfaces/queues/i-import.queue";
+import { ImportWorker } from "@/infrastructure/workers/import.worker";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -66,9 +75,12 @@ export interface ICradle {
 
     /** @description Repository lưu trữ thông tin đăng ký người dùng tạm thời (Redis). */
     pendingUserRepository: IPendingUserRepository;
-    
+
     /** @description Repository quản lý mối quan hệ giữa người dùng và vai trò (Bảng trung gian). */
     userRoleRepository: IUserRoleRepository;
+
+    /** @description Kho lưu trữ và quản trị trạng thái các phiên nhập dữ liệu (Persistence/Database). */
+    importJobRepository: IImportJobRepository;
 
     // --- QUẢN LÝ KỸ THUẬT (MANAGERS) ---
 
@@ -101,8 +113,29 @@ export interface ICradle {
     /** @description Quản lý nghiệp vụ liên quan đến vai trò hệ thống. */
     roleService: RoleService;
 
+    /** @description Dịch vụ điều phối và quản lý toàn bộ tiến trình nhập liệu (Import Orchestration). */
+    importService: ImportService;
+
     /** @description Dịch vụ quản lý và lưu trữ tệp tin (Local/Cloud Storage). */
     fileStorageService: IFileStorageService;
+
+    /** @description Dịch vụ xử lý tệp tin tạm thời trên ổ đĩa cục bộ (Local Disk), quản lý các mảnh tệp (Chunks). */
+    tempStorageService: ITempStorageService;
+
+    /** @description Dịch vụ nén và giải nén tệp tin (Zip/Unzip), xử lý các gói dữ liệu lưu trữ. */
+    zipService: IZipService;
+
+    /** @description Dịch vụ đọc, phân tích và trích xuất dữ liệu từ các tệp tin bảng tính (Excel, CSV). */
+    excelService: IExcelService;
+
+    /** @description Dịch vụ lõi điều phối toàn bộ quy trình hậu xử lý nhập liệu (Giải nén -> Đọc dữ liệu -> Lưu trữ). */
+    importProcessorService: IImportProcessorService;
+
+    /** @description Hệ thống hàng đợi quản lý và điều phối các tác vụ nhập liệu chạy ngầm (Job Producer). */
+    importQueue: IImportQueue;
+
+    /** @description Trình xử lý tác vụ chạy ngầm (Background Worker) thực thi các Job lấy từ hàng đợi nhập liệu (Job Consumer). */
+    importWorker: ImportWorker;
 
     // --- GIAO TIẾP API (CONTROLLERS) ---
 
@@ -124,4 +157,6 @@ export interface ICradle {
     /** @description Xử lý các yêu cầu HTTP liên quan đến câu hỏi. */
     quenstionController: QuestionController;
 
+    /** @description Xử lý các yêu cầu HTTP liên quan đến quy trình nhập liệu (Import). */
+    importController: ImportController;
 }

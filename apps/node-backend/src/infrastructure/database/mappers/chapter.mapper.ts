@@ -21,6 +21,7 @@ export class ChapterMapper {
       name: raw.name,
       description: raw.description,
       orderIndex: raw.orderIndex,
+      code: raw.code,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt ?? null,
@@ -39,6 +40,7 @@ export class ChapterMapper {
       name: chapter.name,
       description: chapter.description,
       orderIndex: chapter.orderIndex,
+      code: chapter.code,
       createdAt: chapter.createdAt,
       updatedAt: chapter.updatedAt,
       deletedAt: chapter.deletedAt ?? null,
@@ -55,6 +57,7 @@ export class ChapterMapper {
       id: chapter.id as string,
       name: chapter.name,
       description: chapter.description,
+      code: chapter.code,
       orderIndex: chapter.orderIndex,
       createdAt: chapter.createdAt as Date,
       status: chapter.isDeleted() ? 'deleted' : 'active'

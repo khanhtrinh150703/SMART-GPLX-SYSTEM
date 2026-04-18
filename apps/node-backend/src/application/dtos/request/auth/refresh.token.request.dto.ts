@@ -30,7 +30,7 @@ export class RefreshTokenRequestDTO {
     // 2. Kiểm tra độ dài cơ bản (Refresh Token thường là JWT nên không thể quá ngắn)
     // Giả định tối thiểu 40 ký tự để lọc bớt rác ban đầu
     if (this.refreshToken.length < 40) {
-      throw new AppError(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT);
+      throw new AppError(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID);
     }
 
     // 💡 Lưu ý cho Cậu Vàng: 

@@ -1,30 +1,30 @@
 export const permissions = [
-  // 👤 Quản lý người dùng
-  { name: 'users:read', description: 'Xem danh sách người dùng' },
-  { name: 'users:manage', description: 'Thêm, sửa, khóa tài khoản người dùng' },
-  { name: 'profile:manage', description: 'Cập nhật thông tin cá nhân của chính mình' },
+    // 👤 Quản lý người dùng
+    { name: 'users:read', description: 'Xem danh sách người dùng' },
+    { name: 'users:manage', description: 'Thêm, sửa, khóa tài khoản người dùng' },
+    { name: 'profile:manage', description: 'Cập nhật thông tin cá nhân của chính mình' },
 
-  // 📚 Ngân hàng câu hỏi
-  { name: 'questions:read', description: 'Xem ngân hàng câu hỏi' },
-  { name: 'questions:write', description: 'Thêm/Sửa câu hỏi và đáp án' },
-  { name: 'questions:import', description: 'Import câu hỏi từ file Excel' },
-  { name: 'questions:delete', description: 'Xóa câu hỏi' },
+    // 📚 Ngân hàng câu hỏi
+    { name: 'questions:read', description: 'Xem ngân hàng câu hỏi' },
+    { name: 'questions:write', description: 'Thêm/Sửa câu hỏi và đáp án' },
+    { name: 'questions:import', description: 'Import câu hỏi từ file Excel' },
+    { name: 'questions:delete', description: 'Xóa câu hỏi' },
 
-  // 📖 Chương học & Mẹo thi (Tách Read để Student còn vào học được)
-  { name: 'chapters:read', description: 'Xem nội dung bài học' },
-  { name: 'chapters:manage', description: 'Quản lý (Thêm/Sửa/Xóa) chương học và mẹo thi' },
+    // 📖 Chương học & Mẹo thi (Tách Read để Student còn vào học được)
+    { name: 'chapters:read', description: 'Xem nội dung bài học' },
+    { name: 'chapters:manage', description: 'Quản lý (Thêm/Sửa/Xóa) chương học và mẹo thi' },
 
-  // 🪪 Hạng bằng lái
-  { name: 'licenses:read', description: 'Xem danh sách các hạng bằng lái' },
-  { name: 'licenses:manage', description: 'Quản lý thông tin các hạng bằng (A1, B2, C...)' },
+    // 🪪 Hạng bằng lái
+    { name: 'licenses:read', description: 'Xem danh sách các hạng bằng lái' },
+    { name: 'licenses:manage', description: 'Quản lý thông tin các hạng bằng (A1, B2, C...)' },
 
-  // 📝 Đề thi & Kết quả
-  { name: 'exams:manage', description: 'Tạo và cấu trúc bộ đề thi' },
-  { name: 'exams:take', description: 'Thực hiện bài thi thử' },
-  { name: 'results:read', description: 'Xem lịch sử và kết quả thi' },
+    // 📝 Đề thi & Kết quả
+    { name: 'exams:manage', description: 'Tạo và cấu trúc bộ đề thi' },
+    { name: 'exams:take', description: 'Thực hiện bài thi thử' },
+    { name: 'results:read', description: 'Xem lịch sử và kết quả thi' },
 
-  // 🔑 Quyền tối thượng
-  { name: 'admin:all', description: 'Toàn quyền hệ thống (Bypass mọi kiểm tra)' },
+    // 🔑 Quyền tối thượng
+    { name: 'admin:all', description: 'Toàn quyền hệ thống (Bypass mọi kiểm tra)' },
 ];
 
 export const roles = [
@@ -36,7 +36,7 @@ export const roles = [
 export const adminUser = {
     username: 'admin',
     email: 'admin@smartgplx.com',
-    password: 'AdminPassword123@', 
+    password: 'AdminPassword123@',
     fullName: 'Quản trị viên hệ thống',
     phoneNumber: '0999999999',
 };
@@ -44,7 +44,7 @@ export const adminUser = {
 export const testUser = {
     username: 'testuser',
     email: 'testuser@smartgplx.com',
-    password: 'UserPassword123@', 
+    password: 'UserPassword123@',
     fullName: 'Người dùng thử nghiệm',
     phoneNumber: '0988888888',
 };
@@ -52,16 +52,16 @@ export const testUser = {
 export const testInstructor = {
     username: 'testinstructor',
     email: 'instructor@smartgplx.com',
-    password: 'InstructorPassword123@', 
+    password: 'InstructorPassword123@',
     fullName: 'Giảng viên hướng dẫn',
     phoneNumber: '0977777777',
-    role: 'INSTRUCTOR', 
+    role: 'INSTRUCTOR',
 };
 
 export const testUserTemp = {
     username: 'testusertemp',
     email: 'temp@smartgplx.com',
-    password: 'TempPassword123@', 
+    password: 'TempPassword123@',
     fullName: 'Học viên dự phòng',
     phoneNumber: '0966666666',
 };
@@ -146,38 +146,39 @@ export const licenses = [
 
 export const chapters = [
     {
-        name: 'Chương 1: Khái niệm và quy tắc giao thông đường bộ',
-        description: 'Bao gồm các khái niệm cơ bản, quy tắc ưu tiên và các quy định khi tham gia giao thông (166 câu).',
+        code: '1',
+        name: 'Chương I: Quy định chung và quy tắc giao thông đường bộ',
+        description: 'Gồm 180 câu (từ câu số 1 đến câu 180) về quy định chung và các quy tắc giao thông đường bộ.',
         orderIndex: 1
     },
     {
-        name: 'Chương 2: Nghiệp vụ vận tải',
-        description: 'Quy định về hoạt động vận tải hàng hóa và hành khách bằng xe ô tô (26 câu).',
+        code: '2',
+        name: 'Chương II: Văn hóa giao thông, đạo đức người lái xe, kỹ năng PCCC và cứu hộ, cứu nạn',
+        description: 'Gồm 25 câu (từ câu 181 đến câu 205) về văn hóa giao thông, đạo đức và kỹ năng phòng cháy, cứu hộ.',
         orderIndex: 2
     },
     {
-        name: 'Chương 3: Văn hóa giao thông và đạo đức người lái xe',
-        description: 'Các chuẩn mực ứng xử, trách nhiệm và đạo đức của người điều khiển phương tiện (21 câu).',
+        code: '3',
+        name: 'Chương III: Kỹ thuật lái xe',
+        description: 'Gồm 58 câu (từ câu 206 đến câu 263) hướng dẫn các phương pháp và kỹ năng điều khiển xe an toàn.',
         orderIndex: 3
     },
     {
-        name: 'Chương 4: Kỹ thuật lái xe',
-        description: 'Các phương pháp, kỹ năng điều khiển xe an toàn trong các điều kiện địa hình khác nhau (56 câu).',
+        code: '4',
+        name: 'Chương IV: Cấu tạo và sửa chữa',
+        description: 'Gồm 37 câu (từ câu 264 đến câu 300) về cấu tạo cơ bản và cách khắc phục sự cố thông thường của xe ô tô.',
         orderIndex: 4
     },
     {
-        name: 'Chương 5: Cấu tạo và sửa chữa',
-        description: 'Kiến thức cơ bản về các bộ phận của xe ô tô và cách khắc phục sự cố thông thường (35 câu).',
+        code: '5',
+        name: 'Chương V: Báo hiệu đường bộ',
+        description: 'Gồm 185 câu (từ câu 301 đến câu 485) về hệ thống biển báo hiệu, vạch kẻ đường.',
         orderIndex: 5
     },
     {
-        name: 'Chương 6: Hệ thống biển báo hiệu đường bộ',
-        description: 'Nhận biết và ý nghĩa của các nhóm biển báo: cấm, nguy hiểm, hiệu lệnh, chỉ dẫn (182 câu).',
+        code: '6',
+        name: 'Chương VI: Giải thế sa hình và kỹ năng xử lý tình huống giao thông',
+        description: 'Gồm 115 câu (từ câu 486 đến câu 600) về quy tắc ưu tiên và xử lý tình huống tại các thế sa hình.',
         orderIndex: 6
-    },
-    {
-        name: 'Chương 7: Giải các thế sa hình và kỹ năng xử lý tình huống',
-        description: 'Quy tắc ưu tiên tại giao lộ và các tình huống thực tế khi lưu thông trên đường (114 câu).',
-        orderIndex: 7
     }
 ];

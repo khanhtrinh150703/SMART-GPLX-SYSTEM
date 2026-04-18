@@ -13,6 +13,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 429,      // Too Many Requests
     [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 408,        // Request Timeout
     [ErrorCode.SYSTEM.CONFIG_ERROR]: 500,        // Request Timeout
+    [ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED]: 400,        // Request Timeout
 
 
     // --- AUTHENTICATION & AUTHORIZATION ---
@@ -60,29 +61,31 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.FILE.UPLOAD_FAILED]: 500,            // Internal Server Error
     [ErrorCode.FILE.TOO_LARGE]: 413,                // Payload Too Large
     [ErrorCode.FILE.INVALID_TYPE]: 415,             // Unsupported Media Type
+    [ErrorCode.FILE.NOT_FOUND]: 404,             // Not Found
 
     // --- DATA VALIDATION ---
-    [ErrorCode.VALIDATION.INVALID_EMAIL]: 400,
-    [ErrorCode.VALIDATION.INVALID_PASSWORD]: 400,
-    [ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH]: 400,
-    [ErrorCode.VALIDATION.MISSING_FIELD]: 400,
-    [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
-    [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
-    [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
-    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 400,
-
-    // --- VALIDATION ---
+    // --- VALIDATION (Tất cả đều là 400 Bad Request) ---
+    [ErrorCode.VALIDATION.REQUIRED]: 400,
     [ErrorCode.VALIDATION.ID_REQUIRED]: 400,
     [ErrorCode.VALIDATION.NAME_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
+    [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
+
+    [ErrorCode.VALIDATION.EMAIL_INVALID]: 400,
     [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 400,
-    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 400,
     [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 400,
-    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 400,
-    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 400,
-    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 400,
-    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 400,
 
+    [ErrorCode.VALIDATION.PASSWORD_INVALID]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_CONFIRM_MISMATCH]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID]: 400,
+
+    [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 400,
+    [ErrorCode.VALIDATION.AGE_INVALID]: 400,
+    
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 400,
     [ErrorCode.LICENSE.NOT_FOUND]: 404,
@@ -91,11 +94,13 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
 
     // --- CHAPTER DOMAIN ---
     [ErrorCode.CHAPTER.NOT_FOUND]: 404,              // Not Found
-    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 409,         // Conflict
+    [ErrorCode.CHAPTER.NAME_ALREADY_EXISTS]: 409,         // Conflict
+    [ErrorCode.CHAPTER.CODE_ALREADY_EXISTS]: 409,         // Conflict
     [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 403,  // Forbidden (Ràng buộc dữ liệu)
     [ErrorCode.CHAPTER.CREATE_FAILED]: 400,          // Bad Request
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 400,          // Bad Request
     [ErrorCode.CHAPTER.INVALID_ORDER]: 400,          // Bad Request
+    [ErrorCode.CHAPTER.INVALID_DESCRIPTION]: 400,          // Bad Request
 
     // --- QUESTION ---
     [ErrorCode.QUESTION.NOT_FOUND]: 404,
@@ -108,4 +113,13 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 400,
     [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 400,
     [ErrorCode.QUESTION.ALREADY_EXISTS]: 409,
+
+    // IMPORT
+    [ErrorCode.IMPORT.JOB_NOT_FOUND]: 404,        // Not Found
+    [ErrorCode.IMPORT.JOB_INVALID_STATUS]: 400,   // Bad Request
+    [ErrorCode.IMPORT.INVALID_CHUNK_INDEX]: 400,  // Bad Request
+    [ErrorCode.IMPORT.EXTRACT_FAILED]: 400,  // Bad Request
+    [ErrorCode.IMPORT.FILE_MISSING]: 400,  // Bad Request
+    [ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED]: 400,  // Bad Request
+    [ErrorCode.IMPORT.SESSION_EXPIRED]: 410, // Gone (Tài nguyên không còn tồn tại do hết hạn)
 };

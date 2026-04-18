@@ -76,4 +76,10 @@ export class Message {
     NOT_FOUND: 'Không tìm thấy vai trò yêu cầu.',
     ALREADY_EXISTS: 'Tên vai trò này đã tồn tại trên hệ thống.',
   };
+  static readonly IMPORT = {
+    INIT_SUCCESS: 'Phiên làm việc đã được khởi tạo',
+    CHUNK_UPLOAD_SUCCESS: (index: number | string) => `Đã nhận thành công mảnh dữ liệu thứ ${index}`,
+    COMPLETE_SUCCESS: 'Tất cả các mảnh đã được nhận. Hệ thống đang tiến hành xử lý ngầm.',
+    STATUS_SUCCESS: 'Lấy trạng thái tiến độ thành công.'
+  }
 }

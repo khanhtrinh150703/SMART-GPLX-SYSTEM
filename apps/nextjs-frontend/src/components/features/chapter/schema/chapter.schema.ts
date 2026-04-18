@@ -44,7 +44,10 @@ export const chapterEditSchema = z.object({
 export const createChapterSchema = z.object({
   name: z.string().min(1, "Tên chương không được để trống"),
   description: z.string().min(1, "Mô tả không được để trống"),
-  // Sử dụng z.coerce để ép kiểu Input String -> Number an toàn
+  code: z
+    .string()
+    .min(1, { message: 'Mã độc nhất không được để trống' }),
+    
   orderIndex: z
     .union([z.number()])
     .pipe(z.coerce.number())

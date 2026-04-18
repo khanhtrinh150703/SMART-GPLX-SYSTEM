@@ -4,6 +4,7 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { UserController } from '../controllers/user.controller';
 import { upload } from '../middlewares/upload.middleware';
 import { requirePermission } from '../middlewares/permission.middleware';
+import { validateFileSize } from '../middlewares/error.middleware';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.use(authMiddleware);
  * @route PATCH /api/v1/users/me/profile
  * @access Private (Authenticated User)
  */
-router.patch('/me/profile', upload.single('pictureFile'), userController.updateProfile);
+router.patch('/me/profile', validateFileSize(upload.single('pictureFile')), userController.updateProfile);
 
 /**
  * @description Thay đổi mật khẩu của người dùng hiện tại.

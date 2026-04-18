@@ -8,6 +8,7 @@ export interface Chapter {
   name: string; // Thống nhất dùng 'title'
   description: string;
   lessonCount: number;
+  code: string;
   status: "active" | "draft" | "deleted";
 }
 

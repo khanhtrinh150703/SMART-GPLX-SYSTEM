@@ -40,7 +40,8 @@ export class MySQLChapterRepository implements IChapterRepository {
       id: raw.id,
       name: raw.name,
       description: raw.description,
-      orderIndex: raw.orderIndex, // Giả định Prisma dùng orderIndex
+      orderIndex: raw.orderIndex,
+      code: raw.code,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt,
@@ -89,7 +90,8 @@ export class MySQLChapterRepository implements IChapterRepository {
         id: data.id,
         name: data.name,
         description: data.description,
-        orderIndex: data.orderIndex, // Trả lại CamelCase cho Prisma
+        orderIndex: data.orderIndex,
+        code: data.code,
       }
     });
   }
@@ -203,6 +205,18 @@ export class MySQLChapterRepository implements IChapterRepository {
     return [domainEntities, total];
   }
 
+  public async findByCode(code: string): Promise<Chapter | null> {
+    // findUnique yêu cầu cột 'code' trong Schema phải có thuộc tính @unique
+    const record = await this._prisma.chapter.findUnique({
+      where: { code: code.trim() }
+    });
+
+    if (!record) return null;
+
+    // Chuyển đổi từ Record (DB) sang Entity (Domain) để sử dụng ở tầng nghiệp vụ
+    return ChapterMapper.toDomain(record);
+  }
+  
   public async countQuestions(id: string): Promise<number> {
     return await this._prisma.question.count({
       where: { chapterId: id }

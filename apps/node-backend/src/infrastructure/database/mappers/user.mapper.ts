@@ -2,12 +2,12 @@ import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
 import { LoginResponseDTO } from '@/application/dtos/response/auth/auth.respone.dto';
 import { UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
-import { RoleCacheService } from '@/infrastructure/security/role-cache.service';
 import { Role } from '@/domain/entities/role/role.entity';
 import { Permission } from '@/domain/entities/permission/permission.entity';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { Prisma } from '@prisma/client';
 import { IUserRecord } from '@/infrastructure/persistence/user.record';
+import { MasterDataCacheService } from '@/infrastructure/security/master-data-cache.service';
 
 
 export class UserMapper {
@@ -17,7 +17,7 @@ export class UserMapper {
   public static toDomain(raw: IUserRecord): User {
     // 1. Hydrate Roles từ Cache dựa trên dữ liệu từ DB
     const roleEntities: Role[] = (raw.userRoles || []).map((ur) => {
-      const cached = RoleCacheService.getRole(ur.roleId);
+      const cached = MasterDataCacheService.getRoleById(ur.roleId)
 
       if (!cached) {
         throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);

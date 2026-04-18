@@ -8,6 +8,7 @@ export const ErrorCode = {
      */
     SYSTEM: {
         SUCCESS: 'SYS_000',             // Thao tác thành công
+        FILE_SIZE_EXCEEDED: 'SYS_001', // Mã lỗi chung cho mọi loại file vượt dung lượng
         INTERNAL_ERROR: 'SYS_500',      // Lỗi server không xác định
         SERVICE_UNAVAILABLE: 'SYS_503', // Bảo trì
         DATABASE_ERROR: 'SYS_504',      // Lỗi truy vấn DB
@@ -76,30 +77,37 @@ export const ErrorCode = {
         UPLOAD_FAILED: 'FILE_500',      // Lỗi upload lên Cloud/Server
         TOO_LARGE: 'FILE_413',          // File quá nặng
         INVALID_TYPE: 'FILE_415',       // Sai định dạng (Cần .jpg, .png...)
+        NOT_FOUND: 'FILE_404',          // Tệp tin không tồn tại (Dịch: File not found)
     },
 
     /** * --- DATA VALIDATION (VAL) --- 
      * Kiểm tra format đầu vào (Dùng cho Class Validator).
      */
     VALIDATION: {
-        ID_REQUIRED: 'VAL_000',
-        INVALID_EMAIL: 'VAL_101',
-        INVALID_PASSWORD: 'VAL_102',
-        CONFIRM_PASSWORD_MISMATCH: 'VAL_103',
-        MISSING_FIELD: 'VAL_201',
-        INVALID_FORMAT: 'VAL_202',
-        INVALID_LENGTH: 'VAL_203',
-        PASSWORD_MUST_BE_DIFFERENT: "VAL_204",
-        PASSWORD_DIFFERENT: "VAL_205",
-        NAME_REQUIRED: 'VAL_001',
-        NAME_INVALID_LENGTH: 'VAL_002',
-        NAME_FORMAT_INVALID: 'VAL_003',
-        DESCRIPTION_REQUIRED: 'VAL_004',
-        DESCRIPTION_TOO_LONG: 'VAL_005',
-        MIN_AGE_MUST_BE_NUMBER: 'VAL_006', // Đã thêm từ DTO trước
-        MIN_AGE_INVALID: 'VAL_007',
-        REFRESH_TOKEN_REQUIRED: 'VAL_008',
-        REFRESH_TOKEN_INVALID_FORMAT: 'VAL_009',
+        // --- 0xx: General Required & Format (Lỗi chung & Định dạng) ---
+        REQUIRED: 'VAL_000',               // Trường bắt buộc chung (MISSING_FIELD)
+        ID_REQUIRED: 'VAL_001',
+        NAME_REQUIRED: 'VAL_002',
+        DESCRIPTION_REQUIRED: 'VAL_003',
+        INVALID_FORMAT: 'VAL_004',
+        INVALID_LENGTH: 'VAL_005',
+
+        // --- 1xx: Identity & Contact (Định danh & Liên lạc) ---
+        EMAIL_INVALID: 'VAL_101',
+        NAME_INVALID_LENGTH: 'VAL_102',
+        NAME_FORMAT_INVALID: 'VAL_103',
+        DESCRIPTION_TOO_LONG: 'VAL_104',
+
+        // --- 2xx: Security & Authentication (Mật khẩu & Token) ---
+        PASSWORD_INVALID: 'VAL_201',
+        PASSWORD_CONFIRM_MISMATCH: 'VAL_202', // CONFIRM_PASSWORD_MISMATCH
+        PASSWORD_MUST_BE_DIFFERENT: 'VAL_203', // Dùng cho đổi mật khẩu (mới khác cũ)
+        REFRESH_TOKEN_REQUIRED: 'VAL_204',
+        REFRESH_TOKEN_INVALID: 'VAL_205',
+
+        // --- 3xx: Specific Business Logic (Logic nghiệp vụ cụ thể) ---
+        AGE_MUST_BE_NUMBER: 'VAL_301',
+        AGE_INVALID: 'VAL_302',
     },
 
     LICENSE: {
@@ -111,11 +119,13 @@ export const ErrorCode = {
 
     CHAPTER: {
         NOT_FOUND: 'CHPT_404',               // Không tìm thấy chương
-        ALREADY_EXISTS: 'CHPT_409',          // Trùng tên chương
+        NAME_ALREADY_EXISTS: 'CHPT_409',     // Trùng TÊN chương (Đổi từ ALREADY_EXISTS)
+        CODE_ALREADY_EXISTS: 'CHPT_410',     // Trùng MÃ chương (Thêm mới)
         HAS_RELATED_QUESTIONS: 'CHPT_403',   // Vi phạm ràng buộc (có câu hỏi)
         CREATE_FAILED: 'CHPT_001',           // Lỗi khi tạo mới
         UPDATE_FAILED: 'CHPT_002',           // Lỗi khi cập nhật
         INVALID_ORDER: 'CHPT_003',           // Thứ tự hiển thị không hợp lệ
+        INVALID_DESCRIPTION: 'CHPT_004',
     },
 
     QUESTION: {
@@ -130,6 +140,16 @@ export const ErrorCode = {
         CANNOT_DELETE_CRITICAL: 'QUESTION_CANNOT_DELETE_CRITICAL',
         ANSWERS_SYNC_ERROR: 'QUESTION_ANSWERS_SYNC_ERROR',
     },
+
+    IMPORT: {
+        JOB_NOT_FOUND: 'IMP_001',        // IMPORT_JOB_NOT_FOUND
+        JOB_INVALID_STATUS: 'IMP_002',   // IMPORT_JOB_INVALID_STATUS
+        INVALID_CHUNK_INDEX: 'IMP_003',  // INVALID_CHUNK_INDEX
+        EXTRACT_FAILED: 'IMP_004',       // EXTRACT_FAILED
+        FILE_MISSING: 'IMP_005',         // FILE_MISSING
+        CHUNK_SIZE_EXCEEDED: 'IMP_006',  // CHUNK_SIZE_EXCEEDED
+        SESSION_EXPIRED: 'IMP_007',      // IMPORT_SESSION_EXPIRED
+    }
 } as const;
 
 export type ErrorCodeType = {

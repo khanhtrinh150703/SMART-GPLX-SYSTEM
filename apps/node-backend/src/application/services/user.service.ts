@@ -11,7 +11,6 @@ import { PaginatedResult } from "@/shared/types/pagination.types";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { UserMapper } from "@/infrastructure/database/mappers/user.mapper";
 import { UserResponseDTO } from "../dtos/response/user/user.respone.dto";
-import { RoleCacheService } from "@/infrastructure/security/role-cache.service";
 import { Role } from "@/domain/entities/role/role.entity";
 import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
 import bcrypt from 'bcrypt';
@@ -24,6 +23,7 @@ import logger from '@/infrastructure/logging/winston.logger';
 import { IUserRoleRepository } from "@/domain/interfaces/repositories/i-user-role.repository";
 import { UpdateAdminRequestDTO } from "../dtos/request/user/update-admin.request.dto";
 import { PrismaClient } from "@prisma/client";
+import { MasterDataCacheService } from "@/infrastructure/security/master-data-cache.service";
 
 /**
  * @interface IUserServiceCradle
@@ -386,7 +386,7 @@ export class UserService implements IUserService {
         fullName: string;
         passwordHash: string;
     }): Promise<User> {
-        const roleData = RoleCacheService.getByName(UserRole.STUDENT);
+        const roleData = MasterDataCacheService.getRoleByName(UserRole.STUDENT);
 
         if (!roleData) {
             throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);

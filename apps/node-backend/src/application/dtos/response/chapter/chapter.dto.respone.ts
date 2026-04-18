@@ -20,4 +20,6 @@ export interface ChapterResponseDTO {
 
   /** @property {string} status - Trạng thái hiện tại (VD: 'active', 'draft', 'deleted'). */
   readonly status: string;
+
+  readonly code: string;
 }

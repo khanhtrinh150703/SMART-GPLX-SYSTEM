@@ -13,6 +13,7 @@ export class Chapter {
   get id(): string { return this._props.id; }
   get name(): string { return this._props.name; }
   get description(): string | null { return this._props.description; }
+  get code(): string { return this._props.code; }
   get orderIndex(): number { return this._props.orderIndex; }
   get createdAt(): Date | undefined { return this._props.createdAt; }
   get updatedAt(): Date | undefined { return this._props.updatedAt; }
@@ -25,7 +26,7 @@ export class Chapter {
     if (data.name !== undefined) {
       const trimmedName = data.name.trim();
       if (trimmedName.length === 0) {
-        throw new AppError(ErrorCode.VALIDATION.MISSING_FIELD);
+        throw new AppError(ErrorCode.VALIDATION.REQUIRED);
       }
       this._props.name = trimmedName; // Cập nhật vào props
     }

@@ -45,3 +45,37 @@ export const parseMultipartData = (fields: string[]) => {
     next();
   };
 };
+
+/**
+ * 3. Cấu hình Multer cho Import File lớn (Giới hạn 15MB)
+ * (Dịch: Multer configuration for large import files - 15MB limit)
+ */
+export const uploadImport = multer({
+  storage: multer.memoryStorage(), // Khuyên dùng tường minh memoryStorage
+  limits: {
+    fileSize: 15 * 1024 * 1024, // 15MB
+  },
+  fileFilter: (_req, file, cb) => {
+    // LOG để debug (Trinh nhìn vào terminal sẽ thấy mimetype thực tế của chunk)
+    // console.log(`>>> [MULTER_FILTER] Receiving file: ${file.originalname}, Mime: ${file.mimetype}`);
+
+    const allowedMimeTypes = [
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'application/octet-stream' 
+    ];
+
+    const isImage = file.mimetype.startsWith('image/');
+    const isAllowedType = allowedMimeTypes.includes(file.mimetype);
+
+    if (isAllowedType || isImage) {
+      cb(null, true);
+    } else {
+      // Nếu vẫn lỗi, Trinh hãy tạm thời cb(null, true) để test, 
+      // nhưng Senior khuyên nên check kỹ mimetype này.
+      cb(new AppError(ErrorCode.IMPORT.EXTRACT_FAILED, `Định dạng ${file.mimetype} không được hỗ trợ.`));
+    }
+  },
+});

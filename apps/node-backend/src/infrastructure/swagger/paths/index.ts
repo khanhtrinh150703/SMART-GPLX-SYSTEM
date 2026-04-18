@@ -4,6 +4,7 @@ import { licensePaths } from './license-category.paths';
 import { chapterPaths } from './chapter.paths';
 import { questionPaths } from './question.paths';
 import { selectionPaths } from './selection.paths';
+import { importPaths } from './import.swagger';
 
 
 export const paths = {
@@ -13,4 +14,5 @@ export const paths = {
   ...chapterPaths,
   ...questionPaths,
   ...selectionPaths,
+  ...importPaths,
 };

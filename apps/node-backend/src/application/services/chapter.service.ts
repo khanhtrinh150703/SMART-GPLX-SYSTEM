@@ -11,6 +11,8 @@ import { ChapterQueryDTO } from "../dtos/request/chapter/chapter-query.request.d
 import { PaginatedResult } from "@/shared/types/pagination.types";
 import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { CreateChapterValidator } from "../validators/chapter/create-chatper.validator";
+import { UpdateChapterValidator } from "../validators/chapter/update-chapter.validator";
 
 /**
  * @interface IChapterServiceCradle
@@ -83,16 +85,25 @@ export class ChapterService implements IChapterService {
    * @returns {Promise<ChapterResponseDTO>}
    */
   public async createChapter(dto: CreateChapterRequestDTO): Promise<ChapterResponseDTO> {
-    // 1. Kiểm tra trùng tên (Cheap Check)
-    const existing = await this._chapterRepo.findByName(dto.name.trim());
-    if (existing) {
-      throw new AppError(ErrorCode.CHAPTER.ALREADY_EXISTS);
+    CreateChapterValidator.validate(dto);
+    // 1. Kiểm tra trùng tên (Dịch: Check duplicate name)
+    const existingName = await this._chapterRepo.findByName(dto.name.trim());
+    if (existingName) {
+      throw new AppError(ErrorCode.CHAPTER.NAME_ALREADY_EXISTS);
     }
 
-    // 2. Khởi tạo Entity
+    // 2. QUAN TRỌNG: Kiểm tra trùng mã chương (Dịch: Check duplicate code)
+    // Đây là "điểm neo" cho import nên tuyệt đối không được trùng
+    const existingCode = await this._chapterRepo.findByCode(dto.code.trim());
+    if (existingCode) {
+      throw new AppError(ErrorCode.CHAPTER.CODE_ALREADY_EXISTS);
+    }
+
+    // 3. Khởi tạo Entity (100% camelCase)
     const newChapter = new Chapter({
       id: crypto.randomUUID(),
       name: dto.name.trim(),
+      code: dto.code.trim(), // Lưu mã sạch
       description: dto.description?.trim() || null,
       orderIndex: dto.orderIndex ?? 0,
       createdAt: new Date(),
@@ -100,7 +111,7 @@ export class ChapterService implements IChapterService {
       deletedAt: null,
     });
 
-    // 3. Persist vào DB và trả về DTO
+    // 4. Lưu vào DB và trả về DTO
     await this._chapterRepo.save(newChapter);
     return ChapterMapper.toResponse(newChapter);
   }
@@ -111,12 +122,13 @@ export class ChapterService implements IChapterService {
    * @returns {Promise<ChapterResponseDTO>}
    */
   public async updateChapter(dto: UpdateChapterRequestDTO): Promise<ChapterResponseDTO> {
+    UpdateChapterValidator.validate(dto);
     // Lấy Entity để thực hiện logic nghiệp vụ
     const chapter = await this._getChapterEntityOrThrow(dto.id);
 
     if (dto.name && dto.name !== chapter.name) {
       const existing = await this._chapterRepo.findByName(dto.name.trim());
-      if (existing) throw new AppError(ErrorCode.CHAPTER.ALREADY_EXISTS);
+      if (existing) throw new AppError(ErrorCode.CHAPTER.NAME_ALREADY_EXISTS);
     }
 
     // Domain Logic cập nhật bên trong Entity

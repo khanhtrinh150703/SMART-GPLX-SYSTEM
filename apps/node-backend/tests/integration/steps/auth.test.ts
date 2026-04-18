@@ -150,13 +150,13 @@ export const authSteps = () => {
           label: 'Email sai định dạng',
           field: 'email',
           value: INVALID_TEST_DATA.invalidEmail,
-          code: ErrorCode.VALIDATION.INVALID_EMAIL,
+          code: ErrorCode.VALIDATION.EMAIL_INVALID,
         },
         {
           label: 'Mật khẩu quá yếu',
           field: 'password',
           value: INVALID_TEST_DATA.weakPassword,
-          code: ErrorCode.VALIDATION.INVALID_PASSWORD,
+          code: ErrorCode.VALIDATION.PASSWORD_INVALID,
         },
       ];
 
@@ -294,7 +294,7 @@ export const authSteps = () => {
         .send({ refreshToken: 'chuoi-nay-qua-ngan-duoi-40-ky-tu' });
 
       expect(response.status).toBe(400);
-      expect(response.body.code).toBe(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT);
+      expect(response.body.code).toBe(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID);
     });
 
     it('Nên báo lỗi INVALID_TOKEN khi Token là giả mạo hoặc không tồn tại (Session không hợp lệ)', async () => {

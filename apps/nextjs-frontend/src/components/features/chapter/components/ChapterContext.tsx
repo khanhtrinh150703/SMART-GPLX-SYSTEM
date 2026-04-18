@@ -20,7 +20,7 @@ import { FilterSelect } from "@/components/ui/Select/FilterSelect";
 import { CHAPTER_STATUS_OPTIONS } from "@/components/features/chapter/components/chapter.config";
 import { useChapters } from "@/components/features/chapter/hooks/use-chapters";
 import { useChapterUrlParams } from "@/components/features/chapter/hooks/use-chapter-url-params";
-import { Chapter } from "@/types/chapter.types";
+import { Chapter } from "@/components/features/chapter/types/chapter.types";
 import {
   CreateChapterPayload,
   UpdateChapterPayload,

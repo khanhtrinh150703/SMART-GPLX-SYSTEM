@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CreateChapterRequest,
   UpdateChapterRequest
-} from "@/types/chapter.types";
+} from "@/components/features/chapter/types/chapter.types";
 import { QueryParams } from "@/types/paginaton.type";
 import { chapterService } from "@/components/features/chapter/service/chapter.service";
 

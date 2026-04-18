@@ -4,17 +4,16 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Hash, FileText, Activity, Info } from "lucide-react";
+import { BookOpen, Hash, FileText, Info } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
-import Input from "@/components/ui/Input/Input";
-import { cn } from "@/lib/utils/utils";
 import {
   chapterEditSchema,
   ChapterFormEditValues,
 } from "../schema/chapter.schema";
-import { Chapter } from "@/types/chapter.types";
+import { Chapter } from "@/components/features/chapter/types/chapter.types";
 import { Alert } from "@/components/ui/Alert";
+import { FormField } from "@/components/common/Form/FormField";
 
 // Định nghĩa Schema cho Chapter (English: Validation Schema)
 
@@ -92,8 +91,10 @@ export default function EditChapterModal({
             <FileText size={14} className="text-slate-400" />
             Tiêu đề chương
           </label>
-          <Input
-            placeholder="Ví dụ: Khái niệm và quy tắc giao thông"
+          <FormField
+            label="Tên chương học (Name)"
+            icon={FileText}
+            placeholder="VD: Khái niệm và quy tắc giao thông đường bộ."
             {...register("name")}
             error={errors.name?.message}
             disabled={isLoading}
@@ -103,13 +104,12 @@ export default function EditChapterModal({
         <div className="grid grid-cols-2 gap-4">
           {/* Thứ tự hiển thị */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5 ml-1">
-              <Hash size={14} className="text-slate-400" />
-              Thứ tự (Order)
-            </label>
-            <Input
+            <FormField
+              label="Thứ tự hiển thị (Order Index)"
+              icon={Hash}
               type="number"
-              {...register("orderIndex")}
+              placeholder="VD: 1"
+              {...register("orderIndex", { valueAsNumber: true })}
               error={errors.orderIndex?.message}
               disabled={isLoading}
             />
@@ -134,23 +134,15 @@ export default function EditChapterModal({
 
         {/* Mô tả chi tiết */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5 ml-1">
-            <Info size={14} className="text-slate-400" />
-            Mô tả chương
-          </label>
-          <textarea
+          <FormField
+            label="Mô tả chi tiết (Description)"
+            icon={Info}
+            isTextArea
+            placeholder="VD: Chương 1: Bao gồm các định nghĩa cơ bản và quy tắc ưu tiên"
             {...register("description")}
-            className={cn(
-              "w-full p-4 rounded-2xl border border-slate-200 min-h-[100px] outline-none focus:border-emerald-500 transition-all",
-              errors.description && "border-rose-500",
-            )}
-            placeholder="Nhập mô tả tóm tắt nội dung chương..."
+            error={errors.description?.message}
+            disabled={isLoading}
           />
-          {errors.description && (
-            <p className="text-rose-500 text-xs mt-1 ml-1">
-              {errors.description.message}
-            </p>
-          )}
         </div>
 
         {/* Action Buttons */}
