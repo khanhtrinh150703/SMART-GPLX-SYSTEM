@@ -1,95 +1,143 @@
-import { QuestionProps } from "./question.props";
+import { BaseEntity } from "@/domain/seedwork/entity.base";
+import { CreateQuestionProps, IQuestionProps } from "./question.props";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { Answer } from "./answer.entity";
+import { QuestionStatus } from "./question.status";
 
-/**
- * @class Question
- * @description Thực thể Câu hỏi (Question Entity) trong hệ thống Smart-GPLX.
- */
-export class Question {
-  private readonly _props: QuestionProps;
-
-  /**
-   * @description Constructor riêng tư để đảm bảo tính đóng gói, sử dụng qua reconstitute.
-   */
-  private constructor(props: QuestionProps) {
-    this._props = {
-      ...props,
-      difficultyLevel: props.difficultyLevel ?? 1,
-      isCritical: props.isCritical ?? false,
-      answers: props.answers ?? [],
-      licenseCategoryIds: props.licenseCategoryIds ?? [],
-    };
-
-    // Tự động kiểm tra nghiệp vụ ngay khi khởi tạo
+export class Question extends BaseEntity<IQuestionProps> {
+  
+  private constructor(props: IQuestionProps) {
+    super(props);
     this.validateQuestion();
   }
 
   /**
-   * @description Phương thức tái tạo Entity từ dữ liệu thô (Persistence/DTO)
+   * @description Factory Method: Dùng để khởi tạo một câu hỏi mới hoàn toàn.
    */
-  public static reconstitute(props: QuestionProps): Question {
+  public static create(data: CreateQuestionProps): Question {
+    const now = new Date();
+
+    // 1. Khởi tạo các thực thể Answer con thông qua Factory của chúng
+    const answerEntities = data.answers.map(ans => Answer.create(ans));
+
+    // 2. Chuẩn hóa dữ liệu thô
+    const finalizedProps: IQuestionProps = {
+      ...data,
+      id: crypto.randomUUID(),
+      content: data.content.trim(),
+      imageUrl: data.imageUrl || '',
+      difficultyLevel: data.difficultyLevel ?? 1,
+      isCritical: data.isCritical ?? false,
+      status: data.status || 'ACTIVE',
+      indexNumber: data.indexNumber || 1,
+
+      // Gán các thực thể đã được Answer.create() sinh ra
+      answers: answerEntities,
+
+      licenseCategoryIds: data.licenseCategoryIds || [],
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: undefined,
+    } as IQuestionProps;
+
+    return new Question(finalizedProps);
+  }
+  /**
+   * @description HỒI SINH (Reconstitute): Dùng ở Repository/Mapper khi load từ DB.
+   */
+  public static reconstitute(props: IQuestionProps): Question {
     return new Question(props);
   }
 
+  // --- Getters ---
+
+  public get id(): string { return this._props.id; }
+  public get imageUrl(): string { return this._props.imageUrl; }
+  public get answers(): Answer[] { return [...this._props.answers]; }
+  public get content(): string { return this._props.content; }
+  public get isCritical(): boolean { return this._props.isCritical; }
+  public get deletedAt(): Date | undefined { return this._props.deletedAt; }
+
+  // --- Hành vi nghiệp vụ (Domain Behaviors) ---
+
   /**
-   * @description Truy xuất các thuộc tính dưới dạng Readonly
+   * @description Cập nhật chi tiết câu hỏi.
+   * Nhận vào thực thể Answer[] đã được Service chuẩn bị sẵn.
    */
-  public get props(): Readonly<QuestionProps> {
-    return Object.freeze(this._props);
+  public update(data: {
+    chapterId: string;
+    content: string;
+    imageUrl: string;
+    isCritical: boolean;
+    difficultyLevel: number;
+    indexNumber: number;
+    status: QuestionStatus;
+    answers: Answer[];
+    licenseCategoryIds: string[];
+  }): void {
+    this._props.chapterId = data.chapterId;
+    this._props.content = data.content.trim();
+    this._props.imageUrl = data.imageUrl;
+    this._props.isCritical = data.isCritical;
+    this._props.difficultyLevel = data.difficultyLevel;
+    this._props.indexNumber = data.indexNumber;
+    this._props.status = data.status;
+    this._props.licenseCategoryIds = [...data.licenseCategoryIds];
+
+    // Gán trực tiếp vì Service đã map sang Entity rồi, không gọi Answer.create nữa
+    this._props.answers = [...data.answers];
+
+    this.validateQuestion();
+    this.touch();
   }
 
-  /**
-   * @description Xác thực các ràng buộc nghiệp vụ (Invariants) của câu hỏi.
-   * Sử dụng cơ chế AppError Lookup (ErrorCode -> Status & Message).
-   * @throws {AppError} Nếu vi phạm quy tắc nghiệp vụ.
-   */
-  public validateQuestion(): void {
+  public delete(): void {
+    if (this.isCritical) {
+      throw new AppError(ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL);
+    }
+    this._props.status = "DELETED";
+    this._props.deletedAt = new Date();
+    this.touch();
+  }
+
+  public isDeleted(): boolean {
+    return !!this.props.deletedAt;
+  }
+
+  public restore(): void {
+    this._props.deletedAt = undefined;
+    this._props.status = "ACTIVE";
+    this.touch();
+  }
+
+  // --- Private Helpers ---
+
+  private touch(): void {
+    this._props.updatedAt = new Date();
+  }
+
+  private validateQuestion(): void {
     const { QUESTION } = ErrorCode;
 
-    // 1. Kiểm tra nội dung câu hỏi
     if (!this._props.content || this._props.content.trim().length < 10) {
       throw new AppError(QUESTION.CONTENT_INVALID);
     }
 
-    // 2. Kiểm tra chương lý thuyết
     if (!this._props.chapterId) {
       throw new AppError(QUESTION.CHAPTER_REQUIRED);
     }
 
-    // 3. Kiểm tra hạng bằng lái liên quan
     if (!this._props.licenseCategoryIds || this._props.licenseCategoryIds.length === 0) {
       throw new AppError(QUESTION.LICENSE_REQUIRED);
     }
 
-    // 4. Kiểm tra số lượng đáp án tối thiểu
     if (!this._props.answers || this._props.answers.length < 2) {
       throw new AppError(QUESTION.ANSWERS_INSUFFICIENT);
     }
 
-    // 5. Kiểm tra đáp án đúng (Sử dụng some để tối ưu hiệu năng)
     const hasCorrectAnswer = this._props.answers.some((a) => a.isCorrect);
     if (!hasCorrectAnswer) {
       throw new AppError(QUESTION.CORRECT_ANSWER_MISSING);
     }
-  }
-
-  /**
-   * @description Kiểm tra xem đây có phải câu hỏi điểm liệt không
-   */
-  public isCritical(): boolean {
-    return this._props.isCritical;
-  }
-
-  public delete(): void {
-    const { QUESTION } = ErrorCode;
-    if (this.isCritical()) {
-      throw new AppError(QUESTION.CANNOT_DELETE_CRITICAL);
-    }
-
-    this._props.deletedAt = new Date();
-  }
-
-  public restore(): void {
-    this._props.deletedAt = null;
   }
 }

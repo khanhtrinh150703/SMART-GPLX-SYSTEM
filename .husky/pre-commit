@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
+echo "🚦 Đang kiểm tra lỗi kỹ thuật trước khi Commit..."
+npm run verify
 
 echo "🔍 Checking Website."
-act
+act --rm

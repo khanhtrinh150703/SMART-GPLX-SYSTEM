@@ -1,7 +1,16 @@
-export interface AnswerProps {
-  id?: string;
+export interface IAnswerProps {
+  id: string;
   content: string;
-  imageUrl?: string | null;
   isCorrect: boolean;
-  deletedAt: Date | null;
+  imageUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
 }
+
+/**
+ * @description Dữ liệu cần thiết để tạo một đáp án mới.
+ */
+export type CreateAnswerProps = Pick<IAnswerProps, 'content' | 'isCorrect'> & {
+  imageUrl?: string;
+};

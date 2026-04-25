@@ -34,8 +34,16 @@ export class CreateLicenseCategoryRequestDTO {
       throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
     }
 
-    if (this.name.length < 2 || this.name.length > 10) {
+    if (this.name.length < 1 || this.name.length > 10) {
       throw new AppError(ErrorCode.VALIDATION.NAME_INVALID_LENGTH);
+    }
+
+    if (this.minAge === undefined || this.minAge === null || typeof this.minAge !== 'number' || Number.isNaN(this.minAge)) {
+      throw new AppError(ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER); // "Độ tuổi phải là một con số hợp lệ."
+    }
+
+    if (this.minAge < 18) {
+      throw new AppError(ErrorCode.VALIDATION.AGE_INVALID); // "Độ tuổi tối thiểu không được nhỏ hơn 18."
     }
 
     // Kiểm tra định dạng bằng Regex (VD: A1, B1, B2...)

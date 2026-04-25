@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { StandardResponse } from '../types/response.type';
 import { ErrorCode, ErrorCodeType, ErrorStatus } from '@/shared/errors';
+import { Message } from '../errors/messages/success-messages-vn';
 
 export const Result = {
 
@@ -24,7 +25,7 @@ export const Result = {
     ok: <T>(
         res: Response,
         data?: T,
-        message: string = 'Thao tác thành công',
+        message: string = Message.SYSTEM.DATA_RETRIEVED,
         code: ErrorCodeType | string = ErrorCode.SYSTEM.SUCCESS
     ) => {
         const status = ErrorStatus[code as keyof typeof ErrorStatus] || 200;
@@ -35,7 +36,7 @@ export const Result = {
     created: <T>(
         res: Response,
         data: T,
-        message: string = 'Tạo mới thành công',
+        message: string = Message.SYSTEM.ACTION_SUCCESS,
         code: string = 'CREATED_SUCCESS'
     ) => {
         return Result.send(res, 201, code, message, data);

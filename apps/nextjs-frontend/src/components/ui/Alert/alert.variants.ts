@@ -10,6 +10,7 @@ export const alertVariants = cva(
         success: "bg-emerald-50 border-emerald-100 text-emerald-700",
         error: "bg-rose-50 border-rose-100 text-rose-700 animate-shake", // Hiệu ứng rung khi có lỗi
         warning: "bg-amber-50 border-amber-100 text-amber-700",
+        info: "bg-blue-50 border-blue-100 text-blue-700",
       },
       layout: {
         default: "text-left font-medium",
@@ -29,6 +30,7 @@ export const dotVariants = cva("w-1.5 h-1.5 rounded-full shrink-0", {
       success: "bg-emerald-500",
       error: "bg-rose-500",
       warning: "bg-amber-500",
+      info: "bg-blue-500", // ✨ PHẢI THÊM INFO VÀO ĐÂY NỮA
     },
   },
   defaultVariants: {

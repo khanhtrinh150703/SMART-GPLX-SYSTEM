@@ -10,10 +10,11 @@ import { X } from 'lucide-react';
 interface AlertProps 
   extends React.HTMLAttributes<HTMLDivElement>, 
     VariantProps<typeof alertVariants> {
-  message?: string | null;
+  message?: React.ReactNode;
   duration?: number; // ms (Ví dụ: 10000 = 10s)
   onClose?: () => void;
   showDot?: boolean;
+  
 }
 
 export const Alert = ({ 

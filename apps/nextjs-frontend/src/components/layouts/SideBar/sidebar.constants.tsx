@@ -1,60 +1,81 @@
-// 💡 Nhớ đổi tên file thành .tsx nhé!
+import { NavItem } from "@/types/sidebar.types";
 import {
-  LayoutDashboard,
-  FileText,
-  History,
-  UserCircle,
-  Settings,
-  Database,
-  Users,
-  CreditCard,
-  BookOpen,
+  LayoutDashboard, FileText, History, UserCircle,
+  Settings, Database, Users, CreditCard, BookOpen, FileUp,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
+export const NAV_ITEMS: NavItem[] = [
   {
-    href: "/",
-    label: "Tổng quan",
-    icon: <LayoutDashboard className="w-5 h-5" />,
+    href: "/dashboard",
+    title: "Tổng quan",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    // Không để requiredPermission = Mặc định ai cũng thấy (Public)
   },
   {
     href: "/dashboard/exams",
-    label: "Quản lý Đề thi",
-    icon: <FileText className="w-5 h-5" />,
+    title: "Quản lý Đề thi",
+    label: "Exams Management",
+    icon: FileText,
+    requiredPermission: "exams:manage", 
   },
   {
     href: "/dashboard/history",
-    label: "Lịch sử thi",
-    icon: <History className="w-5 h-5" />,
+    title: "Lịch sử thi",
+    label: "Exam History",
+    icon: History,
+    requiredPermission: "results:read",
   },
   {
     href: "/profile",
-    label: "Hồ sơ cá nhân",
-    icon: <UserCircle className="w-5 h-5" />,
+    title: "Hồ sơ cá nhân",
+    label: "Personal Profile",
+    icon: UserCircle,
+    requiredPermission: "profile:manage",
   },
+  
+  // --- PHÂN ĐOẠN QUẢN TRỊ (ADMIN/INSTRUCTOR) ---
   {
     href: "/admin/users",
-    label: "Quản lý người dùng",
-    icon: <Users className="w-5 h-5" />,
+    title: "Quản lý người dùng",
+    label: "Users Management",
+    icon: Users,
+    requiredPermission: "users:read",
   },
   {
-    href: "/chapter", // Cập nhật theo yêu cầu của cậu
-    label: "Quản lý chương học",
-    icon: <BookOpen className="w-5 h-5" />, // Chapter Management
+    href: "/chapter",
+    title: "Quản lý chương học",
+    label: "Chapter Management",
+    icon: BookOpen,
+    requiredPermission: "chapters:manage",
   },
   {
-    href: "/questions", // Cập nhật theo yêu cầu của cậu
-    label: "Ngân hàng câu hỏi",
-    icon: <Database className="w-5 h-5" />, // Question Bank
+    href: "/questions",
+    title: "Ngân hàng câu hỏi",
+    label: "Question Bank",
+    icon: Database,
+    requiredPermission: "questions:read",
   },
   {
-    href: "/licenses", // Cập nhật theo yêu cầu của cậu
-    label: "Hạng bằng lái",
-    icon: <CreditCard className="w-5 h-5" />, // License/GPLX Management
+    href: "/licenses",
+    title: "Hạng bằng lái",
+    label: "License Types",
+    icon: CreditCard,
+    requiredPermission: "licenses:manage",
+  },
+  {
+    href: "/admin/questions/import",
+    title: "Import câu hỏi",
+    label: "Import Questions",
+    icon: FileUp,
+    requiredPermission: "questions:import",
   },
   {
     href: "/settings",
-    label: "Cài đặt",
-    icon: <Settings className="w-5 h-5" />,
+    title: "Cài đặt",
+    label: "System Settings",
+    icon: Settings,
+    // Thường cài đặt hệ thống chỉ dành cho Admin tối thượng
+    // requiredPermission: "admin:all", 
   },
 ];

@@ -1,45 +1,166 @@
-import { beforeAll, afterAll, describe } from '@jest/globals';
+import { beforeAll, afterAll, describe, it, expect } from '@jest/globals';
 import { authSteps } from './steps/auth.test';
 import { userSteps } from './steps/user.test';
 import { licenseSteps } from './steps/license.test';
 import { chapterSteps } from './steps/chapter.test';
 import { questionSteps } from './steps/question-management.test';
 import { cleanupDB, connectDB } from '../jest.setup';
-
+import { selectionSteps } from './steps/selection.test';
+import { AUTH_PAYLOAD, AUTH_ENDPOINTS, CHAPTER_ENDPOINTS, LICENSE_ENDPOINTS } from '../config/index'
+import request from 'supertest';
+import app from '@/app';
+import { examMatrixSteps } from './steps/exam-matrix.test';
+import { Chapter } from '@prisma/client';
+import { License } from 'swagger-jsdoc';
 
 describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     // Shared Context: Dữ liệu dùng chung xuyên suốt các file
+    let adminToken: string;
+    let regularToken: string;
+    let chapterId: string | undefined;
+    let chapterIdSecond: string | undefined;
+    let chapterIdThird: string | undefined;
+    let chapterIdFour: string | undefined;
+    let licenseId: string | undefined;
+    let licenseSecond: string | undefined;
 
-    // Khởi động DB 1 lần duy nhất
+    // --- 🔑 SETUP: Khởi động, lấy Token và Dữ liệu nền ---
     beforeAll(async () => {
+        // Kết nối Database 1 lần duy nhất
         await connectDB();
+
+        const login = async (credentials: { username: string; password: string }, roleName: string): Promise<string> => {
+            const res = await request(app)
+                .post(AUTH_ENDPOINTS.LOGIN)
+                .send(credentials);
+
+            if (res.status !== 200) {
+                console.error(`❌ [${roleName} Setup]: Login Failed!`, res.body);
+                throw new Error(`Dừng test: Không thể lấy token cho ${roleName}.`);
+            }
+
+            return res.body.data.accessToken;
+        };
+
+        // 1. Đăng nhập song song hoặc tuần tự
+        adminToken = await login(
+            { username: AUTH_PAYLOAD.ADMIN_ACCOUNT.username, password: AUTH_PAYLOAD.ADMIN_ACCOUNT.password },
+            'Admin'
+        );
+
+        regularToken = await login(
+            { username: AUTH_PAYLOAD.NORMAL_ACCOUNT.username, password: AUTH_PAYLOAD.NORMAL_ACCOUNT.password },
+            'Regular User'
+        );
+
+        // 2. Fetch dữ liệu từ API
+        const [chapterRes, licenseRes] = await Promise.all([
+            request(app)
+                .get(CHAPTER_ENDPOINTS.FETCH_ALL)
+                .set('Authorization', `Bearer ${adminToken}`),
+            request(app)
+                .get(LICENSE_ENDPOINTS.BASE)
+                .set('Authorization', `Bearer ${adminToken}`)
+        ]);
+
+        // 3. Ép kiểu dữ liệu (Cast type) để không phải dùng any
+        const chapters = (chapterRes.body.data?.data || []) as Chapter[];
+        const licenses = (licenseRes.body.data?.data || []) as License[];
+
+        // 4. Tìm kiếm ID chính xác theo nghiệp vụ (c giờ đây là Chapter, l là License)
+        chapterId = chapters.find((c: Chapter) => c.code === '1')?.id;
+        chapterIdSecond = chapters.find((c: Chapter) => c.code === '5')?.id;
+        chapterIdThird = chapters.find((c: Chapter) => c.code === '6')?.id;
+        chapterIdFour = chapters.find((c: Chapter) => c.code === '2')?.id;
+        licenseId = licenses.find((l: License) => l.name === 'CE')?.id;
+        licenseSecond = licenses.find((l: License) => l.name === 'C')?.id;
+
+        // 5. Kiểm tra an toàn (Guard Clause)
+        if (!chapterId || !chapterIdSecond || !licenseId) {
+            throw new Error('❌ Test Fail: Không tìm thấy Seed Data cho Code 1, 5 hoặc License A1');
+        }
+
     });
 
-    // Chạy các Phase (Giai đoạn) theo thứ tự
-    describe('Phase 1: Authentication', () => {
+    // =========================================================================
+    // THỰC THI CÁC GIAI ĐOẠN (SEQUENTIAL EXECUTION)
+    // =========================================================================
+
+    describe('Phase 1: Authentication Operations', () => {
         authSteps();
     });
 
     describe('Phase 2: User Operations', () => {
-        userSteps();
+        userSteps(() => adminToken);
     });
-
 
     describe('Phase 3: License Operations', () => {
-        licenseSteps();
+        licenseSteps(
+            () => adminToken,
+            () => regularToken,
+            () => licenseId as string,
+            () => licenseSecond as string);
     });
 
-
     describe('Phase 4: Chapter Operations', () => {
-        chapterSteps();
+        chapterSteps(
+            () => adminToken,
+            () => regularToken,
+            () => chapterId as string,
+            () => chapterIdFour as string);
     });
 
     describe('Phase 5: Question Operations', () => {
-        questionSteps();
+        questionSteps(
+            () => adminToken,
+            () => regularToken,
+            () => chapterId as string,
+            () => licenseId as string
+        );
     });
 
-    // Dọn dẹp DB sau khi tất cả đã xong
+    describe('Phase 6: Selection Operations', () => {
+        selectionSteps(() => adminToken, () => regularToken);
+    });
+
+    describe('Phase 7: Exam-Matrix Operations', () => {
+        examMatrixSteps(
+            () => adminToken,
+            () => regularToken,
+            () => licenseId as string,
+            () => chapterId as string,
+            () => chapterIdSecond as string,
+            () => chapterIdThird as string
+        );
+    });
+
+    // =========================================================================
+    // GIAI ĐOẠN CUỐI: ĐĂNG XUẤT (TEARDOWN & LOGOUT)
+    // =========================================================================
+    describe('Phase 8: Logout & Cleanup Session', () => {
+        it('✅ Nên đăng xuất thành công và vô hiệu hóa session của Admin', async () => {
+            const res = await request(app)
+                .post(AUTH_ENDPOINTS.LOGOUT)
+                .set('Authorization', `Bearer ${adminToken}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+        });
+
+        it('✅ Nên bị từ chối (401) nếu cố gắng truy cập sau khi đã đăng xuất', async () => {
+            const res = await request(app)
+                .get(LICENSE_ENDPOINTS.BASE)
+                .set('Authorization', `Bearer ${adminToken}`);
+
+            expect(res.status).toBe(401);
+        });
+    });
+
+    // =========================================================================
+    // DỌN DẸP DATABASE
+    // =========================================================================
     afterAll(async () => {
+        console.log("✅ Teardown hoàn tất: Database đã được dọn dẹp.");
         await cleanupDB();
     });
 });

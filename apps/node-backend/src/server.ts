@@ -1,47 +1,78 @@
+import 'dotenv/config'; 
 import { env } from 'node:process';
-import app from './app';
+
+// 1. Core App & Database
+import app from '@/app';
+import { connectRedis } from '@/infrastructure/database/redis/redis.client';
 import prisma from '../prisma/prisma';
-import { connectRedis } from './infrastructure/database/redis/redis.client';
-import { RoleCacheService } from './infrastructure/security/role-cache.service';
 
-// Import Redis connection ở đây...
+// 2. Dependency Injection & Services
+import { container } from '@/shared/utils/container';
+import { IMasterDataCacheService } from '@/domain/interfaces/services/exam-mgmt';
 
-const PORT = env.PORT
+// 3. Infrastructure (Queues & Workers)
+import { ImportQueue } from './infrastructure/queues';
+import { ImportWorker } from './infrastructure/workers';
 
+// 4. Logging
+// import logger from '@/infrastructure/logging/winston.logger';
+
+const PORT = env.PORT || 3000;
 async function startServer() {
   try {
     console.log('⏳ [System] Starting services...');
 
-    // 1. Kết nối hạ tầng cơ sở (Infrastructure)
-    // Đảm bảo các dịch vụ này sẵn sàng trước khi nạp Cache
+    // 1. Kết nối hạ tầng cơ sở
     await Promise.all([
       prisma.$connect(),
       connectRedis()
     ]);
     console.log('✅ [System] Database & Redis connected');
 
-    // 2. Nạp dữ liệu vào bộ nhớ (Memory Warm-up)
-    // Phải xong bước này thì mới được phép nhận Request
-    console.log('⏳ [System] Initializing Role Cache...');
-    await RoleCacheService.initialize();
-    console.log('✅ [System] Role Cache warmed up successfully');
+    // 2. Nạp dữ liệu vào bộ nhớ
+    const masterDataCache = container.resolve<IMasterDataCacheService>('masterDataCacheService');
+    await masterDataCache.initialize();
+    console.log('✅ [System] MasterData Cache warmed up');
 
-    // 3. Khởi chạy Server
+    // ============================================================
+    // 3. KHỞI TẠO BULLMQ QUA CONTAINER (Dịch: Initialize via DI)
+    // ============================================================
+    console.log('⏳ [System] Resolving Background Workers...');
+
+    // Ông chỉ cần 'resolve' chúng ra. Awilix sẽ tự động:
+    // - Tạo ImportProcessorService (vì Worker cần nó)
+    // - Tạo ImportQueue (Singleton)
+    // - Khởi chạy Worker (Lắng nghe Redis ngay lập tức)
+    const importQueue = container.resolve('importQueue') as ImportQueue;
+    const importWorker = container.resolve('importWorker') as ImportWorker;
+
+    console.log('👷 [System] Import Worker & Queue are ready');
+
+    // 4. Khởi chạy Server API
     const server = app.listen(PORT, () => {
-      console.log(`🚀 [System] Smart-GPLX-Backend is live at http://127.0.0.1:${PORT}`);
+      console.log(`🚀 [System] Backend is live at http://127.0.0.1:${PORT}`);
     });
 
-    // 4. Xử lý tắt server an toàn (Graceful Shutdown)
+    // ==========================================
+    // 5. GRACEFUL SHUTDOWN (Tắt máy an toàn)
+    // ==========================================
     process.on('SIGTERM', async () => {
-      console.log('👋 [System] Closing server...');
+      console.log('👋 [System] SIGTERM received.');
+
+      // Đóng Worker trước để ngừng nhận Job mới
+      await importWorker.close();
+      await importQueue.close();
+      console.log('✅ [System] BullMQ safely closed.');
+
       server.close(async () => {
         await prisma.$disconnect();
+        console.log('✅ [System] All services stopped. Goodbye!');
         process.exit(0);
       });
     });
 
   } catch (error) {
-    console.error('❌ [System] Critical failure during startup:', error);
+    console.error('❌ [System] Startup failure:', error);
     process.exit(1);
   }
 }

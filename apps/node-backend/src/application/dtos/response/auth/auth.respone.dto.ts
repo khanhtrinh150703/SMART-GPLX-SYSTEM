@@ -3,7 +3,7 @@ import { RoleResponseDTO } from "../role/role.respone.dto";
 /**
  * @description DTO phản hồi sau khi đăng nhập thành công, bao gồm thông tin hồ sơ và bộ đôi mã thông báo bảo mật (Tokens).
  */
-export interface LoginResponseDTO {
+export interface ILoginResponseDTO {
   /** @description Thông tin chi tiết hồ sơ người dùng đã được xác thực. */
   user: {
     /** @property {string} id - Mã định danh duy nhất của người dùng (UUID). */

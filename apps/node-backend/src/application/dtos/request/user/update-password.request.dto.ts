@@ -27,7 +27,7 @@ export class ChangePasswordRequestDTO {
   public validateOrThrow(): void {
     // 1. Kiểm tra sự hiện diện
     if (!this.oldPassword || !this.newPassword) {
-      throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
+      throw new AppError(ErrorCode.VALIDATION.PASSWORD_INVALID);
     }
 
     // 2. Kiểm tra tính khác biệt (UX: Không nên đổi mật khẩu mới giống hệt mật khẩu cũ)
@@ -37,7 +37,7 @@ export class ChangePasswordRequestDTO {
 
     // 3. Kiểm tra độ phức tạp dựa trên chính sách bảo mật (Regex)
     if (!REGEX.PASSWORD.STRONG.test(this.newPassword)) {
-      throw new AppError(ErrorCode.VALIDATION.INVALID_PASSWORD);
+      throw new AppError(ErrorCode.VALIDATION.PASSWORD_INVALID);
     }
   }
 }

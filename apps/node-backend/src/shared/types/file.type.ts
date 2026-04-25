@@ -7,13 +7,14 @@ export interface IUpdateProfileInput {
 }
 
 export interface IUploadedFile {
-  fieldname: string;
   originalname: string;
-  encoding: string;
   mimetype: string;
   size: number;
-  destination: string;
-  filename: string;
-  path: string;
   buffer: Buffer;
+  // Các trường bên dưới cho thêm dấu ? để không bắt buộc
+  fieldname?: string;
+  encoding?: string;
+  destination?: string;
+  filename?: string;
+  path?: string;
 }

@@ -62,10 +62,24 @@ export const chapterSchemas = {
                 type: 'object',
                 properties: {
                     data: {
-                        type: 'array',
-                        items: { $ref: '#/components/schemas/ChapterResponse' }
+                        type: 'object',
+                        properties: { 
+                            data: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/ChapterResponse' },
+                            },
+                            meta: {
+                                type: 'object',
+                                properties: {
+                                    total: { type: 'integer', example: 100 },
+                                    page: { type: 'integer', example: 1 },
+                                    limit: { type: 'integer', example: 10 },
+                                    totalPages: { type: 'integer', example: 10 },
+                                },
+                            },
+                        } 
                     }
-                }
+                },
             }
         ]
     }

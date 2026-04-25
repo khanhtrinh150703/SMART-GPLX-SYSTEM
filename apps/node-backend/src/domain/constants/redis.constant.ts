@@ -1,25 +1,20 @@
 /**
- * @description Tập hợp các hằng số tiền tố (prefix) dùng để đặt tên key trong Redis.
- * Sử dụng cấu trúc namespace 'auth:' để tránh xung đột dữ liệu.
+ * @description Định nghĩa các prefix cho Redis Key theo cấu trúc: [service]:[module]:[purpose]
  */
 export const REDIS_CONSTANTS = {
-  // --- NHÓM ĐĂNG KÝ & OTP ---
-  OTP_PREFIX: 'auth:otp:',
-  OTP_LOCK_PREFIX: 'auth:otp_lock:',
-  PENDING_USER_PREFIX: 'auth:pending_user:',
-
-  // --- NHÓM XÁC THỰC (TOKEN MANAGEMENT) ---
-  // Dùng để check JTI trong Middleware (Access Token)
-  ACCESS_TOKEN_PREFIX: 'auth:access:', 
-  
-  // Dùng để check quyền đổi thẻ mới (Refresh Token)
-  REFRESH_TOKEN_PREFIX: 'auth:refresh:',
-
-  // --- NHÓM BLACKLIST (Tùy chọn nếu cần thu hồi token thủ công) ---
-  BLACKLIST_PREFIX: 'auth:blacklist:',
+  PREFIX: {
+    AUTH: {
+      // Nhóm đăng ký & xác thực
+      OTP: 'auth:otp:',
+      OTP_LOCK: 'auth:otp-lock:',
+      PENDING_USER: 'auth:pending-user:',
+      
+      // Nhóm Token Management
+      ACCESS_TOKEN: 'auth:access-token:',
+      REFRESH_TOKEN: 'auth:refresh-token:',
+      BLACKLIST: 'auth:blacklist:',
+    },
+    // Trinh có thể thêm các module khác ở đây sau này
+    // QUESTION: 'question:',
+  }
 } as const;
-
-/**
- * @type {string} Định nghĩa kiểu dữ liệu cho các Key để đảm bảo Type Safety
- */
-export type RedisPrefix = typeof REDIS_CONSTANTS[keyof typeof REDIS_CONSTANTS];
