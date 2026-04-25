@@ -1,76 +1,131 @@
-export const permissions = [
-    // 👤 Quản lý người dùng
+// data.seed.ts
+
+// --- Interfaces ---
+
+interface UserSeed {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber: string;
+  roleNames: string[];
+} 
+
+export interface PermissionSeed {
+    name: string;
+    description: string;
+}
+
+export interface RoleSeed {
+    name: string;
+    description: string;
+    permissions: string[]; // Danh sách tên permission
+}
+
+export interface LicenseSeed {
+    name: string;
+    description: string;
+    minAge: number;
+}
+
+export interface ChapterSeed {
+    code: string;
+    name: string;
+    description: string;
+    orderIndex: number;
+}
+
+export interface MatrixDetailSeed {
+    chapterCode: string; // Dùng code để tìm ID
+    percentage: number;
+}
+
+export interface MatrixSeed {
+    name: string;
+    licenseName: string; // Dùng name để tìm ID (A1, B2...)
+    totalQuestions: number;
+    passingScore: number;
+    durationMinutes: number;
+    minCriticalQuestions: number;
+    isDefault: boolean;
+    details: MatrixDetailSeed[];
+}
+
+// --- Data ---
+export const permissions: PermissionSeed[] = [
     { name: 'users:read', description: 'Xem danh sách người dùng' },
     { name: 'users:manage', description: 'Thêm, sửa, khóa tài khoản người dùng' },
     { name: 'profile:manage', description: 'Cập nhật thông tin cá nhân của chính mình' },
-
-    // 📚 Ngân hàng câu hỏi
     { name: 'questions:read', description: 'Xem ngân hàng câu hỏi' },
     { name: 'questions:write', description: 'Thêm/Sửa câu hỏi và đáp án' },
     { name: 'questions:import', description: 'Import câu hỏi từ file Excel' },
     { name: 'questions:delete', description: 'Xóa câu hỏi' },
-
-    // 📖 Chương học & Mẹo thi (Tách Read để Student còn vào học được)
     { name: 'chapters:read', description: 'Xem nội dung bài học' },
-    { name: 'chapters:manage', description: 'Quản lý (Thêm/Sửa/Xóa) chương học và mẹo thi' },
-
-    // 🪪 Hạng bằng lái
+    { name: 'chapters:manage', description: 'Quản lý chương học và mẹo thi' },
     { name: 'licenses:read', description: 'Xem danh sách các hạng bằng lái' },
-    { name: 'licenses:manage', description: 'Quản lý thông tin các hạng bằng (A1, B2, C...)' },
-
-    // 📝 Đề thi & Kết quả
+    { name: 'licenses:manage', description: 'Quản lý thông tin các hạng bằng' },
     { name: 'exams:manage', description: 'Tạo và cấu trúc bộ đề thi' },
     { name: 'exams:take', description: 'Thực hiện bài thi thử' },
     { name: 'results:read', description: 'Xem lịch sử và kết quả thi' },
-
-    // 🕸️ Ma trận đề thi (Cấu trúc phân bổ câu hỏi)
     { name: 'matrices:read', description: 'Xem cấu trúc ma trận đề thi' },
-    { name: 'matrices:manage', description: 'Quản lý (Thêm/Sửa/Xóa) ma trận đề thi' },
-    
-    // 🔑 Quyền tối thượng
-    { name: 'admin:all', description: 'Toàn quyền hệ thống (Bypass mọi kiểm tra)' },
+    { name: 'matrices:manage', description: 'Quản lý ma trận đề thi' },
+    { name: 'admin:all', description: 'Toàn quyền hệ thống' },
 ];
 
-export const roles = [
-    { name: 'ADMIN', description: 'Quản trị viên hệ thống' },
-    { name: 'INSTRUCTOR', description: 'Giảng viên/Người ra đề' },
-    { name: 'STUDENT', description: 'Học viên/Thí sinh' },
+export const roles: RoleSeed[] = [
+    {
+        name: 'ADMIN',
+        description: 'Quản trị viên hệ thống',
+        permissions: ['admin:all']
+    },
+    {
+        name: 'INSTRUCTOR',
+        description: 'Giảng viên/Người ra đề',
+        permissions: ['questions:read', 'questions:write', 'chapters:read', 'matrices:read']
+    },
+    {
+        name: 'STUDENT',
+        description: 'Học viên/Thí sinh',
+        permissions: ['chapters:read', 'exams:take', 'results:read', 'profile:manage']
+    },
 ];
 
-export const adminUser = {
+export const users: UserSeed[] = [
+  {
     username: 'admin',
     email: 'admin@smartgplx.com',
     password: 'AdminPassword123@',
     fullName: 'Quản trị viên hệ thống',
     phoneNumber: '0999999999',
-};
-
-export const testUser = {
-    username: 'testuser',
-    email: 'testuser@smartgplx.com',
-    password: 'UserPassword123@',
-    fullName: 'Người dùng thử nghiệm',
-    phoneNumber: '0988888888',
-};
-
-export const testInstructor = {
-    username: 'testinstructor',
+    roleNames: ['ADMIN'],
+  },
+  {
+    username: 'instructor_test',
     email: 'instructor@smartgplx.com',
     password: 'InstructorPassword123@',
     fullName: 'Giảng viên hướng dẫn',
     phoneNumber: '0977777777',
-    role: 'INSTRUCTOR',
-};
-
-export const testUserTemp = {
+    roleNames: ['INSTRUCTOR'],
+  },
+  {
+    username: 'student_test',
+    email: 'testuser@smartgplx.com',
+    password: 'UserPassword123@',
+    fullName: 'Học viên dùng thử',
+    phoneNumber: '0988888888',
+    roleNames: ['STUDENT'],
+  },
+  {
     username: 'testusertemp',
     email: 'temp@smartgplx.com',
     password: 'TempPassword123@',
-    fullName: 'Học viên dự phòng',
+    fullName: 'Học viên dự phòng (Multi-role)',
     phoneNumber: '0966666666',
-};
+    roleNames: ['STUDENT', 'INSTRUCTOR'], // User này có 2 quyền
+  },
+];
 
-export const licenses = [
+export const licenses: LicenseSeed[] = [
     {
         name: 'A1',
         description: 'Mô tô 2 bánh có dung tích xi-lanh đến 125 cm3 hoặc công suất động cơ điện đến 11 kW.',
@@ -94,7 +149,7 @@ export const licenses = [
     {
         name: 'C1',
         description: 'Ô tô tải và chuyên dùng có khối lượng từ 3.500 kg đến 7.500 kg; kéo rơ moóc đến 750 kg; các loại xe hạng B.',
-        minAge: 19 // Theo luật mới 2024 hạng C1 là 19 tuổi
+        minAge: 19
     },
     {
         name: 'C',
@@ -148,7 +203,7 @@ export const licenses = [
     }
 ];
 
-export const chapters = [
+export const chapters: ChapterSeed[] = [
     {
         code: '1',
         name: 'Chương I: Quy định chung và quy tắc giao thông đường bộ',
@@ -184,5 +239,22 @@ export const chapters = [
         name: 'Chương VI: Giải thế sa hình và kỹ năng xử lý tình huống giao thông',
         description: 'Gồm 115 câu (từ câu 486 đến câu 600) về quy tắc ưu tiên và xử lý tình huống tại các thế sa hình.',
         orderIndex: 6
+    }
+];
+
+export const examMatrices: MatrixSeed[] = [
+    {
+        name: "Ma trận tạm",
+        licenseName: "CE",
+        totalQuestions: 25,
+        passingScore: 21,
+        durationMinutes: 19,
+        minCriticalQuestions: 1,
+        isDefault: true,
+        details: [
+            { chapterCode: '1', percentage: 40 },
+            { chapterCode: '5', percentage: 30 },
+            { chapterCode: '6', percentage: 30 },
+        ]
     }
 ];

@@ -22,6 +22,9 @@ export class ExamMatrixResponseDTO {
 
   /** @description Số điểm tối thiểu để đạt */
   public readonly passingScore: number;
+  
+  /** @description Tên hiển thị của đề thi. */
+  public readonly name: string;
 
   /** @description Thời gian làm bài (phút) */
   public readonly durationMinutes: number;
@@ -33,6 +36,7 @@ export class ExamMatrixResponseDTO {
   public readonly details: IExamMatrixDetailResponse[];
 
   constructor(props: ExamMatrixResponseDTO) {
+    this.name = props.name;
     this.id = props.id;
     this.licenseCategoryId = props.licenseCategoryId;
     this.totalQuestions = props.totalQuestions;

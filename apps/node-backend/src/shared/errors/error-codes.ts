@@ -7,14 +7,19 @@ export const ErrorCode = {
      * Các lỗi tầng hạ tầng và phản hồi chung.
      */
     SYSTEM: {
-        SUCCESS: 'SYS_000',             // Thao tác thành công
-        INVALID_INPUT: 'SYS_400',       // Dữ liệu đầu vào không hợp lệ hoặc sai định dạng
-        FILE_SIZE_EXCEEDED: 'SYS_001',  // Mã lỗi chung cho mọi loại file vượt dung lượng
-        INTERNAL_ERROR: 'SYS_500',      // Lỗi server không xác định
-        SERVICE_UNAVAILABLE: 'SYS_503', // Bảo trì
-        DATABASE_ERROR: 'SYS_504',      // Lỗi truy vấn DB
-        TOO_MANY_REQUESTS: 'SYS_429',   // Spam / Rate limit
-        REQUEST_TIMEOUT: 'SYS_408',     // Hết thời gian chờ
+        SUCCESS: 'SYS_000',
+        FILE_SIZE_EXCEEDED: 'SYS_001',
+        ALREADY_EXISTS: 'SYS_002',
+        INVALID_INPUT: 'SYS_400',      // Lỗi validation (dữ liệu sai)
+        BAD_REQUEST: 'SYS_401',        // Lỗi request không hợp lệ nói chung
+        REQUEST_TIMEOUT: 'SYS_408',
+        DUPLICATE_DATA: 'SYS_409',      // P2002: Trùng lặp dữ liệu (Unique constraint)
+        RESOURCE_NOT_FOUND: 'SYS_444',  // P2025: Không tìm thấy bản ghi để thao tác
+        RELATION_FAILED: 'SYS_422',     // P2003: Lỗi ràng buộc (Khóa ngoại không tồn tại)
+        TOO_MANY_REQUESTS: 'SYS_429',
+        INTERNAL_ERROR: 'SYS_500',
+        SERVICE_UNAVAILABLE: 'SYS_503',
+        DATABASE_ERROR: 'SYS_504',
         CONFIG_ERROR: 'SYS_505',
     },
 
@@ -64,11 +69,27 @@ export const ErrorCode = {
      * Lỗi đặc thù cho hệ thống thi bằng lái xe.
      */
     EXAM: {
-        NOT_FOUND: 'EXAM_404',          // Đề thi không tồn tại
-        ALREADY_SUBMITTED: 'EXAM_409',  // Bài thi đã nộp trước đó
-        EXPIRED: 'EXAM_410',            // Hết giờ làm bài
-        AI_PROCESSING_ERROR: 'EXAM_500',// Lỗi AI khi chấm điểm/nhận diện
-        IMAGE_INVALID: 'EXAM_001',      // Ảnh chụp bằng lái/CMND không rõ nét
+        // --- Nhóm 1xx: Lỗi dữ liệu đầu vào (Validation) ---
+        IMAGE_INVALID: 'EXM_101',           // Ảnh không hợp lệ
+        ANSWERS_EMPTY: 'EXM_102',           // Danh sách câu trả lời trống
+        ANSWER_FORMAT_INVALID: 'EXM_103',   // Định dạng câu trả lời sai
+        NAME_REQUIRED: 'EXM_104',           // Tên không được để trống
+        NAME_TOO_LONG: 'EXM_105',           // Tên quá dài
+        INVALID_MATRIX_ID: 'EXM_106',       // Mã ma trận đề thi không hợp lệ
+
+        // --- Nhóm 2xx: Lỗi nghiệp vụ & Kho dữ liệu (Pool & Business) ---
+        INSUFFICIENT_POOL_QUESTIONS: 'EXM_201',     // Tổng kho không đủ câu hỏi
+        INSUFFICIENT_CHAPTER_QUESTIONS: 'EXM_202',  // Thiếu câu hỏi theo chương mục
+        INSUFFICIENT_CRITICAL_QUESTIONS: 'EXM_203', // Thiếu câu hỏi điểm liệt
+        QUESTION_DATA_INVALID: 'EXM_204',           // Dữ liệu câu hỏi trong kho bị lỗi/thiếu
+
+        // --- Nhóm 4xx: Lỗi trạng thái & Luồng thực thi (Flow & State) ---
+        NOT_FOUND: 'EXM_404',               // Không tìm thấy bài thi (Dùng 404 cho dễ nhớ)
+        ALREADY_SUBMITTED: 'EXM_409',       // Đã nộp bài trước đó (Dùng 409 - Conflict)
+        EXPIRED: 'EXM_410',                 // Hết giờ làm bài (Dùng 410 - Gone)
+
+        // --- Nhóm 5xx: Lỗi xử lý hạ tầng & AI (System/AI) ---
+        AI_PROCESSING_ERROR: 'EXM_500',     // Lỗi xử lý AI (Giải thích đáp án...)
     },
 
     /** * --- RESOURCE & UPLOAD (FILE) --- 
@@ -151,13 +172,58 @@ export const ErrorCode = {
         CHUNK_SIZE_EXCEEDED: 'IMP_006',  // CHUNK_SIZE_EXCEEDED
         SESSION_EXPIRED: 'IMP_007',      // IMPORT_SESSION_EXPIRED
     },
+
     MATRIX: {
-        NO_DETAILS: "MATRIX_NO_DETAILS",
-        INVALID_PERCENTAGE: "INVALID_MATRIX_PERCENTAGE",
-        INVALID_PASSING_SCORE: "INVALID_PASSING_SCORE",
-        NOT_FOUND: "MATRIX_NOT_FOUND",
-        DUPLICATE_CHAPTER: "DUPLICATE_CHAPTER_IN_MATRIX",
-        RESTORE_FAILED_DUPLICATE: "RESTORE_FAILED_DUPLICATE",
+        // --- Nhóm 1xx: Validation (Lỗi nhập liệu) ---
+        NAME_REQUIRED: 'MTX_101',           // Tên ma trận không được trống
+        NAME_TOO_LONG: 'MTX_102',           // Tên ma trận quá dài
+        NO_DETAILS: 'MTX_103',              // Ma trận không có chi tiết cấu trúc
+        INVALID_PERCENTAGE: 'MTX_104',       // Tổng tỉ lệ phần trăm không bằng 100%
+        INVALID_PASSING_SCORE: 'MTX_105',    // Điểm đạt không hợp lệ
+        DUPLICATE_CHAPTER: 'MTX_106',        // Trùng lặp chương trong ma trận
+
+        // --- Nhóm 4xx: State/Management (Lỗi trạng thái/Quản lý) ---
+        NOT_FOUND: 'MTX_404',                // Không tìm thấy ma trận
+        RESTORE_FAILED_DUPLICATE: 'MTX_409', // Khôi phục thất bại do trùng tên đã tồn tại
+    },
+
+    EXCEL: {
+        WORKSHEET_NOT_FOUND: 'EXCEL_001',
+        INVALID_FORMAT: 'EXCEL_002',
+        EMPTY_FILE: 'EXCEL_003',
+    },
+
+    PROCESS: {
+        ALREADY_COMPLETED: 'PRC_001', // Process Error 001
+    },
+
+    MEDIA: {
+        // --- Nhóm 1xx: Validation (Lỗi dữ liệu đầu vào) ---
+        SOURCE_REQUIRED: 'MED_101',     // Nguồn (path/url/buffer) không được để trống
+        INVALID_TYPE: 'MED_102',        // Loại file không hỗ trợ
+        FILE_TOO_LARGE: 'MED_103',      // File quá dung lượng
+        UPLOAD_FAILED: 'MED_501',       // Lỗi khi upload lên Storage (S3, Cloudinary...)
+    },
+
+    EXAM_ATTEMPT: {
+        ID_REQUIRED: 'EXA_000',
+        NOT_FOUND: 'EXA_001',
+        ALREADY_SUBMITTED: 'EXA_002',
+        TIME_EXPIRED: 'EXA_003',
+        SCORE_INVALID: 'EXA_004',
+        RESULT_CONSISTENCY_ERROR: 'EXA_005',
+        NOT_IN_PROGRESS: 'EXA_006',
+        UNAUTHORIZED_ACCESS: 'EXA_007',
+    },
+
+    ACTIVE_SESSION: {
+        NOT_FOUND: 'SES_001',
+        EXPIRED: 'SES_002',
+        REVOKED: 'SES_003',
+        MAX_SESSIONS_REACHED: 'SES_004',
+        INVALID_TOKEN: 'SES_005',
+        DEVICE_MISMATCH: 'SES_006',
+        INVALID_EXPIRATION_TIME: 'SES_007'
     }
 } as const;
 

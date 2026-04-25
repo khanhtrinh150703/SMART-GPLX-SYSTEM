@@ -1,8 +1,5 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
 export const examMatrixPaths = {
-    // ==================== TẠO MỚI MA TRẬN ====================
-    [`${API_CONSTANTS.API_BASE}/exam-matrices`]: {
+    [`/exam-matrices`]: {
         post: {
             tags: ['Exam Matrix Management'],
             summary: 'Tạo mới một ma trận đề thi',
@@ -44,6 +41,18 @@ export const examMatrixPaths = {
                                 InvalidInput: {
                                     summary: 'Dữ liệu không hợp lệ',
                                     value: { success: false, code: 'SYS_400', message: 'Dữ liệu đầu vào không đúng định dạng' }
+                                },
+                                LicenseNotFound: {
+                                    summary: 'Hạng bằng không tồn tại',
+                                    value: { success: false, code: 'LICENSE_NOT_FOUND', message: 'Hạng giấy phép lái xe không tồn tại' }
+                                },
+                                ChapterNotFound: {
+                                    summary: 'Chương học không tồn tại',
+                                    value: { success: false, code: 'CHAPTER_NOT_FOUND', message: 'Một hoặc nhiều chương học không tồn tại trong hệ thống' }
+                                },
+                                DuplicateChapter: {
+                                    summary: 'Trùng lặp chương học',
+                                    value: { success: false, code: 'DUPLICATE_CHAPTER', message: 'Một chương học không được xuất hiện hai lần trong một ma trận' }
                                 },
                                 NoDetails: {
                                     summary: 'Thiếu chi tiết chương',
@@ -98,7 +107,7 @@ export const examMatrixPaths = {
     },
 
     // ==================== MA TRẬN THEO ID (GET - PUT - DELETE) ====================
-    [`${API_CONSTANTS.API_BASE}/exam-matrices/{id}`]: {
+    [`/exam-matrices/{id}`]: {
         put: {
             tags: ['Exam Matrix Management'],
             summary: 'Cập nhật thông tin ma trận',
@@ -267,7 +276,7 @@ export const examMatrixPaths = {
             ],
             responses: {
                 '200': {
-                    description: 'Xóa thành công (Có thể là Hard Delete hoặc Soft Delete ngầm định)',
+                    description: 'Xóa thành công',
                     content: {
                         'application/json': {
                             schema: { $ref: '#/components/schemas/StandardResponse' }
@@ -307,7 +316,7 @@ export const examMatrixPaths = {
     },
 
     // ==================== KHÔI PHỤC MA TRẬN ====================
-    [`${API_CONSTANTS.API_BASE}/exam-matrices/{id}/restore`]: {
+    [`/exam-matrices/{id}/restore`]: {
         patch: {
             tags: ['Exam Matrix Management'],
             summary: 'Khôi phục Ma trận đã xóa mềm',

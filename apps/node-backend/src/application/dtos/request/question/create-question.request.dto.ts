@@ -3,35 +3,35 @@ import { AppError, ErrorCode } from "@/shared/errors";
 import { IUploadedFile } from "@/shared/types/file.type";
 
 /**
- * @description Cấu trúc đáp án trong Payload sau khi xử lý (Processed answer payload structure)
+ * @description Cấu trúc đáp án sau khi được DTO xử lý.
+ * Khớp hoàn toàn với đầu vào của Question.create.
  */
 export interface CreateAnswerPayload {
   content: string;
   isCorrect: boolean;
+  imageUrl: string;
   imageIndex?: number;
-  imageFile?: IUploadedFile; // File vật lý sau khi được DTO ánh xạ (Mapped physical file)
+  imageFile?: IUploadedFile;
 }
 
 /**
- * @description Giao diện cho dữ liệu thô nhận từ Controller (Raw input interface from Controller)
+ * @description Dữ liệu thô từ Controller (Multipart/FormData)
  */
 export interface ICreateQuestionInput {
+  indexNumber: string | number;
   chapterId: string;
   content: string;
   licenseCategoryIds: string | string[];
-  answers: string; // Chuỗi JSON từ Frontend (JSON string from Frontend)
+  answers: string | CreateAnswerPayload[];
   isCritical: string | boolean;
   difficultyLevel: string | number;
-  status: QuestionStatus; 
-  imageFile?: IUploadedFile;       // Ảnh chính của câu hỏi (Main question image)
-  answerFiles?: IUploadedFile[];   // Mảng ảnh đáp án lấy từ req.files (Array of answer images)
+  status: QuestionStatus;
+  imageFile?: IUploadedFile;
+  answerFiles?: IUploadedFile[];
 }
 
-/**
- * @class CreateQuestionRequestDto
- * @description DTO vận chuyển dữ liệu tạo câu hỏi mới (DTO for transporting new question data)
- */
 export class CreateQuestionRequestDto {
+  public readonly indexNumber: number;
   public readonly chapterId: string;
   public readonly content: string;
   public readonly licenseCategoryIds: string[];
@@ -42,77 +42,102 @@ export class CreateQuestionRequestDto {
   public readonly imageFile?: IUploadedFile;
 
   constructor(data: ICreateQuestionInput) {
-    // 1. Gán và ép kiểu cơ bản (Basic casting and assignment)
+    // 1. Ép kiểu cơ bản (Casting)
     this.chapterId = String(data.chapterId || '');
     this.content = String(data.content || '');
     this.imageFile = data.imageFile;
     this.difficultyLevel = Number(data.difficultyLevel) || 1;
-    this.isCritical = String(data.isCritical) === 'true';
+    this.indexNumber = Number(data.indexNumber) || 1;
     this.status = data.status ?? 'ACTIVE';
 
-    // 2. Xử lý mảng hạng bằng lái (License categories processing)
-    this.licenseCategoryIds = this._parseArray<string>(data.licenseCategoryIds);
+    // Xử lý boolean từ FormData (string 'true' -> boolean true)
+    this.isCritical = String(data.isCritical).toLowerCase() === 'true';
 
-    // 3. Xử lý mảng answers & THỰC HIỆN ÁNH XẠ ẢNH (Answers processing & Image Mapping)
-    const parsedAnswers = this._parseArray<CreateAnswerPayload>(data.answers);
+    // 2. Parse mảng hạng bằng lái (Dựa trên string | string[])
+    this.licenseCategoryIds = this._parseLicenseCategories(data.licenseCategoryIds);
 
-    this.answers = parsedAnswers.map((ans) => {
-      const processedAnswer: CreateAnswerPayload = {
-        content: String(ans.content || ''),
-        isCorrect: String(ans.isCorrect) === 'true' || ans.isCorrect === true,
-        imageIndex: ans.imageIndex,
-      };
+    // 3. Parse answers và Ánh xạ ảnh vật lý
+    const rawAnswers = this._parseAnswersJson(data.answers);
 
-      // Ánh xạ file vật lý vào đáp án dựa trên imageIndex (Map physical file based on index)
-      if (
-        typeof ans.imageIndex === 'number' &&
-        data.answerFiles &&
-        data.answerFiles[ans.imageIndex]
-      ) {
-        processedAnswer.imageFile = data.answerFiles[ans.imageIndex];
+    this.answers = rawAnswers.map((ans, idx) => {
+      // 1. Nếu ans bị null/undefined, chửi ngay lập tức!
+      if (!ans) {
+        throw new AppError(ErrorCode.QUESTION.NOT_FOUND, `Dữ liệu đáp án tại vị trí ${idx} không hợp lệ`);
       }
 
-      return processedAnswer;
+      // 2. Ép kiểu index
+      const imgIdx = ans.imageIndex !== undefined ? Number(ans.imageIndex) : undefined;
+
+      // 3. Mapping dữ liệu (Đảm bảo ans.content và ans.isCorrect tồn tại trong JSON)
+      const processed: CreateAnswerPayload = {
+        content: String(ans.content || '').trim(),
+        isCorrect: String(ans.isCorrect) === 'true' || ans.isCorrect === true,
+        imageUrl: '',
+        imageIndex: imgIdx,
+      };
+
+      // 4. Xử lý file vật lý
+      if (imgIdx !== undefined && data.answerFiles?.[imgIdx]) {
+        processed.imageFile = data.answerFiles[imgIdx];
+      }
+
+      return processed; // Lúc này TS sẽ hiểu kết quả chắc chắn KHÔNG PHẢI null
     });
   }
 
   /**
-   * @description Hàm bổ trợ parse mảng an toàn (Helper method for safe array parsing)
+   * @private Xử lý parse License Categories (string | string[])
    */
-  private _parseArray<T>(input: unknown): T[] {
-    if (typeof input === 'string') {
-      try {
-        const parsed = JSON.parse(input);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return input ? [input as unknown as T] : [];
-      }
+  private _parseLicenseCategories(input: string | string[]): string[] {
+    if (Array.isArray(input)) return input.map(String);
+
+    const trimmed = input.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed.map(String) : [trimmed];
+    } catch {
+      // Xử lý trường hợp chuỗi "A1,A2"
+      return trimmed.split(',').map(s => s.trim()).filter(Boolean);
     }
-    return Array.isArray(input) ? (input as T[]) : [];
   }
 
   /**
-   * @description Tự xác thực nghiệp vụ (Self-Validation logic)
+   * @private Parse JSON answers an toàn
+   */
+  private _parseAnswersJson(input: string | CreateAnswerPayload[]): CreateAnswerPayload[] {
+    // 1. Dùng Type Guard: Nếu là mảng thì dùng luôn
+    if (Array.isArray(input)) {
+      return input;
+    }
+
+    // 2. Nếu là chuỗi thì mới parse
+    if (typeof input === 'string' && input.trim() !== '') {
+      try {
+        const parsed = JSON.parse(input);
+        // Kiểm tra lần nữa sau khi parse xem có đúng là mảng không
+        return Array.isArray(parsed) ? (parsed as CreateAnswerPayload[]) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * @description Xác thực nghiệp vụ DTO
    */
   public isValid(): void {
     const { QUESTION } = ErrorCode;
 
-    if (!this.chapterId || this.chapterId.length === 0) {
-      throw new AppError(QUESTION.CHAPTER_REQUIRED);
-    }
-    if (!this.content || this.content.trim().length < 10) {
-      throw new AppError(QUESTION.CONTENT_INVALID);
-    }
-    if (this.licenseCategoryIds.length === 0) {
-      throw new AppError(QUESTION.LICENSE_REQUIRED);
-    }
-    if (!Array.isArray(this.answers) || this.answers.length < 2) {
-      throw new AppError(QUESTION.ANSWERS_INSUFFICIENT);
-    }
+    if (!this.chapterId) throw new AppError(QUESTION.CHAPTER_REQUIRED);
+    if (this.content.trim().length < 10) throw new AppError(QUESTION.CONTENT_INVALID);
+    if (this.licenseCategoryIds.length === 0) throw new AppError(QUESTION.LICENSE_REQUIRED);
+    if (this.answers.length < 2) throw new AppError(QUESTION.ANSWERS_INSUFFICIENT);
 
-    const hasCorrectAnswer = this.answers.some((a) => a.isCorrect);
-    if (!hasCorrectAnswer) {
-      throw new AppError(QUESTION.CORRECT_ANSWER_MISSING);
-    }
+    const hasCorrect = this.answers.some((a) => a.isCorrect);
+    if (!hasCorrect) throw new AppError(QUESTION.CORRECT_ANSWER_MISSING);
   }
 }

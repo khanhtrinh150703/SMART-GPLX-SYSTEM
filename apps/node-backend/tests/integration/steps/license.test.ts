@@ -1,9 +1,11 @@
 import request from 'supertest';
 import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
-import { LICENSE_ENDPOINTS } from '../../test.data';
+import { LICENSE_ENDPOINTS } from '../../config/index'
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
+import { LICENSE_PAYLOAD } from '../../config/index'
+import { DeleteType } from '@/domain/constants/delete.constant';
 
 // Helper để tạo Header Auth nhanh
 const getAuthHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -13,7 +15,9 @@ const getAuthHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
  */
 export const licenseSteps = (
     getAdminToken: () => string,
-    getRegularToken: () => string
+    getRegularToken: () => string,
+    getLicenseId: () => string,
+    getLicenseIdSecond: () => string,
 ) => {
     describe('📂 License Category Management API Suite', () => {
         let testCategoryId: string;
@@ -26,10 +30,7 @@ export const licenseSteps = (
                 const res = await request(app)
                     .post(LICENSE_ENDPOINTS.CREATE)
                     .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
-                    .send({
-                        name: 'B2',
-                        description: 'Hạng bằng lái xe ô tô chở người đến 9 chỗ.'
-                    });
+                    .send(LICENSE_PAYLOAD.CREATE_VALID);
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
@@ -53,7 +54,7 @@ export const licenseSteps = (
             it('✅ Nên lấy danh sách thành công và chứa hạng bằng vừa tạo', async () => {
                 const res = await request(app)
                     .get(LICENSE_ENDPOINTS.FETCH_ALL)
-                    .set(getAuthHeader(getAdminToken())); // GỌI HÀM Ở ĐÂY
+                    .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
@@ -69,7 +70,7 @@ export const licenseSteps = (
                     .post(LICENSE_ENDPOINTS.CREATE)
                     // GỌI HÀM getRegularToken()
                     .set(getAuthHeader(getRegularToken()))
-                    .send({ name: 'Chương giả mạo' });
+                    .send(LICENSE_PAYLOAD.INVALID_NAME);
 
                 expect(res.status).toBe(403);
             });
@@ -80,10 +81,7 @@ export const licenseSteps = (
                 const res = await request(app)
                     .patch(LICENSE_ENDPOINTS.UPDATE(testCategoryId))
                     .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
-                    .send({
-                        name: 'B2',
-                        description: 'Mô tả đã được chỉnh sửa chuẩn xác hơn.'
-                    });
+                    .send(LICENSE_PAYLOAD.UPDATE_VALID);
 
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe(Message.LICENSE.UPDATE_SUCCESS);
@@ -91,27 +89,44 @@ export const licenseSteps = (
         });
 
         describe('🔒 Kịch bản: Xóa mềm và Khôi phục (Unlock)', () => {
-            it('✅ Nên xóa mềm thành công (deleted_at != null)', async () => {
+            it('✅ Nên xóa mềm thành công ', async () => {
                 const res = await request(app)
-                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId))
-                    .set(getAuthHeader(getAdminToken())); // GỌI HÀM Ở ĐÂY
-
+                    .delete(LICENSE_ENDPOINTS.DELETE(getLicenseId()))
+                    .set(getAuthHeader(getAdminToken()));
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe(Message.LICENSE.DELETE_SUCCESS);
             });
 
+            it('✅ Nên xóa cứng thành công ', async () => {
+                const res = await request(app)
+                    .delete(LICENSE_ENDPOINTS.DELETE(getLicenseIdSecond()))
+                    .set(getAuthHeader(getAdminToken()));
+                expect(res.status).toBe(200);
+                expect(res.body.data).toEqual({ type: DeleteType.HARD });
+                expect(res.body.message).toBe(Message.LICENSE.DELETE_SUCCESS);
+            });
+
+
             it('❌ Nên trả về lỗi 404 khi cố xóa một ID không tồn tại hoặc đã bị xóa', async () => {
                 const res = await request(app)
-                    .delete(LICENSE_ENDPOINTS.DELETE(testCategoryId))
-                    .set(getAuthHeader(getAdminToken())); // GỌI HÀM Ở ĐÂY
+                    .delete(LICENSE_ENDPOINTS.DELETE(getLicenseIdSecond()))
+                    .set(getAuthHeader(getAdminToken()));
+
+                expect(res.status).toBe(404);
+            });
+
+            it('❌ Nên trả về lỗi 404 khi cố xóa một ID không tồn tại hoặc đã bị xóa', async () => {
+                const res = await request(app)
+                    .delete(LICENSE_ENDPOINTS.DELETE(getLicenseId()))
+                    .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(404);
             });
 
             it('✅ Nên khôi phục (Restore) thành công hạng bằng đã xóa', async () => {
                 const res = await request(app)
-                    .patch(LICENSE_ENDPOINTS.RESTORE(testCategoryId))
-                    .set(getAuthHeader(getAdminToken())) // GỌI HÀM Ở ĐÂY
+                    .patch(LICENSE_ENDPOINTS.RESTORE(getLicenseId()))
+                    .set(getAuthHeader(getAdminToken()))
                     .send();
 
                 expect(res.status).toBe(200);

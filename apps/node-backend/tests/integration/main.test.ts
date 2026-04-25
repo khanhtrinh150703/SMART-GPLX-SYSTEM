@@ -6,19 +6,23 @@ import { chapterSteps } from './steps/chapter.test';
 import { questionSteps } from './steps/question-management.test';
 import { cleanupDB, connectDB } from '../jest.setup';
 import { selectionSteps } from './steps/selection.test';
-import { ADMIN_ACCOUNT, AUTH_ENDPOINTS, CHAPTER_ENDPOINTS, LICENSE_ENDPOINTS, NORMAL_ACCOUNT } from '../test.data';
+import { AUTH_PAYLOAD, AUTH_ENDPOINTS, CHAPTER_ENDPOINTS, LICENSE_ENDPOINTS } from '../config/index'
 import request from 'supertest';
 import app from '@/app';
 import { examMatrixSteps } from './steps/exam-matrix.test';
+import { Chapter } from '@prisma/client';
+import { License } from 'swagger-jsdoc';
 
 describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     // Shared Context: Dữ liệu dùng chung xuyên suốt các file
     let adminToken: string;
     let regularToken: string;
-    let chapterId: string;
-    let chapterIdSecond: string;
-    let chapterIdThird: string;
-    let licenseId: string;
+    let chapterId: string | undefined;
+    let chapterIdSecond: string | undefined;
+    let chapterIdThird: string | undefined;
+    let chapterIdFour: string | undefined;
+    let licenseId: string | undefined;
+    let licenseSecond: string | undefined;
 
     // --- 🔑 SETUP: Khởi động, lấy Token và Dữ liệu nền ---
     beforeAll(async () => {
@@ -40,16 +44,16 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
 
         // 1. Đăng nhập song song hoặc tuần tự
         adminToken = await login(
-            { username: ADMIN_ACCOUNT.username, password: ADMIN_ACCOUNT.password },
+            { username: AUTH_PAYLOAD.ADMIN_ACCOUNT.username, password: AUTH_PAYLOAD.ADMIN_ACCOUNT.password },
             'Admin'
         );
 
         regularToken = await login(
-            { username: NORMAL_ACCOUNT.username, password: NORMAL_ACCOUNT.password },
+            { username: AUTH_PAYLOAD.NORMAL_ACCOUNT.username, password: AUTH_PAYLOAD.NORMAL_ACCOUNT.password },
             'Regular User'
         );
 
-        // 2. Lấy Chapter và License (Dùng adminToken đã lấy ở trên)
+        // 2. Fetch dữ liệu từ API
         const [chapterRes, licenseRes] = await Promise.all([
             request(app)
                 .get(CHAPTER_ENDPOINTS.FETCH_ALL)
@@ -59,18 +63,23 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
                 .set('Authorization', `Bearer ${adminToken}`)
         ]);
 
-        // 3. Gán ID và Kiểm tra dữ liệu nền (Seed data)
-        chapterId = chapterRes.body.data?.data?.[0]?.id;
-        chapterIdSecond = chapterRes.body.data?.data?.[1]?.id;
-        chapterIdThird = chapterRes.body.data?.data?.[2]?.id; // Đã fix lại index [2] tránh trùng lặp
-        licenseId = licenseRes.body.data?.data?.[0]?.id;
+        // 3. Ép kiểu dữ liệu (Cast type) để không phải dùng any
+        const chapters = (chapterRes.body.data?.data || []) as Chapter[];
+        const licenses = (licenseRes.body.data?.data || []) as License[];
 
-        if (!chapterId || !licenseId) {
-            console.error("❌ Setup Error: Chapter hoặc License đang trống trong Database!");
-            throw new Error("⚠️ Dừng test: Hãy chạy Seed data Chapter và License trước.");
+        // 4. Tìm kiếm ID chính xác theo nghiệp vụ (c giờ đây là Chapter, l là License)
+        chapterId = chapters.find((c: Chapter) => c.code === '1')?.id;
+        chapterIdSecond = chapters.find((c: Chapter) => c.code === '5')?.id;
+        chapterIdThird = chapters.find((c: Chapter) => c.code === '6')?.id;
+        chapterIdFour = chapters.find((c: Chapter) => c.code === '2')?.id;
+        licenseId = licenses.find((l: License) => l.name === 'CE')?.id;
+        licenseSecond = licenses.find((l: License) => l.name === 'C')?.id;
+
+        // 5. Kiểm tra an toàn (Guard Clause)
+        if (!chapterId || !chapterIdSecond || !licenseId) {
+            throw new Error('❌ Test Fail: Không tìm thấy Seed Data cho Code 1, 5 hoặc License A1');
         }
 
-        console.log("✅ Setup hoàn tất: Đã có Token và ID cần thiết.");
     });
 
     // =========================================================================
@@ -82,23 +91,31 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     });
 
     describe('Phase 2: User Operations', () => {
-        userSteps();
+        userSteps(() => adminToken);
     });
 
     describe('Phase 3: License Operations', () => {
-        licenseSteps(() => adminToken, () => regularToken);
+        licenseSteps(
+            () => adminToken,
+            () => regularToken,
+            () => licenseId as string,
+            () => licenseSecond as string);
     });
 
     describe('Phase 4: Chapter Operations', () => {
-        chapterSteps(() => adminToken, () => regularToken);
+        chapterSteps(
+            () => adminToken,
+            () => regularToken,
+            () => chapterId as string,
+            () => chapterIdFour as string);
     });
 
     describe('Phase 5: Question Operations', () => {
         questionSteps(
             () => adminToken,
             () => regularToken,
-            () => chapterId,
-            () => licenseId
+            () => chapterId as string,
+            () => licenseId as string
         );
     });
 
@@ -110,10 +127,10 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         examMatrixSteps(
             () => adminToken,
             () => regularToken,
-            () => licenseId,
-            () => chapterId,
-            () => chapterIdSecond,
-            () => chapterIdThird
+            () => licenseId as string,
+            () => chapterId as string,
+            () => chapterIdSecond as string,
+            () => chapterIdThird as string
         );
     });
 
@@ -124,7 +141,6 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         it('✅ Nên đăng xuất thành công và vô hiệu hóa session của Admin', async () => {
             const res = await request(app)
                 .post(AUTH_ENDPOINTS.LOGOUT)
-                // Sử dụng biến adminToken trực tiếp thay vì getAdminToken() để đảm bảo lấy đúng session đang test
                 .set('Authorization', `Bearer ${adminToken}`);
 
             expect(res.status).toBe(200);
@@ -133,7 +149,7 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
 
         it('✅ Nên bị từ chối (401) nếu cố gắng truy cập sau khi đã đăng xuất', async () => {
             const res = await request(app)
-                .get(LICENSE_ENDPOINTS.BASE) // Thử gọi một API bất kỳ cần quyền
+                .get(LICENSE_ENDPOINTS.BASE)
                 .set('Authorization', `Bearer ${adminToken}`);
 
             expect(res.status).toBe(401);

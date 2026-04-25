@@ -1,14 +1,50 @@
+import { BaseEntity } from "@/domain/seedwork/entity.base";
 import { Permission } from "../permission/permission.entity";
-import { IRoleProps } from "./role.props";
+import { CreateRoleProps, IRoleProps } from "./role.props";
 
 /**
- * Thực thể Vai trò (Role), chứa danh sách các Quyền hạn.
+ * @description Thực thể Vai trò (Role) - Quản lý nhóm các quyền hạn.
  */
-export class Role {
+export class Role extends BaseEntity<IRoleProps> {
+
+
+
   /**
-   * Private constructor để ép việc khởi tạo qua phương thức static.
+   * @description Constructor đơn giản: Chỉ nhận dữ liệu đã được gọt giũa sạch sẽ.
    */
-  private constructor(private _props: IRoleProps) {}
+  private constructor(props: IRoleProps) {
+    super(props);
+    // this.validate(); // Kiểm tra tên Role không được trống, v.v.
+  }
+
+  /**
+   * @description Factory Method: Khởi tạo một Role mới hoàn toàn.
+   * Đây là nơi duy nhất thực hiện Normalization (gọt giũa) và sinh ID.
+   */
+  public static create(data: CreateRoleProps): Role {
+    const finalizedProps: IRoleProps = {
+      // Luôn sinh ID mới khi tạo mới
+      id: crypto.randomUUID(),
+
+      // Normalization: Gọt giũa văn bản
+      name: data.name.trim(),
+      description: data.description?.trim() || '',
+
+      // Đảm bảo permissions luôn là một mảng thực thể hợp lệ
+      permissions: data.permissions || [],
+    };
+
+    return new Role(finalizedProps);
+  }
+
+  /**
+   * @description Tái tạo thực thể Role từ dữ liệu thô (thường là từ Database).
+   * @param {IRoleProps} props - Dữ liệu thuộc tính.
+   * @returns {Role}
+   */
+  public static reconstitute(props: IRoleProps): Role {
+    return new Role(props);
+  }
 
   // --- Getters: Truy xuất tập trung từ _props ---
   public get id(): string { return this._props.id; }
@@ -22,19 +58,6 @@ export class Role {
    */
   public hasPermission(permissionName: string): boolean {
     return this._props.permissions.some(p => p.name === permissionName);
-  }
-
-  /**
-   * Tái tạo thực thể Role từ dữ liệu thô hoặc kết quả truy vấn Database.
-   * @param props Dữ liệu thuộc tính của Role.
-   */
-  public static reconstitute(props: IRoleProps): Role {
-    return new Role({
-      id: props.id,
-      name: props.name,
-      description: props.description,
-      permissions: props.permissions || [],
-    });
   }
 
   /**

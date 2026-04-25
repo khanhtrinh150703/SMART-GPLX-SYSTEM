@@ -9,3 +9,12 @@ export interface IRoleProps {
   description: string;
   permissions: Permission[];
 }
+
+/**
+ * @description Type phục vụ việc tạo mới Role.
+ * Chấp nhận mảng Permission thực thể hoặc để trống.
+ */
+export type CreateRoleProps = Omit<IRoleProps, 'id'> & {
+  description?: string;
+  permissions?: Permission[];
+};

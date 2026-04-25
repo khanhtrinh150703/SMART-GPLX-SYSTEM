@@ -1,7 +1,6 @@
-// src/infrastructure/workers/import.worker.ts
 import { Worker, Job } from 'bullmq';
 import { IImportJobPayload, IMPORT_QUEUE_NAME } from '../queues/import.queue';
-import { IImportProcessorService } from '@/domain/interfaces/services/i-import-processor.service';
+import { IImportProcessorService } from '@/domain/interfaces/services/integration/i-import-processor.service';
 
 interface ImportWorkerDependencies {
   importProcessorService: IImportProcessorService; // Tên phải khớp 100% với tên đăng ký trong container

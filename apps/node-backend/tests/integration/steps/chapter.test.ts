@@ -1,14 +1,17 @@
 import request from 'supertest';
 import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
-import { CHAPTER_ENDPOINTS, CHAPTER_PAYLOAD } from '../../test.data';
+import { CHAPTER_ENDPOINTS, CHAPTER_PAYLOAD } from '../../config/index'
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { ErrorCode } from '@/shared/errors';
 import { ChapterResponseDTO } from '@/application/dtos/response/chapter/chapter.respone.dto';
+import { DeleteType } from '@/domain/constants/delete.constant';
 
 export const chapterSteps = (
     getAdminToken: () => string,
-    getRegularToken: () => string
+    getRegularToken: () => string,
+    getChapterId: () => string,
+    getChapterIdSecond: () => string,
 ) => {
     let testChapterId: string;
     const getAuthHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -95,8 +98,8 @@ export const chapterSteps = (
             });
         });
 
-        // --- CẬP NHẬT & XÓA ---
-        describe('🔄 Kịch bản: Cập nhật & Xóa', () => {
+        // --- CẬP NHẬT ---
+        describe('🔄 Kịch bản: Cập nhật ', () => {
             it('✅ Cập nhật thành công (UPDATE_SUCCESS)', async () => {
                 const res = await request(app)
                     .patch(CHAPTER_ENDPOINTS.UPDATE(testChapterId))
@@ -114,6 +117,53 @@ export const chapterSteps = (
 
                 expect(res.body.code).toBe(ErrorCode.CHAPTER.NOT_FOUND);
                 expect(res.body.code).toBe('CHPT_404');
+            });
+        });
+
+        describe('🔒 Kịch bản: Xóa mềm và Khôi phục Chapter (Unlock)', () => {
+            it('✅ Nên xóa mềm thành công chương học', async () => {
+                const res = await request(app)
+                    .delete(CHAPTER_ENDPOINTS.DELETE(getChapterId())) 
+                    .set(getAuthHeader(getAdminToken()));
+
+                expect(res.status).toBe(200);
+                expect(res.body.message).toBe(Message.CHAPTER.DELETE_SUCCESS); 
+            });
+
+            it('✅ Nên xóa cứng thành công ', async () => {
+                const res = await request(app)
+                    .delete(CHAPTER_ENDPOINTS.DELETE(getChapterIdSecond()))
+                    .set(getAuthHeader(getAdminToken()));
+                expect(res.status).toBe(200);
+                expect(res.body.data).toEqual({ type: DeleteType.HARD });
+                expect(res.body.message).toBe(Message.CHAPTER.DELETE_SUCCESS);
+            });
+
+            it('❌ Nên trả về lỗi 404 khi cố xóa một Chapter ID không tồn tại hoặc đã bị xóa', async () => {
+                const res = await request(app)
+                    .delete(CHAPTER_ENDPOINTS.DELETE(getChapterIdSecond()))
+                    .set(getAuthHeader(getAdminToken()));
+
+                expect(res.status).toBe(404);
+            });
+
+            it('❌ Nên trả về lỗi 404 khi cố xóa một Chapter ID không tồn tại hoặc đã bị xóa', async () => {
+                const res = await request(app)
+                    .delete(CHAPTER_ENDPOINTS.DELETE(getChapterId()))
+                    .set(getAuthHeader(getAdminToken()));
+
+                expect(res.status).toBe(404);
+            });
+
+            it('✅ Nên khôi phục (Restore) thành công chương học đã xóa', async () => {
+                const res = await request(app)
+                    .patch(CHAPTER_ENDPOINTS.RESTORE(getChapterId())) // Đổi sang RESTORE của CHAPTER
+                    .set(getAuthHeader(getAdminToken()))
+                    .send();
+
+                expect(res.status).toBe(200);
+                expect(res.body.success).toBe(true);
+                expect(res.body.message).toBe(Message.CHAPTER.RESTORE_SUCCESS); // Đổi sang Message.CHAPTER
             });
         });
     });

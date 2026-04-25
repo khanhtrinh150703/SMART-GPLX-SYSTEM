@@ -1,13 +1,13 @@
 import { ITokenManager } from '@/domain/interfaces/external/i-token-manager';
-import { ITokenRepository } from '@/domain/interfaces/repositories/i-token.repository';
+import { ITokenRepository } from '@/domain/interfaces/repositories/identity/i-token.repository';
 import { TokenPayload, Tokens } from '@/shared/types/auth.types';
 import { jwtUtil } from '@/shared/utils/jwt.util';
-import { REDIS_CONSTANTS } from '@/domain/constants/redis.constant';
-import { JWT_CONSTANTS, TIME_CONSTANTS } from '@/domain/constants/time.constants';
 import { User } from '@/domain/entities/user/user.entity';
 import { randomUUID } from 'node:crypto';
 import { UserRole } from '@/domain/constants/roles.constant';
 import { ICradle } from '@/shared/types/container.types';
+import { AUTH_CONFIG } from '@/shared/config/auth.config';
+import { REDIS_KEYS } from '@/shared/config/redis.config';
 
 /**
  * Lớp quản lý vòng đời của Token (Tạo và Thu hồi).
@@ -33,7 +33,7 @@ export class JwtTokenManager implements ITokenManager {
    * @returns {Promise< Tokens = { accessToken: string; refreshToken: string }>}
    */
   public async generateAndStoreTokens(user: User): Promise<Tokens> {
-
+    const { access, refresh } = AUTH_CONFIG.jwt;
     // 1. Trích xuất tên các Role
     const userRoles = user.roles.map(r => r.name as UserRole);
     const finalRoles = userRoles.length > 0 ? userRoles : [UserRole.STUDENT];
@@ -57,20 +57,29 @@ export class JwtTokenManager implements ITokenManager {
     });
 
     // 1. Ký Token
-    const accessToken = jwtUtil.signAccessToken(payload, JWT_CONSTANTS.ACCESS_TOKEN_EXPIRE);
-    const refreshToken = jwtUtil.signRefreshToken(payload, JWT_CONSTANTS.REFRESH_TOKEN_EXPIRE);
+    const accessToken = jwtUtil.signAccessToken(payload, access.expiresIn);
+    const refreshToken = jwtUtil.signRefreshToken(payload, refresh.expiresIn)
 
     // 2. Định nghĩa 2 loại Key
     const deviceId = payload.deviceId || 'default';
-    const accessKey = `${REDIS_CONSTANTS.ACCESS_TOKEN_PREFIX}${payload.userId}:${deviceId}:${jti}`;
-    const refreshKey = `${REDIS_CONSTANTS.REFRESH_TOKEN_PREFIX}${payload.userId}:${deviceId}:${jti}`;
+    const accessKey = REDIS_KEYS.AUTH.getAccessTokenKey(
+      payload.userId,
+      deviceId,
+      payload.jti
+    );
+
+    const refreshKey = REDIS_KEYS.AUTH.getRefreshTokenKey(
+      payload.userId,
+      deviceId,
+      payload.jti
+    );
 
     // 3. Lưu vào Redis với TTL tương ứng
     // Access Token: 15 phút (900s)
     // Refresh Token: 7 ngày hoặc 30 ngày (Ví dụ: 604800s)
     await Promise.all([
-      this._tokenRepo.save(accessKey, 'valid', TIME_CONSTANTS.ACCESS_TOKEN_EXPIRE),
-      this._tokenRepo.save(refreshKey, 'valid', TIME_CONSTANTS.REFRESH_TOKEN_EXPIRE)
+      this._tokenRepo.save(accessKey, 'valid', access.ttlSeconds),
+      this._tokenRepo.save(refreshKey, 'valid', refresh.ttlSeconds)
     ]);
 
     return {
@@ -103,8 +112,17 @@ export class JwtTokenManager implements ITokenManager {
     const deviceId = payload.deviceId || 'default';
 
     // Dựng lại chính xác 2 Key đã lưu lúc generate
-    const accessKey = `${REDIS_CONSTANTS.ACCESS_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
-    const refreshKey = `${REDIS_CONSTANTS.REFRESH_TOKEN_PREFIX}${payload.userId}:${deviceId}:${payload.jti}`;
+    const accessKey = REDIS_KEYS.AUTH.getAccessTokenKey(
+      payload.userId,
+      deviceId,
+      payload.jti
+    );
+
+    const refreshKey = REDIS_KEYS.AUTH.getRefreshTokenKey(
+      payload.userId,
+      deviceId,
+      payload.jti
+    );
 
     // Gọi Repo xóa cả 2 cùng lúc
     await Promise.all([

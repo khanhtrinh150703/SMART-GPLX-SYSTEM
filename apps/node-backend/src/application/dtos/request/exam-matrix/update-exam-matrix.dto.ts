@@ -11,6 +11,8 @@ export class UpdateExamMatrixDTO {
     public readonly durationMinutes: number;
     public readonly minCriticalQuestions: number;
     public readonly details: IExamMatrixDetailRequest[];
+    public readonly name: string;
+    public readonly isDefault: boolean;
 
     constructor(data: UpdateExamMatrixDTO) {
         this.totalQuestions = data.totalQuestions;
@@ -18,6 +20,8 @@ export class UpdateExamMatrixDTO {
         this.durationMinutes = data.durationMinutes;
         this.minCriticalQuestions = data.minCriticalQuestions;
         this.details = data.details;
+        this.name = data.name;
+        this.isDefault = data.isDefault;
     }
     /**
        * @description Kiểm tra tính toàn vẹn và logic của Ma trận đề thi.
@@ -29,7 +33,8 @@ export class UpdateExamMatrixDTO {
             { value: this.totalQuestions, name: 'totalQuestions' },
             { value: this.passingScore, name: 'passingScore' },
             { value: this.durationMinutes, name: 'durationMinutes' },
-            { value: this.minCriticalQuestions, name: 'minCriticalQuestions' }
+            { value: this.minCriticalQuestions, name: 'minCriticalQuestions' },
+            { value: this.name, name: 'name' }
         ];
 
         for (const field of mandatoryFields) {
@@ -40,6 +45,15 @@ export class UpdateExamMatrixDTO {
                 // Hoặc bạn có thể ném lỗi chi tiết hơn nếu muốn
             }
         }
+
+        if (!this.name) {
+            throw new AppError(ErrorCode.MATRIX.NAME_REQUIRED)
+        }
+
+        if (this.name.length > 100) {
+            throw new AppError(ErrorCode.MATRIX.NAME_TOO_LONG)
+        }
+
         if (this.totalQuestions <= 0 || this.passingScore <= 0 || this.durationMinutes <= 0) {
             throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
         }

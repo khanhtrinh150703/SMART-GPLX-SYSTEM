@@ -1,17 +1,26 @@
-import express from "express";
-import cors from "cors"; // 1. Đổi sang cú pháp import chuẩn của TypeScript
+import express  from "express";
+import cors from "cors";
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
-import rootRouter from "./api/routes/index";
-import { specs } from './infrastructure/swagger/index';
-import { globalErrorHandler } from './api/middlewares/error.middleware';
-import { requestTimer } from "./api/middlewares/timer.middleware";
-import { apiMonitor } from "./api/middlewares/monitor.middleware";
+
+// 1. Routers
+import rootRouter from "./api/routes";
+
+// 2. Middlewares (Gom từ index của shared)
+import { 
+  globalErrorHandler, 
+  requestTimer, 
+  apiMonitor 
+} from './api/middlewares/shared';
+
+// 3. Infrastructure & Config
+import { specs } from './infrastructure/swagger';
 import logger from "./infrastructure/logging/winston.logger";
+import { STORAGE_CONFIG } from "./shared/config/storage.config";
 
 const app = express();
-const uploadPath = path.resolve(process.env.UPLOAD_DIR || 'public/uploads');
+const uploadPath = path.resolve(STORAGE_CONFIG.PUBLIC_DIR);
 
 // =========================================================
 // 1. SECURITY & PARSING (Bảo mật & Phân tích dữ liệu)

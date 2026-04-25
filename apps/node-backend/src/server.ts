@@ -1,14 +1,23 @@
+import 'dotenv/config'; 
 import { env } from 'node:process';
-import app from './app';
+
+// 1. Core App & Database
+import app from '@/app';
+import { connectRedis } from '@/infrastructure/database/redis/redis.client';
 import prisma from '../prisma/prisma';
-import { connectRedis } from './infrastructure/database/redis/redis.client';
-import { MasterDataCacheService } from './infrastructure/security/master-data-cache.service';
-import { container } from './shared/utils/container';
-import { ImportQueue } from './infrastructure/queues/import.queue';
-import { ImportWorker } from './infrastructure/workers/import.worker';
+
+// 2. Dependency Injection & Services
+import { container } from '@/shared/utils/container';
+import { IMasterDataCacheService } from '@/domain/interfaces/services/exam-mgmt';
+
+// 3. Infrastructure (Queues & Workers)
+import { ImportQueue } from './infrastructure/queues';
+import { ImportWorker } from './infrastructure/workers';
+
+// 4. Logging
+// import logger from '@/infrastructure/logging/winston.logger';
 
 const PORT = env.PORT || 3000;
-
 async function startServer() {
   try {
     console.log('⏳ [System] Starting services...');
@@ -21,14 +30,15 @@ async function startServer() {
     console.log('✅ [System] Database & Redis connected');
 
     // 2. Nạp dữ liệu vào bộ nhớ
-    await MasterDataCacheService.initialize();
+    const masterDataCache = container.resolve<IMasterDataCacheService>('masterDataCacheService');
+    await masterDataCache.initialize();
     console.log('✅ [System] MasterData Cache warmed up');
 
     // ============================================================
     // 3. KHỞI TẠO BULLMQ QUA CONTAINER (Dịch: Initialize via DI)
     // ============================================================
     console.log('⏳ [System] Resolving Background Workers...');
-    
+
     // Ông chỉ cần 'resolve' chúng ra. Awilix sẽ tự động:
     // - Tạo ImportProcessorService (vì Worker cần nó)
     // - Tạo ImportQueue (Singleton)
@@ -48,9 +58,9 @@ async function startServer() {
     // ==========================================
     process.on('SIGTERM', async () => {
       console.log('👋 [System] SIGTERM received.');
-      
+
       // Đóng Worker trước để ngừng nhận Job mới
-      await importWorker.close(); 
+      await importWorker.close();
       await importQueue.close();
       console.log('✅ [System] BullMQ safely closed.');
 

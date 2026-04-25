@@ -1,5 +1,3 @@
-// domain/entities/import/import-job.props.ts
-
 import { IImportResultData } from "@/domain/entities/import/import-result.type";
 import { ImportStatus } from "./import.status";
 
@@ -12,15 +10,28 @@ export interface IImportJobProps {
     status: ImportStatus;
     expiresAt: Date;
     resultData: IImportResultData;
-    createdAt?: Date;
-    updatedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 
-/** * @description Kiểu dữ liệu để khởi tạo Entity (Cho phép optional một số trường có default logic) 
+/**
+ * @description Type phục vụ cho việc khởi tạo ImportJob mới.
+ * Loại bỏ các trường hệ thống tự sinh và cho phép truyền vào các trường tùy chọn.
  */
-export type CreateImportJobProps = Omit<IImportJobProps, 'status' | 'expiresAt' | 'resultData'> & {
+export type CreateImportJobProps = Omit<IImportJobProps,
+    | 'id'
+    | 'status'
+    | 'expiresAt'
+    | 'resultData'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'totalChunks'      // totalChunks cũng nên tính toán bên trong
+    | 'chunkSizeLimit'   // chunkSizeLimit lấy từ config
+> & {
     status?: ImportStatus;
     expiresAt?: Date;
     resultData?: Partial<IImportResultData>;
+    fileName: string;
+    totalSize: number;
 };

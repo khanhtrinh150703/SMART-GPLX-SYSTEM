@@ -1,8 +1,5 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
-
 export const authPaths = {
-    [`${API_CONSTANTS.API_BASE}/auth/register/init`]: {
+    [`/auth/register/init`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Đăng ký thành viên mới',
@@ -31,7 +28,7 @@ export const authPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/auth/resend-otp`]: {
+    [`/auth/resend-otp`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Gửi lại mã OTP',
@@ -66,7 +63,7 @@ export const authPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/auth/register/verify`]: {
+    [`/auth/register/verify`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Xác thực OTP để hoàn tất đăng ký',
@@ -96,7 +93,7 @@ export const authPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/auth/login`]: {
+    [`/auth/login`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Đăng nhập',
@@ -124,7 +121,7 @@ export const authPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/auth/refresh-token`]: {
+    [`/auth/refresh-token`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Làm mới mã xác thực (Refresh Token)',
@@ -163,31 +160,8 @@ export const authPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/auth/forgot-password`]: {
-        post: {
-            tags: ['Authentication'],
-            summary: 'Yêu cầu gửi OTP quên mật khẩu',
-            operationId: 'forgotPassword',
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: { $ref: '#/components/schemas/ForgotPasswordDTO' },
-                    },
-                },
-            },
-            responses: {
-                '200': {
-                    description: 'OTP đã được gửi qua email',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } },
-                },
-                '404': { description: 'Email không tồn tại trong hệ thống' },
-                '429': { description: 'Gửi quá nhanh, đang bị khóa tạm thời' },
-            },
-        },
-    },
     // Forgot & Reset Password
-    [`${API_CONSTANTS.API_BASE}/auth/forgot-password`]: {
+    [`/auth/forgot-password`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Yêu cầu gửi OTP quên mật khẩu',
@@ -210,8 +184,7 @@ export const authPaths = {
             },
         },
     },
-
-    [`${API_CONSTANTS.API_BASE}/auth/reset-password`]: {
+    [`/auth/reset-password`]: {
         post: {
             tags: ['Authentication'],
             summary: 'Xác thực OTP và đặt lại mật khẩu mới',

@@ -1,44 +1,102 @@
-import { createContainer, asValue, asClass, InjectionMode } from 'awilix';
-import { UserController } from '@/api/controllers/user.controller';
-import { UserService } from '@/application/services/user.service';
-import { RoleService } from '@/application/services/role.service';
-import { LicenseCategoryService } from "@/application/services/license-category.service";
-import { JwtTokenManager } from '@/infrastructure/security/jwt-token.manager';
-import { MySQLRoleRepository } from '@/infrastructure/repositories/mysql/role.repository';
-import { RedisTokenRepository } from '@/infrastructure/repositories/redis/redis-token.repository';
-import { MySQLUserRepository } from '@/infrastructure/repositories/mysql/user.repository';
-import { AuthController } from '@/api/controllers/auth.controller';
-import { AuthService } from '@/application/services/auth.service';
-import { RegistrationService } from '@/application/services/registration.service';
-import { RedisPendingUserRepository } from '@/infrastructure/repositories/redis/redis-pending-user.repository';
-import { NodemailerService } from '@/infrastructure/external-services/mailer/mailer.service';
-import { RedisOtpRepository } from '@/infrastructure/repositories/redis/redis-otp.repository';
+import { createContainer, asValue, asClass, InjectionMode, asFunction, Constructor, Resolver } from 'awilix';
+
+// --- 1. CORE INFRASTRUCTURE (DB, Client, Security) ---
+import prisma from '../../../prisma/prisma';
 import { redisClient } from '@/infrastructure/database/redis/redis.client';
-import { OtpService } from '@/application/services/otp.service';
-import { FileStorageService } from '@/infrastructure/external-services/file-storage.service';
-import { LicenseCategoryController } from '@/api/controllers/license-category.controller';
-import { MySQLLicenseCategoryRepository } from '@/infrastructure/repositories/mysql/license-category.repository';
-import { MySQLChapterRepository } from '@/infrastructure/repositories/mysql/chapter.repository';
-import { ChapterService } from '@/application/services/chapter.service';
-import { ChapterController } from '@/api/controllers/chapter.controller';
-import { MySQLQuestionRepository } from '@/infrastructure/repositories/mysql/question.repository';
-import { QuestionService } from '@/application/services/question.service';
-import { QuestionController } from '@/api/controllers/question.controller';
-import { RoleController } from '@/api/controllers/roles.controller';
-import { MySQLUserRoleRepository } from '@/infrastructure/repositories/mysql/user-role.repository';
-import { TempStorageService } from '@/infrastructure/external-services/temp-storage.service';
-import { MySQLImportRepository } from '@/infrastructure/repositories/mysql/import.repository';
-import { ImportController } from '@/api/controllers/import.controller';
-import { ImportService } from '@/application/services/import.service';
-import { ZipService } from '@/application/services/zip.service';
-import { ExcelService } from '@/application/services/excel.service';
-import { ImportProcessorService } from '@/application/services/import-processor.service';
+import { JwtTokenManager } from '@/infrastructure/security/jwt-token.manager';
+import { MasterDataCacheService } from '@/infrastructure/security/master-data-cache.service';
+import { autoWrapRepository } from '@/infrastructure/repositories/repository-proxy';
+
+// --- 2. REPOSITORIES (Data Access) ---
+// Nhóm Identity (Kết hợp cả MySQL và Redis)
+import {
+    MySQLUserRepository,
+    MySQLRoleRepository,
+    MySQLUserRoleRepository,
+    RedisTokenRepository,
+    RedisPendingUserRepository,
+    RedisOtpRepository
+} from '@/infrastructure/repositories/identity';
+
+// Nhóm Exam Management (Thuần MySQL)
+import {
+    MySQLChapterRepository,
+    MySQLQuestionRepository,
+    MySQLLicenseCategoryRepository
+} from '@/infrastructure/repositories/exam-mgmt';
+
+// Nhóm Exam Session (Xử lý thực thi bài thi)
+import {
+    MySQLExamRepository,
+    MySQLExamMatrixRepository
+} from '@/infrastructure/repositories/exam-session';
+
+// Nhóm Integration (Xử lý dữ liệu ngoại vi)
+import { MySQLImportRepository } from '@/infrastructure/repositories/integration';
+
+// --- 3. SERVICES (Application Logic) ---
+import {
+    AuthService, UserService, RoleService, OtpService, RegistrationService
+} from '@/application/services/identity';
+
+// Nhóm Exam Management
+import {
+    ExamService, QuestionService, ChapterService, LicenseCategoryService
+} from '@/application/services/exam-mgmt';
+
+// Nhóm Exam Engine & Session
+import { ExamGeneratorService } from '@/application/services/exam-engine';
+import { ExamMatrixService } from '@/application/services/exam-session';
+
+// Nhóm Integration
+import {
+    ImportService, ImportProcessorService, ExcelService, ZipService, MediaService
+} from '@/application/services/integration';
+
+
+// --- 2. TẦNG INFRASTRUCTURE (Triển khai kỹ thuật) ---
+import { NodemailerService } from '@/application/services/external-services/mailer';
+import { FileStorageService, TempStorageService } from '@/application/services/external-services/storage';
+
+
+// --- 4. BACKGROUND TASKS (Queue & Worker) ---
 import { ImportQueue } from '@/infrastructure/queues/import.queue';
 import { ImportWorker } from '@/infrastructure/workers/import.worker';
-import prisma from '../../../prisma/prisma';
-import { MySQLExamMatrixRepository } from '@/infrastructure/repositories/mysql/exam-matrix/exam-matrix.repository';
-import { ExamMatrixService } from '@/application/services/exam-matrix.service';
-import { ExamMatrixController } from '@/api/controllers/exam-matrix.controller';
+
+// --- 5. API CONTROLLERS ---
+import {
+    AuthController,
+    UserController,
+    RoleController
+} from "@/api/controllers/identity";
+
+// Nhóm Exam Management
+import {
+    ChapterController,
+    ExamController,
+    LicenseCategoryController,
+    QuestionController
+} from "@/api/controllers/exam-mgmt";
+
+// Nhóm Exam Session
+import { ExamMatrixController } from "@/api/controllers/exam-session";
+
+// Nhóm Integration
+import { ImportController } from "@/api/controllers/integration";
+
+
+// Service
+/**
+ * @description Helper để tự động bọc Repository bằng Proxy xử lý lỗi.
+ * @param Class - Lớp Repository cần đăng ký.
+ */
+export const asRepo = <T extends object>(Class: Constructor<T>): Resolver<T> => {
+    return asFunction((cradle) => {
+        const instance = new Class(cradle);
+        return autoWrapRepository<T>(instance);
+    }).singleton();
+};
+
 /**
  * @description Khởi tạo Dependency Injection (DI) Container sử dụng thư viện Awilix.
  * Cơ chế PROXY được kích hoạt để hỗ trợ tự động giải quyết (resolve) các phụ thuộc linh hoạt thông qua ICradle.
@@ -56,17 +114,18 @@ container.register({
     prisma: asValue(prisma),
     redisClient: asValue(redisClient),
     // --- TẦNG HẠ TẦNG (INFRASTRUCTURE LAYER - REPOSITORIES) ---
-    userRepository: asClass(MySQLUserRepository).singleton(),
-    tokenRepository: asClass(RedisTokenRepository).singleton(),
-    roleRepository: asClass(MySQLRoleRepository).singleton(),
-    userRoleRepository: asClass(MySQLUserRoleRepository).singleton(),
-    pendingUserRepository: asClass(RedisPendingUserRepository).singleton(),
-    licenseCategoryRepository: asClass(MySQLLicenseCategoryRepository).singleton(),
-    chapterRepository: asClass(MySQLChapterRepository).singleton(),
-    questionRepository: asClass(MySQLQuestionRepository).singleton(),
-    otpRepository: asClass(RedisOtpRepository).singleton(),
-    importJobRepository: asClass(MySQLImportRepository).singleton(),
-    examMatrixRepository: asClass(MySQLExamMatrixRepository).singleton(),
+    userRepository: asRepo(MySQLUserRepository),
+    tokenRepository: asRepo(RedisTokenRepository),
+    roleRepository: asRepo(MySQLRoleRepository),
+    userRoleRepository: asRepo(MySQLUserRoleRepository),
+    pendingUserRepository: asRepo(RedisPendingUserRepository),
+    licenseCategoryRepository: asRepo(MySQLLicenseCategoryRepository),
+    chapterRepository: asRepo(MySQLChapterRepository),
+    questionRepository: asRepo(MySQLQuestionRepository),
+    otpRepository: asRepo(RedisOtpRepository),
+    importJobRepository: asRepo(MySQLImportRepository),
+    examMatrixRepository: asRepo(MySQLExamMatrixRepository),
+    examRepository: asRepo(MySQLExamRepository),
 
     // --- TẦNG TIỆN ÍCH & BẢO MẬT (SECURITY & EXTERNAL SERVICES) ---
     tokenManager: asClass(JwtTokenManager).singleton(),
@@ -90,6 +149,10 @@ container.register({
     importProcessorService: asClass(ImportProcessorService).singleton(),
     importQueue: asClass(ImportQueue).singleton(),
     importWorker: asClass(ImportWorker).singleton(),
+    examService: asClass(ExamService).singleton(),
+    examGeneratorService: asClass(ExamGeneratorService).singleton(),
+    masterDataCacheService: asClass(MasterDataCacheService).singleton(),
+    mediaService: asClass(MediaService).singleton(),
 
     // --- TẦNG GIAO TIẾP (API LAYER - CONTROLLERS) ---
     userController: asClass(UserController).singleton(),
@@ -100,5 +163,6 @@ container.register({
     questionController: asClass(QuestionController).singleton(),
     importController: asClass(ImportController).singleton(),
     examMatrixController: asClass(ExamMatrixController).singleton(),
-    
+    examController: asClass(ExamController).singleton(),
+
 });

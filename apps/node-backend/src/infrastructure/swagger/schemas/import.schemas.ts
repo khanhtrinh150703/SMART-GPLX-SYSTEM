@@ -1,19 +1,17 @@
+// 1. SCHEMAS: Định nghĩa cấu trúc dữ liệu
 export const importSchemas = {
-    // 1. Trạng thái phiên (Import Status)
     ImportStatus: {
         type: 'string',
         enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'QUEUED'],
         description: 'Trạng thái tổng quát của phiên Import'
     },
 
-    // 2. Các bước xử lý (Import Step)
     ImportStep: {
         type: 'string',
         enum: ['QUEUED', 'EXTRACTING', 'VALIDATING_EXCEL', 'UPLOADING_ASSETS', 'SAVING_DATABASE', 'COMPLETED', 'FAILED'],
         description: 'Tiến độ xử lý chi tiết trong Worker'
     },
 
-    // 3. Cấu trúc Lỗi dòng (Import Error)
     ImportError: {
         type: 'object',
         properties: {
@@ -24,7 +22,6 @@ export const importSchemas = {
         }
     },
 
-    // 4. Dữ liệu kết quả xử lý (Import Result Data)
     ImportResultData: {
         type: 'object',
         properties: {
@@ -41,7 +38,6 @@ export const importSchemas = {
         }
     },
 
-    // 5. DTO khởi tạo phiên (Init Import DTO)
     InitImportDTO: {
         type: 'object',
         required: ['fileName', 'totalSize', 'totalChunks', 'chunkSizeLimit'],
@@ -53,7 +49,6 @@ export const importSchemas = {
         }
     },
 
-    // 6. Cấu trúc Job Entity đầy đủ
     ImportJob: {
         type: 'object',
         properties: {
@@ -69,15 +64,68 @@ export const importSchemas = {
         }
     },
 
-    // 7. Standard Response Wrapper (Dựa trên StandardResponse interface của bạn)
-    StandardResponse: {
+    BaseResponse: {
         type: 'object',
         properties: {
             success: { type: 'boolean', example: true },
-            code: { type: 'string', example: 'SUCCESS' },
-            statusCode: { type: 'integer', example: 200 },
             message: { type: 'string', example: 'Thao tác thành công' },
-            data: { type: 'object' } // Sẽ được overwrite ở từng API cụ thể
-        }
-    }
+            timestamp: { type: 'string', format: 'date-time' },
+        },
+    },
+
+    StandardResponse: {
+        allOf: [
+            { $ref: '#/components/schemas/BaseResponse' },
+            {
+                type: 'object',
+                properties: {
+                    code: { type: 'string', example: 'SUCCESS' },
+                    statusCode: { type: 'integer', example: 200 },
+                    data: { type: 'object' }
+                }
+            }
+        ]
+    },
+
+    ErrorCode: {
+        type: 'string',
+        enum: ['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN', 'NOT_FOUND', 'INTERNAL_ERROR', 'VALIDATION_ERROR'],
+        description: 'Mã lỗi nghiệp vụ hệ thống'
+    },
+
+    BadRequestError: {
+        description: 'Lỗi yêu cầu không hợp lệ (400)',
+        content: {
+            'application/json': {
+                schema: {
+                    allOf: [
+                        { $ref: '#/components/schemas/BaseResponse' },
+                        {
+                            type: 'object',
+                            properties: {
+                                code: { $ref: '#/components/schemas/ErrorCode' },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+    },
+    UnauthorizedError: {
+        description: 'Lỗi chưa xác thực (401)',
+        content: {
+            'application/json': {
+                schema: { $ref: '#/components/schemas/BaseResponse' },
+            },
+        },
+    },
+    ForbiddenError: {
+        description: 'Không có quyền truy cập (403)',
+        content: {
+            'application/json': {
+                schema: { $ref: '#/components/schemas/BaseResponse' },
+            },
+        },
+    },
+
 };

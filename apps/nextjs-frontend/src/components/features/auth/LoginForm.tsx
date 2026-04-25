@@ -91,7 +91,8 @@ export default function LoginForm() {
         <Alert
           intent="error"
           message={errorMsg}
-          className="mb-6" // Thêm margin nếu cần
+          className="mb-6" 
+          duration={10000}
         />
       )}
 

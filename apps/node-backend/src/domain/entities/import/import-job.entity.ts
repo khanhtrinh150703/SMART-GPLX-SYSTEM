@@ -1,148 +1,153 @@
 import { IMPORT_STATUS, ImportStatus } from "@/domain/entities/import/import.status";
 import { AppError, ErrorCode } from "@/shared/errors";
-import { IImportJobProps, CreateImportJobProps } from "./import-job.props";
-import { IMPORT_CONFIG } from "@/domain/constants/import.constant";
+import { CreateImportJobProps, IImportJobProps} from "./import-job.props";
 import { IImportResultData, ImportStep } from "@/domain/entities/import/import-result.type";
+import { BaseEntity } from "@/domain/seedwork/entity.base";
+import { IMPORT_CONFIG } from "@/shared/config/import.config";
 
 /**
  * @description Thực thể quản lý vòng đời và logic nghiệp vụ của tiến trình Import.
+ * Tuân thủ chuẩn Rich Domain: Mọi thay đổi trạng thái phải thông qua các phương thức nghiệp vụ.
  */
-export class ImportJobEntity {
-  private readonly _props: IImportJobProps;
+export class ImportJobEntity extends BaseEntity<IImportJobProps> {
 
-  constructor(props: CreateImportJobProps) {
-    // Khởi tạo giá trị mặc định cho resultData để tránh lỗi null/undefined
-    const defaultResultData: IImportResultData = {
+  private constructor(props: IImportJobProps) {
+    super(props);
+  }
+
+  /**
+   * @description Factory Method - Nơi duy nhất chứa logic khởi tạo dữ liệu mới
+   */
+  public static create(props: CreateImportJobProps): ImportJobEntity {
+    const now = new Date();
+
+    // 1. Khởi tạo cấu trúc Result Data mặc định
+    const defaultResult: IImportResultData = {
       totalRows: 0,
       processedRows: 0,
       successCount: 0,
       errorCount: 0,
       errors: [],
       currentStep: 'QUEUED',
-      ...(props.resultData || {})
     };
 
-    this._props = {
+    // 2. Chuẩn hóa dữ liệu trước khi đưa vào constructor
+    const finalizedProps: IImportJobProps = {
       ...props,
+      id: crypto.randomUUID(),
       status: props.status ?? IMPORT_STATUS.PENDING,
-      expiresAt: props.expiresAt ?? new Date(Date.now() + IMPORT_CONFIG.SESSION_EXPIRY_HOURS * 60 * 60 * 1000),
-      resultData: defaultResultData
-    };
+      // Sử dụng hàm static để tính toán
+      expiresAt: props.expiresAt ?? this.calculateExpiryDate(),
+      totalChunks: Math.ceil(props.totalSize / IMPORT_CONFIG.chunk.sizeLimit),
+      chunkSizeLimit: IMPORT_CONFIG.chunk.sizeLimit,
+      resultData: { ...defaultResult, ...props.resultData },
+      createdAt: now,
+      updatedAt: now,
+    } as IImportJobProps;
+
+    return new ImportJobEntity(finalizedProps);
   }
 
-  // --- Getters (Read-only access) ---
-  public get id(): string | undefined { return this._props.id; }
-  public get fileName(): string { return this._props.fileName; }
-  public get totalSize(): number { return this._props.totalSize; }
-  public get totalChunks(): number { return this._props.totalChunks; }
+  public static reconstitute(props: IImportJobProps): ImportJobEntity {
+    return new ImportJobEntity(props);
+  }
+
+  /** @description Cập nhật dấu thời gian thay đổi cuối cùng. */
+  private touch(): void {
+    this._props.updatedAt = new Date();
+  }
+
+  // --- Getters (Read-only) ---
+  public get id(): string { return this._props.id!; }
   public get status(): ImportStatus { return this._props.status; }
-  public get chunkSizeLimit(): number { return this._props.chunkSizeLimit; }
-  public get expiresAt(): Date { return this._props.expiresAt!; }
-  public get resultData(): IImportResultData { return this._props.resultData; }
+  public get resultData(): Readonly<IImportResultData> { return this._props.resultData; }
+  public get totalChunks(): number { return this._props.totalChunks; }
+
+  // --- Business Logic (State Mutators) ---
 
   /**
-   * @description Truy cập toàn bộ props dưới dạng Readonly
+   * @description Thiết lập tổng số dòng thực tế từ file Excel.
    */
-  public get props(): Readonly<IImportJobProps> {
-    return Object.freeze({ ...this._props });
-  }
-
-  // --- Business Logic (Rich Domain Methods) ---
-
-  /**
-   * @description Kiểm tra tính hợp lệ của mảnh file (chunk)
-   */
-  public validateChunkSize(actualSize: number): void {
-    if (actualSize > this._props.chunkSizeLimit) {
-      throw new AppError(ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED);
-    }
+  public setTotalRows(total: number): void {
+    this._props.resultData.totalRows = total;
+    this.touch();
   }
 
   /**
-   * @description Kiểm tra phiên làm việc đã hết hạn chưa
+   * @description Ghi nhận một dòng xử lý thành công.
+   * Tăng tiến độ tổng và số lượng thành công.
    */
-  public isExpired(): boolean {
-    return new Date() > this._props.expiresAt;
+  public incrementSuccessCount(): void {
+    this._props.resultData.processedRows = (this._props.resultData.processedRows ?? 0) + 1;
+    this._props.resultData.successCount = (this._props.resultData.successCount ?? 0) + 1;
+    this.touch();
   }
 
   /**
-   * @description Cập nhật bước xử lý hiện tại của Worker
+   * @description Ghi nhận một dòng thất bại với thông tin chi tiết.
+   * @param index Số thứ tự dòng trong Excel.
+   * @param reason Lý do lỗi chính.
+   * @param details Mảng các lỗi chi tiết (vd: lỗi từ validate entity).
+   */
+  public addErrorLog(index: number, column: string, reason: string, details: string[] = []): void {
+    this._props.resultData.processedRows = (this._props.resultData.processedRows ?? 0) + 1;
+    this._props.resultData.errorCount = (this._props.resultData.errorCount ?? 0) + 1;
+    this._props.resultData.errors.push({
+      row: index,
+      column: column,
+      message: reason,
+      details: details,
+      timestamp: new Date().toISOString()
+    });
+    this._props.updatedAt = new Date();
+  }
+
+  /**
+   * @description Cập nhật bước xử lý hiện tại (EXTRACTING, PROCESSING...).
    */
   public updateStep(step: ImportStep): void {
     this._props.resultData.currentStep = step;
+    this.touch();
   }
 
   /**
-   * @description Chuyển trạng thái sang QUEUED sau khi gộp file xong
-   */
-  public markAsQueued(): void {
-    if (this._props.status !== IMPORT_STATUS.PENDING) {
-      throw new AppError(ErrorCode.IMPORT.JOB_INVALID_STATUS);
-    }
-    this._props.status = IMPORT_STATUS.QUEUED;
-    this.updateStep('QUEUED');
-  }
-
-  /**
-   * @description Chuyển trạng thái sang PROCESSING khi Worker bắt đầu làm việc
+   * @description Đánh dấu bắt đầu xử lý trong Worker.
    */
   public markAsProcessing(): void {
     if (this._props.status !== IMPORT_STATUS.QUEUED) {
       throw new AppError(ErrorCode.IMPORT.JOB_INVALID_STATUS);
     }
     this._props.status = IMPORT_STATUS.PROCESSING;
+    this.updateStep('PROCESSING');
   }
 
   /**
-   * @description Hoàn thành tiến trình và lưu kết quả cuối cùng
-   */
-  /**
-   * @description Đánh dấu hoàn tất phiên làm việc
-   * (Dịch: Mark the job as successfully completed)
+   * @description Hoàn tất Job với trạng thái thành công.
    */
   public markAsCompleted(): void {
-    // 1. Chỉ cho phép hoàn tất khi đang ở trạng thái PROCESSING hoặc QUEUED
-    const allowedStatuses: ImportStatus[] = [IMPORT_STATUS.PROCESSING, IMPORT_STATUS.QUEUED];
-
-    if (!allowedStatuses.includes(this._props.status)) {
-      throw new AppError(ErrorCode.IMPORT.JOB_INVALID_STATUS);
-    }
-
-    // 2. Cập nhật trạng thái chính
     this._props.status = IMPORT_STATUS.COMPLETED;
-
-    // 3. Cập nhật Step và ép tiến độ về tối đa (để FE hiển thị 100%)
     this._props.resultData.currentStep = 'COMPLETED';
 
-    // Đảm bảo số dòng đã xử lý bằng tổng số dòng (nếu trước đó có sai lệch nhỏ)
-    if (this._props.resultData.totalRows > 0) {
-      this._props.resultData.processedRows = this._props.resultData.totalRows;
+    // Đảm bảo progress đạt 100% khi kết thúc
+    const total = this._props.resultData.totalRows ?? 0;
+    if (total > 0) {
+      this._props.resultData.processedRows = total;
     }
-
-    this._props.updatedAt = new Date();
+    this.touch();
   }
 
   /**
-   * @description Ghi nhận thất bại của tiến trình
+   * @description Đánh dấu Job thất bại do lỗi nghiêm trọng (System Error).
    */
   public markAsFailed(errorMessage: string): void {
     this._props.status = IMPORT_STATUS.FAILED;
     this._props.resultData.currentStep = 'FAILED';
     this._props.resultData.lastError = errorMessage;
-  }
-
-  /**
-   * @description Tính toán % tiến độ dựa trên dữ liệu thực tế
-   */
-  public get progressPercentage(): number {
-    const { totalRows, processedRows } = this._props.resultData;
-    if (totalRows === 0) return 0;
-    return Math.round((processedRows / totalRows) * 100);
+    this.touch();
   }
 
   /**
    * @description Kiểm tra xem phiên làm việc có đang trong trạng thái chờ upload hay không.
-   * Giúp che giấu logic so sánh chuỗi 'PENDING' bên trong thực thể.
    */
   public isPending(): boolean {
     return this._props.status === IMPORT_STATUS.PENDING;
@@ -150,59 +155,60 @@ export class ImportJobEntity {
 
   /**
    * @description Kiểm tra điều kiện tổng thể để hoàn tất giai đoạn upload.
-   * Hiện tại chỉ check status, nhưng có thể mở rộng thêm logic kiểm tra đủ chunk.
+   * Logic: Phải đang ở trạng thái PENDING và chưa bị hết hạn.
    */
   public canComplete(): boolean {
-    // Logic: Phải đang PENDING và chưa bị hết hạn
     return this.isPending() && !this.isExpired();
   }
 
-  public toJSON(): IImportJobProps {
-    return { ...this._props };
-  }
-
-  // --- STATE MUTATORS (Những hàm thay đổi trạng thái) ---
-
   /**
-   * @description Thiết lập tổng số dòng sẽ xử lý
+   * @description Kiểm tra tính hợp lệ của mảnh file (chunk) nhận được từ Client.
+   * @throws {AppError} Nếu kích thước vượt quá giới hạn cấu hình.
    */
-  public setTotalRows(total: number): void {
-    this._props.resultData.totalRows = total;
-  }
-
-  /**
-   * @description Cập nhật trạng thái chi tiết của tiến trình
-   */
-  public updateProgress(
-    total: number,
-    processed: number,
-    success: number,
-    error: number
-  ): void {
-    this._props.resultData.totalRows = total;
-    this._props.resultData.processedRows = processed;
-    this._props.resultData.successCount = success;
-    this._props.resultData.errorCount = error;
-
-    // Tự động cập nhật step nếu cần (Optionally)
-    if (processed === total && total > 0) {
-      this._props.resultData.currentStep = 'COMPLETED';
+  public validateChunkSize(actualSize: number): void {
+    // Giới hạn này thường được config lúc tạo Job (ví dụ: 1MB/chunk)
+    if (actualSize > this._props.chunkSizeLimit) {
+      throw new AppError(
+        ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED,
+        `Kích thước mảnh file (${actualSize} bytes) vượt quá giới hạn cho phép.`
+      );
     }
   }
 
   /**
-   * @description Ghi nhận lỗi tại một dòng và cột cụ thể
-   * (Dịch: Record error at a specific row and column)
+   * @description Chuyển trạng thái sang QUEUED (Đang chờ xử lý).
+   * Dùng sau khi Client đã gửi đủ 100% các chunk và hệ thống đã gộp file xong.
    */
-  public addError(rowNumber: number, message: string, column: string = 'General'): void {
-    this._props.resultData.errors.push({
-      row: rowNumber,
-      column: column, // Bổ sung để khớp với IImportError
-      message: message,
-      timestamp: new Date().toISOString()
-    });
+  public markAsQueued(): void {
+    // Chỉ cho phép chuyển sang hàng chờ nếu đang ở trạng thái PENDING
+    if (!this.isPending()) {
+      throw new AppError(ErrorCode.IMPORT.JOB_INVALID_STATUS, "Chỉ có thể đưa Job vào hàng chờ khi đang ở trạng thái PENDING.");
+    }
 
-    // Tự động tăng errorCount khi có lỗi mới
-    this._props.resultData.errorCount++;
+    this._props.status = IMPORT_STATUS.QUEUED;
+    this.updateStep('QUEUED');
+    this.touch();
+  }
+
+
+  // --- Helpers ---
+  public isExpired(): boolean {
+    return new Date() > this._props.expiresAt!;
+  }
+
+  private static calculateExpiryDate(): Date {
+    const now = new Date();
+    return new Date(now.getTime() + IMPORT_CONFIG.session.expiryHours * 3600 * 1000);
+  }
+
+  public get progressPercentage(): number {
+    // FIX: Trích xuất an toàn với giá trị mặc định là 0
+    const totalRows = this._props.resultData.totalRows ?? 0;
+    const processedRows = this._props.resultData.processedRows ?? 0;
+
+    if (totalRows <= 0) return 0;
+
+    const percentage = Math.round((processedRows / totalRows) * 100);
+    return Math.min(percentage, 100);
   }
 }

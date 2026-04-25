@@ -1,8 +1,6 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
 export const selectionPaths = {
     // API lấy Chapter cho Dropdown
-    [`${API_CONSTANTS.API_BASE}/chapters/selection`]: {
+    [`/chapters/selection`]: {
         get: {
             tags: ['Selection Data'],
             summary: 'Lấy danh sách chương học (Rút gọn cho Dropdown)',
@@ -21,7 +19,7 @@ export const selectionPaths = {
     },
 
     // API lấy License Category cho Dropdown
-    [`${API_CONSTANTS.API_BASE}/license-categories/selection`]: {
+    [`/license-categories/selection`]: {
         get: {
             tags: ['Selection Data'],
             summary: 'Lấy danh sách hạng bằng lái (Rút gọn cho Dropdown)',
@@ -39,7 +37,7 @@ export const selectionPaths = {
         }
     },
 
-     [`${API_CONSTANTS.API_BASE}/roles/selection`]: {
+     [`/roles/selection`]: {
         get: {
             tags: ['Selection Data'],
             summary: 'Lấy danh sách chức vụ (Rút gọn cho Dropdown)',

@@ -1,21 +1,86 @@
 import { AppError, ErrorCode } from "@/shared/errors";
-import { IExamMatrixProps } from "./exam-matrix.props";
-/**
- * @description Rich Domain Model cho Ma trận đề thi.
- * Đảm bảo tính toàn vẹn của cấu trúc đề ngay từ khi khởi tạo.
- */
-export class ExamMatrix {
-    private constructor(private readonly _props: IExamMatrixProps) { }
+import { CreateExamMatrixProps, IExamMatrixDetailProps, IExamMatrixProps } from "./exam-matrix.props";
+import { BaseEntity } from "@/domain/seedwork/entity.base";
 
-    public static create(props: IExamMatrixProps): ExamMatrix {
-        const instance = new ExamMatrix(props);
-        instance.validate();
-        return instance;
+/**
+ * @description Thực thể Ma trận đề thi (Exam Matrix).
+ * Quản lý cấu trúc bộ đề: số lượng câu hỏi, điểm đạt và thời gian làm bài.
+ */
+export class ExamMatrix extends BaseEntity<IExamMatrixProps> {
+    /**
+       * @description Constructor đơn giản, không chứa logic tính toán thời gian.
+       */
+    private constructor(props: IExamMatrixProps) {
+        super(props);
+        this.validate(); // Validation vẫn nên nằm ở đây để check tính toàn vẹn
+    }
+
+    /**
+     * @description Factory Method: Khởi tạo một Ma trận đề mới.
+     */
+    public static create(props: CreateExamMatrixProps): ExamMatrix {
+        const now = new Date();
+
+        const finalizedProps: IExamMatrixProps = {
+            ...props,
+            id: crypto.randomUUID(),
+
+            // Normalization: Gọt giũa dữ liệu
+            name: props.name.trim(),
+
+            // Gán giá trị mặc định nếu không truyền vào
+            totalQuestions: props.totalQuestions ?? 0,
+            passingScore: props.passingScore ?? 0,
+            durationMinutes: props.durationMinutes ?? 0,
+
+            // Timestamps khởi tạo
+            createdAt: now,
+            updatedAt: now,
+            deletedAt: undefined,
+        } as IExamMatrixProps;
+
+        return new ExamMatrix(finalizedProps);
+    }
+
+    /**
+     * @description Tái tạo thực thể từ Database (Resurrection).
+     */
+    public static reconstitute(props: IExamMatrixProps): ExamMatrix {
+        return new ExamMatrix(props);
+    }
+
+    private touch(): void {
+        this._props.updatedAt = new Date();
     }
 
     // Getters
     get id() { return this._props.id; }
-    get props() { return this._props; }
+
+
+    /**
+     * @description Cập nhật cấu hình của Ma trận đề thi.
+     * Đây là nơi duy nhất được phép thay đổi các chỉ số này.
+     */
+    public updateConfig(payload: {
+        totalQuestions: number;
+        passingScore: number;
+        durationMinutes: number;
+        minCriticalQuestions: number;
+        details: IExamMatrixDetailProps[];
+        isDefault: boolean;
+    }): void {
+        // 1. Cập nhật dữ liệu vào _props
+        this._props.totalQuestions = payload.totalQuestions;
+        this._props.passingScore = payload.passingScore;
+        this._props.durationMinutes = payload.durationMinutes;
+        this._props.minCriticalQuestions = payload.minCriticalQuestions;
+        this._props.isDefault = payload.isDefault;
+        // 2. Tự động cập nhật thời gian
+        this.touch();
+
+        // 3. Chốt chặn: Phải validate lại ngay lập tức để đảm bảo dữ liệu mới không phá hỏng Invariants
+        this.validate();
+    }
 
     /**
      * @description Quy tắc nghiệp vụ bắt buộc: 

@@ -7,19 +7,23 @@ import { IExamMatrixDetailRequest } from "./exam-matrix-detail.request";
  */
 export class CreateExamMatrixDTO {
     public readonly licenseCategoryId: string;
+    public readonly name: string;
     public readonly totalQuestions: number;
     public readonly passingScore: number;
     public readonly durationMinutes: number;
     public readonly minCriticalQuestions: number;
+    public readonly isDefault: boolean;
     public readonly details: IExamMatrixDetailRequest[];
 
     constructor(data: CreateExamMatrixDTO) {
+        this.name = data.name;
         this.licenseCategoryId = data.licenseCategoryId;
         this.totalQuestions = data.totalQuestions;
         this.passingScore = data.passingScore;
         this.durationMinutes = data.durationMinutes;
         this.minCriticalQuestions = data.minCriticalQuestions;
         this.details = data.details;
+        this.isDefault = data.isDefault;
     }
 
     /**
@@ -35,7 +39,9 @@ export class CreateExamMatrixDTO {
             { value: this.totalQuestions, name: 'totalQuestions' },
             { value: this.passingScore, name: 'passingScore' },
             { value: this.durationMinutes, name: 'durationMinutes' },
-            { value: this.minCriticalQuestions, name: 'minCriticalQuestions' }
+            { value: this.minCriticalQuestions, name: 'minCriticalQuestions' },
+            { value: this.name, name: 'name' },
+            { value: this.isDefault, name: 'isDefault' },
         ];
 
         for (const field of mandatoryFields) {
@@ -46,7 +52,14 @@ export class CreateExamMatrixDTO {
                 // Hoặc bạn có thể ném lỗi chi tiết hơn nếu muốn
             }
         }
+        if (!this.name) {
+            throw new AppError(ErrorCode.MATRIX.NAME_REQUIRED)
+        }
 
+        if (this.name.length > 100) {
+            throw new AppError(ErrorCode.MATRIX.NAME_TOO_LONG)
+        }
+        
         if (!this.licenseCategoryId) {
             throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED); // Hoặc mã lỗi chung cho Input
         }

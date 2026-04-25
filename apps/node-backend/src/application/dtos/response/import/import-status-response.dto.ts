@@ -4,6 +4,7 @@ import { ImportStatus } from "@/domain/entities/import/import.status";
  * @description DTO phản hồi chi tiết tiến độ xử lý của Job
  */
 export interface IImportJobStatusResponseDTO {
+  
   jobId: string;
   status: ImportStatus;
   progress: number; // Phần trăm từ 0-100
@@ -19,4 +20,5 @@ export interface IImportJobStatusResponseDTO {
     message: string;
   }>;
   currentStep: string;
+  lastError: string;
 }

@@ -1,69 +1,41 @@
+import {
+  IMasterDataCacheService,
+} from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
 import prisma from "../../../prisma/prisma";
+import { ICachedCategory, ICachedChapter, ICachedRole } from "@/domain/master-data/types/cached-data.type";
 
 /**
- * @description Cấu trúc dữ liệu Vai trò (Role data structure)
+ * @description Dịch vụ quản lý bộ nhớ đệm Master Data (Implementation)
  */
-export interface CachedRoleData {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-}
+export class MasterDataCacheService implements IMasterDataCacheService {
+  // Sử dụng private Map để lưu trữ trong RAM
+  private _rolesById = new Map<string, ICachedRole>();
+  private _rolesByName = new Map<string, ICachedRole>();
 
-/**
- * @description Cấu trúc dữ liệu Chương học (Chapter data structure)
- */
-export interface CachedChapterData {
-  id: string;
-  name: string;
-}
+  private _chaptersById = new Map<string, ICachedChapter>();
+  private _chaptersByNormalizedName = new Map<string, ICachedChapter>();
+  private _chaptersByCode = new Map<string, ICachedChapter>();
 
-/**
- * @description Cấu trúc dữ liệu Hạng bằng (License category data structure)
- */
-export interface CachedCategoryData {
-  id: string;
-  name: string;
-}
-
-/**
- * @description Dịch vụ quản lý bộ nhớ đệm cho dữ liệu danh mục cốt lõi (Master Data Cache Service)
- * Giúp truy xuất O(1) và giảm tải tuyệt đối cho Database (Ensures O(1) access and zero DB load).
- */
-export class MasterDataCacheService {
-  // --- ROLES CACHE ---
-  private static _rolesById = new Map<string, CachedRoleData>();
-  private static _rolesByName = new Map<string, CachedRoleData>();
-
-  // --- CHAPTERS CACHE ---
-  private static _chaptersById = new Map<string, CachedChapterData>();
-  /** @description Lưu tên chương ở dạng chữ thường để đối soát Excel (Stores lowercase names for Excel mapping) */
-  private static _chaptersByNormalizedName = new Map<string, CachedChapterData>();
-  private static _chaptersByCode = new Map<string, CachedChapterData>();
-
-  // --- CATEGORIES CACHE ---
-  private static _categoriesById = new Map<string, CachedCategoryData>();
-  /** @description Lưu tên hạng bằng ở dạng chữ thường (Stores lowercase category names) */
-  private static _categoriesByNormalizedName = new Map<string, CachedCategoryData>();
+  private _categoriesById = new Map<string, ICachedCategory>();
+  private _categoriesByNormalizedName = new Map<string, ICachedCategory>();
 
   /**
-   * @description Khởi tạo và nạp toàn bộ Master Data vào RAM (Initialize and load all Master Data into RAM)
-   * Sử dụng Promise.all để chạy truy vấn song song giúp khởi động nhanh hơn.
+   * @description Khởi tạo và nạp toàn bộ Master Data vào RAM
    */
-  public static async initialize(): Promise<void> {
-    // Chạy song song 3 truy vấn để tiết kiệm thời gian (Run 3 queries in parallel to save time)
+  public async initialize(): Promise<void> {
     const [rolesFromDb, chaptersFromDb, categoriesFromDb] = await Promise.all([
-      prisma.role.findMany({ include: { rolePermissions: { include: { permission: true } } } }),
+      prisma.role.findMany({
+        include: { rolePermissions: { include: { permission: true } } }
+      }),
       prisma.chapter.findMany(),
-      prisma.licenseCategory.findMany() // Trinh tự đổi tên model nếu trong Prisma schema của bạn viết khác nhé
+      prisma.licenseCategory.findMany()
     ]);
 
-    // 1. Xóa dữ liệu cũ (Clear old data)
     this._clearAllCaches();
 
-    // 2. Nạp dữ liệu Role (Load Role data)
+    // 1. Map Roles
     rolesFromDb.forEach(role => {
-      const cachedRole: CachedRoleData = {
+      const cachedRole: ICachedRole = {
         id: role.id,
         name: role.name,
         description: role.description || "",
@@ -73,66 +45,67 @@ export class MasterDataCacheService {
       this._rolesByName.set(role.name, cachedRole);
     });
 
-    // 3. Nạp dữ liệu Chapter (Load Chapter data)
+    // 2. Map Chapters
     chaptersFromDb.forEach(chapter => {
-      const cachedChapter = { id: chapter.id, name: chapter.name };
+      const cachedChapter: ICachedChapter = { id: chapter.id, name: chapter.name };
       this._chaptersById.set(chapter.id, cachedChapter);
 
-      // Xử lý chống lỗi Excel: Cắt dấu cách và đưa về chữ thường (Trim spaces and toLowerCase)
-      const normalizedKey = chapter.name.trim().toLowerCase();
-      this._chaptersByNormalizedName.set(normalizedKey, cachedChapter);
-      const normalizedCode = String(chapter.code).trim().toLowerCase();
-      this._chaptersByCode.set(normalizedCode, cachedChapter);
+      this._chaptersByNormalizedName.set(chapter.name.trim().toLowerCase(), cachedChapter);
+      this._chaptersByCode.set(String(chapter.code).trim().toLowerCase(), cachedChapter);
     });
 
-    // 4. Nạp dữ liệu Category (Load Category data)
+    // 3. Map Categories
     categoriesFromDb.forEach(category => {
-      const cachedCategory = { id: category.id, name: category.name };
+      const cachedCategory: ICachedCategory = { id: category.id, name: category.name };
       this._categoriesById.set(category.id, cachedCategory);
-
-      // Ví dụ: " b2 " -> "b2"
-      const normalizedKey = category.name.trim().toLowerCase();
-      this._categoriesByNormalizedName.set(normalizedKey, cachedCategory);
+      this._categoriesByNormalizedName.set(category.name.trim().toLowerCase(), cachedCategory);
     });
 
-    console.log('>>> [CACHE] Master Data initialized successfully!');
   }
 
-  // =========================================================================
-  // CÁC HÀM TRUY XUẤT (RETRIEVAL METHODS)
-  // =========================================================================
+  public async refresh(): Promise<void> {
+    await this.initialize();
+  }
 
-  // --- Roles ---
-  public static getRoleById(id: string): CachedRoleData | undefined { return this._rolesById.get(id); }
-  public static getRoleByName(name: string): CachedRoleData | undefined { return this._rolesByName.get(name); }
+  // --- Retrieval Methods (Bỏ static để thỏa mãn Interface) ---
 
-  // --- Chapters ---
-  public static getChapterById(id: string): CachedChapterData | undefined { return this._chaptersById.get(id); }
-  /**
-   * @description Tìm chương bằng tên từ Excel (Find chapter by name from Excel)
-   */
-  public static getChapterByExcelName(rawName: string): CachedChapterData | undefined {
+  public getRoleById(id: string) { return this._rolesById.get(id); }
+  public getRoleByName(name: string) { return this._rolesByName.get(name); }
+
+  public getChapterById(id: string) { return this._chaptersById.get(id); }
+  public getChapterByExcelName(rawName: string) {
     return this._chaptersByNormalizedName.get(rawName.trim().toLowerCase());
   }
-  public static getChapterByExcelCode(rawCode: string | number): CachedChapterData | undefined {
-    // Ép đầu vào về string và cắt khoảng trắng (Cast input to string and trim)
+  public getChapterByExcelCode(rawCode: string | number) {
     return this._chaptersByCode.get(String(rawCode).trim().toLowerCase());
   }
 
-  // --- Categories ---
-  public static getCategoryById(id: string): CachedCategoryData | undefined { return this._categoriesById.get(id); }
-  /**
-   * @description Tìm hạng bằng lái từ tên Excel (Find license category by Excel name)
-   */
-  public static getCategoryByExcelName(rawName: string): CachedCategoryData | undefined {
+  public getCategoryById(id: string) { return this._categoriesById.get(id); }
+  public getCategoryByExcelName(rawName: string) {
     return this._categoriesByNormalizedName.get(rawName.trim().toLowerCase());
   }
+  /**
+   * @description Kiểm tra xem ID của Role có trong RAM không
+   */
+  public existsRole(id: string): boolean {
+    return this._rolesById.has(id);
+  }
 
-  // =========================================================================
-  // TIỆN ÍCH (UTILITIES)
-  // =========================================================================
+  /**
+   * @description Kiểm tra xem ID của Chapter có trong RAM không
+   */
+  public existsChapter(id: string): boolean {
+    return this._chaptersById.has(id);
+  }
 
-  private static _clearAllCaches(): void {
+  /**
+   * @description Kiểm tra xem ID của Hạng bằng lái có trong RAM không
+   */
+  public existsCategory(id: string): boolean {
+    return this._categoriesById.has(id);
+  }
+
+  private _clearAllCaches(): void {
     this._rolesById.clear();
     this._rolesByName.clear();
     this._chaptersById.clear();
@@ -141,11 +114,6 @@ export class MasterDataCacheService {
     this._categoriesById.clear();
     this._categoriesByNormalizedName.clear();
   }
-
-  /**
-   * @description Làm mới toàn bộ bộ nhớ đệm (Refresh all caches)
-   */
-  public static async refresh(): Promise<void> {
-    await this.initialize();
-  }
 }
+
+export const masterDataCacheService = new MasterDataCacheService();

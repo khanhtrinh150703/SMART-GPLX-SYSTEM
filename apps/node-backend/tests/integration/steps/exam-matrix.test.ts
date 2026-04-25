@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
-import { EXAM_MATRIX_ENDPOINTS, EXAM_MATRIX_PAYLOAD } from '../../test.data';
+import { ErrorCode, EXAM_MATRIX_ENDPOINTS, EXAM_MATRIX_PAYLOAD, fakeID } from '../../config/index'
 
 export const examMatrixSteps = (
     getAdminToken: () => string,
@@ -49,7 +49,6 @@ export const examMatrixSteps = (
                     .post(EXAM_MATRIX_ENDPOINTS.CREATE)
                     .set(getAuthHeader(getAdminToken()))
                     .send(payload);
-
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
                 expect(res.body.data).toBeDefined();
@@ -57,6 +56,48 @@ export const examMatrixSteps = (
                 expect(res.body.data.licenseCategoryId).toBe(getLicenseId());
 
                 testMatrixId = res.body.data.id;
+            });
+
+            describe('❌ Kịch bản lỗi: Dữ liệu quan hệ không tồn tại', () => {
+
+                it('❌ Nên trả về lỗi 404 khi License Category không tồn tại', async () => {
+                    // Tạo payload với License ID giả
+                    const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(
+                        fakeID, // License ID không tồn tại
+                        getChapterId(),
+                        getChapterIdSecond(),
+                        getChapterIdThird()
+                    );
+
+                    const res = await request(app)
+                        .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(404);
+                    expect(res.body.success).toBe(false);
+                    expect(res.body.code).toBe(ErrorCode.LICENSE.NOT_FOUND);
+                });
+
+                it('❌ Nên trả về lỗi 404 khi có ít nhất một Chapter không tồn tại', async () => {
+                    // Tạo payload với một Chapter ID giả (ví dụ chapter thứ 3 giả)
+                    const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(
+                        getLicenseId(),
+                        getChapterId(),
+                        getChapterIdSecond(),
+                        fakeID 
+                    );
+
+                    const res = await request(app)
+                        .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(404);
+                    expect(res.body.success).toBe(false);
+                    // Message.CHAPTER.NOT_FOUND
+                    expect(res.body.code).toBe(ErrorCode.CHAPTER.NOT_FOUND);
+                });
             });
 
             it('🚫 Nên trả về lỗi khi tổng phần trăm không bằng 100%', async () => {
@@ -72,7 +113,7 @@ export const examMatrixSteps = (
                     .send(payload);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe('INVALID_MATRIX_PERCENTAGE');
+                expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
             });
 
             it('🚫 Nên trả về lỗi khi có chương trùng lặp', async () => {
@@ -87,7 +128,7 @@ export const examMatrixSteps = (
                     .send(payload);
 
                 expect(res.status).toBe(409);
-                expect(res.body.code).toBe('DUPLICATE_CHAPTER_IN_MATRIX');
+                expect(res.body.code).toBe(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
             });
 
             it('🚫 Nên trả về lỗi khi thiếu chi tiết chương', async () => {
@@ -99,7 +140,7 @@ export const examMatrixSteps = (
                     .send(payload);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe('MATRIX_NO_DETAILS');
+                expect(res.body.code).toBe(ErrorCode.MATRIX.NO_DETAILS);
             });
         });
 
@@ -129,7 +170,7 @@ export const examMatrixSteps = (
                     .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(404);
-                expect(res.body.code).toBe('MATRIX_NOT_FOUND');
+                expect(res.body.code).toBe(ErrorCode.MATRIX.NOT_FOUND);
             });
         });
 
@@ -172,7 +213,7 @@ export const examMatrixSteps = (
                     .send(payload);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe('INVALID_MATRIX_PERCENTAGE');
+                expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
             });
         });
 

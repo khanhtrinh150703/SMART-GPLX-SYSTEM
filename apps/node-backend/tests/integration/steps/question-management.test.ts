@@ -5,7 +5,7 @@ import {
     QUESTION_DATA,
     ErrorCode,
     QUESTION_ENDPOINTS,
-} from '../../test.data';
+} from '../../config/index'
 import { attachMultipart } from '@/shared/types/attach.types';
 
 /**
@@ -136,10 +136,9 @@ export const questionSteps = (
                         chapterId: getChapterId(),
                         licenseCategoryIds: [getLicenseId()]
                     });
-
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                normalQuestionId = res.body.data.id; // Lưu ID để dùng cho các test sau
+                normalQuestionId = res.body.data.id; 
             });
 
             it('✅ Nên tạo thành công câu hỏi ĐIỂM LIỆT', async () => {

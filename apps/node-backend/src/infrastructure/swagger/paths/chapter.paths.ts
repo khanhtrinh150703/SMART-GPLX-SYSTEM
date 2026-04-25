@@ -1,8 +1,5 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
-
 export const chapterPaths = {
-    [`${API_CONSTANTS.API_BASE}/chapters`]: {
+    [`/chapters`]: {
         get: {
             tags: ['Chapters'],
             summary: 'Lấy danh sách toàn bộ chương lý thuyết',
@@ -30,7 +27,7 @@ export const chapterPaths = {
             }
         }
     },
-    [`${API_CONSTANTS.API_BASE}/chapters/{id}`]: {
+    [`/chapters/{id}`]: {
         patch: {
             tags: ['Chapters'],
             summary: 'Cập nhật thông tin chương lý thuyết',
@@ -57,7 +54,7 @@ export const chapterPaths = {
             }
         }
     },
-    [`${API_CONSTANTS.API_BASE}/chapters/{id}/restore`]: {
+    [`/chapters/{id}/restore`]: {
         patch: {
             tags: ['Chapters'],
             summary: 'Khôi phục chương lý thuyết đã xóa mềm',

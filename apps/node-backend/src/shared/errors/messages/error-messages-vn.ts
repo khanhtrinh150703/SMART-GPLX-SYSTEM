@@ -8,6 +8,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     // === SYSTEM & INFRASTRUCTURE (SYS) ===
     [ErrorCode.SYSTEM.SUCCESS]: 'Thao tác thực hiện thành công.',
     [ErrorCode.SYSTEM.INTERNAL_ERROR]: 'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.',
+    [ErrorCode.SYSTEM.ALREADY_EXISTS]: 'Dữ liệu đã tồn tại trong hệ thống.',
     [ErrorCode.SYSTEM.SERVICE_UNAVAILABLE]: 'Máy chủ đang bảo trì, vui lòng quay lại sau.',
     [ErrorCode.SYSTEM.DATABASE_ERROR]: 'Lỗi kết nối cơ sở dữ liệu, vui lòng thử lại.',
     [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 'Bạn thao tác quá nhanh, vui lòng đợi một lát.',
@@ -15,6 +16,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.SYSTEM.CONFIG_ERROR]: "Hệ thống gặp sự cố về cấu hình kỹ thuật. Vui lòng liên hệ bộ phận kỹ thuật.",
     [ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED]: "Kích thước tệp tin vượt quá giới hạn cho phép.",
     [ErrorCode.SYSTEM.INVALID_INPUT]: 'Dữ liệu đầu vào không hợp lệ hoặc không đúng định dạng. Vui lòng kiểm tra lại các trường thông tin.',
+    [ErrorCode.SYSTEM.BAD_REQUEST]: 'Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu gửi đi.',
+    [ErrorCode.SYSTEM.DUPLICATE_DATA]: 'Dữ liệu đã tồn tại trong hệ thống, không thể tạo trùng lặp.',
+    [ErrorCode.SYSTEM.RESOURCE_NOT_FOUND]: 'Thao tác thất bại do không tìm thấy dữ liệu tương ứng trên hệ thống.',
+    [ErrorCode.SYSTEM.RELATION_FAILED]: 'Không thể thực hiện thao tác do vi phạm ràng buộc dữ liệu liên quan.',
 
     // === AUTHENTICATION & AUTHORIZATION (AUTH) ===
     [ErrorCode.AUTH.UNAUTHORIZED]: 'Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.',
@@ -50,11 +55,26 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.AVATAR_INVALID_TYPE]: 'Định dạng tệp không hỗ trợ. Vui lòng sử dụng JPG, PNG hoặc WEBP.',
 
     // === SMART-GPLX (EXAM & AI) ===
-    [ErrorCode.EXAM.NOT_FOUND]: 'Đề thi không tồn tại hoặc đã bị gỡ bỏ.',
-    [ErrorCode.EXAM.ALREADY_SUBMITTED]: 'Bạn đã nộp bài thi này rồi, không thể thực hiện lại.',
-    [ErrorCode.EXAM.EXPIRED]: 'Thời gian làm bài đã kết thúc.',
-    [ErrorCode.EXAM.AI_PROCESSING_ERROR]: 'Hệ thống AI gặp sự cố khi xử lý dữ liệu, vui lòng thử lại.',
-    [ErrorCode.EXAM.IMAGE_INVALID]: 'Ảnh chụp không rõ nét hoặc không chứa thông tin hợp lệ.',
+    [ErrorCode.EXAM.IMAGE_INVALID]: 'Ảnh minh họa không hợp lệ hoặc không rõ nét. Vui lòng kiểm tra lại.',
+    [ErrorCode.EXAM.ANSWERS_EMPTY]: 'Danh sách câu trả lời không được để trống.',
+    [ErrorCode.EXAM.ANSWER_FORMAT_INVALID]: 'Định dạng dữ liệu câu trả lời không hợp lệ.',
+    [ErrorCode.EXAM.NAME_REQUIRED]: 'Tên đề thi không được để trống.',
+    [ErrorCode.EXAM.NAME_TOO_LONG]: 'Tên đề thi không được vượt quá 100 ký tự.',
+    [ErrorCode.EXAM.INVALID_MATRIX_ID]: 'Mã ma trận đề thi không tồn tại hoặc không đúng định dạng.',
+
+    // --- Nhóm 2xx: Business/Pool (Lỗi kho dữ liệu & Nghiệp vụ) ---
+    [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 'Tổng kho câu hỏi không đủ số lượng để đáp ứng cấu trúc đề thi.',
+    [ErrorCode.EXAM.INSUFFICIENT_CHAPTER_QUESTIONS]: 'Số lượng câu hỏi trong chương không đủ để tạo đề theo yêu cầu.',
+    [ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS]: 'Kho dữ liệu không đủ số lượng câu hỏi điểm liệt để tạo đề.',
+    [ErrorCode.EXAM.QUESTION_DATA_INVALID]: 'Dữ liệu câu hỏi trong hệ thống bị lỗi (thiếu đáp án hoặc nội dung).',
+
+    // --- Nhóm 4xx: State/Flow (Lỗi trạng thái & Luồng thi) ---
+    [ErrorCode.EXAM.NOT_FOUND]: 'Thông tin bài thi không tồn tại trên hệ thống.',
+    [ErrorCode.EXAM.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp và ghi nhận kết quả trước đó.',
+    [ErrorCode.EXAM.EXPIRED]: 'Đã hết thời gian làm bài. Thao tác nộp bài không còn hiệu lực.',
+
+    // --- Nhóm 5xx: Infrastructure/AI (Lỗi hệ thống & AI) ---
+    [ErrorCode.EXAM.AI_PROCESSING_ERROR]: 'Hệ thống AI gặp sự cố trong quá trình xử lý dữ liệu. Vui lòng thử lại sau.',
 
     // === FILE & UPLOAD (FILE) ===
     [ErrorCode.FILE.UPLOAD_FAILED]: 'Tải tệp lên thất bại, vui lòng kiểm tra kết nối.',
@@ -126,10 +146,43 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.IMPORT.SESSION_EXPIRED]: 'Phiên nhập liệu đã hết hạn do quá thời gian quy định. Vui lòng khởi tạo lại quy trình.',
 
     // --- MATRIX MESSAGES ---
-    [ErrorCode.MATRIX.NO_DETAILS]: 'Cấu trúc ma trận không có nội dung chi tiết. Vui lòng bổ sung ít nhất một phần chi tiết cho ma trận.',
-    [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 'Tổng tỷ lệ phần trăm của các phần trong ma trận phải bằng 100%. Vui lòng kiểm tra lại thiết lập.',
-    [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 'Điểm đạt (điểm sàn) không hợp lệ. Điểm sàn không được vượt quá tổng số câu hỏi có trong ma trận.',
-    [ErrorCode.MATRIX.NOT_FOUND]: 'Dữ liệu ma trận không tồn tại hoặc đã bị xóa khỏi hệ thống. Vui lòng tải lại trang.',
-    [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 'Mỗi chương học chỉ được xuất hiện một lần trong ma trận. Vui lòng kiểm tra lại danh sách chi tiết.',
-    [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 'Không thể khôi phục ma trận này vì hạng bằng lái tương ứng đã có một ma trận khác đang hoạt động.',
+    [ErrorCode.MATRIX.NAME_REQUIRED]: 'Tên ma trận đề thi không được để trống.',
+    [ErrorCode.MATRIX.NAME_TOO_LONG]: 'Tên ma trận đề thi không được vượt quá 100 ký tự.',
+    [ErrorCode.MATRIX.NO_DETAILS]: 'Cấu trúc ma trận phải có ít nhất một thông số chi tiết.',
+    [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 'Tổng tỉ lệ câu hỏi trong ma trận phải bằng 100%.',
+    [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 'Điểm đạt yêu cầu không được lớn hơn tổng số câu hỏi.',
+    [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 'Một chương không được xuất hiện hai lần trong cùng một ma trận.',
+    [ErrorCode.MATRIX.NOT_FOUND]: 'Không tìm thấy thông tin ma trận đề thi này.',
+    [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 'Không thể khôi phục vì tên ma trận này đã tồn tại trong hệ thống.',
+
+    // Nhóm EXCEL
+    [ErrorCode.EXCEL.WORKSHEET_NOT_FOUND]: 'Không tìm thấy Worksheet yêu cầu trong file Excel.',
+    [ErrorCode.EXCEL.INVALID_FORMAT]: 'Định dạng file Excel không hợp lệ.',
+    [ErrorCode.EXCEL.EMPTY_FILE]: 'File Excel rỗng hoặc không có.',
+
+    // Nhóm PROCESS 
+    [ErrorCode.PROCESS.ALREADY_COMPLETED]: 'Yêu cầu này đã được xử lý hoặc hoàn thành trước đó.',
+
+    // --- Nhóm MEDIA ---
+    [ErrorCode.MEDIA.SOURCE_REQUIRED]: 'Nguồn dữ liệu phương tiện (đường dẫn hoặc tập tin) không được để trống.',
+    [ErrorCode.MEDIA.INVALID_TYPE]: 'Định dạng tập tin không được hỗ trợ. Vui lòng kiểm tra lại.',
+    [ErrorCode.MEDIA.FILE_TOO_LARGE]: 'Kích thước tập tin vượt quá giới hạn cho phép của hệ thống.',
+    [ErrorCode.MEDIA.UPLOAD_FAILED]: 'Hệ thống gặp sự cố khi lưu trữ tập tin. Vui lòng thử lại sau.',
+
+    [ErrorCode.EXAM_ATTEMPT.ID_REQUIRED]: 'Mã định danh lượt thi (ID) không được để trống.',
+    [ErrorCode.EXAM_ATTEMPT.NOT_FOUND]: 'Không tìm thấy thông tin lượt thi.',
+    [ErrorCode.EXAM_ATTEMPT.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp trước đó.',
+    [ErrorCode.EXAM_ATTEMPT.TIME_EXPIRED]: 'Thời gian làm bài đã hết, không thể thực hiện thao tác này.',
+    [ErrorCode.EXAM_ATTEMPT.SCORE_INVALID]: 'Số điểm không hợp lệ với tổng số câu hỏi.',
+    [ErrorCode.EXAM_ATTEMPT.RESULT_CONSISTENCY_ERROR]: 'Trạng thái Đạt/Trượt không khớp với điểm số hoặc logic câu điểm liệt.',
+    [ErrorCode.EXAM_ATTEMPT.NOT_IN_PROGRESS]: 'Lượt thi hiện không trong trạng thái đang làm bài.',
+    [ErrorCode.EXAM_ATTEMPT.UNAUTHORIZED_ACCESS]: 'Bạn không có quyền truy cập vào lượt thi này.',
+
+    [ErrorCode.ACTIVE_SESSION.NOT_FOUND]: 'Phiên làm việc không tồn tại.',
+    [ErrorCode.ACTIVE_SESSION.EXPIRED]: 'Phiên làm việc đã hết hạn, vui lòng đăng nhập lại.',
+    [ErrorCode.ACTIVE_SESSION.REVOKED]: 'Phiên làm việc đã bị thu hồi hoặc bạn đã đăng xuất từ thiết bị khác.',
+    [ErrorCode.ACTIVE_SESSION.MAX_SESSIONS_REACHED]: 'Số lượng thiết bị đăng nhập đã đạt giới hạn tối đa.',
+    [ErrorCode.ACTIVE_SESSION.INVALID_TOKEN]: 'Mã xác thực phiên không hợp lệ.',
+    [ErrorCode.ACTIVE_SESSION.DEVICE_MISMATCH]: 'Thông tin thiết bị không khớp với phiên hiện tại.',
+    [ErrorCode.ACTIVE_SESSION.INVALID_EXPIRATION_TIME]: 'Thời gian hết hạn phải lớn hơn 0 phút.',
 };

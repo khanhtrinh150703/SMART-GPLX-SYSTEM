@@ -26,7 +26,15 @@ export const jwtUtil = {
     const secret = JWT_CONFIG[type].getSecret();
     if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
 
-    return jwt.sign({ ...payload }, secret, {
+    const dataToSign = {
+      userId: payload.userId,
+      roles: payload.roles,
+      permissions: payload.permissions,
+      jti: payload.jti,
+      deviceId: payload.deviceId
+    };
+
+    return jwt.sign(dataToSign, secret, {
       expiresIn: expiresIn as SignOptions['expiresIn']
     });
   },

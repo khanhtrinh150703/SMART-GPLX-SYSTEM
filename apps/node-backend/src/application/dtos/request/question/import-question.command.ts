@@ -4,8 +4,9 @@ export interface ImportQuestionCommand {
   categoryId: string[];
   content: string;
   difficultyLevel: number;
+  indexNumber: number;
   isCritical: boolean;
-  imageLocalPath?: string; // Chỉ dùng đường dẫn Local
+  imageLocalPath?: string;
   answers: {
     content: string;
     isCorrect: boolean;

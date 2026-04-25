@@ -1,13 +1,13 @@
 import { connectRedis } from '@/infrastructure/database/redis/redis.client';
 import prisma from '../prisma/prisma'; // Đường dẫn tới file prisma client của bạn
 import { redisClient } from '@/infrastructure/database/redis/redis.client'
-import { MasterDataCacheService } from '@/infrastructure/security/master-data-cache.service';
 import { container } from '@/shared/utils/container';
 import { ImportQueue } from '@/infrastructure/queues/import.queue';
 import { ImportWorker } from '@/infrastructure/workers/import.worker';
 import app from '@/app';
 import { env } from 'process';
 import { Server } from 'http';
+import { IMasterDataCacheService } from '@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service';
 
 const PORT = env.PORT || 3000;
 let serverInstance: Server | null = null;
@@ -23,7 +23,8 @@ export const connectDB = async () => {
     console.log('✅ [System] Database & Redis connected');
 
     // 2. Nạp dữ liệu vào bộ nhớ
-    await MasterDataCacheService.initialize();
+    const masterDataCache = container.resolve<IMasterDataCacheService>('masterDataCacheService');
+    await masterDataCache.initialize();
     console.log('✅ [System] MasterData Cache warmed up');
 
     // ============================================================
@@ -109,7 +110,7 @@ export const cleanupDB = async (): Promise<void> => {
       });
       console.log('✅ [Cleanup] Server closed');
     }
-    
+
     // 3. Xóa data và ngắt kết nối DB
     await dropAllTables();
     await prisma.$disconnect();

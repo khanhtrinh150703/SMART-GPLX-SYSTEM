@@ -1,43 +1,91 @@
-import { AuthController } from "@/api/controllers/auth.controller";
-import { LicenseCategoryController } from "@/api/controllers/license-category.controller";
-import { UserController } from "@/api/controllers/user.controller";
-import { IEmailService } from "@/domain/interfaces/external/i-email.service";
-import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
-import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
-import { IOtpRepository } from "@/domain/interfaces/repositories/i-otp.repository";
-import { IPendingUserRepository } from "@/domain/interfaces/repositories/i-pending-user.repository";
-import { IRoleRepository } from "@/domain/interfaces/repositories/i-role.repository";
-import { ITokenRepository } from "@/domain/interfaces/repositories/i-token.repository";
-import { IUserRepository } from "@/domain/interfaces/repositories/i-user.repository";
-import { ILicenseCategoryRepository } from "@/domain/interfaces/repositories/i-license-category-repository";
+// --- 1. CORE & INFRASTRUCTURE (Cấu trúc nền tảng) ---
 import { PrismaClient } from "@prisma/client";
 import { Redis } from 'ioredis';
-import { IChapterRepository } from "@/domain/interfaces/repositories/i-chapter.repository";
-import { ChapterController } from "@/api/controllers/chapter.controller";
-import { IQuestionRepository } from "@/domain/interfaces/repositories/i-question.repository";
-import { QuestionController } from "@/api/controllers/question.controller";
-import { RoleController } from "@/api/controllers/roles.controller";
-import { IUserRoleRepository } from "@/domain/interfaces/repositories/i-user-role.repository";
-import { IImportJobRepository } from "@/domain/interfaces/repositories/i-import-job.repository";
-import { ITempStorageService } from "@/domain/interfaces/external/i-temp-storage.service";
-import { ImportController } from "@/api/controllers/import.controller";
-import { IZipService } from "@/domain/interfaces/services/i-zip.service";
-import { IExcelService } from "@/domain/interfaces/services/i-excel.service";
-import { IImportProcessorService } from "@/domain/interfaces/services/i-import-processor.service";
 import { IImportQueue } from "@/domain/interfaces/queues/i-import.queue";
 import { ImportWorker } from "@/infrastructure/workers/import.worker";
-import { IUserService } from "@/domain/interfaces/services/i-user.service";
-import { IOtpService } from "@/domain/interfaces/services/i-otp.service";
-import { IAuthService } from "@/domain/interfaces/services/i-auth.service";
-import { ILicenseCategoryService } from "@/domain/interfaces/services/i-license-category.service";
-import { IChapterService } from "@/domain/interfaces/services/i-chapter.service";
-import { IQuestionService } from "@/domain/interfaces/services/i-question.service";
-import { IRegistrationService } from "@/domain/interfaces/services/i-registration.service";
-import { IRoleService } from "@/domain/interfaces/services/i-role.service";
-import { IImportService } from "@/domain/interfaces/services/i-import.service";
-import { IExamMatrixRepository } from "@/domain/interfaces/repositories/i-exam-matrix.repository";
-import { ExamMatrixController } from "@/api/controllers/exam-matrix.controller";
-import { IExamMatrixService } from "@/domain/interfaces/services/i-exam-matrix.service";
+
+// --- 2. REPOSITORIES (Tầng truy xuất dữ liệu) ---
+// Nhóm Identity (Dữ liệu người dùng & Bảo mật)
+import {
+    IUserRepository,
+    IRoleRepository,
+    IUserRoleRepository,
+    ITokenRepository,
+    IOtpRepository,
+    IPendingUserRepository
+} from "@/domain/interfaces/repositories/identity";
+
+// Nhóm Exam Management (Dữ liệu nội dung thi)
+import {
+    ILicenseCategoryRepository,
+    IChapterRepository,
+    IQuestionRepository
+} from "@/domain/interfaces/repositories/exam-mgmt";
+
+// Nhóm Exam Session & History (Dữ liệu phiên làm bài & Kết quả)
+import { IExamMatrixRepository } from "@/domain/interfaces/repositories/exam-session";
+
+// Nhóm Integration (Theo dõi trạng thái tích hợp/Import)
+import { IImportJobRepository } from "@/domain/interfaces/repositories/integration";
+// --- 3. SERVICES (Tầng nghiệp vụ) ---
+// Nhóm Identity (Xác thực & Người dùng)
+import {
+    IAuthService,
+    IUserService,
+    IRoleService,
+    IOtpService,
+    IRegistrationService
+} from "@/domain/interfaces/services/identity";
+
+// Nhóm Exam Management (Quản lý dữ liệu đề thi)
+import {
+    IChapterService,
+    IExamService,
+    IQuestionService,
+    ILicenseCategoryService,
+    IMasterDataCacheService
+} from "@/domain/interfaces/services/exam-mgmt";
+
+// Nhóm Exam Engine & Session (Logic tạo đề & Phiên làm bài)
+import { IExamGeneratorService } from "@/domain/interfaces/services/exam-engine";
+import { IExamMatrixService } from "@/domain/interfaces/services/exam-session";
+
+// Nhóm Integration (Xử lý file & Dịch vụ tích hợp)
+import {
+    IImportService,
+    IImportProcessorService,
+    IExcelService,
+    IMediaService,
+    IZipService
+} from "@/domain/interfaces/services/integration";
+
+// --- 4. EXTERNAL & SECURITY (Dịch vụ bên ngoài) ---
+import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
+import { IEmailService } from "@/domain/interfaces/external/i-email.service";
+import { IFileStorageService } from "@/domain/interfaces/external/i-file-storage.service";
+import { ITempStorageService } from "@/domain/interfaces/external/i-temp-storage.service";
+
+// --- 5. PRESENTATION (Controllers - Tầng giao diện API) ---
+// Nhóm Identity
+import {
+    AuthController,
+    UserController,
+    RoleController
+} from "@/api/controllers/identity";
+
+// Nhóm Exam Management
+import {
+    ChapterController,
+    ExamController,
+    LicenseCategoryController,
+    QuestionController
+} from "@/api/controllers/exam-mgmt";
+
+// Nhóm Exam Session
+import { ExamMatrixController } from "@/api/controllers/exam-session";
+
+// Nhóm Integration
+import { ImportController } from "@/api/controllers/integration";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -73,9 +121,6 @@ export interface ICradle {
     /** @description Repository quản lý câu hỏi hạng bằng lái (MySQL). */
     questionRepository: IQuestionRepository;
 
-    /** @description Dịch vụ gửi Email (Nodemailer/External API). */
-    emailService: IEmailService;
-
     /** @description Repository lưu trữ thông tin đăng ký người dùng tạm thời (Redis). */
     pendingUserRepository: IPendingUserRepository;
 
@@ -94,6 +139,9 @@ export interface ICradle {
     tokenManager: ITokenManager;
 
     // --- NGHIỆP VỤ ỨNG DỤNG (APPLICATION SERVICES) ---
+
+    /** @description Dịch vụ gửi Email (Nodemailer/External API). */
+    emailService: IEmailService;
 
     /** @description Điều phối nghiệp vụ liên quan đến người dùng và hồ sơ cá nhân. */
     userService: IUserService;
@@ -124,7 +172,19 @@ export interface ICradle {
 
     /** @description Dịch vụ điều phối nghiệp vụ và quản lý vòng đời Ma trận đề thi (Exam Matrix Orchestration). */
     examMatrixService: IExamMatrixService;
-    
+
+    /** @description Dịch vụ quản lý thông tin, trạng thái và nghiệp vụ liên quan đến Đề thi (Exam Management). */
+    examService: IExamService;
+
+    /** @description Dịch vụ thực thi thuật toán khởi tạo và tổ hợp đề thi tự động từ ma trận (Exam Generation Engine). */
+    examGeneratorService: IExamGeneratorService;
+
+    /** @description Dịch vụ quản lý bộ nhớ đệm cho dữ liệu danh mục dùng chung, tối ưu hóa tốc độ truy xuất (Master Data Caching). */
+    masterDataCacheService: IMasterDataCacheService;
+
+    /** @description Dịch vụ xử lý tệp tin đa phương tiện, quản lý lưu trữ và liên kết tài nguyên (Media & Asset Management). */
+    mediaService: IMediaService;
+
     /** @description Dịch vụ quản lý và lưu trữ tệp tin (Local/Cloud Storage). */
     fileStorageService: IFileStorageService;
 
@@ -171,4 +231,6 @@ export interface ICradle {
 
     /** @description Xử lý các yêu cầu HTTP liên quan đến ma trận đề thi (Exam Matrix). */
     examMatrixController: ExamMatrixController;
+
+    examController: ExamController;
 }
