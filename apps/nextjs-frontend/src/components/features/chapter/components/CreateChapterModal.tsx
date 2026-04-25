@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Hash, FileText, Info } from "lucide-react";
+import { BookOpen, Hash, FileText, Info, Fingerprint } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import { FormField } from "@/components/common/Form/FormField";
@@ -86,8 +86,17 @@ export default function CreateChapterModal({
           icon={Hash}
           type="number"
           placeholder="VD: 1"
-          {...register("orderIndex")}
+          {...register("orderIndex" , { valueAsNumber: true } )}
           error={errors.orderIndex?.message}
+          disabled={isLoading}
+        />
+
+        <FormField
+          label="Mã số (Code)"
+          icon={Fingerprint} 
+          placeholder="VD: CH01"
+          {...register("code")} 
+          error={errors.code?.message}
           disabled={isLoading}
         />
 

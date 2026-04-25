@@ -10,4 +10,6 @@ export interface UpdateChapterRequestDTO {
   description?: string;
   /** @property {number} orderIndex - Thứ tự sắp xếp mới. */
   orderIndex?: number;
+
+  code:string;
 }

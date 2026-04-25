@@ -50,11 +50,13 @@ export default function AdminUserManagementPage() {
   const [prevActiveValue, setPrevActiveValue] = useState(activeValue);
   const [prevActiveField, setPrevActiveField] = useState(activeField);
 
-  const [selectedUser, setSelectedUser] = useState<UserResponseDTO | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserResponseDTO | null>(
+    null,
+  );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
+
   // Chuẩn hóa Type message (intent thay vì type)
   const [message, setMessage] = useState<{
     intent: "success" | "error" | "warning";
@@ -100,11 +102,11 @@ export default function AdminUserManagementPage() {
     handleUnlock,
     handleRestore,
     handleUpdate,
-    roleOptions = []
+    roleOptions = [],
   } = useUsers(getApiParams() as UserQueryDTO);
 
   // --- 6. HANDLERS ---
-  
+
   // Hàm trích xuất lỗi API chuẩn
   const getApiError = (error: unknown) => {
     return axios.isAxiosError(error)
@@ -145,10 +147,13 @@ export default function AdminUserManagementPage() {
     try {
       setMessage(null);
       await handleDelete.mutateAsync(selectedUser.id);
-      
+
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
-      setMessage({ intent: "success", text: "Đã khóa/xóa người dùng thành công!" });
+      setMessage({
+        intent: "success",
+        text: "Đã khóa/xóa người dùng thành công!",
+      });
     } catch (error: unknown) {
       setMessage({ intent: "error", text: getApiError(error) });
     }
@@ -168,7 +173,10 @@ export default function AdminUserManagementPage() {
     try {
       setMessage(null);
       await handleRestore.mutateAsync(user.id);
-      setMessage({ intent: "success", text: "Khôi phục tài khoản thành công!" });
+      setMessage({
+        intent: "success",
+        text: "Khôi phục tài khoản thành công!",
+      });
     } catch (error: unknown) {
       setMessage({ intent: "error", text: getApiError(error) });
     }
@@ -176,9 +184,7 @@ export default function AdminUserManagementPage() {
 
   // --- 7. RENDER ---
   if (!isMounted || (isLoading && !result)) {
-    return (
-      <SplashScreen icon={Users} message="Đang tải danh sách học viên..." />
-    );
+    return <SplashScreen variant="user" />;
   }
 
   return (
@@ -329,11 +335,11 @@ export default function AdminUserManagementPage() {
         onClose={() => {
           setIsEditModalOpen(false);
           setSelectedUser(null);
-        } }
+        }}
         onSave={handleUpdateUser}
-        isLoading={isUpdating} 
-        roleOptions={roleOptions}      
-        />
+        isLoading={isUpdating}
+        roleOptions={roleOptions}
+      />
 
       <BaseConfirmModal
         isOpen={isDeleteModalOpen}

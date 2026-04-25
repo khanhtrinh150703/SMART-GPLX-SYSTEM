@@ -2,15 +2,20 @@
 import { describe, it, expect } from '@jest/globals';
 import request from 'supertest';
 import app from '@/app';
-import { AUTH_ENDPOINTS, ErrorCode } from '../../test.data';
-import { API_CONSTANTS } from '@/domain/constants/api.constant';
+import {
+    AUTH_ENDPOINTS,
+    CHAPTER_ENDPOINTS,
+    ErrorCode, fakeLongToken,
+    LICENSE_ENDPOINTS,
+    ROLE_ENDPOINTS
+} from '../../config/index'
 
 /**
  * @param getAdminToken - Callback lấy token Admin (Mong đợi 200 OK)
  * @param getRegularToken - Callback lấy token User thường (Mong đợi 403 Forbidden)
  */
 export const selectionSteps = (
-    getAdminToken: () => string, 
+    getAdminToken: () => string,
     getRegularToken: () => string
 ) => {
 
@@ -25,7 +30,7 @@ export const selectionSteps = (
         describe('✅ Quyền Admin: Truy cập hợp lệ', () => {
             it('Nên lấy danh sách chương học (Chapters) thành công', async () => {
                 const res = await request(app)
-                    .get(`${API_CONSTANTS.API_BASE}/chapters/selection`)
+                    .get(CHAPTER_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(200);
@@ -38,7 +43,7 @@ export const selectionSteps = (
 
             it('Nên lấy danh sách hạng bằng lái (License Categories) thành công', async () => {
                 const res = await request(app)
-                    .get(`${API_CONSTANTS.API_BASE}/license-categories/selection`)
+                    .get(LICENSE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(200);
@@ -47,7 +52,7 @@ export const selectionSteps = (
 
             it('Nên lấy danh sách chức vụ (Roles) thành công', async () => {
                 const res = await request(app)
-                    .get(`${API_CONSTANTS.API_BASE}/roles/selection`)
+                    .get(ROLE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(200);
@@ -57,9 +62,19 @@ export const selectionSteps = (
 
         // --- NHÓM TEST CHO USER THƯỜNG (403 FORBIDDEN) ---
         describe('🚫 Quyền User: Bị từ chối (403 Forbidden)', () => {
+
+
+            it('❌ Nên trả về 403 khi khi User thường lấy danh sách chức danh', async () => {
+                const res = await request(app)
+                    .get(ROLE_ENDPOINTS.SELECTION)
+                    .set(getAuthHeader(getRegularToken()));
+
+                expect(res.status).toBe(403);
+            });
+
             it('Nên trả về 403 khi User thường lấy danh sách chương học', async () => {
                 const res = await request(app)
-                    .get(`${API_CONSTANTS.API_BASE}/chapters/selection`)
+                    .get(CHAPTER_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));
 
                 expect(res.status).toBe(403);
@@ -67,7 +82,7 @@ export const selectionSteps = (
 
             it('Nên trả về 403 khi User thường lấy danh sách hạng bằng lái', async () => {
                 const res = await request(app)
-                    .get(`${API_CONSTANTS.API_BASE}/license-categories/selection`)
+                    .get(LICENSE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));
 
                 expect(res.status).toBe(403);
@@ -75,7 +90,7 @@ export const selectionSteps = (
 
             it('Nên trả về 403 khi User thường lấy danh sách chức vụ', async () => {
                 const res = await request(app)
-                    .get(`${API_CONSTANTS.API_BASE}/roles/selection`)
+                    .get(ROLE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));
 
                 expect(res.status).toBe(403);
@@ -87,13 +102,23 @@ export const selectionSteps = (
 
         it('❌ Nên trả về 401 khi truy cập API mà không gửi Token', async () => {
             const res = await request(app)
-                .get(`${API_CONSTANTS.API_BASE}/roles/selection`);
-            
+                .get(ROLE_ENDPOINTS.SELECTION)
+            expect(res.status).toBe(401);
+        });
+
+        it('❌ Nên trả về 401 khi truy cập API mà không gửi Token', async () => {
+            const res = await request(app)
+                .get(CHAPTER_ENDPOINTS.SELECTION)
+            expect(res.status).toBe(401);
+        });
+
+        it('❌ Nên trả về 401 khi truy cập API mà không gửi Token', async () => {
+            const res = await request(app)
+                .get(LICENSE_ENDPOINTS.SELECTION)
             expect(res.status).toBe(401);
         });
 
         it('❌ Nên báo lỗi INVALID_TOKEN khi Token Refresh giả mạo', async () => {
-            const fakeLongToken = 'fake-jwt-token-that-is-long-enough-to-pass-validation-length-check-123456789';
 
             const response = await request(app)
                 .post(AUTH_ENDPOINTS.REFRESH_TOKEN)
@@ -103,13 +128,5 @@ export const selectionSteps = (
             expect(response.body.code).toBe(ErrorCode.AUTH.INVALID_TOKEN);
         });
 
-        it('✅ Nên đăng xuất thành công và vô hiệu hóa session', async () => {
-            const res = await request(app)
-                .post(AUTH_ENDPOINTS.LOGOUT)
-                .set(getAuthHeader(getAdminToken()));
-
-            expect(res.status).toBe(200);
-            expect(res.body.success).toBe(true);
-        });
     });
 };

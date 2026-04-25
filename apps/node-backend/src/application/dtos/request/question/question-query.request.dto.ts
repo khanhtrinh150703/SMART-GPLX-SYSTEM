@@ -8,11 +8,11 @@ export class QuestionsAdminQueryDto extends BaseQueryDTO {
   public readonly chapterId?: string;
   public readonly difficultyLevel?: number;
   public readonly isCritical?: boolean;
-  public readonly search?: string;
-  
+  public readonly indexNumber?: number;
+
   constructor(data: Record<string, unknown>) {
     super();
-    
+
     // 1. Phân trang & Sắp xếp (Kế thừa từ BaseQueryDTO)
     this.page = data.page ? Math.max(1, Number(data.page)) : 1;
     this.limit = data.limit ? Math.max(1, Number(data.limit)) : 10;
@@ -27,6 +27,10 @@ export class QuestionsAdminQueryDto extends BaseQueryDTO {
     // 3. Ép kiểu Number & Boolean (Dịch: Explicit Casting)
     if (data.difficultyLevel !== undefined && data.difficultyLevel !== '') {
       this.difficultyLevel = Number(data.difficultyLevel);
+    }
+
+    if (data.indexNumber !== undefined && data.indexNumber !== '') {
+      this.indexNumber = Number(data.indexNumber);
     }
 
     if (data.isCritical !== undefined && data.isCritical !== '') {

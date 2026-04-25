@@ -13,7 +13,10 @@ import { AvatarUpload } from "@/components/features/profile/components/AvatarUpl
 // Business Logic & Types (Lớp nghiệp vụ và Kiểu dữ liệu)
 import { useUserStore } from "@/store/user/user.store";
 import { UserRole } from "@/types/user.type";
-import { ProfileFormValues, profileSchema } from "@/lib/validations/user.schema";
+import {
+  ProfileFormValues,
+  profileSchema,
+} from "@/lib/validations/user.schema";
 
 // Features (Thành phần tính năng)
 import Button from "@/components/ui/Button/Button";
@@ -21,9 +24,11 @@ import { ProfileSidebar } from "./ProfileSidebar";
 import ProfileRoles from "./ProfileRoles";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { profileService } from "../service/profile.service";
+import SplashScreen from "@/components/common/Loaders/SplashScreen";
 
 export default function ProfileForm() {
   // --- States (Trạng thái) ---
+  const [isMounted, setIsMounted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false); // Trạng thái đóng/mở Modal
   const [message, setMessage] = useState<{
@@ -52,6 +57,10 @@ export default function ProfileForm() {
     },
   });
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const urlPicture = watch("urlPicture");
   const roles = watch("roles");
 
@@ -69,7 +78,7 @@ export default function ProfileForm() {
   }, [user, reset]);
 
   /**
-   * Update Profile Handler 
+   * Update Profile Handler
    * (Xử lý cập nhật thông tin cá nhân)
    */
   const onSubmit = async (data: ProfileFormValues) => {
@@ -92,6 +101,8 @@ export default function ProfileForm() {
     }
   };
 
+  if (!user) return <SplashScreen variant="profile" />;
+
   return (
     <div className="bg-white rounded-[2.5rem] shadow-soft border border-slate-100 overflow-hidden">
       {/* Form chính chỉ xử lý Update Profile. 
@@ -99,7 +110,6 @@ export default function ProfileForm() {
       */}
       <form onSubmit={handleSubmit(onSubmit)} className="p-8 md:p-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          
           {/* Cột trái: Sidebar & Avatar */}
           <div className="lg:col-span-3 flex flex-col items-center">
             <ProfileSidebar isActive={true}>
@@ -156,7 +166,7 @@ export default function ProfileForm() {
             {/* Change Password Trigger (Nút kích hoạt đổi mật khẩu) */}
             <div className="flex justify-end mt-2">
               <button
-                type="button" 
+                type="button"
                 onClick={() => setIsPasswordModalOpen(true)}
                 className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors text-sm underline-offset-4 hover:underline"
               >

@@ -1,11 +1,9 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
 export const questionPaths = {
     /**
      * ROUTE: /questions
      * Thao tác trên danh sách câu hỏi
      */
-    [`${API_CONSTANTS.API_BASE}/questions`]: {
+    [`/questions`]: {
         get: {
             tags: ['Question Management'],
             summary: 'Lấy danh sách câu hỏi',
@@ -60,7 +58,7 @@ export const questionPaths = {
      * ROUTE: /questions/{id}
      * Thao tác trên một câu hỏi cụ thể
      */
-    [`${API_CONSTANTS.API_BASE}/questions/{id}`]: {
+    [`/questions/{id}`]: {
         get: {
             tags: ['Question Management'],
             summary: 'Lấy chi tiết câu hỏi',
@@ -125,7 +123,7 @@ export const questionPaths = {
      * ROUTE: /questions/{id}/restore
      * Khôi phục dữ liệu
      */
-    [`${API_CONSTANTS.API_BASE}/questions/{id}/restore`]: {
+    [`/questions/{id}/restore`]: {
         patch: {
             tags: ['Question Management'],
             summary: 'Khôi phục câu hỏi đã xóa',

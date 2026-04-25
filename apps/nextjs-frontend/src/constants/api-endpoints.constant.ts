@@ -45,5 +45,12 @@ export const ENDPOINTS = {
 
   ROLE: {
     SELECTION: "/roles/selection",
+  },
+
+  IMPORT: {
+    INIT: "/import/init",
+    UPLOADCHUNK: "/import/upload-chunk",
+    COMPLETE: "/import/complete",
+    STATUS: "/import/status",
   }
 };

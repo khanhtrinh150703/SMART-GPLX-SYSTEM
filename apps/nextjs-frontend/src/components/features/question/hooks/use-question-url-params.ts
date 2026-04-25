@@ -36,7 +36,10 @@ export function useQuestionUrlParams() {
         }
       });
 
-      current.set("page", "1");
+      if (!('page' in params)) {
+        current.set("page", "1");
+      }
+      
       router.push(`${pathname}?${current.toString()}`, { scroll: false });
     },
     [pathname, router, searchParams]
@@ -81,7 +84,7 @@ export function useQuestionUrlParams() {
       sortBy: searchParams.get("sortBy") || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as "asc" | "desc") || "desc",
       status: searchParams.get("status") || "all",
-      
+
       // BƯỚC 3: Ném đúng biến 'search' cho Backend
       // (Dịch: Pass the exact 'search' variable to Backend DTO)
       search: searchParams.get("search") || undefined,

@@ -1,0 +1,6 @@
+export * from './i-otp.repository'
+export * from './i-pending-user.repository'
+export * from './i-role.repository'
+export * from './i-token.repository'
+export * from './i-user-role.repository'
+export * from './i-user.repository'

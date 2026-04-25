@@ -1,13 +1,13 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { CreditCard } from "lucide-react";
+// Đã xóa import CreditCard vì variant="question" sẽ tự lấy icon FileQuestion
 import SplashScreen from "@/components/common/Loaders/SplashScreen";
 import { QuestionsContent } from "@/components/features/question/components/QuestionContent";
 
-export default function LicensesPage() {
+export default function QuestionsPage() {
   return (
-    <Suspense fallback={<SplashScreen icon={CreditCard} message="Đang chuẩn bị dữ liệu..." />}>
+    <Suspense fallback={<SplashScreen variant="question" />}>
       <QuestionsContent />
     </Suspense>
   );

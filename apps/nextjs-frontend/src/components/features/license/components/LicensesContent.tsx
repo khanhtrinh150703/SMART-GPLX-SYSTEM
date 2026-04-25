@@ -166,7 +166,7 @@ export function LicensesContent() {
 
   // --- 6. RENDER GIAO DIỆN ---
   if (!isMounted || (isLoading && !result)) {
-    return <SplashScreen icon={CreditCard} message="Đang tải dữ liệu..." />;
+    return <SplashScreen variant="license" />;
   }
 
   return (

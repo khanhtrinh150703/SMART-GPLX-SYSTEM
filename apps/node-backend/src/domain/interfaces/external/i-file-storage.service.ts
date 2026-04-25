@@ -22,4 +22,12 @@ export interface IFileStorageService {
    * @returns {Promise<void>}
    */
   deleteFile(relativePath: string): Promise<void>;
-}
+
+  /**
+   * @description Lưu tệp tin từ một đường dẫn tạm thời trên hệ thống vào thư mục lưu trữ chính thức.
+   * @param {string} localPath - Đường dẫn vật lý của tệp tin tạm (Ví dụ: 'temp/unzipped/image.png')
+   * @param {string} folder - Tên thư mục đích bên trong kho lưu trữ (Ví dụ: 'questions', 'avatars')
+   * @returns {Promise<string>} - Trả về đường dẫn tương đối sau khi lưu (Ví dụ: '/uploads/questions/uuid.png')
+   */
+  saveFromLocalPath(localPath: string, folder: string): Promise<string>;
+} 

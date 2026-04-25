@@ -3,39 +3,35 @@ import { AppError, ErrorCode } from "@/shared/errors";
 import { IUploadedFile } from "@/shared/types/file.type";
 
 /**
- * @interface UpdateAnswerPayload
  * @description Cấu trúc đáp án trong yêu cầu cập nhật.
+ * Đã bỏ hoàn toàn null, dùng optional hoặc string rỗng.
  */
 export interface UpdateAnswerPayload {
-  id?: string;            // Có ID là update, không có ID là tạo mới (Dịch: ID exists = update, no ID = new)
+  id?: string;             // Có ID: Update/Keep - Không ID: Create new
   content: string;
   isCorrect: boolean;
-  imageUrl?: string | null; // URL ảnh cũ (nếu có)
-  imageIndex?: number;    // Index để ánh xạ file mới từ answerFiles
-  imageFile?: IUploadedFile; // File vật lý sau khi được DTO ánh xạ
+  imageUrl: string;        // URL ảnh cũ (mặc định là chuỗi rỗng)
+  imageIndex?: number;     // Vị trí file trong mảng answerFiles
+  imageFile?: IUploadedFile;
 }
 
 /**
- * @interface IUpdateQuestionInput
- * @description Giao diện dữ liệu thô nhận từ Controller cho việc Update.
+ * @description Dữ liệu thô từ Controller (Thường từ FormData)
  */
 export interface IUpdateQuestionInput {
-  id: string;             // Bắt buộc phải có ID để biết update câu nào
+  id: string;
   chapterId: string;
   content: string;
   licenseCategoryIds: string | string[];
-  answers: string;        // Chuỗi JSON từ Frontend
+  answers: string | UpdateAnswerPayload[];
   isCritical: string | boolean;
   difficultyLevel: string | number;
   status: QuestionStatus;
-  imageFile?: IUploadedFile;       // Ảnh chính mới (nếu muốn đổi)
-  answerFiles?: IUploadedFile[];   // Mảng các ảnh mới cho đáp án
+  imageFile?: IUploadedFile;
+  answerFiles?: IUploadedFile[];
+  indexNumber: string | number;
 }
 
-/**
- * @class UpdateQuestionRequestDto
- * @description DTO vận chuyển dữ liệu cập nhật câu hỏi (Dịch: Question update request DTO).
- */
 export class UpdateQuestionRequestDto {
   public readonly id: string;
   public readonly chapterId: string;
@@ -46,73 +42,108 @@ export class UpdateQuestionRequestDto {
   public readonly status: QuestionStatus;
   public readonly difficultyLevel: number;
   public readonly imageFile?: IUploadedFile;
+  public readonly indexNumber: number;
 
   constructor(data: IUpdateQuestionInput) {
-    // 1. Gán và ép kiểu cơ bản (Dịch: Basic casting)
+    // 1. Ép kiểu dữ liệu cơ bản
     this.id = String(data.id || '');
     this.chapterId = String(data.chapterId || '');
     this.content = String(data.content || '');
     this.imageFile = data.imageFile;
     this.difficultyLevel = Number(data.difficultyLevel) || 1;
-    this.isCritical = String(data.isCritical).toLowerCase() === 'true';
+    this.indexNumber = Number(data.indexNumber) || 1;
     this.status = data.status ?? 'ACTIVE';
 
-    // 2. Xử lý mảng hạng bằng lái (Dịch: License categories parsing)
-    this.licenseCategoryIds = this._parseArray<string>(data.licenseCategoryIds);
+    // Xử lý boolean từ string (FormData gửi 'true'/'false')
+    this.isCritical = String(data.isCritical).toLowerCase() === 'true';
 
-    // 3. Xử lý mảng answers & Ánh xạ ảnh mới (Dịch: Answer processing & New Image Mapping)
-    const parsedAnswers = this._parseArray<UpdateAnswerPayload>(data.answers);
+    // 2. Xử lý mảng licenseCategoryIds (Hỗ trợ cả JSON string hoặc mảng thô)
+    this.licenseCategoryIds = this._parseLicenseCategories(data.licenseCategoryIds);
 
-    this.answers = parsedAnswers.map((ans) => {
-      const processedAnswer: UpdateAnswerPayload = {
-        id: ans.id, // Giữ lại ID để Repository biết đường mà update thay vì tạo mới
-        content: String(ans.content || ''),
+    // 3. Xử lý mảng answers & Ánh xạ file
+    const rawAnswers = this._parseAnswersJson(data.answers);
+
+    this.answers = rawAnswers.map((ans) => {
+      const processed: UpdateAnswerPayload = {
+        id: ans.id,
+        content: String(ans.content || '').trim(),
         isCorrect: String(ans.isCorrect) === 'true' || ans.isCorrect === true,
-        imageUrl: ans.imageUrl, 
-        imageIndex: ans.imageIndex,
+        imageUrl: ans.imageUrl || '', // No null here!
+        imageIndex: ans.imageIndex !== undefined ? Number(ans.imageIndex) : undefined,
       };
 
-      // Nếu có imageIndex và có file tương ứng trong answerFiles, thực hiện ánh xạ
+      // Map file vật lý dựa trên imageIndex
       if (
-        typeof ans.imageIndex === 'number' &&
+        processed.imageIndex !== undefined &&
         data.answerFiles &&
-        data.answerFiles[ans.imageIndex]
+        data.answerFiles[processed.imageIndex]
       ) {
-        processedAnswer.imageFile = data.answerFiles[ans.imageIndex];
+        processed.imageFile = data.answerFiles[processed.imageIndex];
       }
 
-      return processedAnswer;
+      return processed;
     });
   }
 
   /**
-   * @description Hàm bổ trợ parse mảng an toàn (Dịch: Safe array parsing helper)
-   */
-  private _parseArray<T>(input: unknown): T[] {
-    if (typeof input === 'string') {
-      try {
-        const parsed = JSON.parse(input);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return input ? [input as unknown as T] : [];
-      }
+     * @private Parse mảng License IDs dựa trên kiểu dữ liệu đã định nghĩa: string | string[]
+     */
+  private _parseLicenseCategories(input: string | string[]): string[] {
+    // 1. Nếu là mảng sẵn rồi (string[]) thì trả về luôn, đỡ phải nghĩ
+    if (Array.isArray(input)) {
+      return input;
     }
-    return Array.isArray(input) ? (input as T[]) : [];
+
+    // 2. Nếu là string, xử lý 2 trường hợp: JSON array hoặc chuỗi phân tách bởi dấu phẩy
+    const trimmed = input.trim();
+    if (!trimmed) return [];
+
+    try {
+      // Thử parse xem có phải dạng '["A1", "A2"]' không
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed.map(String) : [trimmed];
+    } catch {
+      // Nếu parse lỗi, chắc chắn là dạng "A1,A2" hoặc chỉ là 1 ID "A1"
+      return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+    }
   }
 
   /**
-   * @description Xác thực dữ liệu (Dịch: Data validation)
+   * @private Parse JSON an toàn
+   */
+  private _parseAnswersJson(input: string | UpdateAnswerPayload[]): UpdateAnswerPayload[] {
+    // 1. Dùng Type Guard: Nếu là mảng thì dùng luôn
+    if (Array.isArray(input)) {
+      return input;
+    }
+
+    // 2. Nếu là chuỗi thì mới parse
+    if (typeof input === 'string' && input.trim() !== '') {
+      try {
+        const parsed = JSON.parse(input);
+        // Kiểm tra lần nữa sau khi parse xem có đúng là mảng không
+        return Array.isArray(parsed) ? (parsed as UpdateAnswerPayload[]) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * @description Xác thực DTO trước khi đẩy vào Service
    */
   public isValid(): void {
     const { QUESTION } = ErrorCode;
 
     if (!this.id) throw new AppError(QUESTION.NOT_FOUND);
     if (!this.chapterId) throw new AppError(QUESTION.CHAPTER_REQUIRED);
-    if (!this.content || this.content.trim().length < 10) throw new AppError(QUESTION.CONTENT_INVALID);
+    if (this.content.trim().length < 10) throw new AppError(QUESTION.CONTENT_INVALID);
     if (this.licenseCategoryIds.length === 0) throw new AppError(QUESTION.LICENSE_REQUIRED);
     if (this.answers.length < 2) throw new AppError(QUESTION.ANSWERS_INSUFFICIENT);
 
-    const hasCorrectAnswer = this.answers.some((a) => a.isCorrect);
-    if (!hasCorrectAnswer) throw new AppError(QUESTION.CORRECT_ANSWER_MISSING);
+    const hasCorrect = this.answers.some(a => a.isCorrect);
+    if (!hasCorrect) throw new AppError(QUESTION.CORRECT_ANSWER_MISSING);
   }
 }

@@ -1,18 +1,59 @@
 import { ErrorCode } from "@/shared/errors/error-codes";
-import { IChapterProps } from "./chapter.props";
+import { CreateChapterProps, IChapterProps } from "./chapter.props";
 import { AppError } from "@/shared/errors/error-app"; // Đổi sang ValidationError cho đúng chuẩn mình làm nãy giờ nhé
+import { BaseEntity } from "@/domain/seedwork/entity.base";
 
 /**
- * Thực thể đại diện cho một Chương lý thuyết (Domain Entity).
+ * @description Thực thể Chương (Chapter) - Quản lý cấu trúc phân loại câu hỏi lý thuyết.
+ * Kế thừa BaseEntity để đảm bảo tính nhất quán về định danh và thời gian.
  */
-export class Chapter {
-  // Thay vì khai báo từng cái, mình dùng 1 object props duy nhất
-  constructor(private _props: IChapterProps) { }
+export class Chapter extends BaseEntity<IChapterProps> {
+
+  /**
+     * @description Constructor đơn giản, chỉ nhận dữ liệu đã "sạch".
+     */
+  private constructor(props: IChapterProps) {
+    super(props);
+  }
+
+  /**
+   * @description Factory: Tạo một Chương mới hoàn toàn với các quy tắc nghiệp vụ.
+   */
+  public static create(props: CreateChapterProps): Chapter {
+    const now = new Date();
+
+    const finalizedProps: IChapterProps = {
+      ...props,
+      id: crypto.randomUUID(),
+      // Normalization: Chỉ thực hiện khi tạo mới
+      name: props.name.trim(),
+      description: props.description?.trim() || null,
+      orderIndex: props.orderIndex ?? 0,
+
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: undefined,
+    };
+
+    return new Chapter(finalizedProps);
+  }
+
+  /**
+   * @description Tái tạo thực thể từ dữ liệu cũ (Dùng ở tầng Infrastructure/Mapper).
+   */
+  public static reconstitute(props: IChapterProps): Chapter {
+    return new Chapter(props);
+  }
+
+  private touch(): void {
+    this._props.updatedAt = new Date();
+  }
 
   // --- Getters: Phải trỏ vào trong _props ---
   get id(): string { return this._props.id; }
   get name(): string { return this._props.name; }
   get description(): string | null { return this._props.description; }
+  get code(): string { return this._props.code; }
   get orderIndex(): number { return this._props.orderIndex; }
   get createdAt(): Date | undefined { return this._props.createdAt; }
   get updatedAt(): Date | undefined { return this._props.updatedAt; }
@@ -25,7 +66,7 @@ export class Chapter {
     if (data.name !== undefined) {
       const trimmedName = data.name.trim();
       if (trimmedName.length === 0) {
-        throw new AppError(ErrorCode.VALIDATION.MISSING_FIELD);
+        throw new AppError(ErrorCode.VALIDATION.REQUIRED);
       }
       this._props.name = trimmedName; // Cập nhật vào props
     }
@@ -41,7 +82,7 @@ export class Chapter {
       this._props.orderIndex = data.orderIndex;
     }
 
-    this._props.updatedAt = new Date();
+    this.touch();
   }
 
   /**
@@ -49,13 +90,14 @@ export class Chapter {
    */
   public softDelete(): void {
     this._props.deletedAt = new Date();
-    this._props.updatedAt = new Date();
+    this.touch();
   }
-
 
   public restore(): void {
-    this._props.deletedAt = null;
+    this._props.deletedAt = undefined;
+    this.touch();
   }
+
   /**
    * Kiểm tra trạng thái xóa.
    */

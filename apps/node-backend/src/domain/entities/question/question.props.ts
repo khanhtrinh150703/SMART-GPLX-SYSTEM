@@ -1,28 +1,35 @@
 // domain/entities/question/question.props.ts
 
-import { AnswerProps } from "./answer.props";
+import { Answer } from "./answer.entity";
 import { QuestionStatus } from "./question.status";
 
-export interface QuestionProps {
-  id?: string;
+export interface IQuestionProps {
+  id: string;
   chapterId: string;
   content: string;
-  imageUrl?: string | null;
+  imageUrl: string;
   difficultyLevel: number;
   isCritical: boolean;
-  answers: AnswerProps[];
+  answers: Answer[];
   licenseCategoryIds: string[];
+  indexNumber: number;
+  status: QuestionStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
   
-  status: QuestionStatus
-  // --- BỔ SUNG CÁC TRƯỜNG DÀNH CHO HIỂN THỊ (ENRICHED DATA) ---
-  /** @description Tên chương học (Dịch: Name of the chapter) */
   chapterName?: string;
-
-  /** @description Danh sách tên các hạng bằng lái (Dịch: Names of the license categories) */
   licenseCategoryNames?: string[];
-  // ----------------------------------------------------------
-
-  createdAt?: Date;
-  updatedAt?: Date;
-  deletedAt: Date | null;
 }
+
+export type CreateQuestionProps = Omit<IQuestionProps, 
+  | 'id' 
+  | 'status' 
+  | 'answers'
+  | 'createdAt' 
+  | 'updatedAt' 
+  | 'deletedAt'
+> & {
+  answers: Array<{ content: string; isCorrect: boolean; imageUrl?: string }>;
+  status?: string;
+};

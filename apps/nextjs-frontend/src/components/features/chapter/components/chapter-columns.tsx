@@ -1,4 +1,4 @@
-import { Chapter } from "@/types/chapter.types";
+import { Chapter } from "@/components/features/chapter/types/chapter.types";
 import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { TableColumnFactory } from "@/components/common/Generic-Table/table-column.factory";
 
@@ -9,11 +9,24 @@ export const getChapterColumns = (
   page: number,
   limit: number,
 ): TableColumn<Chapter>[] => [
-  // Gọi Variant STT
+  // 1. Gọi Variant STT
   TableColumnFactory.stt<Chapter>(page, limit),
 
+  // 2. Cột Mã số (Mới thêm)
   {
-    header: "Tên chương chương",
+    header: "Mã số",
+    sortable: true,
+    sortKey: "code",
+    accessor: (item) => (
+      <span className="font-mono font-medium text-slate-600">
+        {item.code || "---"}
+      </span>
+    ),
+  },
+
+  // 3. Tên chương
+  {
+    header: "Tên chương",
     sortable: true,
     sortKey: "name",
     accessor: (item) => (
@@ -24,6 +37,8 @@ export const getChapterColumns = (
       </div>
     ),
   },
+
+  // 4. Nội dung chương
   {
     header: "Nội dung chương",
     sortable: true,
@@ -37,9 +52,9 @@ export const getChapterColumns = (
     ),
   },
 
-  // Gọi Variant Trạng thái (Tự động map màu & chữ)
+  // 5. Gọi Variant Trạng thái
   TableColumnFactory.status<Chapter>(),
 
-  // Gọi Variant Thao tác (Tự động xử lý logic icon & màu)
+  // 6. Gọi Variant Thao tác
   TableColumnFactory.actions<Chapter>(onEdit, onDelete, onRestore),
 ];

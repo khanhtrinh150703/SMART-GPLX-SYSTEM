@@ -5,7 +5,7 @@ import {
     Chapter,
     CreateChapterRequest,
     UpdateChapterRequest
-} from "@/types/chapter.types"; // (Giả định bạn đã đổi tên file types)
+} from "@/components/features/chapter/types/chapter.types"; // (Giả định bạn đã đổi tên file types)
 import { PaginatedResult, QueryParams } from "@/types/paginaton.type";
 
 /**
