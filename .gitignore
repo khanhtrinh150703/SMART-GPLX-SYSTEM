@@ -142,5 +142,5 @@ Dockerfile
 # experiments/
 # backup/
 uploads/
-storage/
+storage/temp
 public/
