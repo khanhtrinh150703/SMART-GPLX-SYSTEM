@@ -1,8 +1,5 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
-
 export const userPaths = {
-    [`${API_CONSTANTS.API_BASE}/users/me/profile`]: {
+    [`/users/me/profile`]: {
         patch: {
             tags: ['User Management'],
             summary: 'Cập nhật thông tin cá nhân',
@@ -30,7 +27,7 @@ export const userPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/users/me/password`]: {
+    [`/users/me/password`]: {
         patch: {
             tags: ['User Management'],
             summary: 'Đổi mật khẩu',
@@ -59,7 +56,7 @@ export const userPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/users/{id}/status`]: {
+    [`/users/{id}/status`]: {
         patch: {
             tags: ['User Management'],
             summary: 'Cập nhật trạng thái tài khoản (Admin only)',
@@ -96,7 +93,7 @@ export const userPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/users/{id}`]: {
+    [`/users/{id}`]: {
         delete: {
             tags: ['User Management'],
             summary: 'Xóa mềm tài khoản người dùng',
@@ -127,7 +124,7 @@ export const userPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/users/{id}/restore`]: {
+    [`/users/{id}/restore`]: {
         patch: {
             tags: ['User Management'],
             summary: 'Khôi phục tài khoản đã xóa mềm',
@@ -166,7 +163,7 @@ export const userPaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/users`]: {
+    [`/users`]: {
         get: {
             tags: ['User Management'],
             summary: 'Lấy danh sách người dùng có phân trang (Admin)',

@@ -4,7 +4,7 @@ import React from "react";
 import { ServerCrash } from "lucide-react";
 import { containerVariants, iconBoxVariants } from "./global-error.variants";
 import { HomeNavigationButton } from "../Navigation/HomeNavigationButton";
-import { ReloadButton } from "../Navigation/ReloadButton";
+import { ReloadToPreviousButton } from "../Navigation/ReloadButton";
 
 export const ServerErrorView = () => {
   return (
@@ -33,7 +33,7 @@ export const ServerErrorView = () => {
       {/* 🚀 3. Action Section - Bộ đôi nút bấm Premium */}
       <div className="mt-12 flex flex-col sm:flex-row gap-4">
         {/* Nút Tải lại (Đỏ Rose - Cảnh báo) */}
-        <ReloadButton />
+        <ReloadToPreviousButton />
 
         {/* Nút Về nhà (Xanh Emerald - An toàn) */}
         <HomeNavigationButton />

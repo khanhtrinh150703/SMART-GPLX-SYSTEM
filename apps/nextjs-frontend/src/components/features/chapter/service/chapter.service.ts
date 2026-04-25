@@ -4,7 +4,7 @@ import {
     Chapter,
     CreateChapterRequest,
     UpdateChapterRequest
-} from "@/types/chapter.types";
+} from "@/components/features/chapter/types/chapter.types";
 import { QueryParams } from "@/types/paginaton.type";
 
 /**

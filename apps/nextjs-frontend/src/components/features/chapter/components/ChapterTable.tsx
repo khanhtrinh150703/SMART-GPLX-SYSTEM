@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { GenericTable } from "@/components/common/Generic-Table/GenericTable";
 import { getChapterColumns } from "@/components/features/chapter/components/chapter-columns";
-import { Chapter } from "@/types/chapter.types";
+import { Chapter } from "@/components/features/chapter/types/chapter.types";
 
 /**
  * ChapterTableProps - Cập nhật Interface để TypeScript không "la"

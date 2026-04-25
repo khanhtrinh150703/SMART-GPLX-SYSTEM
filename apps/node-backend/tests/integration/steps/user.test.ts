@@ -5,18 +5,19 @@ import app from '@/app';
 import {
   AUTH_ENDPOINTS,
   USER_ENDPOINTS,
-  TEST_ACCOUNT,
-  TEST_UPDATE_DATA,
+  USER_UPDATE_DATA,
+  AUTH_PAYLOAD,
   Message,
   ErrorStatus,
-  ADMIN_ACCOUNT,
-} from '../../test.data';
+} from '../../config/index'
 
 /**
  * Tác dụng: Tập hợp các bài kiểm tra tích hợp cho quản lý người dùng.
  * Kịch bản: Tách biệt Token Admin/User và xử lý vòng đời Token sau khi đổi mật khẩu.
  */
-export const userSteps = () => {
+export const userSteps = (
+  getAdminToken: () => string,
+) => {
   let regularUserId: string;
   let regularToken: string;
   let adminToken: string;
@@ -27,22 +28,14 @@ export const userSteps = () => {
     const userLogin = await request(app)
       .post(AUTH_ENDPOINTS.LOGIN)
       .send({
-        username: TEST_ACCOUNT.username,
-        password: TEST_ACCOUNT.newPassword,
+        username: AUTH_PAYLOAD.USER_TEST.username,
+        password: AUTH_PAYLOAD.USER_TEST.newPassword,
       });
-    
+
     regularToken = userLogin.body.data.accessToken;
     regularUserId = userLogin.body.data.user.id;
 
-    // 2. Lấy Token cho Admin
-    const adminLogin = await request(app)
-      .post(AUTH_ENDPOINTS.LOGIN)
-      .send({
-        username: ADMIN_ACCOUNT.username,
-        password: ADMIN_ACCOUNT.password,
-      });
-    
-    adminToken = adminLogin.body.data.accessToken;
+    adminToken = getAdminToken();
   });
 
   // Helper function để linh hoạt truyền token
@@ -54,15 +47,16 @@ export const userSteps = () => {
 
     // --- PHASE 1: USER SELF-MANAGEMENT ---
     describe('📝 Kịch bản: Người dùng tự quản lý thông tin', () => {
-      
+
       it('Nên cập nhật thông tin cá nhân thành công', async () => {
         const response = await request(app)
           .patch(USER_ENDPOINTS.ME_PROFILE)
           .set(getAuthHeader(regularToken))
-          .send(TEST_UPDATE_DATA);
+          .send(USER_UPDATE_DATA);
 
+        regularToken = response.body.data.accessToken;
         expect(response.status).toBe(200);
-        expect(response.body.data.user.fullName).toBe(TEST_UPDATE_DATA.fullName);
+        expect(response.body.data.user.fullName).toBe(USER_UPDATE_DATA.fullName);
         expect(response.body.message).toBe(Message.USER.UPDATE_SUCCESS);
       });
 
@@ -72,23 +66,24 @@ export const userSteps = () => {
           .patch(USER_ENDPOINTS.ME_PASSWORD)
           .set(getAuthHeader(regularToken))
           .send({
-            oldPassword: TEST_ACCOUNT.newPassword,
-            newPassword: TEST_ACCOUNT.newPassword_2,
-            confirmNewPassword: TEST_ACCOUNT.newPassword_2,
+            oldPassword: AUTH_PAYLOAD.USER_TEST.newPassword,
+            newPassword: AUTH_PAYLOAD.USER_TEST.secondnewPassword,
+            confirmNewPassword: AUTH_PAYLOAD.USER_TEST.secondnewPassword,
           });
 
         expect(res.status).toBe(200);
         expect(res.body.message).toBe(Message.USER.PASSWORD_CHANGED);
 
-        // 2. 💡 QUAN TRỌNG: Login lại để lấy token mới (vì token cũ có thể đã bị invalidate)
+        // 2. 💡 QUAN TRỌNG: Login lại bằng mật khẩu mới để lấy token mới
         const refreshRes = await request(app)
           .post(AUTH_ENDPOINTS.LOGIN)
           .send({
-            username: TEST_ACCOUNT.username,
-            password: TEST_ACCOUNT.newPassword_2,
+            username: AUTH_PAYLOAD.USER_TEST.username,
+            password: AUTH_PAYLOAD.USER_TEST.secondnewPassword,
           });
-        
-        regularToken = refreshRes.body.data.accessToken; // Ghi đè token mới để dùng cho các test sau
+
+        // Ghi đè token mới để dùng cho các test sau (nếu có)
+        regularToken = refreshRes.body.data.accessToken;
       });
     });
 
@@ -116,8 +111,8 @@ export const userSteps = () => {
         const loginFail = await request(app)
           .post(AUTH_ENDPOINTS.LOGIN)
           .send({
-            username: TEST_ACCOUNT.username,
-            password: TEST_ACCOUNT.newPassword_2,
+            username: AUTH_PAYLOAD.USER_TEST.username,
+            password: AUTH_PAYLOAD.USER_TEST.newPassword,
           });
         expect(loginFail.status).toBe(ErrorStatus.AUTH_423);
 

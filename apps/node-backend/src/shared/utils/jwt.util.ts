@@ -26,7 +26,15 @@ export const jwtUtil = {
     const secret = JWT_CONFIG[type].getSecret();
     if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
 
-    return jwt.sign({ ...payload }, secret, {
+    const dataToSign = {
+      userId: payload.userId,
+      roles: payload.roles,
+      permissions: payload.permissions,
+      jti: payload.jti,
+      deviceId: payload.deviceId
+    };
+
+    return jwt.sign(dataToSign, secret, {
       expiresIn: expiresIn as SignOptions['expiresIn']
     });
   },
@@ -42,12 +50,12 @@ export const jwtUtil = {
     try {
       // 1. Cố gắng giải mã (Nếu token dị dạng hoặc hết hạn, nó sẽ văng lỗi ngay dòng này)
       const decoded = jwt.verify(token, secret) as JwtPayload;
-
       // 2. Đúc dữ liệu vào class duy nhất tại đây
       return new TokenPayload({
         userId: decoded.userId,
         roles: decoded.roles || decoded.role || [],
         jti: decoded.jti,
+        permissions: decoded.permissions,
         deviceId: decoded.deviceId,
         exp: decoded.exp,
         iat: decoded.iat

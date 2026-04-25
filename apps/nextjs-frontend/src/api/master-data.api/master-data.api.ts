@@ -28,6 +28,7 @@ export const masterApi = {
     return response.data;
   },
 
+  
   getRoleSelection: async (): Promise<StandardResponse<SelectionData[]>> => {
     const response = await axiosClient.get<StandardResponse<SelectionData[]>>(
       ENDPOINTS.ROLE.SELECTION

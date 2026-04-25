@@ -1,14 +1,17 @@
-import { UserRoleEnum } from "@/constants/enum/use.enum";
 import { LucideIcon } from "lucide-react";
 
 /**
- * NavItem Interface (Giao diện mục điều hướng)
- * T: Generic cho phép mở rộng nếu cần
+ * NavItem Interface (Giao diện mục điều hướng mới)
  */
 export interface NavItem {
-  title: string;          // Tiêu đề chính (Vietnamese)
-  label: string;          // Nhãn phụ (English)
-  href: string;           // Đường dẫn điều hướng
-  icon: LucideIcon;       // Component biểu tượng (Reference, không phải Instance)
-  roles?: UserRoleEnum[];       // Danh sách quyền được phép truy cập (RBAC)
+  title: string;           // Tiêu đề (Tiếng Việt)
+  label: string;           // Nhãn phụ (Tiếng Anh)
+  href: string;            // Đường dẫn
+  icon: LucideIcon;        // Icon component
+  
+  // 🚀 THAY THẾ roles/minRole BẰNG CÁI NÀY
+  requiredPermission?: string; 
+  
+  // Mẹo: Nếu ông muốn một mục cần NHIỀU quyền mới hiện, hãy dùng:
+  // requiredPermissions?: string[]; 
 }

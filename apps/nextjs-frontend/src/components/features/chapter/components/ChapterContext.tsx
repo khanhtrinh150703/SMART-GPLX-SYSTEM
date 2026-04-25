@@ -20,7 +20,7 @@ import { FilterSelect } from "@/components/ui/Select/FilterSelect";
 import { CHAPTER_STATUS_OPTIONS } from "@/components/features/chapter/components/chapter.config";
 import { useChapters } from "@/components/features/chapter/hooks/use-chapters";
 import { useChapterUrlParams } from "@/components/features/chapter/hooks/use-chapter-url-params";
-import { Chapter } from "@/types/chapter.types";
+import { Chapter } from "@/components/features/chapter/types/chapter.types";
 import {
   CreateChapterPayload,
   UpdateChapterPayload,
@@ -51,7 +51,7 @@ export function ChapterContent() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
+
   // CHỈ DÙNG 1 BIẾN MESSAGE DUY NHẤT (Only one message state)
   const [message, setMessage] = useState<{
     intent: "success" | "error" | "warning";
@@ -100,7 +100,7 @@ export function ChapterContent() {
   } = useChapters(getApiParams());
 
   // --- 5. HANDLERS ---
-  
+
   // Hàm trích xuất lỗi API chuẩn xác
   const getApiError = (error: unknown) => {
     return axios.isAxiosError(error)
@@ -113,7 +113,10 @@ export function ChapterContent() {
       setMessage(null);
       const res = await createChapter.mutateAsync(payload);
       setIsCreateModalOpen(false);
-      setMessage({ intent: "success", text: "Thêm mới chương bài học thành công!" });
+      setMessage({
+        intent: "success",
+        text: "Thêm mới chương bài học thành công!",
+      });
       return res;
     } catch (error: unknown) {
       setMessage({ intent: "error", text: getApiError(error) });
@@ -165,9 +168,7 @@ export function ChapterContent() {
 
   // --- 6. RENDER PHASE ---
   if (!isMounted || (isLoading && !result)) {
-    return (
-      <SplashScreen icon={BookOpen} message="Đang tải dữ liệu chương..." />
-    );
+    return <SplashScreen variant="chapter"/>;
   }
 
   return (

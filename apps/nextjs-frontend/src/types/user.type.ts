@@ -1,7 +1,9 @@
+import { UserRoleEnum } from "@/constants/enum/use.enum";
+
 // Role - Vai trò người dùng
 export interface UserRole {
   id: string;
-  name: string;
+  name: UserRoleEnum;
   displayName: string;
 }
 
@@ -21,6 +23,7 @@ export interface User {
   createdAt?: string; // Optional: Có thể không cần ở mọi nơi
   updatedAt?: string;
   roles: UserRole[];
+  permissions: string[];
 }
 
 export interface IUpdateProfileResponse {

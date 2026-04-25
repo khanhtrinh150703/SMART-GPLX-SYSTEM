@@ -6,18 +6,15 @@ import Header from "@/components/common/Header";
 import { cn } from "@/lib/utils/utils";
 import QueryProvider from "@/components/common/Provider/QueryProvider";
 import Sidebar from "@/components/common/Sidebar";
+import { useSyncLogout } from "@/hooks/use-sync-logout";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Mặc định mở cho pro
-
+  useSyncLogout();
   return (
-    // 1. Dùng flex h-screen để cố định chiều cao (Dịch: Flex container for full height)
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       
-      {/* 2. SIDEBAR: Bây giờ nó sẽ chiếm diện tích thật 
-          - lg:relative: Trên PC nó nằm trong luồng flex (Đẩy nội dung)
-          - fixed: Trên Mobile nó vẫn đè lên (Vì mobile không đủ chỗ để đẩy)
-      */}
+
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen} 
@@ -28,7 +25,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       />
 
-      {/* 3. NỘI DUNG CHÍNH: Tự động co giãn theo Sidebar */}
       <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative">
         <Header 
           isOpen={isSidebarOpen} 

@@ -1,8 +1,6 @@
-import { API_CONSTANTS } from "@/domain/constants/api.constant";
-
 export const licensePaths = {
     // ====================== LICENSE CATEGORIES ======================
-    [`${API_CONSTANTS.API_BASE}/license-categories`]: {
+    [`/license-categories`]: {
         get: {
             tags: ['License Category'],
             summary: 'Lấy danh sách hạng bằng lái',
@@ -49,7 +47,7 @@ export const licensePaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/license-categories/{id}`]: {
+    [`/license-categories/{id}`]: {
         patch: {
             tags: ['License Category'],
             summary: 'Cập nhật hạng bằng lái',
@@ -113,7 +111,7 @@ export const licensePaths = {
         },
     },
 
-    [`${API_CONSTANTS.API_BASE}/license-categories/{id}/restore`]: {
+    [`/license-categories/{id}/restore`]: {
         patch: {
             tags: ['License Category'],
             summary: 'Khôi phục hạng bằng lái',

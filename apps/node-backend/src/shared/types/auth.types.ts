@@ -6,7 +6,7 @@ export class TokenPayload {
   public readonly roles!: UserRole[];
   public readonly jti!: string;
   public readonly deviceId!: string;
-
+  public readonly permissions!: string[];
 
   /** * Thời điểm phát hành token (Unix Timestamp - giây) */
   public readonly iat!: number;

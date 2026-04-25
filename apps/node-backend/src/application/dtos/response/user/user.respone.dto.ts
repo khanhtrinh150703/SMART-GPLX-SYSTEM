@@ -35,4 +35,6 @@ export interface UserResponseDTO {
 
   /** @property {RoleResponseDTO[]} roles - Danh sách các vai trò quyền hạn mà người dùng này đang nắm giữ. */
   readonly roles: RoleResponseDTO[];
+
+  readonly permissions: string[];
 }
