@@ -1,22 +1,66 @@
-// Lấy domain gốc từ biến môi trường (Ví dụ: http://localhost:8080/api/v1)
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+/**
+ * 💡 TIP: Thường thì chúng ta chỉ để PATH ở đây. 
+ * Base URL sẽ được cấu hình tập trung ở file axios-client để code linh hoạt hơn.
+ */
 
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN: `${API_BASE_URL}/auth/login`,
-    REGISTER: `${API_BASE_URL}/auth/register/init`,
-    VERIFY_OTP: `${API_BASE_URL}/auth/register/verify`,
-    RESEND_OTP: `${API_BASE_URL}/auth/resend-otp`,
-    FORGOT_PASSWORD: `${API_BASE_URL}/auth/forgot-password`,
-    RESET_PASSWORD: `${API_BASE_URL}/auth/reset-password`,
+    LOGIN: `/auth/login`,
+    REGISTER: `/auth/register/init`,
+    VERIFY_OTP: `/auth/register/verify`,
+    RESEND_OTP: `/auth/resend-otp`,
+    FORGOT_PASSWORD: `/auth/forgot-password`,
+    RESET_PASSWORD: `/auth/reset-password`,
   },
+
   USER: {
-    UPDATE_PROFILE: `${API_BASE_URL}/users/me/profile`,
-    UPDATE_PROFILE_ADMIN: `${API_BASE_URL}/users/admin`,
-    CHANGEPASSWORD: `${API_BASE_URL}/users/me/password`,
-    DELETE: `${API_BASE_URL}/users`,
-    GET_ALL: `${API_BASE_URL}/users`,
-    RESTORE: `${API_BASE_URL}/users`,
+    GET_ALL: `/users`,
+    UPDATE_PROFILE: `/users/me/profile`,
+    CHANGE_PASSWORD: `/users/me/password`,
+    // 💡 FIX: Sử dụng function để truyền ID động vào đúng chuẩn
+    UPDATE_BY_ADMIN: (id: string) => `/users/${id}/admin`,
+    DELETE: (id: string) => `/users/${id}`,
+    RESTORE: (id: string) => `/users/${id}/restore`,
+  },
+
+  LICENSE: {
+    BASE: "/license-categories",
+    DETAIL: (id: string) => `/license-categories/${id}`,
+    RESTORE: (id: string) => `/license-categories/${id}/restore`,
+    SELECTION: "/license-categories/selection",
+  },
+
+  CHAPTER: {
+    BASE: "/chapters",
+    DETAIL: (id: string) => `/chapters/${id}`,
+    RESTORE: (id: string) => `/chapters/${id}/restore`,
+    SELECTION: "/chapters/selection",
+  },
+
+  QUESTION: {
+    BASE: "/questions",
+    DETAIL: (id: string) => `/questions/${id}`,
+    RESTORE: (id: string) => `/questions/${id}/restore`,
+  },
+
+  ROLE: {
+    SELECTION: "/roles/selection",
+  },
+
+  IMPORT: {
+    INIT: "/import/init",
+    UPLOADCHUNK: "/import/upload-chunk",
+    COMPLETE: "/import/complete",
+    STATUS: "/import/status",
+  },
+  EXAM_MATRICES: {
+    BASE: '/exam-matrices',
+    DETAILS: (id: string) => `/exam-matrices/${id}`,
+    RESTORE: (id: string) => `/exam-matrices/${id}/restore`,
+  },
+
+  EXAM: {
+    BASE: '/exams',
+    GENERATION: "/exams/generate-auto",
   }
-  // Thêm các tính năng khác sau này: EXAM, USER_PROFILE...
 };

@@ -1,22 +1,41 @@
 // src/components/common/Modals/BaseModal.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { X, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
+import { baseModalVariants as variants } from "./base-modal.variants";
+// QUAN TRỌNG: Phải import cái Alert vào đây (Import the Alert component)
+import { Alert } from "@/components/ui/Alert";
 
 /**
  * BaseModalProps - Thuộc tính cho khung Modal cơ bản
- * @property {LucideIcon} icon - Icon hiển thị ở tiêu đề (English: Title Icon)
+ * @property {LucideIcon} icon - Icon hiển thị ở tiêu đề
+ * @property {string} maxWidth - Độ rộng tối đa của Modal
  */
-interface BaseModalProps {
+export interface BaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   description?: string;
   icon: LucideIcon;
   children: React.ReactNode;
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
+  maxWidth?:
+    | "sm"
+    | "md"
+    | "lg"
+    | "xl"
+    | "2xl"
+    | "3xl"
+    | "4xl"
+    | "5xl"
+    | "6xl"
+    | "7xl";
+  className?: string;
+
+  // --- BỔ SUNG 2 DÒNG NÀY ĐỂ NHẬN THÔNG BÁO TỪ CHA TRUYỀN XUỐNG ---
+  message?: { intent: "success" | "error" | "warning"; text: string } | null;
+  onMessageClose?: () => void;
 }
 
 export const BaseModal = ({
@@ -27,41 +46,74 @@ export const BaseModal = ({
   icon: Icon,
   children,
   maxWidth = "lg",
+  className,
+  // --- BỔ SUNG Ở ĐÂY ĐỂ LẤY BIẾN RA DÙNG ---
+  message,
+  onMessageClose,
 }: BaseModalProps) => {
+  // Khóa cuộn trang nền khi mở Modal
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const maxWidthClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    "2xl": "max-w-2xl",
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className={cn(
-        "bg-white w-full rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300",
-        maxWidthClasses[maxWidth]
-      )}>
+    <div className={variants.overlay()}>
+      {/* Click ra ngoài để đóng Modal */}
+      <div className="absolute inset-0 z-0" onClick={onClose} />
+
+      {/* Khung Modal chính */}
+      <div
+        className={cn(
+          variants.contentWrapper({ maxWidth }),
+          "relative z-10 flex flex-col",
+          className,
+        )}
+      >
         {/* Header (Phần đầu trang) */}
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-2xl">
+        <div className={variants.header()}>
+          <div className={variants.titleGroup()}>
+            <div className={variants.iconWrapper()}>
               <Icon size={22} />
             </div>
             <div>
-              <h3 className="text-xl font-extrabold text-slate-800">{title}</h3>
-              {description && <p className="text-xs text-slate-500 font-medium">{description}</p>}
+              <h3 className={variants.titleText()}>{title}</h3>
+              {description && (
+                <p className={variants.descText()}>{description}</p>
+              )}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all">
+          <button onClick={onClose} className={variants.closeButton()}>
             <X size={20} />
           </button>
         </div>
 
-        {/* Body (Phần thân chứa Form) */}
-        <div className="p-8">{children}</div>
+        {/* --- KHU VỰC HIỂN THỊ LỖI (ALERT SECTION) --- */}
+        {/* Nếu có message được ném vào, nó sẽ hiện ở ngay dưới Header */}
+        {message && (
+          <div className="px-6 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <Alert
+              intent={message.intent}
+              message={message.text}
+              onClose={onMessageClose}
+              duration={10000}
+            />
+          </div>
+        )}
+
+        {/* Body (Phần thân chứa Form/Nội dung) */}
+        {/* Lớp flex-1 và overflow-y-auto giúp nội dung tự cuộn */}
+        <div className={cn(variants.body(), "flex-1 overflow-y-auto")}>
+          {children}
+        </div>
       </div>
     </div>
   );

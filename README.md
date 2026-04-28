@@ -23,8 +23,8 @@ cd ai-engine && python src/main.py
 
 Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn kết:
 
-1. **Authentication & Security (RBAC):** Kiểm soát truy cập dựa trên vai trò và quyền hạn chi tiết (Permissions).
-2. **Knowledge & Question Bank:** Ngân hàng câu hỏi thông minh với cơ chế **Soft Delete** và **Cron Job** để tối ưu hóa dữ liệu lịch sử.
+1. **Authentication & Security (PBAC):** Kiểm soát truy cập dựa trên vai trò và quyền hạn chi tiết (Permissions).
+2. **Knowledge & Question Bank:** Ngân hàng câu hỏi thông minh với cơ chế **Soft Delete**. 
 3. **Exam Engine:** Tự động sinh đề thi theo **Ma trận đề (Exam Matrix)** chuẩn Bộ GTVT.
 4. **Execution & Audit:** Ghi lại nhật ký thi chi tiết, phục vụ thống kê và làm dữ liệu đầu vào cho AI.
 5. **AI & Analytics:** "Bộ não" của hệ thống với khả năng giải thích luật (LLM) và học tập thích ứng (Adaptive Learning).
@@ -50,10 +50,10 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **Language:** TypeScript
 * **ORM:** Prisma / TypeORM
 * **Architecture:** Clean Architecture & Domain-Driven Design (DDD)
-* **Database:** MySQL/PostgreSQL, Redis, Prisma / TypeORM
+* **Database:** MySQL & Redis (Caching/Queue)
+* **Background Jobs:** BullMQ
 * **Security & Auth:** JWT, Nodemailer
 * **API Documentation:** Swagger (OpenAPI 3.0)
-
 
 ### **Frontend (Nextjs)**
 

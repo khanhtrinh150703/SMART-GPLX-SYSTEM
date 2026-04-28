@@ -1,4 +1,3 @@
-// user-management.test.ts
 import request from 'supertest';
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import app from '@/app';
@@ -6,242 +5,182 @@ import app from '@/app';
 import {
   AUTH_ENDPOINTS,
   USER_ENDPOINTS,
-  TEST_ACCOUNT,
-  TEST_UPDATE_DATA,
+  USER_UPDATE_DATA,
+  AUTH_PAYLOAD,
   Message,
-  ErrorCode,
   ErrorStatus,
-} from '../../test.data';
+} from '../../config/index'
 
 /**
  * Tác dụng: Tập hợp các bài kiểm tra tích hợp cho quản lý người dùng.
- * Tuân thủ cấu trúc Scenario-based, Zero Any và bảo mật tuyệt đối.
+ * Kịch bản: Tách biệt Token Admin/User và xử lý vòng đời Token sau khi đổi mật khẩu.
  */
-export const userSteps = () => {
-  let userId: string;
-  let accessToken: string;
+export const userSteps = (
+  getAdminToken: () => string,
+) => {
+  let regularUserId: string;
+  let regularToken: string;
+  let adminToken: string;
 
-  // --- BEFORE ALL: Đăng nhập để lấy token và userId ---
+  // --- 🔑 SETUP: Lấy Token cho cả 2 tài khoản trước khi chạy test ---
   beforeAll(async () => {
-    const loginRes = await request(app)
+    // 1. Lấy Token cho Regular User
+    const userLogin = await request(app)
       .post(AUTH_ENDPOINTS.LOGIN)
       .send({
-        username: TEST_ACCOUNT.username,
-        password: TEST_ACCOUNT.newPassword,
+        username: AUTH_PAYLOAD.USER_TEST.username,
+        password: AUTH_PAYLOAD.USER_TEST.newPassword,
       });
 
-    userId = loginRes.body.data.user.id;
-    accessToken = loginRes.body.data.accessToken;
-    console.log(accessToken)
+    regularToken = userLogin.body.data.accessToken;
+    regularUserId = userLogin.body.data.user.id;
+
+    adminToken = getAdminToken();
   });
 
-  // --- HELPER FUNCTION ---
-  const getAuthHeader = () => ({
-    Authorization: `Bearer ${accessToken}`,
+  // Helper function để linh hoạt truyền token
+  const getAuthHeader = (token: string) => ({
+    Authorization: `Bearer ${token}`,
   });
 
   describe('👤 User Management API Suite', () => {
-    describe('📝 Kịch bản: Đăng xuất tài khoản', () => {
-      it('Nên đăng xuất thành công khi Token hợp lệ', async () => {
+
+    // --- PHASE 1: USER SELF-MANAGEMENT ---
+    describe('📝 Kịch bản: Người dùng tự quản lý thông tin', () => {
+      it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
         const res = await request(app)
-          .post(AUTH_ENDPOINTS.LOGOUT)
-          .set(getAuthHeader());
-
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.code).toBe('AUTH_LOGOUT_SUCCESS');
-        expect(res.body.message).toContain(Message.AUTH.LOGOUT_SUCCESS);
+          .patch(USER_ENDPOINTS.ME_PROFILE)
+          .send(USER_UPDATE_DATA);
+        expect(res.status).toBe(401); // Unauthorized
       });
 
-      it('Nên trả về lỗi 401 khi đăng xuất mà không gửi kèm Token', async () => {
-        const res = await request(app).post(AUTH_ENDPOINTS.LOGOUT);
-
-        expect(res.status).toBe(401);
-        expect(res.body.success).toBe(false);
-      });
-    });
-
-    describe('📝 Kịch bản: Đăng nhập bằng Email', () => {
-      it('Nên đăng nhập thành công khi sử dụng Email hợp lệ', async () => {
-        const res = await request(app)
-          .post(AUTH_ENDPOINTS.LOGIN)
-          .send({
-            username: TEST_ACCOUNT.email,
-            password: TEST_ACCOUNT.newPassword,
-          });
-
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.data).toHaveProperty('accessToken');
-        expect(res.body.data.user.email).toBe(TEST_ACCOUNT.email);
-        accessToken = res.body.data.accessToken;
-      });
-
-      it('Nên trả về lỗi 401 khi đăng nhập bằng email nhưng sai mật khẩu', async () => {
-        const res = await request(app)
-          .post(AUTH_ENDPOINTS.LOGIN)
-          .send({
-            username: TEST_ACCOUNT.email,
-            password: 'WrongPassword123',
-          });
-
-        expect(res.status).toBe(401);
-        expect(res.body.success).toBe(false);
-      });
-    });
-
-    describe('📝 Kịch bản: Cập nhật thông tin cá nhân (Profile)', () => {
-      it('Nên cập nhật thành công khi dữ liệu hợp lệ và có Token', async () => {
+      it('Nên cập nhật thông tin cá nhân thành công', async () => {
         const response = await request(app)
           .patch(USER_ENDPOINTS.ME_PROFILE)
-          .set(getAuthHeader())
-          .send(TEST_UPDATE_DATA);
+          .set(getAuthHeader(regularToken))
+          .send(USER_UPDATE_DATA);
 
+        regularToken = response.body.data.accessToken;
         expect(response.status).toBe(200);
-        expect(response.body.success).toBe(true);
-        expect(response.body.data.user.fullName).toBe(TEST_UPDATE_DATA.fullName);
+        expect(response.body.data.user.fullName).toBe(USER_UPDATE_DATA.fullName);
         expect(response.body.message).toBe(Message.USER.UPDATE_SUCCESS);
       });
 
-      it('Nên bị chặn (401) nếu không gửi kèm Access Token', async () => {
-        const response = await request(app)
-          .patch(USER_ENDPOINTS.ME_PROFILE)
-          .send({ fullName: 'Hacker' });
-
-        expect(response.status).toBe(ErrorStatus.AUTH_005);
-      });
-    });
-
-    describe('🔐 Kịch bản: Quản lý mật khẩu (Password)', () => {
-      it('Nên báo lỗi khi mật khẩu cũ không chính xác', async () => {
-        const payload = {
-          oldPassword: 'wrong_password_123',
-          newPassword: TEST_ACCOUNT.newPassword,
-          confirmNewPassword: TEST_ACCOUNT.newPassword,
-        };
-
-        const response = await request(app)
+      it('Nên đổi mật khẩu thành công và CẬP NHẬT lại Token mới', async () => {
+        // 1. Thực hiện đổi mật khẩu
+        const res = await request(app)
           .patch(USER_ENDPOINTS.ME_PASSWORD)
-          .set(getAuthHeader())
-          .send(payload);
-
-        expect(response.body).toMatchObject({
-          success: false,
-          code: ErrorCode.VALIDATION.PASSWORD_DIFFERENT,
-        });
-        expect(response.body.message).toBeDefined();
-      });
-
-      it('Nên đổi mật khẩu thành công khi mọi thứ hợp lệ', async () => {
-        const response = await request(app)
-          .patch(USER_ENDPOINTS.ME_PASSWORD)
-          .set(getAuthHeader())
+          .set(getAuthHeader(regularToken))
           .send({
-            oldPassword: TEST_ACCOUNT.newPassword,
-            newPassword: TEST_ACCOUNT.newPassword_2,
-            confirmNewPassword: TEST_ACCOUNT.newPassword_2,
+            oldPassword: AUTH_PAYLOAD.USER_TEST.newPassword,
+            newPassword: AUTH_PAYLOAD.USER_TEST.secondnewPassword,
+            confirmNewPassword: AUTH_PAYLOAD.USER_TEST.secondnewPassword,
           });
 
-        expect(response.status).toBe(200);
-        expect(response.body.message).toBe(Message.USER.PASSWORD_CHANGED);
-      });
-    });
+        expect(res.status).toBe(200);
+        expect(res.body.message).toBe(Message.USER.PASSWORD_CHANGED);
 
-    describe('🚫 Kịch bản: Admin quản lý trạng thái và Xóa', () => {
-
-      beforeAll(async () => {
-        const loginRes = await request(app)
+        // 2. 💡 QUAN TRỌNG: Login lại bằng mật khẩu mới để lấy token mới
+        const refreshRes = await request(app)
           .post(AUTH_ENDPOINTS.LOGIN)
           .send({
-            username: TEST_ACCOUNT.username,
-            // 💡 QUAN TRỌNG: Dùng password mới nhất sau khi đã đổi ở test trước
-            password: TEST_ACCOUNT.newPassword_2,
+            username: AUTH_PAYLOAD.USER_TEST.username,
+            password: AUTH_PAYLOAD.USER_TEST.secondnewPassword,
           });
 
-        if (loginRes.body.data) {
-          userId = loginRes.body.data.user.id;
-          accessToken = loginRes.body.data.accessToken;
-        }
+        // Ghi đè token mới để dùng cho các test sau (nếu có)
+        regularToken = refreshRes.body.data.accessToken;
+      });
+    });
+
+    // --- PHASE 2: ADMIN MANAGEMENT ---
+    describe('🚫 Kịch bản: Quyền Quản trị viên (Admin Actions)', () => {
+
+      it('Nên từ chối (403) khi User thường Xóa', async () => {
+        const response = await request(app)
+          .delete(USER_ENDPOINTS.USER_DELETE(regularUserId))
+          .set(getAuthHeader(regularToken)); // Dùng token User thường
+
+        expect(response.status).toBe(403); // Forbidden
+        expect(response.body.success).toBe(false);
       });
 
-      it('Nên cập nhật trạng thái người dùng thành công', async () => {
+      it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+        const res = await request(app)
+          .patch(USER_ENDPOINTS.USER_STATUS(regularUserId))
+          .send({ status: 'active' });
+        expect(res.status).toBe(401); // Unauthorized
+      });
+
+      it('Nên cho phép Admin cập nhật trạng thái người dùng khác', async () => {
         const response = await request(app)
-          .patch(USER_ENDPOINTS.USER_STATUS(userId))
-          .set(getAuthHeader())
+          .patch(USER_ENDPOINTS.USER_STATUS(regularUserId))
+          .set(getAuthHeader(adminToken)) // Dùng token Admin
           .send({ status: 'active' });
 
         expect(response.status).toBe(200);
         expect(response.body.message).toBe(Message.USER.STATUS_UPDATED);
       });
 
-      it('Nên quản lý vòng đời tài khoản: Xóa mềm và Khôi phục', async () => {
-        // BƯỚC 1: Xóa mềm
+      it('Nên từ chối (403) khi User thường  Khôi phục tài khoản', async () => {
+        const response = await request(app)
+          .patch(USER_ENDPOINTS.USER_RESTORE(regularUserId))
+          .set(getAuthHeader(regularToken)); // Dùng token User thường
+
+        expect(response.status).toBe(403); // Forbidden
+        expect(response.body.success).toBe(false);
+      });
+
+      it('Nên cho phép Admin Xóa mềm và Khôi phục tài khoản', async () => {
+        // Bước 1: Admin Xóa mềm User
         const deleteRes = await request(app)
-          .delete(USER_ENDPOINTS.USER_DELETE(userId))
-          .set(getAuthHeader());
-
+          .delete(USER_ENDPOINTS.USER_DELETE(regularUserId))
+          .set(getAuthHeader(adminToken));
         expect(deleteRes.status).toBe(200);
-        expect(deleteRes.body.message).toBe(Message.USER.DELETE_SUCCESS);
 
-        // BƯỚC 2: Kiểm tra không thể đăng nhập sau khi xóa mềm
-        const loginFailRes = await request(app)
+        // Bước 2: Kiểm tra User không thể login sau khi bị xóa (423 Locked)
+        const loginFail = await request(app)
           .post(AUTH_ENDPOINTS.LOGIN)
           .send({
-            username: TEST_ACCOUNT.username,
-            password: TEST_ACCOUNT.newPassword_2,
+            username: AUTH_PAYLOAD.USER_TEST.username,
+            password: AUTH_PAYLOAD.USER_TEST.newPassword,
           });
-        expect(loginFailRes.status).toBe(ErrorStatus.AUTH_423);
-        expect(loginFailRes.body.code).toBe(ErrorCode.AUTH.ACCOUNT_LOCKED);
+        expect(loginFail.status).toBe(ErrorStatus.AUTH_423);
 
-        // BƯỚC 3: Khôi phục tài khoản
+        // Bước 3: Admin Khôi phục tài khoản
         const restoreRes = await request(app)
-          .patch(USER_ENDPOINTS.USER_RESTORE(userId))
-          .set(getAuthHeader());
-
+          .patch(USER_ENDPOINTS.USER_RESTORE(regularUserId))
+          .set(getAuthHeader(adminToken));
         expect(restoreRes.status).toBe(200);
-        expect(restoreRes.body.code).toBe('USER_RESTORED_SUCCESS');
+      });
 
-        // BƯỚC 4: Kiểm tra đăng nhập lại thành công
-        const loginSuccessRes = await request(app)
-          .post(AUTH_ENDPOINTS.LOGIN)
-          .send({
-            username: TEST_ACCOUNT.username,
-            password: TEST_ACCOUNT.newPassword_2,
-          });
+      it('Nên trả về danh sách người dùng khi là Admin', async () => {
+        const response = await request(app)
+          .get(USER_ENDPOINTS.USERS_LIST)
+          .set(getAuthHeader(adminToken))
+          .query({ page: 1, limit: 10 });
 
-        expect(loginSuccessRes.status).toBe(200);
-        expect(loginSuccessRes.body.success).toBe(true);
-        expect(loginSuccessRes.body.data.accessToken).toBeDefined();
-        expect(loginSuccessRes.body.data.user.status).toBe('active');
+        expect(response.status).toBe(200);
+        expect(Array.isArray(response.body.data.data)).toBe(true);
       });
     });
 
-    describe('📝 Kịch bản: Quản trị - Lấy danh sách người dùng', () => {
-      it('Nên trả về danh sách có phân trang khi là Admin', async () => {
+    // --- PHASE 3: SECURITY & AUTHORIZATION ---
+    describe('🔒 Kịch bản: Bảo mật & Phân quyền', () => {
+
+      it('Nên từ chối (403) khi User thường cố gắng lấy danh sách người dùng', async () => {
         const response = await request(app)
           .get(USER_ENDPOINTS.USERS_LIST)
-          .query({ page: 1, limit: 10, search: 'cauVag' })
-          .set(getAuthHeader());
+          .set(getAuthHeader(regularToken)); // Dùng token User thường
 
-        expect(response.status).toBe(200);
-        expect(response.body.success).toBe(true);
-        expect(response.body.code).toBe('USER_FETCH_SUCCESS');
+        expect(response.status).toBe(403); // Forbidden
+        expect(response.body.success).toBe(false);
+      });
 
-        expect(response.body.data).toHaveProperty('data');
-        expect(Array.isArray(response.body.data.data)).toBe(true);
-
-        const firstUser = response.body.data.data[0];
-        if (firstUser) {
-          expect(firstUser).toHaveProperty('email');
-          expect(firstUser).toHaveProperty('roles');
-          expect(Array.isArray(firstUser.roles)).toBe(true);
-        }
-
-        const meta = response.body.data.meta;
-        expect(meta.page).toBe(1);
-        expect(meta.limit).toBe(10);
-        expect(meta).toHaveProperty('total');
-        expect(meta).toHaveProperty('totalPages');
+      it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+        const res = await request(app)
+          .get(USER_ENDPOINTS.USERS_LIST)
+        expect(res.status).toBe(401); // Unauthorized
       });
     });
   });

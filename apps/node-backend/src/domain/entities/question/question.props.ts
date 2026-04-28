@@ -1,17 +1,35 @@
-import { AnswerProps } from "./answer.props";
-/**
- * @description Định nghĩa các thuộc tính của đối tượng Câu hỏi (Question)
- */
-export interface QuestionProps {
-  id?: string;
+// domain/entities/question/question.props.ts
+
+import { Answer } from "./answer.entity";
+import { QuestionStatus } from "./question.status";
+
+export interface IQuestionProps {
+  id: string;
   chapterId: string;
   content: string;
-  imageUrl?: string | null;
+  imageUrl: string;
   difficultyLevel: number;
   isCritical: boolean;
-  answers: AnswerProps[];
+  answers: Answer[];
   licenseCategoryIds: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
-  deletedAt: Date | null;
+  indexNumber: number;
+  status: QuestionStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+  
+  chapterName?: string;
+  licenseCategoryNames?: string[];
 }
+
+export type CreateQuestionProps = Omit<IQuestionProps, 
+  | 'id' 
+  | 'status' 
+  | 'answers'
+  | 'createdAt' 
+  | 'updatedAt' 
+  | 'deletedAt'
+> & {
+  answers: Array<{ content: string; isCorrect: boolean; imageUrl?: string }>;
+  status?: string;
+};

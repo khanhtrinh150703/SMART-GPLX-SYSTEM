@@ -6,14 +6,20 @@ import { ErrorCode, ErrorCodeType } from './error-codes';
  */
 export const ErrorStatus: Record<ErrorCodeType, number> = {
     // --- SYSTEM & INFRASTRUCTURE ---
-    [ErrorCode.SYSTEM.SUCCESS]: 200,                // OK
-    [ErrorCode.SYSTEM.INTERNAL_ERROR]: 500,         // Internal Server Error
-    [ErrorCode.SYSTEM.SERVICE_UNAVAILABLE]: 503,    // Service Unavailable
-    [ErrorCode.SYSTEM.DATABASE_ERROR]: 500,         // Internal Server Error
-    [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 429,      // Too Many Requests
-    [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 408,        // Request Timeout
-    [ErrorCode.SYSTEM.CONFIG_ERROR]: 500,        // Request Timeout
-
+    [ErrorCode.SYSTEM.SUCCESS]: 200,
+    [ErrorCode.SYSTEM.INVALID_INPUT]: 400,
+    [ErrorCode.SYSTEM.ALREADY_EXISTS]: 409,
+    [ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED]: 413,
+    [ErrorCode.SYSTEM.INTERNAL_ERROR]: 500,
+    [ErrorCode.SYSTEM.SERVICE_UNAVAILABLE]: 503,
+    [ErrorCode.SYSTEM.DATABASE_ERROR]: 500,
+    [ErrorCode.SYSTEM.TOO_MANY_REQUESTS]: 429,
+    [ErrorCode.SYSTEM.REQUEST_TIMEOUT]: 408,
+    [ErrorCode.SYSTEM.CONFIG_ERROR]: 500,
+    [ErrorCode.SYSTEM.BAD_REQUEST]: 400,
+    [ErrorCode.SYSTEM.DUPLICATE_DATA]: 409,     // Conflict
+    [ErrorCode.SYSTEM.RESOURCE_NOT_FOUND]: 404, // Not Found
+    [ErrorCode.SYSTEM.RELATION_FAILED]: 422,    // Unprocessable Entity
 
     // --- AUTHENTICATION & AUTHORIZATION ---
     [ErrorCode.AUTH.UNAUTHORIZED]: 401,             // Unauthorized
@@ -39,40 +45,84 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.USER.PHONE_EXISTS]: 409,             // Conflict
     [ErrorCode.USER.REGISTER_FAILED]: 400,          // Bad Request
     [ErrorCode.USER.UPDATE_FAILED]: 400,            // Bad Request
+    [ErrorCode.USER.NAME_REQUIRED]: 400,            // Tên bắt buộc
+    [ErrorCode.USER.NAME_TOO_SHORT]: 400,           // Tên quá ngắn
+    [ErrorCode.USER.NAME_TOO_LONG]: 400,            // Tên quá dài
+    [ErrorCode.USER.NAME_INVALID]: 400,             // Tên sai định dạng
+    [ErrorCode.USER.STATUS_INVALID]: 400,           // Trạng thái sai
+    [ErrorCode.USER.ROLES_REQUIRED]: 400,           // Thiếu vai trò
+    [ErrorCode.USER.INVALID_ROLE_ID]: 400,          // ID vai trò không hợp lệ
+    [ErrorCode.USER.AVATAR_TOO_LARGE]: 400,         // Ảnh quá nặng
+    [ErrorCode.USER.AVATAR_INVALID_TYPE]: 400,      // Sai định dạng ảnh
 
     // --- SMART-GPLX (EXAM & AI) ---
-    [ErrorCode.EXAM.NOT_FOUND]: 404,                // Not Found
-    [ErrorCode.EXAM.ALREADY_SUBMITTED]: 409,        // Conflict
-    [ErrorCode.EXAM.EXPIRED]: 410,                  // Gone (Bài thi đã kết thúc)
-    [ErrorCode.EXAM.AI_PROCESSING_ERROR]: 500,      // Internal Server Error
-    [ErrorCode.EXAM.IMAGE_INVALID]: 400,            // Bad Request (Ảnh mờ/không đúng định dạng)
+    // --- Nhóm 1xx: Validation (Lỗi do dữ liệu Client gửi lên) ---
+    [ErrorCode.EXAM.IMAGE_INVALID]: 400,           // Bad Request
+    [ErrorCode.EXAM.ANSWERS_EMPTY]: 422,           // Unprocessable Entity (Dữ liệu đúng format nhưng sai nghiệp vụ)
+    [ErrorCode.EXAM.ANSWER_FORMAT_INVALID]: 422,   // Unprocessable Entity
+    [ErrorCode.EXAM.NAME_REQUIRED]: 400,           // Bad Request
+    [ErrorCode.EXAM.NAME_TOO_LONG]: 400,           // Bad Request
+    [ErrorCode.EXAM.INVALID_MATRIX_ID]: 400,       // Bad Request
+
+
+    // --- Nhóm 2xx: Business/Pool (Lỗi logic kho dữ liệu/ma trận) ---
+    [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 400,     // Bad Request (Yêu cầu vượt quá khả năng đáp ứng của kho)
+    [ErrorCode.EXAM.INSUFFICIENT_CHAPTER_QUESTIONS]: 400,  // Bad Request
+    [ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS]: 400, // Bad Request
+    [ErrorCode.EXAM.QUESTION_DATA_INVALID]: 500,           // Internal Server Error (Dữ liệu DB lỗi là lỗi hệ thống)
+
+    // --- Nhóm 4xx: State/Flow (Lỗi trạng thái bài thi) ---
+    [ErrorCode.EXAM.NOT_FOUND]: 404,               // Not Found
+    [ErrorCode.EXAM.ALREADY_SUBMITTED]: 409,       // Conflict (Xung đột trạng thái)
+    [ErrorCode.EXAM.EXPIRED]: 410,                 // Gone (Tài nguyên không còn khả dụng)
+
+    // --- Nhóm 5xx: Infrastructure/AI (Lỗi hệ thống/Bên thứ 3) ---
+    [ErrorCode.EXAM.AI_PROCESSING_ERROR]: 500,     // Internal Server Error
+
 
     // --- FILE & UPLOAD ---
     [ErrorCode.FILE.UPLOAD_FAILED]: 500,            // Internal Server Error
     [ErrorCode.FILE.TOO_LARGE]: 413,                // Payload Too Large
     [ErrorCode.FILE.INVALID_TYPE]: 415,             // Unsupported Media Type
+    [ErrorCode.FILE.NOT_FOUND]: 404,             // Not Found
 
     // --- DATA VALIDATION ---
-    [ErrorCode.VALIDATION.INVALID_EMAIL]: 400,
-    [ErrorCode.VALIDATION.INVALID_PASSWORD]: 400,
-    [ErrorCode.VALIDATION.CONFIRM_PASSWORD_MISMATCH]: 400,
-    [ErrorCode.VALIDATION.MISSING_FIELD]: 400,
-    [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
-    [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
-    [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
-    [ErrorCode.VALIDATION.PASSWORD_DIFFERENT]: 400,
-
-    // --- VALIDATION ---
+    // --- 0xx: General Required & Format ---
+    [ErrorCode.VALIDATION.REQUIRED]: 400,
     [ErrorCode.VALIDATION.ID_REQUIRED]: 400,
     [ErrorCode.VALIDATION.NAME_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
+    [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
+    [ErrorCode.VALIDATION.CODE_REQUIRED]: 400,
+
+    // --- 1xx: Identity & Contact ---
+    [ErrorCode.VALIDATION.EMAIL_INVALID]: 400,
     [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 400,
-    [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 400,
     [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 400,
-    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID_FORMAT]: 400,
+
+    // --- 2xx: Security & Authentication ---
+    [ErrorCode.VALIDATION.PASSWORD_INVALID]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_CONFIRM_MISMATCH]: 400,
+    [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
     [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 400,
-    [ErrorCode.VALIDATION.MIN_AGE_INVALID]: 400,
-    [ErrorCode.VALIDATION.MIN_AGE_MUST_BE_NUMBER]: 400,
+    [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID]: 400,
+
+    // --- 3xx: Specific Business Logic ---
+    [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 400,
+    [ErrorCode.VALIDATION.AGE_INVALID]: 400,
+
+    // --- 4xx: Exam & Training (Cập nhật mới) ---
+    [ErrorCode.VALIDATION.LICENSE_CATEGORY_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.EXAM_QUESTIONS_EMPTY]: 400,
+    [ErrorCode.VALIDATION.INVALID_DURATION]: 400,
+    [ErrorCode.VALIDATION.PASSING_SCORE_TOO_HIGH]: 400,
+    [ErrorCode.VALIDATION.MATRIX_ID_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.USER_ID_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.MIN_CRITICAL_INVALID]: 400,
+    [ErrorCode.VALIDATION.RESTORE_FAILED_DUPLICATE]: 400,
+
 
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 400,
@@ -82,11 +132,13 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
 
     // --- CHAPTER DOMAIN ---
     [ErrorCode.CHAPTER.NOT_FOUND]: 404,              // Not Found
-    [ErrorCode.CHAPTER.ALREADY_EXISTS]: 409,         // Conflict
+    [ErrorCode.CHAPTER.NAME_ALREADY_EXISTS]: 409,         // Conflict
+    [ErrorCode.CHAPTER.CODE_ALREADY_EXISTS]: 409,         // Conflict
     [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 403,  // Forbidden (Ràng buộc dữ liệu)
     [ErrorCode.CHAPTER.CREATE_FAILED]: 400,          // Bad Request
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 400,          // Bad Request
     [ErrorCode.CHAPTER.INVALID_ORDER]: 400,          // Bad Request
+    [ErrorCode.CHAPTER.INVALID_DESCRIPTION]: 400,          // Bad Request
 
     // --- QUESTION ---
     [ErrorCode.QUESTION.NOT_FOUND]: 404,
@@ -99,4 +151,62 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 400,
     [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 400,
     [ErrorCode.QUESTION.ALREADY_EXISTS]: 409,
+
+    // IMPORT
+    [ErrorCode.IMPORT.JOB_NOT_FOUND]: 404,        // Not Found
+    [ErrorCode.IMPORT.JOB_INVALID_STATUS]: 400,   // Bad Request
+    [ErrorCode.IMPORT.INVALID_CHUNK_INDEX]: 400,  // Bad Request
+    [ErrorCode.IMPORT.EXTRACT_FAILED]: 400,  // Bad Request
+    [ErrorCode.IMPORT.FILE_MISSING]: 400,  // Bad Request
+    [ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED]: 400,  // Bad Request
+    [ErrorCode.IMPORT.SESSION_EXPIRED]: 410, // Gone (Tài nguyên không còn tồn tại do hết hạn)
+
+    // --- MATRIX ERRORS ---
+    [ErrorCode.MATRIX.NAME_REQUIRED]: 400,
+    [ErrorCode.MATRIX.NAME_TOO_LONG]: 400,
+    [ErrorCode.MATRIX.NO_DETAILS]: 400,
+    [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 400,
+    [ErrorCode.MATRIX.INVALID_DURATION]: 400,
+    [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 400,
+    [ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS]: 400,
+    [ErrorCode.MATRIX.CHAPTER_ID_REQUIRED]: 400,
+    [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 409,
+    [ErrorCode.MATRIX.NOT_FOUND]: 404,
+    [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 409,
+
+    [ErrorCode.EXCEL.WORKSHEET_NOT_FOUND]: 400, // Bad Request
+    [ErrorCode.EXCEL.INVALID_FORMAT]: 400,
+    [ErrorCode.EXCEL.EMPTY_FILE]: 400,
+
+    [ErrorCode.PROCESS.ALREADY_COMPLETED]: 400,
+
+
+    // --- Nhóm MEDIA ---
+    [ErrorCode.MEDIA.SOURCE_REQUIRED]: 400, // Bad Request
+    [ErrorCode.MEDIA.INVALID_TYPE]: 415,    // Unsupported Media Type
+    [ErrorCode.MEDIA.FILE_TOO_LARGE]: 413,  // Payload Too Large
+    [ErrorCode.MEDIA.UPLOAD_FAILED]: 500,   // Internal Server Error
+
+    [ErrorCode.EXAM_ATTEMPT.ID_REQUIRED]: 400,
+    [ErrorCode.EXAM_ATTEMPT.NOT_FOUND]: 404,
+    [ErrorCode.EXAM_ATTEMPT.ALREADY_SUBMITTED]: 400,
+    [ErrorCode.EXAM_ATTEMPT.TIME_EXPIRED]: 400,
+    [ErrorCode.EXAM_ATTEMPT.SCORE_INVALID]: 400,
+    [ErrorCode.EXAM_ATTEMPT.RESULT_CONSISTENCY_ERROR]: 400,
+    [ErrorCode.EXAM_ATTEMPT.NOT_IN_PROGRESS]: 400,
+    [ErrorCode.EXAM_ATTEMPT.UNAUTHORIZED_ACCESS]: 403,
+
+    [ErrorCode.ACTIVE_SESSION.NOT_FOUND]: 404,
+    [ErrorCode.ACTIVE_SESSION.EXPIRED]: 401, // Unauthorized
+    [ErrorCode.ACTIVE_SESSION.REVOKED]: 401,
+    [ErrorCode.ACTIVE_SESSION.MAX_SESSIONS_REACHED]: 403, // Forbidden
+    [ErrorCode.ACTIVE_SESSION.INVALID_TOKEN]: 401,
+    [ErrorCode.ACTIVE_SESSION.DEVICE_MISMATCH]: 403,
+    [ErrorCode.ACTIVE_SESSION.INVALID_EXPIRATION_TIME]: 400,
+
+    // --- Nhóm CACHE (CSH) ---
+    [ErrorCode.CACHE.NOT_INITIALIZED]: 500, // Lỗi máy chủ do chưa sẵn sàng dữ liệu
+    [ErrorCode.CACHE.EMPTY_DATA]: 500,      // Lỗi dữ liệu hệ thống trống
+    [ErrorCode.CACHE.REFRESH_FAILED]: 500,   // Lỗi khi đồng bộ dữ liệu DB - Cache
+    [ErrorCode.CACHE.KEY_NOT_FOUND]: 404,    // Không tìm thấy bản ghi trong Cache
 };

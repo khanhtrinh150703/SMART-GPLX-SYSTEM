@@ -1,18 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Hash, FileText, Info } from "lucide-react";
+import { BookOpen, Hash, FileText, Info, Fingerprint } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import { FormField } from "@/components/common/Form/FormField";
-import { CreateChapterPayload, createChapterSchema } from "../schema/chapter.schema";
+import {
+  CreateChapterPayload,
+  createChapterSchema,
+} from "../schema/chapter.schema";
+import { Alert } from "@/components/ui/Alert";
 
 interface CreateChapterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CreateChapterPayload) => Promise<void>;
+  onSave: (data: CreateChapterPayload) => Promise<unknown>;
   isLoading: boolean;
 }
 
@@ -37,9 +41,15 @@ export default function CreateChapterModal({
     },
   });
 
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   // Xử lý Submit
   const onSubmit = async (data: CreateChapterPayload) => {
     await onSave(data);
+    onClose();
     reset(); // Reset trắng form sau khi thêm thành công để sẵn sàng thêm chương tiếp theo
   };
 
@@ -53,9 +63,15 @@ export default function CreateChapterModal({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        
-        {/* ÁP DỤNG FORM FIELD VẠN NĂNG */}
-        
+        {message && (
+          <Alert
+            key={message.text}
+            intent={message.type}
+            message={message.text}
+            duration={10000}
+            onClose={() => setMessage(null)}
+          />
+        )}
         <FormField
           label="Tên chương học (Name)"
           icon={FileText}
@@ -70,8 +86,17 @@ export default function CreateChapterModal({
           icon={Hash}
           type="number"
           placeholder="VD: 1"
-          {...register("orderIndex")}
+          {...register("orderIndex", { valueAsNumber: true })}
           error={errors.orderIndex?.message}
+          disabled={isLoading}
+        />
+
+        <FormField
+          label="Mã số (Code)"
+          icon={Fingerprint}
+          placeholder="VD: CH01"
+          {...register("code")}
+          error={errors.code?.message}
           disabled={isLoading}
         />
 

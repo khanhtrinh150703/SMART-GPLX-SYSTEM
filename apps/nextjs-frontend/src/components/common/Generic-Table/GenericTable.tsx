@@ -1,18 +1,25 @@
 "use client";
 
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
+import {
+  TableVariant,
+  TableSize,
+  TABLE_SIZES,
+  TABLE_VARIANTS,
+} from "./generic-table.variants";
 
 /**
- * TableColumn: Định nghĩa cấu trúc cột
- * Dịch: Cấu hình cho từng cột của bảng
+ * TableColumn Interface - Định nghĩa cấu trúc cột
+ * accessor hỗ trợ cả chuỗi (key) và hàm (với index để làm STT)
  */
 export interface TableColumn<T> {
   header: string;
-  // Accessor: có thể là tên thuộc tính (key) hoặc một hàm trả về giao diện (ReactNode)
-  accessor: keyof T | ((item: T) => React.ReactNode);
+  accessor: keyof T | ((item: T, index: number) => React.ReactNode);
   className?: string;
+  sortable?: boolean;
+  sortKey?: keyof T;
 }
 
 interface GenericTableProps<T> {
@@ -20,62 +27,119 @@ interface GenericTableProps<T> {
   data: T[];
   isLoading?: boolean;
   className?: string;
+  variant?: TableVariant;
+  size?: TableSize;
+  sortConfig?: { key: keyof T; direction: "asc" | "desc" | null };
+  onRowClick?: (item: T) => void;
+  onSort?: (key: keyof T) => void;
 }
 
-/**
- * GenericTable: Bảng tổng quát
- * Ràng buộc: Dữ liệu truyền vào (T) BẮT BUỘC phải có thuộc tính 'id'
- */
 export function GenericTable<T extends { id: string | number }>({
   columns,
   data,
   isLoading,
   className,
+  variant = "bordered",
+  size = "sm",
+  sortConfig,
+  onRowClick,
+  onSort,
 }: GenericTableProps<T>) {
+  const styles = TABLE_SIZES[size];
+
+  // Hàm render Icon sắp xếp
+  const renderSortIcon = (col: TableColumn<T>) => {
+    if (!col.sortable || !onSort) return null;
+    const key = col.sortKey || (typeof col.accessor === "string" ? col.accessor : null);
+    if (!key) return null;
+
+    if (sortConfig?.key !== key) {
+      return (
+        <ChevronsUpDown
+          size={14}
+          className="ml-2 opacity-20 group-hover:opacity-100 transition-opacity"
+        />
+      );
+    }
+
+    return sortConfig.direction === "asc" ? (
+      <ChevronUp size={14} className="ml-2 text-emerald-500" />
+    ) : (
+      <ChevronDown size={14} className="ml-2 text-emerald-500" />
+    );
+  };
+
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden bg-white/50 backdrop-blur-md rounded-[2rem] shadow-soft border border-white/60",
+        "relative w-full overflow-hidden rounded-[2.5rem] border transition-all duration-500",
+        TABLE_VARIANTS[variant],
         className
       )}
     >
-      {/* Loading Overlay (Lớp phủ khi đang tải) */}
+      {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-10 flex items-center justify-center">
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-20 flex items-center justify-center">
           <Loader2 className="text-emerald-600 animate-spin" size={32} />
         </div>
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-separate border-spacing-0">
+        <table className="w-full text-left border-separate border-spacing-0 table-auto">
           <thead>
-            <tr className="text-slate-400 text-[10px] uppercase tracking-[0.2em] border-b border-slate-100">
-              {columns.map((col, index) => (
-                <th
-                  key={`head-${index}`}
-                  className={cn("px-6 py-5 font-black", col.className)}
-                >
-                  {col.header}
-                </th>
-              ))}
+            <tr className={cn("text-slate-400 uppercase tracking-[0.2em]", styles.text)}>
+              {columns.map((col, index) => {
+                const isSortable = col.sortable && onSort;
+                const key = col.sortKey || (typeof col.accessor === "string" ? col.accessor : null);
+
+                return (
+                  <th
+                    key={`head-${index}`}
+                    className={cn(
+                      "font-black transition-colors select-none align-middle border-b border-slate-100/50",
+                      styles.th,
+                      isSortable && "cursor-pointer hover:text-slate-900 group",
+                      col.className
+                    )}
+                    onClick={() => isSortable && key && onSort(key as keyof T)}
+                  >
+                    <div className="flex items-center">
+                      <span className="truncate">{col.header}</span>
+                      {renderSortIcon(col)}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
-          <tbody className="text-sm text-slate-600">
+
+          <tbody className={cn("text-slate-600", styles.text)}>
             {data.length > 0 ? (
-              data.map((item) => (
+              // FIX: Nhận rowIndex ở đây để truyền xuống accessor
+              data.map((item, rowIndex) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-white/80 transition-all duration-300 group"
+                  onClick={() => onRowClick?.(item)}
+                  className={cn(
+                    "hover:bg-black/[0.01] transition-all duration-300 group",
+                    onRowClick && "cursor-pointer active:bg-slate-50"
+                  )}
                 >
-                  {columns.map((col, index) => (
+                  {columns.map((col, colIndex) => (
                     <td
-                      key={`cell-${item.id}-${index}`}
-                      className={cn("px-6 py-4 border-t border-slate-50/50", col.className)}
+                      key={`cell-${item.id}-${colIndex}`}
+                      className={cn(
+                        "border-t border-slate-50 align-middle",
+                        styles.td,
+                        col.className
+                      )}
                     >
-                      {/* FIX LỖI: Kiểm tra accessor là hàm hay là key */}
-                      {typeof col.accessor === "function"
-                        ? col.accessor(item)
-                        : (item[col.accessor as keyof T] as React.ReactNode)}
+                      <div className="flex items-center min-h-[24px]">
+                        {typeof col.accessor === "function"
+                          ? // TRUYỀN rowIndex vào đây để STT nhảy đúng 1, 2, 3...
+                            col.accessor(item, rowIndex)
+                          : (item[col.accessor as keyof T] as React.ReactNode)}
+                      </div>
                     </td>
                   ))}
                 </tr>

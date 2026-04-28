@@ -54,6 +54,8 @@
   }
 }
 
+
+
 /* --- 4. COMPONENTS (Sử dụng @apply sau khi đã có định nghĩa) --- */
 @layer components {
   .glass {
@@ -76,3 +78,4 @@ html.lenis {
 .lenis.lenis-stopped {
   overflow: hidden;
 }
+

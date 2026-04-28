@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes';
-import userRoutes from './user.routes'; 
-import licenseRoutes from './license-category.routes'; 
-import chapterRoutes from './chapter.routes'; 
-import questionRoutes from './quesion.routes'; 
+import { authRoutes, roleRoutes, userRoutes } from './identity';
+import { chapterRoutes, examRoutes, licenseCategoryRoutes, questionRoutes } from './exam-mgmt';
+import { importRoutes } from './integration';
+import { examMatrixRoutes} from './exam-session';
 
 
 /**
@@ -20,12 +19,24 @@ rootRouter.use('/auth', authRoutes);
 rootRouter.use('/users', userRoutes);
 
 /** @description Phân đoạn API quản lý danh mục các hạng bằng lái xe (A1, A2, B1, B2...). */
-rootRouter.use('/license-categories', licenseRoutes);
+rootRouter.use('/license-categories', licenseCategoryRoutes);
 
 /** @description Phân đoạn API quản lý các chương lý thuyết (Khái niệm, Biển báo, Sa hình...). */
 rootRouter.use('/chapters', chapterRoutes);
 
 /** @description Phân đoạn API quản lý các câu hỏi lý thuyết (Khái niệm, Biển báo, Sa hình...). */
 rootRouter.use('/questions', questionRoutes);
+
+/** @description Phân đoạn API quản lý các vai trò và phân quyền hệ thống (Admin, Instructor, Student...). */
+rootRouter.use('/roles', roleRoutes);
+
+/** @description Phân đoạn API quản lý quy trình nhập dữ liệu hệ thống (Khởi tạo, Tải mảnh, Hoàn tất...). */
+rootRouter.use('/import', importRoutes);
+
+/** @description Phân đoạn API quản lý ma trận đề thi (Cấu trúc, Tỷ lệ phần trăm, Điểm sàn...). */
+rootRouter.use('/exam-matrices', examMatrixRoutes);
+
+rootRouter.use('/exams', examRoutes);
+
 
 export default rootRouter;

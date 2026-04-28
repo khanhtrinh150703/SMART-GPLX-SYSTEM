@@ -65,4 +65,41 @@ export const authSchemas = {
       newPassword: { type: 'string', minLength: 8, example: 'NewPass789!!!' },
     },
   },
+
+  RefreshTokenRequest: {
+    type: 'object',
+    required: ['refreshToken'],
+    properties: {
+      refreshToken: {
+        type: 'string',
+        description: 'Mã Refresh Token được cấp khi đăng nhập',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        minLength: 40
+      },
+    },
+  },
+  // Cấu trúc dữ liệu trả về khi thành công
+  TokenResponse: {
+    type: 'object',
+    properties: {
+      accessToken: {
+        type: 'string',
+        description: 'Mã truy cập mới dùng để gọi các API bảo mật',
+        example: 'eyJhbGciOiJIUzI1Ni...'
+      },
+      refreshToken: {
+        type: 'string',
+        description: 'Mã làm mới mới (Nếu hệ thống dùng cơ chế xoay vòng)',
+        example: 'eyJhbGciOiJIUzI1Ni...'
+      },
+    },
+  },
+  // Schema chung cho các phản hồi thành công khác (nếu cần)
+  SuccessResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      message: { type: 'string', example: 'Thao tác thành công' },
+    }
+  }
 };

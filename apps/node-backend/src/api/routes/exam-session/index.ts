@@ -1,0 +1,1 @@
+export { default as examMatrixRoutes } from './exam-matrix.routes';

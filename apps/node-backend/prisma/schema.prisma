@@ -7,6 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Status {
+  ACTIVE   
+  DRAFT    
+  DELETED
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
+
 // ==========================================
 // PHÂN HỆ 1: RBAC (ROLE-BASED ACCESS CONTROL)
 // ==========================================
@@ -27,7 +40,8 @@ model User {
   userRoles      UserRole[]
   examAttempts   ExamAttempt[]
   userWeaknesses UserWeakness[]
-
+  exams Exam[]
+  
   @@index([deletedAt])
   @@map("users")
 }
@@ -91,19 +105,23 @@ model LicenseCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
   minAge      Int       @default(18) @map("min_age")
-  
-  questionLinks   QuestionLicenseCategory[]
-  examMatrix      ExamMatrix?
-  examAttempts    ExamAttempt[]
+  orderIndex   Int       @default(0) @map("order_index") 
 
+  questionLinks   QuestionLicenseCategory[]
+  examMatrix      ExamMatrix[]
+  examAttempts    ExamAttempt[]
+  exams       Exam[]
+
+  @@index([id])
   @@map("license_categories")
 }
 
 model Chapter {
   id          String    @id @default(uuid()) @db.VarChar(36)
-  name        String    @db.VarChar(255)
-  description String?   @db.Text // Lưu mô tả chi tiết của chương
-  orderIndex  Int       @default(0) @map("order_index") // Thứ tự hiển thị (Của Cậu Vàng đây)
+  name        String    @db.VarChar(255) @unique
+  description String?   @db.Text 
+  code        String     @unique
+  orderIndex  Int       @default(0) @map("order_index") 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -111,10 +129,10 @@ model Chapter {
   // Quan hệ
   questions      Question[]
   userWeaknesses UserWeakness[]
-
+  examMatrixDetails  ExamMatrixDetail[]
+  
   @@map("chapters")
 }
-
 
 model Question {
   id              String    @id @default(uuid()) @db.VarChar(36)
@@ -126,13 +144,17 @@ model Question {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
+  status          Status    @map("status")
+  indexNumber     Int      @map("index_number")
 
   chapter        Chapter                   @relation(fields: [chapterId], references: [id])
   answers        Answer[]
   licenseLinks   QuestionLicenseCategory[]
   aiExplanation  AiExplanation?
   attemptDetails AttemptDetail[]
+  examQuestions   ExamQuestion[]
 
+  @@index([indexNumber])
   @@index([chapterId])
   @@map("questions")
 }
@@ -185,20 +207,81 @@ model QuestionArchive {
 // ==========================================
 
 model ExamMatrix {
-  id                String   @id @default(uuid()) @db.VarChar(36)
-  licenseCategoryId String   @unique @map("license_category_id") @db.VarChar(36)
-  totalQuestions    Int      @map("total_questions")
-  passingScore      Int      @map("passing_score")
-  durationMinutes   Int      @map("duration_minutes")
-  rulesConfig       Json     @map("rules_config")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                String       @id @default(uuid()) @db.VarChar(36)
+  licenseCategoryId String       @map("license_category_id") @db.VarChar(36)
+  name              String       @db.VarChar(100)
+  isDefault         Boolean      @default(false) @map("is_default")
+  totalQuestions    Int          @map("total_questions")
+  passingScore      Int          @map("passing_score")
+  durationMinutes   Int          @map("duration_minutes")
+  minCriticalQuestions Int       @default(1) @map("min_critical_questions") 
+  createdAt         DateTime  @map("created_at")
+  updatedAt         DateTime  @map("updated_at")
   deletedAt         DateTime? @map("deleted_at")
 
-  licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
-
+  licenseCategory   LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
+  details           ExamMatrixDetail[]
+  exams             Exam[]
+  @@index([licenseCategoryId])  
   @@map("exam_matrices")
 }
+
+model ExamMatrixDetail {
+  id            String     @id @default(uuid()) @db.VarChar(36)
+  examMatrixId  String     @map("exam_matrix_id") @db.VarChar(36)
+  chapterId     String     @map("chapter_id") @db.VarChar(36)
+  percentage    Int        @map("percentage")
+  examMatrix    ExamMatrix @relation(fields: [examMatrixId], references: [id], onDelete: Cascade)
+  chapter       Chapter    @relation(fields: [chapterId], references: [id])
+
+  @@unique([examMatrixId, chapterId])
+  @@map("exam_matrix_details")
+}
+
+model Exam {
+  id                   String         @id @default(uuid()) @db.VarChar(36)
+  name                 String         @db.VarChar(100)
+  userId               String         @map("user_id") @db.VarChar(36)
+  examMatrixId         String?        @map("exam_matrix_id") @db.VarChar(36)
+  licenseCategoryId    String         @map("license_category_id") @db.VarChar(36)
+    
+  totalQuestions       Int            @map("total_questions")
+  passingScore         Int            @map("passing_score")
+  durationMinutes      Int            @map("duration_minutes")
+  minCriticalQuestions Int            @map("min_critical_questions")
+
+  status               ExamStatus     @default(PUBLISHED)
+  score                Int            @default(0)
+  isPassed             Boolean        @default(false)
+  
+  startedAt            DateTime       @default(now()) @map("started_at")
+  endedAt              DateTime?      @map("ended_at")
+  deletedAt            DateTime?      @map("deleted_at")
+
+  user                 User            @relation(fields: [userId], references: [id])
+  examMatrix           ExamMatrix?      @relation(fields: [examMatrixId], references: [id])
+  licenseCategory      LicenseCategory @relation(fields: [licenseCategoryId], references: [id]) 
+  questions            ExamQuestion[]
+  @@index([userId, status])
+  @@map("exams")
+}
+
+model ExamQuestion {
+  examId        String   @map("exam_id") @db.VarChar(36)
+  questionId    String   @map("question_id") @db.VarChar(36)
+
+  correctAnswer Int      @map("correct_answer") 
+  isCritical    Boolean  @default(false) @map("is_critical") 
+  indexNumber   Int      @map("index_number")
+
+  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question      Question @relation(fields: [questionId], references: [id])
+
+  @@index([indexNumber])
+  @@id([examId, questionId])
+  @@map("exam_questions")
+}
+
 
 // ==========================================
 // PHÂN HỆ 4: LỊCH SỬ THI (EXAM EXECUTION)
@@ -266,4 +349,19 @@ model UserWeakness {
 
   @@index([userId])
   @@map("user_weaknesses")
+}
+
+model ImportJob {
+  id                String   @id @default(uuid())
+  fileName          String   @map("file_name")
+  totalSize         Int      @map("total_size")
+  totalChunks       Int      @map("total_chunks") // Chính là expectedChunks
+  chunkSizeLimit    Int      @map("chunk_size_limit") // Giới hạn mỗi mảnh
+  status            String
+  resultData        Json?    @map("result_data")
+  expiresAt         DateTime @map("expires_at") // Thời gian hết hạn folder /temp/
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("import_jobs")
 }

@@ -1,81 +1,148 @@
 import { User } from '@/types/user.type';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
 
+/**
+ * Interface cho Payload của JWT (Khớp với Backend của ông)
+ */
+interface JwtPayload {
+  userId: string;
+  roles: string[];
+  permissions: string[];
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Định nghĩa cấu trúc State của User Store
+ */
 interface UserState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  permissions: string[];
+  _hasHydrated: boolean; // Flag kiểm tra Zustand đã load xong từ LocalStorage chưa
 
   // Actions
-  /**
-   * @description Thiết lập toàn bộ thông tin xác thực sau khi Login.
-   */
-  setAuth: (user: User | null, accessToken: string | null, refreshToken: string | null) => void;
-
-  /**
-   * @description Cập nhật chỉ cặp Token (Dùng cho logic Silent Refresh).
-   */
-  setTokens: (accessToken: string | null, refreshToken: string | null) => void;
-
-  /**
-   * @description Xóa sạch dữ liệu (Dùng khi Logout hoặc Token hết hạn hoàn toàn).
-   */
+  setAuth: (user: User | null, access: string | null, refresh: string | null) => void;
+  setTokens: (access: string | null, refresh: string | null) => void;
+  setUser: (user: User | null) => void;
+  setHasHydrated: (state: boolean) => void;
   logout: () => void;
 }
 
 /**
- * User Store: Quản lý trạng thái người dùng và Token toàn cục.
- * Tích hợp Persist để lưu trữ bền vững tại LocalStorage.
+ * Helper: Giải mã quyền từ Token (Dùng để khởi tạo Store đồng bộ)
  */
+const getPermissionsFromToken = (token: string | undefined): string[] => {
+  if (!token) return [];
+  try {
+    const decoded = jwtDecode<JwtPayload>(token);
+    return decoded.permissions || [];
+  } catch {
+    return [];
+  }
+};
+
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
+      // --- INITIAL STATE (Đọc trực tiếp từ Cookies để tránh mất Auth khi F5) ---
+      user: null, // Sẽ được lấy từ LocalStorage qua persist
+      accessToken: Cookies.get('accessToken') || null,
+      refreshToken: Cookies.get('refreshToken') || null,
+      permissions: getPermissionsFromToken(Cookies.get('accessToken')),
+      _hasHydrated: false,
 
+      // --- ACTIONS ---
+
+      /**
+       * Thiết lập Auth sau khi Login thành công
+       */
       setAuth: (user, accessToken, refreshToken) => {
-        // Chốt chặn bảo vệ: Nếu token là chuỗi "undefined" hoặc "null" thì hủy bỏ
-        if (!accessToken || accessToken === 'undefined' || accessToken === 'null') {
-          console.error("Store Error: Cố gắng lưu AccessToken không hợp lệ.");
-          return;
+        if (!accessToken) return;
+
+        const permissions = getPermissionsFromToken(accessToken);
+
+        // Lưu vào Cookies (Client-side access)
+        Cookies.set('accessToken', accessToken, { expires: 7, secure: true, sameSite: 'strict' });
+        if (refreshToken) {
+          Cookies.set('refreshToken', refreshToken, { expires: 30, secure: true, sameSite: 'strict' });
         }
 
-        set({
-          user,
-          accessToken,
-          refreshToken,
-        });
+        set({ user, accessToken, refreshToken, permissions });
       },
 
+      /**
+       * Cập nhật Tokens mới (Silent Refresh)
+       */
       setTokens: (accessToken, refreshToken) => {
-        if (!accessToken || accessToken === 'undefined') return;
-        
-        set({
-          accessToken,
-          refreshToken,
-        });
+        if (!accessToken) return;
+
+        const permissions = getPermissionsFromToken(accessToken);
+
+        Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'strict' });
+        if (refreshToken) {
+          Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'strict' });
+        }
+
+        set({ accessToken, refreshToken, permissions });
       },
 
+      /**
+       * Cập nhật thông tin User (Update Profile)
+       */
+      setUser: (user) => set({ user }),
+
+      /**
+       * Cập nhật trạng thái Hydration
+       */
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+
+      /**
+       * Logout: Xóa sạch dấu vết
+       */
       logout: () => {
-        // 1. Reset trạng thái trong RAM
-        set({ user: null, accessToken: null, refreshToken: null });
-        
-        // 2. Xóa sạch dấu vết trong LocalStorage
+        Cookies.remove('accessToken');
+        Cookies.remove('refreshToken');
+
+        // Reset state về mặc định
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          permissions: []
+        });
+
+        // Phát sự kiện để các Tab khác cũng Logout theo (nếu mở nhiều tab)
+        localStorage.setItem('logout-event', Date.now().toString());
+
+        // Xóa LocalStorage của Zustand
         useUserStore.persist.clearStorage();
-        localStorage.removeItem('user-storage');
       },
     }),
     {
-      name: 'user-storage', // Tên key trong LocalStorage
+      name: 'user-storage', // Key lưu trong LocalStorage
       storage: createJSONStorage(() => localStorage),
-      // Chỉ lưu những trường này xuống đĩa, tránh lưu các hàm (actions)
+
+      /**
+       * CHỈ PERSIST DỮ LIỆU CẦN THIẾT
+       * Tokens và Permissions đã được đọc từ Cookies lúc khởi tạo, 
+       * nên ta chỉ cần persist 'user' để hiển thị UI (Tên, Ảnh).
+       */
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        // Không cần lưu accessToken/permissions ở đây vì đã có Cookies lo
       }),
+
+      /**
+       * Xử lý sau khi Hydration xong
+       */
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

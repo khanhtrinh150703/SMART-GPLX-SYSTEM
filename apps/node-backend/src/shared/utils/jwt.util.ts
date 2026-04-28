@@ -1,8 +1,8 @@
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
-import { TokenPayload } from '../types/auth.types';
 import { AppError } from '../errors/error-app';
 import { ErrorCode } from '../errors/error-codes';
 import { env } from 'node:process';
+import { TokenPayload } from '../types/auth.types';
 
 // 1. TẬP TRUNG CẤU HÌNH: Muốn đổi Secret hay Thời gian thì sửa ở đây
 const JWT_CONFIG = {
@@ -26,30 +26,56 @@ export const jwtUtil = {
     const secret = JWT_CONFIG[type].getSecret();
     if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
 
-    return jwt.sign({ ...payload }, secret, {
+    const dataToSign = {
+      userId: payload.userId,
+      roles: payload.roles,
+      permissions: payload.permissions,
+      jti: payload.jti,
+      deviceId: payload.deviceId
+    };
+
+    return jwt.sign(dataToSign, secret, {
       expiresIn: expiresIn as SignOptions['expiresIn']
     });
   },
 
+
   /** * 🛡️ HÀM LÕI DUY NHẤT ĐỂ CHECK LỖI (VERIFY)
-   * Đây là chỗ duy nhất có try-catch để cậu chỉnh sửa!
-   */
+     * Đây là chỗ duy nhất có try-catch để cậu chỉnh sửa!
+     */
   private_verify(type: TokenType, token: string): TokenPayload {
     const secret = JWT_CONFIG[type].getSecret();
     if (!secret) throw new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR);
 
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-    
-    // Đúc dữ liệu vào class duy nhất tại đây
-    return new TokenPayload({
-      userId: decoded.userId,
-      role: decoded.role,
-      jti: decoded.jti,
-      deviceId: decoded.deviceId,
-      exp: decoded.exp,
-      iat: decoded.iat
-    });
+    try {
+      // 1. Cố gắng giải mã (Nếu token dị dạng hoặc hết hạn, nó sẽ văng lỗi ngay dòng này)
+      const decoded = jwt.verify(token, secret) as JwtPayload;
+      // 2. Đúc dữ liệu vào class duy nhất tại đây
+      return new TokenPayload({
+        userId: decoded.userId,
+        roles: decoded.roles || decoded.role || [],
+        jti: decoded.jti,
+        permissions: decoded.permissions,
+        deviceId: decoded.deviceId,
+        exp: decoded.exp,
+        iat: decoded.iat
+      });
 
+    } catch (error) {
+      // 3. BẮT LỖI TỪ THƯ VIỆN JWT VÀ ÉP THÀNH LỖI APP ERROR (MÃ 401)
+      if (error instanceof jwt.TokenExpiredError) {
+        // Lỗi: Token đã hết hạn (Có thể bạn có mã ErrorCode.AUTH.TOKEN_EXPIRED riêng)
+        throw new AppError(ErrorCode.AUTH.TOKEN_EXPIRED);
+      }
+
+      if (error instanceof jwt.JsonWebTokenError) {
+        // Lỗi: Token sai chữ ký, token dị dạng (jwt malformed), token bị sửa đổi...
+        throw new AppError(ErrorCode.AUTH.INVALID_TOKEN);
+      }
+
+      // Nếu là các lỗi hệ thống khác thì ném ra ngoài bình thường
+      throw error;
+    }
   },
 
   // ============================================================

@@ -2,50 +2,52 @@
 
 import React, { useMemo } from "react";
 import { GenericTable } from "@/components/common/Generic-Table/GenericTable";
-import { License } from "@/components/features/license/components/license.config";
 import { getLicenseColumns } from "@/components/features/license/components/license-columns";
+import { LicenseCategory } from "@/components/features/license/types/license-category.types";
 
 /**
- * LicenseTableProps - Thuộc tính cho bảng quản lý hạng bằng lái
- * @param {License[]} licenses - Danh sách hạng bằng (A1, B2...)
- * @param {boolean} isLoading - Trạng thái đang tải dữ liệu
+ * LicenseTableProps - Thêm page và limit vào Interface
  */
 interface LicenseTableProps {
-  licenses: License[];
+  licenses: LicenseCategory[];
   isLoading: boolean;
-  onEdit: (license: License) => void;
-  onDelete: (license: License) => void;
-  onRestore: (license: License) => void;
+  page: number;   // <-- 1. THÊM DÒNG NÀY
+  limit: number;  // <-- 2. THÊM DÒNG NÀY
+  onEdit: (license: LicenseCategory) => void;
+  onDelete: (license: LicenseCategory) => void;
+  onRestore: (license: LicenseCategory) => void;
+  sortConfig?: { key: keyof LicenseCategory; direction: "asc" | "desc" | null };
+  onSort?: (key: keyof LicenseCategory) => void;
 }
 
-/**
- * LicenseTable - Linh kiện hiển thị bảng danh sách hạng bằng lái
- * Sử dụng GenericTable để đảm bảo tính nhất quán về giao diện Emerald.
- */
-export const LicenseTable = ({ 
-  licenses, 
-  isLoading, 
-  onEdit, 
-  onDelete, 
-  onRestore 
+export const LicenseTable = ({
+  licenses,
+  isLoading,
+  page,    // <-- 3. NHẬN PAGE Ở ĐÂY
+  limit,   // <-- 4. NHẬN LIMIT Ở ĐÂY
+  onEdit,
+  onDelete,
+  onRestore,
+  sortConfig,
+  onSort
 }: LicenseTableProps) => {
-  
-  /**
-   * Memoize columns: Tránh việc tính toán lại cấu hình cột mỗi khi re-render
-   * (English: Optimize performance by memoizing column definitions)
-   */
+
   const columns = useMemo(
-    () => getLicenseColumns(onEdit, onDelete, onRestore),
-    [onEdit, onDelete, onRestore]
+    // 5. TRUYỀN page và limit vào hàm getLicenseColumns
+    () => getLicenseColumns(onEdit, onDelete, onRestore, page, limit),
+    // 6. ĐỪNG QUÊN thêm page và limit vào dependencies để STT cập nhật khi chuyển trang
+    [onEdit, onDelete, onRestore, page, limit], 
   );
 
   return (
-    <GenericTable<License>
+    <GenericTable<LicenseCategory>
       columns={columns}
       data={licenses}
       isLoading={isLoading}
-      // Giữ bg-transparent để hòa quyện với lớp Glassmorphism của container cha
       className="bg-transparent"
+      sortConfig={sortConfig}
+      onSort={onSort}
+      onRowClick={onEdit}
     />
   );
 };

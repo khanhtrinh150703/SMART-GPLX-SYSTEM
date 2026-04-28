@@ -12,7 +12,8 @@ import { Alert } from "@/components/ui/Alert";
 
 // Logic & Validation
 import { changePasswordSchema, ChangePasswordValues } from "@/lib/validations/user.schema";
-import { userService } from "@/services/user/user.service";
+import { profileService } from "../service/profile.service";
+
 
 interface Props {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
       setMessage(null); // Clear previous message (Xóa thông báo cũ)
 
       // UI -> Service Flow
-      await userService.changePassword(data);
+      await profileService.changePassword(data);
 
       setMessage({
         type: "success",

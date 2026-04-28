@@ -1,10 +1,10 @@
-// src/components/common/Errors/GlobalErrorView.tsx
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
-import Button from '@/components/ui/Button/Button';
-import { errorVariants, iconBoxVariants } from './global-error.variants';
+import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
+import { containerVariants, iconBoxVariants } from "./global-error.variants";
+import { HomeNavigationButton } from "../Navigation/HomeNavigationButton";
+import { RetryButton } from "../Navigation/RetryButton";
 
 interface GlobalErrorViewProps {
   error: Error & { digest?: string };
@@ -13,55 +13,49 @@ interface GlobalErrorViewProps {
 
 export const GlobalErrorView = ({ error, reset }: GlobalErrorViewProps) => {
   useEffect(() => {
-    // 💡 Tracing Error: Log lỗi ra console hoặc dịch vụ giám sát (Sentry)
+    // 💡 Tracing Error: Truy vết lỗi nghiêm trọng lên console
     console.error("Critical System Error:", error);
   }, [error]);
 
   return (
-    <div className={errorVariants()}>
-      {/* 🧩 Visual Element */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-rose-400 blur-[60px] opacity-10" />
-        <div className={iconBoxVariants()}>
-          <AlertTriangle className="w-12 h-12 text-rose-500" strokeWidth={1.5} />
+    <main className={containerVariants({ layout: "full", theme: "light" })}>
+      
+      {/* 🧩 1. Visual Element - Tone đỏ Rose cảnh báo nguy hiểm */}
+      <div className="relative mb-12">
+        <div className="absolute inset-0 bg-rose-400 blur-[80px] opacity-10 rounded-full" />
+        <div className={iconBoxVariants({ status: "server", size: "xl" })}>
+          <AlertTriangle className="w-16 h-16 text-rose-500 animate-pulse" strokeWidth={1.5} />
         </div>
       </div>
 
-      {/* 📝 Content Section */}
-      <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">
-        Hệ thống gặp sự cố <span className="text-rose-500">(System Failure)</span>
-      </h2>
-      <p className="text-slate-500 max-w-md mb-10 leading-relaxed font-medium">
-        Hệ thống **Smart-GPLX** đang gặp một chút trục trặc kỹ thuật ngoài ý muốn. Đừng lo lắng, tiến trình học tập của bạn vẫn được bảo vệ.
-      </p>
-
-      {/* 🚀 Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Button 
-          variant="primary" // Emerald color từ variant của bạn
-          onClick={() => reset()} 
-          className="px-10 py-4 rounded-2xl gap-2 shadow-emerald-200"
-        >
-          <RefreshCcw className="w-4 h-4" />
-          Thử lại (Retry)
-        </Button>
-        
-        <Button 
-          variant="secondary" // Slate color
-          onClick={() => window.location.href = '/'}
-          className="px-10 py-4 rounded-2xl gap-2"
-        >
-          <Home className="w-4 h-4" />
-          Về trang chủ (Home) 
-        </Button>
+      {/* 📝 2. Content Section */}
+      <div className="space-y-4 max-w-lg flex flex-col items-center text-center">
+        <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+          Hệ thống gặp sự cố <span className="text-rose-500">(System Failure)</span>
+        </h2>
+        <p className="text-slate-500 leading-relaxed font-medium px-4">
+          Hệ thống **Smart-GPLX** đang gặp một trục trặc kỹ thuật ngoài ý muốn. 
+          Đừng lo lắng, dữ liệu của bạn vẫn được bảo vệ an toàn.
+        </p>
       </div>
 
-      {/* 🏷️ Error ID for support */}
+      {/* 🚀 3. Action Buttons - Bộ đôi nút bấm sinh động */}
+      <div className="mt-12 flex flex-col sm:flex-row gap-4">
+        {/* Nút Retry: Chạy hàm reset() của Next.js */}
+        <RetryButton onClick={reset} />
+        
+        {/* Nút Home: Tự động check về Dashboard hoặc Landing */}
+        <HomeNavigationButton variant="secondary" className="border-slate-200 text-slate-600" />
+      </div>
+
+      {/* 🏷️ 4. Support ID: Hiển thị tinh tế ở dưới */}
       {error.digest && (
-        <p className="mt-12 text-[10px] text-slate-300 font-mono uppercase tracking-widest">
-          Error ID: {error.digest}
-        </p>
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none">
+          <p className="text-[10px] text-slate-300 font-mono uppercase tracking-widest bg-slate-100/40 px-3 py-1 rounded-full border border-slate-200/50">
+            Support ID: {error.digest}
+          </p>
+        </div>
       )}
-    </div>
+    </main>
   );
 };

@@ -1,83 +1,54 @@
 import { z } from 'zod';
 
+
 /**
- * licenseSchema - Lược đồ dùng cho việc THÊM MỚI hạng bằng lái.
+ * createLicenseSchema - Lược đồ dùng cho việc THÊM MỚI hạng bằng lái.
  */
-export const licenseSchema = z.object({
-  code: z
-    .string()
-    .min(1, "Mã hạng không được để trống (VD: A1, B2)")
-    .toUpperCase(), // Tự động chuyển code sang viết hoa
-
-  name: z
-    .string()
-    .min(1, "Tên hạng bằng không được để trống")
-    .min(5, "Tên hạng bằng phải ít nhất 5 ký tự"),
-
-  description: z.string().optional(),
-
-  // Sử dụng z.coerce để ép kiểu từ string sang number cho form input
-  minAge: z.coerce
-    .number()
-    .min(16, "Độ tuổi tối thiểu phải từ 16 trở lên"),
-
-  totalQuestions: z.coerce
-    .number()
-    .min(1, "Tổng số câu hỏi phải lớn hơn 0"),
-
-  passingScore: z.coerce
-    .number()
-    .min(1, "Điểm đạt phải lớn hơn 0"),
-
-  testDuration: z.coerce
-    .number()
-    .min(1, "Thời gian thi phải lớn hơn 0"),
-});
-
-
-// 1. Zod Schema: Định nghĩa chuẩn xác 100% theo JSON Payload (Dữ liệu gửi đi) của Backend
 export const createLicenseSchema = z.object({
   name: z
     .string()
-    .min(1, "Tên/Mã hạng không được để trống")
-    .toUpperCase(), // Ép kiểu in hoa (VD: b1 -> B1)
-  
+    .min(1, "Tên hạng không được để trống")
+    .max(10, "Tên hạng quá dài"),
+
+  minAge: z
+    .union([z.number()]) // Chấp nhận cả chuỗi và số ở đầu vào
+    .pipe(z.coerce.number())        // Sau đó mới ép về kiểu number sạch
+    .refine((val) => val >= 18, "Độ tuổi tối thiểu phải từ 18"),
+
   description: z
     .string()
-    .min(1, "Mô tả không được để trống"),
-  
-  minAge: z.coerce
-    .number()
-    .min(16, "Độ tuổi tối thiểu phải từ 16 trở lên"),
+    .min(10, "Mô tả phải có ít nhất 10 ký tự")
+    .max(500, "Mô tả quá dài"),
+  orderIndex: z
+    .union([z.number()])
+    .pipe(z.coerce.number())
+    .refine((val) => val >= 1, "Thứ tự phải lớn hơn 0"),
 });
 
-// Trích xuất Type (Kiểu dữ liệu) để dùng cho Form
 /**
- * licenseEditSchema - Lược đồ dùng cho việc CHỈNH SỬA hạng bằng lái.
- * Yêu cầu khắt khe hơn về mô tả và có thêm trạng thái (Status).
+ * editLicenseSchema - Lược đồ dùng cho việc CHỈNH SỬA hạng bằng lái.
  */
-export const licenseEditSchema = licenseSchema.extend({
-  description: z
-    .string()
-    .min(1, "Mô tả không được để trống")
-    .min(10, "Mô tả phải ít nhất 10 ký tự"),
-
-  status: z.enum(["active", "draft", "deleted"],
-  ),
-}).refine((data) => data.passingScore <= data.totalQuestions, {
-  message: "Điểm đạt không được lớn hơn tổng số câu hỏi",
-  path: ["passingScore"], // Báo lỗi tại trường passingScore
+export const editLicenseSchema = z.object({
+  name: z.string().min(1, "Tên không được để trống"),
+  description: z.string().min(1, "Mô tả không được để trống"),
+  minAge: z
+    .union([z.number()])
+    .pipe(z.coerce.number())
+    .refine((val) => val >= 18, "Độ tuổi tối thiểu phải từ 18"),
+  status: z.enum(["active", "inactive", "deleted"]),
+  orderIndex: z
+    .union([z.number()])
+    .pipe(z.coerce.number())
+    .refine((val) => val >= 1, "Thứ tự phải lớn hơn 0"),
 });
 
 /** * --- ĐỊNH NGHĨA KIỂU DỮ LIỆU (TYPES) ---
- * Sử dụng z.input và z.output để tách biệt dữ liệu Form thô và dữ liệu API sạch.
+ * Sử dụng z.infer để lấy kiểu dữ liệu "sạch" (đã ép kiểu) cho cả Form và API.
  */
 
-// 1. Kiểu dữ liệu ĐẦU VÀO (Dùng cho useForm)
-export type LicenseFormValues = z.input<typeof licenseSchema>;
-export type LicenseFormEditValues = z.input<typeof licenseEditSchema>;
+// Kiểu dữ liệu dùng cho biểu mẫu (Form Values)
+export type LicenseFormEditValues = z.infer<typeof editLicenseSchema>;
 
-// 2. Kiểu dữ liệu ĐẦU RA (Dùng cho API call sau khi handleSubmit thành công)
-export type LicenseOutputValues = z.output<typeof licenseSchema>;
-export type LicenseEditOutputValues = z.output<typeof licenseEditSchema>;
-export type CreateLicensePayload = z.input<typeof createLicenseSchema>;
+// Kiểu dữ liệu dùng cho Payload gửi lên API (API Payloads)
+export type UpdateLicensePayload = z.infer<typeof editLicenseSchema>;
+export type CreateLicensePayload = z.infer<typeof createLicenseSchema>;

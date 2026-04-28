@@ -20,23 +20,28 @@ jobs:
     steps:
       - name: 🛰️ Checkout Repository
         uses: actions/checkout@v4
-
+        
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          # Trỏ về file lock ở gốc dự án
-          cache-dependency-path: package-lock.json
+          # Nếu package-lock.json nằm ở gốc thì để nguyên, 
+          # nếu nằm trong thư mục frontend thì trỏ đúng vào đó
+          cache-dependency-path: "**/package-lock.json"
 
-      - name: 📥 Install Dependencies (Cài đặt từ Gốc)
-        run: npm ci --include=optional
+      - name: 📥 Install Dependencies
+        # Loại bỏ hoàn toàn 'npm cache clean'
+        # Thêm --prefer-offline để ưu tiên dùng hàng trong cache thay vì tải mới
+        run: npm ci --include=optional --ignore-scripts --prefer-offline
 
       - name: 🔍 Lint Check
-        # Chạy lint riêng cho frontend từ thư mục gốc
         run: npm run lint:fe
 
-      - name: 🏗️ Build App (Xây dựng ứng dụng)
+      - name: 🏗️ Build App
+        # Sử dụng biến môi trường để Next.js không thu thập dữ liệu rác, giúp build nhanh hơn
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
         run: npm run build -w nextjs-frontend
 
   # ==========================================
