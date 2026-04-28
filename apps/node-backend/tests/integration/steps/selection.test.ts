@@ -5,7 +5,7 @@ import app from '@/app';
 import {
     AUTH_ENDPOINTS,
     CHAPTER_ENDPOINTS,
-    ErrorCode, fakeLongToken,
+    ErrorCode, EXAM_MATRIX_ENDPOINTS, fakeLongToken,
     LICENSE_ENDPOINTS,
     ROLE_ENDPOINTS
 } from '../../config/index'
@@ -58,15 +58,35 @@ export const selectionSteps = (
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
             });
+
+            it('✅ Nên lấy danh sách ma trận đề thi (Exam Matrices) thành công', async () => {
+                // 1. Thực hiện request GET để lấy danh sách
+                const res = await request(app)
+                    .get(EXAM_MATRIX_ENDPOINTS.BASE)
+                    .set(getAuthHeader(getAdminToken()));
+
+                // 2. Kiểm tra mã trạng thái HTTP
+                expect(res.status).toBe(200);
+
+                // 3. Kiểm tra cấu trúc phản hồi
+                expect(res.body.success).toBe(true);
+                expect(Array.isArray(res.body.data.data)).toBe(true); // Kiểm tra xem có trả về mảng dữ liệu không
+
+                // Kiểm tra xem danh sách có chứa dữ liệu (nếu đã tạo ở các bước trước)
+                if (res.body.data.data.length > 0) {
+                    expect(res.body.data.data[0]).toHaveProperty('name');
+                    expect(res.body.data.data[0]).toHaveProperty('licenseCategoryId');
+                }
+            });
         });
 
         // --- NHÓM TEST CHO USER THƯỜNG (403 FORBIDDEN) ---
         describe('🚫 Quyền User: Bị từ chối (403 Forbidden)', () => {
 
 
-            it('❌ Nên trả về 403 khi khi User thường lấy danh sách chức danh', async () => {
+            it('❌ Nên trả về 403 khi khi User thường lấy danh sách ma trận đề thi', async () => {
                 const res = await request(app)
-                    .get(ROLE_ENDPOINTS.SELECTION)
+                    .get(EXAM_MATRIX_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));
 
                 expect(res.status).toBe(403);
@@ -115,6 +135,12 @@ export const selectionSteps = (
         it('❌ Nên trả về 401 khi truy cập API mà không gửi Token', async () => {
             const res = await request(app)
                 .get(LICENSE_ENDPOINTS.SELECTION)
+            expect(res.status).toBe(401);
+        });
+
+        it('❌ Nên trả về 401 khi truy cập API mà không gửi Token', async () => {
+            const res = await request(app)
+                .get(EXAM_MATRIX_ENDPOINTS.SELECTION)
             expect(res.status).toBe(401);
         });
 

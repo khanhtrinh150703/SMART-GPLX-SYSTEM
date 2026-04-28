@@ -2,7 +2,7 @@ import { ExamStatus } from "@prisma/client";
 
 export interface IExamQuestionResponse {
   questionId: string;
-  indexNumber: number; 
+  indexNumber: number;
   chapterId?: string;
   chapterName?: string;
   isCritical: boolean;
@@ -17,6 +17,8 @@ export interface IExamResponse {
   totalQuestions: number;
   durationMinutes: number;
   startedAt: Date;
+  userName?: string;
+  licenseCategoryName?: string;
   // endedAt: Date | null;
   status: ExamStatus;
   questions: IExamQuestionResponse[];

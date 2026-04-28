@@ -7,7 +7,8 @@ export interface QuestionFilterForm {
   chapterId: string;
   licenseCategoryIds: string;
   difficultyLevel: string;
-  isCritical: string; // Sử dụng string "true"/"false" để khớp với URL search params
+  isCritical: string;
+  indexNumber: string;
 }
 
 export interface QuestionFilterProps {

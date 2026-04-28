@@ -48,7 +48,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
      * @returns {Promise<SelectionResponseDto[]>} Mảng các đối tượng chứa ID và tên hạng bằng.
      */
     public async getLicenseSelections(): Promise<SelectionResponseDto[]> {
-        const licenses = await this._repo.findAll();
+        const licenses = await this._cacheService.getAllCategories();
         return LicenseCategoryMapper.toSelectionList(licenses);
     }
 
@@ -95,6 +95,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
             name: dto.name,
             description: dto.description,
             minAge: dto.minAge,
+            orderIndex: dto.orderIndex,
         });
 
         await this._repo.createLicenseCategory(category);
@@ -107,7 +108,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
      * @param {UpdateLicenseCategoryRequestDTO} dto - Dữ liệu cập nhật từ Client.
      * @returns {Promise<void>}
      */
-    public async updateCategory(dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse> {
+    public async updateCategory(id: string, dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse> {
 
         // 1. Kiểm tra sự tồn tại của hạng bằng lái
         const category = await this._repo.findById(dto.id);
@@ -119,15 +120,15 @@ export class LicenseCategoryService implements ILicenseCategoryService {
         if (category.name !== dto.name) {
             const existingName = await this._repo.findByName(dto.name);
             if (existingName) {
-                throw new AppError(ErrorCode.LICENSE.ALREADY_EXISTS);
+                throw new AppError(ErrorCode.LICENSE.NAME_ALREADY_EXISTS);
             }
         }
-
+        
         // 3. Sử dụng Rich Domain Model để cập nhật logic bên trong Entity
-        category.updateDetails(dto.name, dto.description, dto.minAge);
+        category.updateDetails(dto.name, dto.description, dto.minAge, dto.orderIndex);
 
         // 4. Lưu lại thay đổi thông qua Repository
-        await this._repo.updateLicenseCategory(category);
+        await this._repo.updateLicenseCategory(id, category);
         this._cacheService.refresh();
         return LicenseCategoryMapper.toResponse(category);
     }
@@ -156,7 +157,7 @@ export class LicenseCategoryService implements ILicenseCategoryService {
 
         // 3. Quyết định phương thức xóa dựa trên trạng thái dữ liệu
         if (totalRelated > 0) {
-            category.softDelete(); 
+            category.softDelete();
             await this._repo.softDelete(id); // Đồng bộ vào Database
 
             await this._cacheService.refresh();

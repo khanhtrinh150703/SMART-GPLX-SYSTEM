@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authRoutes, roleRoutes, userRoutes } from './identity';
-import { chapterRoutes, licenseCategoryRoutes, questionRoutes } from './exam-mgmt';
+import { chapterRoutes, examRoutes, licenseCategoryRoutes, questionRoutes } from './exam-mgmt';
 import { importRoutes } from './integration';
-import { examMatrixRoutes, examRoutes } from './exam-session';
+import { examMatrixRoutes} from './exam-session';
 
 
 /**

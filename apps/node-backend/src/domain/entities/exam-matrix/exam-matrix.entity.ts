@@ -62,6 +62,7 @@ export class ExamMatrix extends BaseEntity<IExamMatrixProps> {
      * Đây là nơi duy nhất được phép thay đổi các chỉ số này.
      */
     public updateConfig(payload: {
+        name: string;
         totalQuestions: number;
         passingScore: number;
         durationMinutes: number;
@@ -70,6 +71,7 @@ export class ExamMatrix extends BaseEntity<IExamMatrixProps> {
         isDefault: boolean;
     }): void {
         // 1. Cập nhật dữ liệu vào _props
+        this._props.name = payload.name;
         this._props.totalQuestions = payload.totalQuestions;
         this._props.passingScore = payload.passingScore;
         this._props.durationMinutes = payload.durationMinutes;

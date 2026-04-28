@@ -12,3 +12,7 @@ export type ChapterRelatedCount = {
   matrixDetails: number;
   userWeaknesses: number;
 };
+
+export type ExamRelatedCount = {
+  questions: number;
+}

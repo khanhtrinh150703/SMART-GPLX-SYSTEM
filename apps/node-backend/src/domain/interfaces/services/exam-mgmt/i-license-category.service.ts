@@ -41,10 +41,11 @@ export interface ILicenseCategoryService {
 
   /**
    * @description Cập nhật thông tin hạng bằng lái.
+   * @param {string} id - ID của hang.
    * @param {UpdateLicenseCategoryRequestDTO} dto - Dữ liệu cập nhật.
    * @returns {Promise<LicenseCategoryResponse>}
    */
-  updateCategory(dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse>;
+  updateCategory(id: string, dto: UpdateLicenseCategoryRequestDTO): Promise<LicenseCategoryResponse>;
 
   /**
    * @description Khôi phục hạng bằng lái đã bị xóa mềm.

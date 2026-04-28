@@ -85,14 +85,12 @@ export class LicenseCategoryController {
    */
   public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const id = req.params.id as string;
-    const { name, description, minAge } = req.body;
+    const { name, description, minAge, orderIndex } = req.body;
 
     // Sử dụng DTO để validate dữ liệu cập nhật
-    const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description, minAge });
+    const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description, minAge, orderIndex });
     dto.isValid();
-
-    const result = await this._licenseService.updateCategory(dto);
-
+    const result = await this._licenseService.updateCategory(id, dto);
     Result.ok(
       res,
       result,

@@ -128,6 +128,15 @@ export const getQuestionColumns = (
     className: "w-32",
   },
 
+  {
+    header: "Mã số",
+    sortable: true,
+    sortKey: "indexNumber",
+    accessor: (item) => (
+      <span className="font-bold text-slate-700">#{item.indexNumber}</span>
+    ),
+    className: "w-20",
+  },
   // 7. Cột Trạng thái
   TableColumnFactory.status<Question>(),
 

@@ -13,7 +13,9 @@ export const questionFormSchema = z.object({
   content: z.string().min(10, "Nội dung câu hỏi phải từ 10 ký tự (Min 10 chars)"),
   chapterId: z.string().uuid("Vui lòng chọn chủ đề (Please select a chapter)"),
   licenseCategoryIds: z.array(z.string()).min(1, "Chọn ít nhất 1 hạng bằng"),
-
+  indexNumber: z.coerce.number()
+  .min(1, "Số thứ tự phải lớn hơn 0")
+  .refine((val) => !isNaN(val), { message: "Số thứ tự phải là số" }),
   // XÓA .default() Ở ĐÂY. Ép kiểu chuẩn là number và boolean
   difficultyLevel: z.number(),
   isCritical: z.boolean(),
@@ -58,5 +60,5 @@ export const editQuestionFormSchema = questionFormSchema.extend({
 });
 
 // Kiểu dữ liệu giờ đây đã sạch bong, không còn độ trễ giữa Input/Output
-export type QuestionFormValues = z.infer<typeof questionFormSchema>;
-export type EditQuestionFormValues = z.infer<typeof editQuestionFormSchema>;
+export type QuestionFormValues = z.input<typeof questionFormSchema>;
+export type EditQuestionFormValues = z.input<typeof editQuestionFormSchema>;

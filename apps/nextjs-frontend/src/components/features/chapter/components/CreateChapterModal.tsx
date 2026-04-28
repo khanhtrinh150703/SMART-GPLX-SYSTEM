@@ -86,16 +86,16 @@ export default function CreateChapterModal({
           icon={Hash}
           type="number"
           placeholder="VD: 1"
-          {...register("orderIndex" , { valueAsNumber: true } )}
+          {...register("orderIndex", { valueAsNumber: true })}
           error={errors.orderIndex?.message}
           disabled={isLoading}
         />
 
         <FormField
           label="Mã số (Code)"
-          icon={Fingerprint} 
+          icon={Fingerprint}
           placeholder="VD: CH01"
-          {...register("code")} 
+          {...register("code")}
           error={errors.code?.message}
           disabled={isLoading}
         />

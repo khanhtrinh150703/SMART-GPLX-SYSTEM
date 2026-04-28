@@ -52,5 +52,15 @@ export const ENDPOINTS = {
     UPLOADCHUNK: "/import/upload-chunk",
     COMPLETE: "/import/complete",
     STATUS: "/import/status",
+  },
+  EXAM_MATRICES: {
+    BASE: '/exam-matrices',
+    DETAILS: (id: string) => `/exam-matrices/${id}`,
+    RESTORE: (id: string) => `/exam-matrices/${id}/restore`,
+  },
+
+  EXAM: {
+    BASE: '/exams',
+    GENERATION: "/exams/generate-auto",
   }
 };

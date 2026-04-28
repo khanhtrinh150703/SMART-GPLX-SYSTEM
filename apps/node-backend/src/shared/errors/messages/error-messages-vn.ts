@@ -72,7 +72,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.EXAM.NOT_FOUND]: 'Thông tin bài thi không tồn tại trên hệ thống.',
     [ErrorCode.EXAM.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp và ghi nhận kết quả trước đó.',
     [ErrorCode.EXAM.EXPIRED]: 'Đã hết thời gian làm bài. Thao tác nộp bài không còn hiệu lực.',
-
+    
     // --- Nhóm 5xx: Infrastructure/AI (Lỗi hệ thống & AI) ---
     [ErrorCode.EXAM.AI_PROCESSING_ERROR]: 'Hệ thống AI gặp sự cố trong quá trình xử lý dữ liệu. Vui lòng thử lại sau.',
 
@@ -90,6 +90,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 'Vui lòng nhập mô tả.',
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 'Dữ liệu không đúng định dạng yêu cầu.',
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu không hợp lệ.',
+    [ErrorCode.VALIDATION.CODE_REQUIRED]: 'Mã (Code) không được để trống.',
 
     // --- VALIDATION (1xx: Identity) ---
     [ErrorCode.VALIDATION.EMAIL_INVALID]: 'Địa chỉ email không hợp lệ (ví dụ: name@example.com).',
@@ -107,6 +108,16 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     // --- VALIDATION (3xx: Specific) ---
     [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số nguyên.',
     [ErrorCode.VALIDATION.AGE_INVALID]: 'Độ tuổi không hợp lệ (phải từ 18 tuổi trở lên).',
+    
+    // --- VALIDATION (4xx: Exam & Training) ---
+    [ErrorCode.VALIDATION.LICENSE_CATEGORY_REQUIRED]: 'Vui lòng chọn hạng bằng lái (A1, B2, ...).',
+    [ErrorCode.VALIDATION.EXAM_QUESTIONS_EMPTY]: 'Danh sách câu hỏi không được để trống.',
+    [ErrorCode.VALIDATION.INVALID_DURATION]: 'Thời gian làm bài phải là số nguyên dương.',
+    [ErrorCode.VALIDATION.PASSING_SCORE_TOO_HIGH]: 'Điểm đạt không được vượt quá tổng số câu hỏi của đề thi.',
+    [ErrorCode.VALIDATION.MATRIX_ID_REQUIRED]: 'Không tìm thấy mã ma trận cấu hình đề thi.',
+    [ErrorCode.VALIDATION.USER_ID_REQUIRED]: 'Thông tin thí sinh (User ID) không hợp lệ.',
+    [ErrorCode.VALIDATION.MIN_CRITICAL_INVALID]: 'Số câu điểm liệt yêu cầu không được nhỏ hơn 0 hoặc vượt quá tổng số câu.',
+    [ErrorCode.VALIDATION.RESTORE_FAILED_DUPLICATE]: 'Không thể khôi phục vì dữ liệu này đã tồn tại trong hệ thống.',
 
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
@@ -154,6 +165,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 'Một chương không được xuất hiện hai lần trong cùng một ma trận.',
     [ErrorCode.MATRIX.NOT_FOUND]: 'Không tìm thấy thông tin ma trận đề thi này.',
     [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 'Không thể khôi phục vì tên ma trận này đã tồn tại trong hệ thống.',
+    [ErrorCode.MATRIX.INVALID_DURATION]: 'Thời lượng làm bài phải lớn hơn 0 phút.',
+    [ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS]: 'Tổng số câu hỏi của ma trận phải lớn hơn 0.',
+    [ErrorCode.MATRIX.CHAPTER_ID_REQUIRED]: 'ID chương học trong danh sách chi tiết không được để trống.',
+
 
     // Nhóm EXCEL
     [ErrorCode.EXCEL.WORKSHEET_NOT_FOUND]: 'Không tìm thấy Worksheet yêu cầu trong file Excel.',
@@ -185,4 +200,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.ACTIVE_SESSION.INVALID_TOKEN]: 'Mã xác thực phiên không hợp lệ.',
     [ErrorCode.ACTIVE_SESSION.DEVICE_MISMATCH]: 'Thông tin thiết bị không khớp với phiên hiện tại.',
     [ErrorCode.ACTIVE_SESSION.INVALID_EXPIRATION_TIME]: 'Thời gian hết hạn phải lớn hơn 0 phút.',
+
+    // --- Nhóm CACHE (CSH) ---
+    [ErrorCode.CACHE.NOT_INITIALIZED]: 'Dữ liệu hệ thống chưa sẵn sàng hoặc đang được khởi tạo.',
+    [ErrorCode.CACHE.EMPTY_DATA]: 'Dữ liệu gốc từ máy chủ trống, không thể nạp bộ nhớ đệm.',
+    [ErrorCode.CACHE.REFRESH_FAILED]: 'Làm mới dữ liệu bộ nhớ đệm thất bại, vui lòng kiểm tra kết nối.',
+    [ErrorCode.CACHE.KEY_NOT_FOUND]: 'Thông tin yêu cầu không tồn tại trong bộ nhớ đệm của hệ thống.',
 };

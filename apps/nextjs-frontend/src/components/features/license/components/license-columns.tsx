@@ -1,5 +1,5 @@
 import { User } from "lucide-react";
-import { LicenseCategory } from "@/types/license-category.types";
+import { LicenseCategory } from "@/components/features/license/types/license-category.types";
 import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { TableColumnFactory } from "@/components/common/Generic-Table/table-column.factory";
 

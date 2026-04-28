@@ -9,6 +9,7 @@ export interface ILicenseCategoryRecord {
   name: string;
   description: string;
   minAge: number;
+  orderIndex: number;
   createdAt: Date; // Đã chuyển từ created_at
   updatedAt: Date; // Đã chuyển từ updated_at
   deletedAt: Date | null;

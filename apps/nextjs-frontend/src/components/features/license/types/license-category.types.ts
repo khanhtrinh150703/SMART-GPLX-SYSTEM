@@ -8,6 +8,7 @@ export interface LicenseCategory {
   minAge: number; // Độ tuổi tối thiểu (Minimum Age)
   description: string; // Mô tả chi tiết (Detailed Description)
   createdAt: string; // Ngày tạo (Creation Date - ISO format)
+  orderIndex: number;
   status: "active" | "inactive" | "deleted";
 }
 
@@ -17,7 +18,7 @@ export interface LicenseCategory {
  */
 export type CreateLicenseCategoryRequest = Pick<
   LicenseCategory,
-  "name" | "description" | "minAge"
+  "name" | "description" | "minAge" | "orderIndex"
 >;
 
 /**

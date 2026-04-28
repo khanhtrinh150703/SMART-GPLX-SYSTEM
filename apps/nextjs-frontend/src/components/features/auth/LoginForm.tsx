@@ -54,9 +54,9 @@ export default function LoginForm() {
       });
 
       // 2. Nếu đăng nhập thành công, điều hướng về trang Dashboard
-      // Dùng '/' hoặc '/dashboard' tùy vào cấu hình Route Group của bạn
+      // Dùng '/' hoặc '/overview' tùy vào cấu hình Route Group của bạn
       if (authData) {
-        router.push("/dashboard");
+        router.push("/overview");
       }
     } catch (error: unknown) {
       /**

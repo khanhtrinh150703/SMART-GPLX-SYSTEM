@@ -107,12 +107,13 @@ export const ErrorCode = {
      */
     VALIDATION: {
         // --- 0xx: General Required & Format (Lỗi chung & Định dạng) ---
-        REQUIRED: 'VAL_000',               // Trường bắt buộc chung (MISSING_FIELD)
+        REQUIRED: 'VAL_000',
         ID_REQUIRED: 'VAL_001',
         NAME_REQUIRED: 'VAL_002',
         DESCRIPTION_REQUIRED: 'VAL_003',
         INVALID_FORMAT: 'VAL_004',
         INVALID_LENGTH: 'VAL_005',
+        CODE_REQUIRED: 'VAL_006',
 
         // --- 1xx: Identity & Contact (Định danh & Liên lạc) ---
         EMAIL_INVALID: 'VAL_101',
@@ -122,14 +123,24 @@ export const ErrorCode = {
 
         // --- 2xx: Security & Authentication (Mật khẩu & Token) ---
         PASSWORD_INVALID: 'VAL_201',
-        PASSWORD_CONFIRM_MISMATCH: 'VAL_202', // CONFIRM_PASSWORD_MISMATCH
-        PASSWORD_MUST_BE_DIFFERENT: 'VAL_203', // Dùng cho đổi mật khẩu (mới khác cũ)
+        PASSWORD_CONFIRM_MISMATCH: 'VAL_202',
+        PASSWORD_MUST_BE_DIFFERENT: 'VAL_203',
         REFRESH_TOKEN_REQUIRED: 'VAL_204',
         REFRESH_TOKEN_INVALID: 'VAL_205',
 
         // --- 3xx: Specific Business Logic (Logic nghiệp vụ cụ thể) ---
         AGE_MUST_BE_NUMBER: 'VAL_301',
         AGE_INVALID: 'VAL_302',
+
+        // --- 4xx: Exam & Training (Đề thi & Đào tạo) ---
+        LICENSE_CATEGORY_REQUIRED: 'VAL_401', // Hạng bằng lái bắt buộc
+        EXAM_QUESTIONS_EMPTY: 'VAL_402',      // Danh sách câu hỏi không được trống
+        INVALID_DURATION: 'VAL_403',          // Thời gian thi không hợp lệ (phải > 0)
+        PASSING_SCORE_TOO_HIGH: 'VAL_404',    // Điểm đạt không được lớn hơn tổng số câu
+        MATRIX_ID_REQUIRED: 'VAL_405',        // Mã ma trận đề bắt buộc (cho Auto-gen)
+        USER_ID_REQUIRED: 'VAL_406',          // ID thí sinh bắt buộc
+        MIN_CRITICAL_INVALID: 'VAL_407',      // Số câu điểm liệt yêu cầu không hợp lệ
+        RESTORE_FAILED_DUPLICATE: 'VAL_411', // Khôi phục thất bại do dữ liệu đã tồn tại (Trùng lặp)
     },
 
     LICENSE: {
@@ -181,7 +192,9 @@ export const ErrorCode = {
         INVALID_PERCENTAGE: 'MTX_104',       // Tổng tỉ lệ phần trăm không bằng 100%
         INVALID_PASSING_SCORE: 'MTX_105',    // Điểm đạt không hợp lệ
         DUPLICATE_CHAPTER: 'MTX_106',        // Trùng lặp chương trong ma trận
-
+        INVALID_TOTAL_QUESTIONS: 'MTX_107',
+        INVALID_DURATION: 'MTX_108',
+        CHAPTER_ID_REQUIRED: 'MTX_109',
         // --- Nhóm 4xx: State/Management (Lỗi trạng thái/Quản lý) ---
         NOT_FOUND: 'MTX_404',                // Không tìm thấy ma trận
         RESTORE_FAILED_DUPLICATE: 'MTX_409', // Khôi phục thất bại do trùng tên đã tồn tại
@@ -224,7 +237,14 @@ export const ErrorCode = {
         INVALID_TOKEN: 'SES_005',
         DEVICE_MISMATCH: 'SES_006',
         INVALID_EXPIRATION_TIME: 'SES_007'
-    }
+    },
+
+    CACHE: {
+        NOT_INITIALIZED: 'CSH_500',   // Bộ nhớ đệm chưa được khởi tạo
+        EMPTY_DATA: 'CSH_501',        // Dữ liệu từ Database rỗng, không thể nạp cache
+        REFRESH_FAILED: 'CSH_502',    // Làm mới bộ nhớ đệm thất bại
+        KEY_NOT_FOUND: 'CSH_404',     // Không tìm thấy khóa dữ liệu trong cache
+    },
 } as const;
 
 export type ErrorCodeType = {

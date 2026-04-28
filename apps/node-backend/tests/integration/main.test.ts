@@ -6,12 +6,11 @@ import { chapterSteps } from './steps/chapter.test';
 import { questionSteps } from './steps/question-management.test';
 import { cleanupDB, connectDB } from '../jest.setup';
 import { selectionSteps } from './steps/selection.test';
-import { AUTH_PAYLOAD, AUTH_ENDPOINTS, CHAPTER_ENDPOINTS, LICENSE_ENDPOINTS } from '../config/index'
+import { AUTH_PAYLOAD, AUTH_ENDPOINTS, CHAPTER_ENDPOINTS, LICENSE_ENDPOINTS, EXAM_MATRIX_ENDPOINTS } from '../config/index'
 import request from 'supertest';
 import app from '@/app';
 import { examMatrixSteps } from './steps/exam-matrix.test';
-import { Chapter } from '@prisma/client';
-import { License } from 'swagger-jsdoc';
+import { Chapter, ExamMatrix, LicenseCategory } from '@prisma/client';
 
 describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     // Shared Context: Dữ liệu dùng chung xuyên suốt các file
@@ -23,6 +22,7 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     let chapterIdFour: string | undefined;
     let licenseId: string | undefined;
     let licenseSecond: string | undefined;
+    let examMatrixId: string | undefined;
 
     // --- 🔑 SETUP: Khởi động, lấy Token và Dữ liệu nền ---
     beforeAll(async () => {
@@ -54,29 +54,35 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         );
 
         // 2. Fetch dữ liệu từ API
-        const [chapterRes, licenseRes] = await Promise.all([
+        const [chapterRes, licenseRes, examMatrixRes] = await Promise.all([
             request(app)
                 .get(CHAPTER_ENDPOINTS.FETCH_ALL)
                 .set('Authorization', `Bearer ${adminToken}`),
             request(app)
                 .get(LICENSE_ENDPOINTS.BASE)
+                .set('Authorization', `Bearer ${adminToken}`),
+            request(app)
+                .get(EXAM_MATRIX_ENDPOINTS.BASE)
                 .set('Authorization', `Bearer ${adminToken}`)
         ]);
 
         // 3. Ép kiểu dữ liệu (Cast type) để không phải dùng any
         const chapters = (chapterRes.body.data?.data || []) as Chapter[];
-        const licenses = (licenseRes.body.data?.data || []) as License[];
+        const licenses = (licenseRes.body.data?.data || []) as LicenseCategory[];
+        const examMatrix = (examMatrixRes.body.data?.data || []) as ExamMatrix[];
+
 
         // 4. Tìm kiếm ID chính xác theo nghiệp vụ (c giờ đây là Chapter, l là License)
         chapterId = chapters.find((c: Chapter) => c.code === '1')?.id;
         chapterIdSecond = chapters.find((c: Chapter) => c.code === '5')?.id;
         chapterIdThird = chapters.find((c: Chapter) => c.code === '6')?.id;
-        chapterIdFour = chapters.find((c: Chapter) => c.code === '2')?.id;
-        licenseId = licenses.find((l: License) => l.name === 'CE')?.id;
-        licenseSecond = licenses.find((l: License) => l.name === 'C')?.id;
+        chapterIdFour = chapters.find((c: Chapter) => c.code === '7')?.id;
+        licenseId = licenses.find((l: LicenseCategory) => l.name === 'CE')?.id;
+        licenseSecond = licenses.find((l: LicenseCategory) => l.name === 'I')?.id;
+        examMatrixId = examMatrix.find((examMatrix: ExamMatrix) => examMatrix.name === 'Ma trận chuẩn Hạng CE')?.id;
 
         // 5. Kiểm tra an toàn (Guard Clause)
-        if (!chapterId || !chapterIdSecond || !licenseId) {
+        if (!chapterId || !chapterIdSecond || !licenseId || !examMatrixId) {
             throw new Error('❌ Test Fail: Không tìm thấy Seed Data cho Code 1, 5 hoặc License A1');
         }
 

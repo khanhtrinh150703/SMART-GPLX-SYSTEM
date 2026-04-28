@@ -4,6 +4,7 @@ import { labels } from "@/domain/constants/difficulty.constant";
 import { Answer } from "@/domain/entities/question/answer.entity";
 import { Question } from "@/domain/entities/question/question.entity";
 import { IQuestionProps } from "@/domain/entities/question/question.props";
+import { QuestionStatus } from "@/domain/entities/question/question.status";
 import { IQuestionRecord } from "@/infrastructure/persistence/exam-mgmt/question.record";
 import { Prisma } from "@prisma/client";
 
@@ -129,7 +130,7 @@ export class QuestionMapper {
       indexNumber: props.indexNumber,
       difficultyLevel: props.difficultyLevel,
       isCritical: props.isCritical,
-      status: props.status,
+      status: props.status.toUpperCase() as QuestionStatus,
       deletedAt: props.deletedAt,
       // Dùng connect để đảm bảo tính toàn vẹn quan hệ ở tầng DB
       chapter: { connect: { id: props.chapterId } },
@@ -145,6 +146,7 @@ export class QuestionMapper {
 
     return {
       id: props.id ?? "",
+      indexNumber: props.indexNumber,
       chapterId: props.chapterId,
       content: props.content,
       status: props.status,

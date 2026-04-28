@@ -62,6 +62,7 @@ export function EditQuestionModal({
         licenseCategoryIds: initialData.licenseCategoryIds,
         difficultyLevel: initialData.difficulty.level,
         isCritical: initialData.isCritical,
+        indexNumber: initialData.indexNumber,
         status: (initialData.status === "active" ? "ACTIVE" : "DRAFT") as
           | "ACTIVE"
           | "DRAFT",
@@ -158,7 +159,7 @@ export function EditQuestionModal({
       formData.append("difficultyLevel", String(values.difficultyLevel));
       formData.append("isCritical", String(values.isCritical));
       formData.append("status", values.status.toLowerCase());
-
+      formData.append("indexNumber", String(values.indexNumber));
       values.licenseCategoryIds.forEach((id) =>
         formData.append("licenseCategoryIds[]", id),
       );

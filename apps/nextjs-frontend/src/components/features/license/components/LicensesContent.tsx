@@ -20,7 +20,7 @@ import { FilterSelect } from "@/components/ui/Select/FilterSelect";
 import { LICENSE_STATUS_OPTIONS } from "@/components/features/license/components/license.config";
 import { useLicenseCategories } from "@/components/features/license/hooks/use-license-categories";
 import { useLicenseUrlParams } from "@/components/features/license/hooks/use-license-url-params";
-import { LicenseCategory } from "@/types/license-category.types";
+import { LicenseCategory } from "@/components/features/license/types/license-category.types";
 import {
   CreateLicensePayload,
   UpdateLicensePayload,

@@ -11,11 +11,11 @@ import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/
 import { PAGINATION_CONFIG } from "@/shared/config/pagination.config";
 import { DeleteResponse, DeleteType } from "@/domain/constants/delete.constant";
 import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-query.request.dto";
-import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
-import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
 import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
 import { CreateChapterValidator } from "@/application/validators/chapter/create-chatper.validator";
 import { UpdateChapterValidator } from "@/application/validators/chapter/update-chapter.validator";
+import { CreateChapterRequestDto } from "@/application/dtos/request/chapter/create-chapter.request.dto";
+import { UpdateChapterRequestDto } from "@/application/dtos/request/chapter/update-chapter.request.dto";
 
 /**
  * @interface IChapterServiceCradle
@@ -50,7 +50,7 @@ export class ChapterService implements IChapterService {
    * @returns {Promise<SelectionResponseDto[]>} - Danh sách các object thường có dạng { id, name } hoặc { value, label }.
    */
   public async getChapterSelections(): Promise<SelectionResponseDto[]> {
-    const chapters = await this._chapterRepo.findAll();
+    const chapters = await this._cacheService.getAllChapters();
     return ChapterMapper.toSelectionList(chapters);
   }
 
@@ -81,7 +81,6 @@ export class ChapterService implements IChapterService {
     return PaginationUtil.createPaginatedResponse(chapterResponses, total, page, limit);
   }
 
-
   /**
    * @description Lấy thông tin chi tiết một chương theo ID và trả về DTO.
    * @param {string} id - ID định danh chương.
@@ -97,7 +96,7 @@ export class ChapterService implements IChapterService {
    * @param {CreateChapterRequestDTO} dto - Dữ liệu khởi tạo chương.
    * @returns {Promise<ChapterResponseDTO>}
    */
-  public async createChapter(dto: CreateChapterRequestDTO): Promise<ChapterResponseDTO> {
+  public async createChapter(dto: CreateChapterRequestDto): Promise<ChapterResponseDTO> {
     CreateChapterValidator.validate(dto);
     // 1. Kiểm tra trùng tên (Dịch: Check duplicate name)
     const existingName = await this._chapterRepo.findByName(dto.name.trim());
@@ -132,16 +131,21 @@ export class ChapterService implements IChapterService {
    * @param {UpdateChapterDTO} dto - Dữ liệu cập nhật.
    * @returns {Promise<ChapterResponseDTO>}
    */
-  public async updateChapter(dto: UpdateChapterRequestDTO): Promise<ChapterResponseDTO> {
+  public async updateChapter(id: string, dto: UpdateChapterRequestDto): Promise<ChapterResponseDTO> {
     UpdateChapterValidator.validate(dto);
     // Lấy Entity để thực hiện logic nghiệp vụ
-    const chapter = await this._getChapterEntityOrThrow(dto.id);
+    const chapter = await this._getChapterEntityOrThrow(id);
 
     if (dto.name && dto.name !== chapter.name) {
       const existing = await this._chapterRepo.findByName(dto.name.trim());
       if (existing) throw new AppError(ErrorCode.CHAPTER.NAME_ALREADY_EXISTS);
     }
 
+    const existingCode = await this._chapterRepo.findByCode(dto.code.trim());
+    if (existingCode) {
+      throw new AppError(ErrorCode.CHAPTER.CODE_ALREADY_EXISTS);
+    }
+    
     // Domain Logic cập nhật bên trong Entity
     chapter.updateDetails({
       name: dto.name?.trim(),
@@ -149,7 +153,7 @@ export class ChapterService implements IChapterService {
       orderIndex: dto.orderIndex,
     });
 
-    await this._chapterRepo.updateChapter(chapter);
+    await this._chapterRepo.updateChapter(id, chapter);
     this._cacheService.refresh();
 
     return ChapterMapper.toResponse(chapter);

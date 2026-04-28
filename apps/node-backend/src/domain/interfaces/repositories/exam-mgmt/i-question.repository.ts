@@ -80,5 +80,12 @@ export interface IQuestionRepository {
    * @description Lấy toàn bộ câu hỏi khả dụng cho hạng bằng lái.
    * @param licenseId - ID của hạng bằng (B1, B2, C...).
    */
-  getByLicenseCategory(licenseId: string[]): Promise<Question[]>;
+  findByLicenseCategory(licenseId: string[]): Promise<Question[]>;
+
+  /**
+   * @description Đếm số lượng câu hỏi đang hoạt động (không bị xóa mềm) dựa trên danh sách ID.
+   * @param {string[]} ids - Mảng danh sách các UUID của câu hỏi.
+   * @returns {Promise<number>} Tổng số bản ghi tìm thấy trong Database.
+   */
+  countActiveByIds(ids: string[]): Promise<number>;
 }

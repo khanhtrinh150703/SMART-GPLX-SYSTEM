@@ -2,39 +2,46 @@ import { AppError, ErrorCode } from "@/shared/errors";
 import { IExamMatrixDetailRequest } from "./exam-matrix-detail.request";
 
 /**
- * @description DTO dùng cho yêu cầu cập nhật Ma trận đề thi.
- * Lưu ý: licenseCategoryId thường không được thay đổi để đảm bảo tính nhất quán của hạng bằng.
+ * @description DTO dùng cho yêu cầu tạo mới Ma trận đề thi.
+ * Tự chịu trách nhiệm kiểm tra tính hợp lệ về kiểu dữ liệu (Input Validation).
  */
-export class UpdateExamMatrixDTO {
+export class CreateExamMatrixDTO {
+    public readonly licenseCategoryId: string;
+    public readonly name: string;
     public readonly totalQuestions: number;
     public readonly passingScore: number;
     public readonly durationMinutes: number;
     public readonly minCriticalQuestions: number;
-    public readonly details: IExamMatrixDetailRequest[];
-    public readonly name: string;
     public readonly isDefault: boolean;
+    public readonly details: IExamMatrixDetailRequest[];
 
-    constructor(data: UpdateExamMatrixDTO) {
+    constructor(data: CreateExamMatrixDTO) {
+        this.name = data.name;
+        this.licenseCategoryId = data.licenseCategoryId;
         this.totalQuestions = data.totalQuestions;
         this.passingScore = data.passingScore;
         this.durationMinutes = data.durationMinutes;
         this.minCriticalQuestions = data.minCriticalQuestions;
         this.details = data.details;
-        this.name = data.name;
         this.isDefault = data.isDefault;
     }
+
     /**
-       * @description Kiểm tra tính toàn vẹn và logic của Ma trận đề thi.
-       * @throws {AppError} Ném lỗi nếu dữ liệu vi phạm quy tắc nghiệp vụ.
-       */
+     * @description Kiểm tra tính hợp lệ của dữ liệu đầu vào trước khi vào tầng Service.
+     * Đảm bảo các ràng buộc về kiểu dữ liệu và logic cơ bản của Ma trận.
+     * @throws {AppError} Ném lỗi nếu dữ liệu không đúng định dạng hoặc vi phạm quy tắc ma trận.
+     */
     public isValid(): void {
-        // 1. Kiểm tra các thông số cơ bản (Phải lớn hơn 0)
+        // 1. Kiểm tra các thông tin cơ bản
+
         const mandatoryFields = [
+            { value: this.licenseCategoryId, name: 'licenseCategoryId' },
             { value: this.totalQuestions, name: 'totalQuestions' },
             { value: this.passingScore, name: 'passingScore' },
             { value: this.durationMinutes, name: 'durationMinutes' },
             { value: this.minCriticalQuestions, name: 'minCriticalQuestions' },
-            { value: this.name, name: 'name' }
+            { value: this.name, name: 'name' },
+            { value: this.isDefault, name: 'isDefault' },
         ];
 
         for (const field of mandatoryFields) {
@@ -42,7 +49,6 @@ export class UpdateExamMatrixDTO {
             // nhưng ở đây totalQuestions > 0 nên ta check kỹ hơn)
             if (field.value === undefined || field.value === null) {
                 throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-                // Hoặc bạn có thể ném lỗi chi tiết hơn nếu muốn
             }
         }
 
@@ -54,38 +60,54 @@ export class UpdateExamMatrixDTO {
             throw new AppError(ErrorCode.MATRIX.NAME_TOO_LONG)
         }
 
-        if (this.totalQuestions <= 0 || this.passingScore <= 0 || this.durationMinutes <= 0) {
-            throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+        if (!this.licenseCategoryId) {
+            throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED); // Hoặc mã lỗi chung cho Input
+        }
+      
+        if (this.totalQuestions <= 0) {
+            throw new AppError(ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS);
         }
 
-        // 2. Logic nghiệp vụ: Điểm sàn không được phép lớn hơn tổng số câu hỏi
+        if (this.passingScore <= 0) {
+            throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
+        }
+
+        if (this.durationMinutes <= 0) {
+            throw new AppError(ErrorCode.MATRIX.INVALID_DURATION);
+        }
+
+        // Logic nghiệp vụ: Điểm đạt không được phép lớn hơn tổng số câu hỏi
         if (this.passingScore > this.totalQuestions) {
             throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
         }
 
-        // 3. Kiểm tra danh sách chi tiết (details)
+        // Kiểm tra logic: Điểm đạt không được lớn hơn tổng số câu
+        if (this.passingScore > this.totalQuestions) {
+            throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
+        }
+
+        // 2. Kiểm tra danh sách chi tiết (details)
         if (!Array.isArray(this.details) || this.details.length === 0) {
             throw new AppError(ErrorCode.MATRIX.NO_DETAILS);
         }
 
-        // 4. Kiểm tra từng phần tử và tính tổng phần trăm
         let totalPercent = 0;
 
+        // 3. Kiểm tra từng phần tử trong mảng details
         this.details.forEach((detail) => {
-            // Kiểm tra kiểu dữ liệu (chapterId là string theo Schema Prisma của bạn)
+            // ĐỔI THÀNH "string" để khớp với Schema Prisma của bạn
             if (typeof detail.chapterId !== "string" || typeof detail.percentage !== "number") {
-                throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+                throw new AppError(ErrorCode.MATRIX.CHAPTER_ID_REQUIRED);
             }
 
-            // Từng phần trăm lẻ phải nằm trong khoảng (0, 100)
-            if (detail.percentage <= 0 || detail.percentage > 100) {
+            if (detail.percentage < 0 || detail.percentage > 100) {
                 throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
             }
 
             totalPercent += detail.percentage;
         });
 
-        // 5. Ràng buộc quan trọng: Tổng phần trăm tất cả các chương phải bằng 100%
+        // 4. Kiểm tra tổng phần trăm phải bằng 100%
         if (totalPercent !== 100) {
             throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
         }

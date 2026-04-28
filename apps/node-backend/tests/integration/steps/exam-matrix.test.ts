@@ -18,15 +18,18 @@ export const examMatrixSteps = (
     describe('📂 Exam Matrix Management API Suite', () => {
 
         // ====================== TẠO MỚI MA TRẬN ======================
+
         describe('📝 Kịch bản: Tạo mới ma trận đề thi', () => {
 
+            // Định nghĩa dữ liệu chương hợp lệ để tái sử dụng cho các test case thành công
+            const getValidChapters = () => [
+                { id: getChapterId(), percent: 40, q: 12 },
+                { id: getChapterIdSecond(), percent: 35, q: 11 },
+                { id: getChapterIdThird(), percent: 25, q: 7 }
+            ];
+
             it('🚫 Nên bị từ chối (403) khi User thường cố gắng tạo', async () => {
-                const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(
-                    getLicenseId(),
-                    getChapterId(),
-                    getChapterIdSecond(),
-                    getChapterIdThird()
-                );
+                const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(getLicenseId(), getValidChapters());
 
                 const res = await request(app)
                     .post(EXAM_MATRIX_ENDPOINTS.CREATE)
@@ -37,114 +40,190 @@ export const examMatrixSteps = (
                 expect(res.body.success).toBe(false);
             });
 
-            it('✅ Nên tạo thành công khi Admin tạo ma trận hợp lệ (3 chương)', async () => {
-                const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(
-                    getLicenseId(),
-                    getChapterId(),
-                    getChapterIdSecond(),
-                    getChapterIdThird()
-                );
-
+            it('✅ Nên tạo thành công khi Admin tạo ma trận hợp lệ', async () => {
+                const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(getLicenseId(), getValidChapters());
                 const res = await request(app)
                     .post(EXAM_MATRIX_ENDPOINTS.CREATE)
                     .set(getAuthHeader(getAdminToken()))
                     .send(payload);
+
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
                 expect(res.body.data).toBeDefined();
                 expect(res.body.data.id).toBeDefined();
                 expect(res.body.data.licenseCategoryId).toBe(getLicenseId());
 
+                // Lưu lại ID để dùng cho các test case Update/Delete phía sau
                 testMatrixId = res.body.data.id;
             });
 
-            describe('❌ Kịch bản lỗi: Dữ liệu quan hệ không tồn tại', () => {
+            describe('📝 Kịch bản: Tạo mới ma trận đề thi', () => {
 
-                it('❌ Nên trả về lỗi 404 khi License Category không tồn tại', async () => {
-                    // Tạo payload với License ID giả
-                    const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(
-                        fakeID, // License ID không tồn tại
-                        getChapterId(),
-                        getChapterIdSecond(),
-                        getChapterIdThird()
-                    );
+                describe('🔐 Quyền truy cập & Luồng thành công', () => {
+                    it('🚫 Nên bị từ chối (403) khi User thường cố gắng tạo', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(getLicenseId(), getValidChapters());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getRegularToken()))
+                            .send(payload);
 
-                    const res = await request(app)
-                        .post(EXAM_MATRIX_ENDPOINTS.CREATE)
-                        .set(getAuthHeader(getAdminToken()))
-                        .send(payload);
+                        expect(res.status).toBe(403);
+                        expect(res.body.success).toBe(false);
+                    });
 
-                    expect(res.status).toBe(404);
-                    expect(res.body.success).toBe(false);
-                    expect(res.body.code).toBe(ErrorCode.LICENSE.NOT_FOUND);
+                    it('✅ Nên tạo thành công khi Admin gửi dữ liệu hợp lệ', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(getLicenseId(), getValidChapters());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
+
+                        expect(res.status).toBe(200);
+                        expect(res.body.success).toBe(true);
+                        expect(res.body.data.id).toBeDefined();
+                        testMatrixId = res.body.data.id; // Lưu lại để dùng cho Update/Delete
+                    });
                 });
 
-                it('❌ Nên trả về lỗi 404 khi có ít nhất một Chapter không tồn tại', async () => {
-                    // Tạo payload với một Chapter ID giả (ví dụ chapter thứ 3 giả)
-                    const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(
-                        getLicenseId(),
-                        getChapterId(),
-                        getChapterIdSecond(),
-                        fakeID 
-                    );
+                describe('❌ Lỗi quan hệ dữ liệu (404 Not Found)', () => {
+                    it('❌ Nên trả về lỗi khi License Category không tồn tại', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(fakeID, getValidChapters());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
 
-                    const res = await request(app)
-                        .post(EXAM_MATRIX_ENDPOINTS.CREATE)
-                        .set(getAuthHeader(getAdminToken()))
-                        .send(payload);
+                        expect(res.status).toBe(404);
+                        expect(res.body.code).toBe(ErrorCode.LICENSE.NOT_FOUND);
+                    });
 
-                    expect(res.status).toBe(404);
-                    expect(res.body.success).toBe(false);
-                    // Message.CHAPTER.NOT_FOUND
-                    expect(res.body.code).toBe(ErrorCode.CHAPTER.NOT_FOUND);
+                    it('❌ Nên trả về lỗi khi có Chapter không tồn tại trong DB', async () => {
+                        const invalidChapters = () => [{ id: fakeID, percent: 100, q: 30 }];
+                        const payload = EXAM_MATRIX_PAYLOAD.CREATE_VALID(getLicenseId(), invalidChapters());
+
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
+
+                        expect(res.status).toBe(404);
+                        expect(res.body.code).toBe(ErrorCode.CHAPTER.NOT_FOUND);
+                    });
                 });
-            });
 
-            it('🚫 Nên trả về lỗi khi tổng phần trăm không bằng 100%', async () => {
-                const payload = EXAM_MATRIX_PAYLOAD.CREATE_INVALID_PERCENTAGE(
-                    getLicenseId(),
-                    getChapterId(),
-                    getChapterIdSecond()
-                );
+                describe('🛠 Lỗi ràng buộc dữ liệu & Logic (400/409)', () => {
+                    it('🚫 Nên lỗi khi để trống tên ma trận (MATRIX.NAME_REQUIRED)', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.EMPTY_NAME(getLicenseId());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
 
-                const res = await request(app)
-                    .post(EXAM_MATRIX_ENDPOINTS.CREATE)
-                    .set(getAuthHeader(getAdminToken()))
-                    .send(payload);
+                        expect(res.status).toBe(400);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.NAME_REQUIRED);
+                    });
 
-                expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
-            });
+                    it('🚫 Nên lỗi khi tên quá dài > 100 ký tự (MATRIX.NAME_TOO_LONG)', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.NAME_TOO_LONG(getLicenseId());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
 
-            it('🚫 Nên trả về lỗi khi có chương trùng lặp', async () => {
-                const payload = EXAM_MATRIX_PAYLOAD.CREATE_DUPLICATE_CHAPTER(
-                    getLicenseId(),
-                    getChapterId()
-                );
+                        expect(res.status).toBe(400);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.NAME_TOO_LONG);
+                    });
 
-                const res = await request(app)
-                    .post(EXAM_MATRIX_ENDPOINTS.CREATE)
-                    .set(getAuthHeader(getAdminToken()))
-                    .send(payload);
+                    it('🚫 Nên lỗi khi thiếu License ID (VALIDATION.ID_REQUIRED)', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.MISSING_LICENSE_ID();
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
 
-                expect(res.status).toBe(409);
-                expect(res.body.code).toBe(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
-            });
+                        expect(res.status).toBe(400);
+                        expect(res.body.code).toBe(ErrorCode.VALIDATION.ID_REQUIRED);
+                    });
 
-            it('🚫 Nên trả về lỗi khi thiếu chi tiết chương', async () => {
-                const payload = EXAM_MATRIX_PAYLOAD.CREATE_NO_DETAILS(getLicenseId());
+                    describe('📝 Kịch bản: Kiểm tra tính hợp lệ của các giá trị số', () => {
 
-                const res = await request(app)
-                    .post(EXAM_MATRIX_ENDPOINTS.CREATE)
-                    .set(getAuthHeader(getAdminToken()))
-                    .send(payload);
+                        const numericTestCases = [
+                            {
+                                label: 'Tổng số câu <= 0',
+                                payload: EXAM_MATRIX_PAYLOAD.INVALID_TOTAL_QUESTIONS,
+                                expectedCode: ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS
+                            },
+                            {
+                                label: 'Điểm đạt <= 0',
+                                payload: EXAM_MATRIX_PAYLOAD.INVALID_PASSING_SCORE,
+                                expectedCode: ErrorCode.MATRIX.INVALID_PASSING_SCORE
+                            },
+                            {
+                                label: 'Thời lượng <= 0',
+                                payload: EXAM_MATRIX_PAYLOAD.INVALID_DURATION,
+                                expectedCode: ErrorCode.MATRIX.INVALID_DURATION
+                            },
+                        ];
 
-                expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.MATRIX.NO_DETAILS);
+                        it.each(numericTestCases)('🚫 Nên lỗi khi $label', async ({ payload, expectedCode }) => {
+                            const res = await request(app)
+                                .post(EXAM_MATRIX_ENDPOINTS.BASE)
+                                .set(getAuthHeader(getAdminToken()))
+                                .send(payload(getLicenseId()));
+
+                            expect(res.status).toBe(400);
+                            expect(res.body.code).toBe(expectedCode);
+                        });
+                    });
+
+                    it('🚫 Nên lỗi khi điểm đạt > tổng câu (MATRIX.INVALID_PASSING_SCORE)', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.PASSING_SCORE_TOO_HIGH(getLicenseId());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
+
+                        expect(res.status).toBe(400);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
+                    });
+
+                    it('🚫 Nên lỗi khi tổng phần trăm các chương != 100%', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.TOTAL_PERCENT_NOT_100(getLicenseId());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
+
+                        expect(res.status).toBe(400);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
+                    });
+
+                    it('🚫 Nên lỗi khi có chương bị trùng lặp (MATRIX.DUPLICATE_CHAPTER)', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.DUPLICATE_CHAPTER(getLicenseId(), getChapterId());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
+
+                        // 409 Conflict là mã phù hợp nhất cho dữ liệu trùng lặp
+                        expect(res.status).toBe(409);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
+                    });
+
+                    it('🚫 Nên lỗi khi mảng details rỗng (MATRIX.NO_DETAILS)', async () => {
+                        const payload = EXAM_MATRIX_PAYLOAD.EMPTY_DETAILS(getLicenseId());
+                        const res = await request(app)
+                            .post(EXAM_MATRIX_ENDPOINTS.CREATE)
+                            .set(getAuthHeader(getAdminToken()))
+                            .send(payload);
+
+                        expect(res.status).toBe(400);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.NO_DETAILS);
+                    });
+                });
             });
         });
 
-        // ====================== LẤY THÔNG TIN MA TRẬN ======================
         describe('🔍 Kịch bản: Lấy thông tin ma trận', () => {
 
             it('✅ Admin lấy chi tiết ma trận theo ID thành công', async () => {
@@ -175,45 +254,156 @@ export const examMatrixSteps = (
         });
 
         // ====================== CẬP NHẬT MA TRẬN ======================
-        describe('✏️ Kịch bản: Cập nhật ma trận', () => {
+        describe('📝 Kịch bản: Cập nhật ma trận đề thi', () => {
 
-            it('✅ Admin cập nhật ma trận thành công', async () => {
-                if (!testMatrixId) {
-                    console.warn('⚠️ testMatrixId chưa được tạo, bỏ qua test này');
-                    return;
-                }
+            describe('📝 Kịch bản: Kiểm tra tính hợp lệ của các giá trị số', () => {
 
-                const payload = EXAM_MATRIX_PAYLOAD.UPDATE_VALID(
-                    getChapterId(),
-                    getChapterIdSecond(),
-                    getChapterIdThird()
-                );
+                const numericTestCases = [
+                    {
+                        label: 'Tổng số câu <= 0',
+                        payload: EXAM_MATRIX_PAYLOAD.INVALID_TOTAL_QUESTIONS,
+                        expectedCode: ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS
+                    },
+                    {
+                        label: 'Điểm đạt <= 0',
+                        payload: EXAM_MATRIX_PAYLOAD.INVALID_PASSING_SCORE,
+                        expectedCode: ErrorCode.MATRIX.INVALID_PASSING_SCORE
+                    },
+                    {
+                        label: 'Thời lượng <= 0',
+                        payload: EXAM_MATRIX_PAYLOAD.INVALID_DURATION,
+                        expectedCode: ErrorCode.MATRIX.INVALID_DURATION
+                    },
+                ];
 
-                const res = await request(app)
-                    .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
-                    .set(getAuthHeader(getAdminToken()))
-                    .send(payload);
+                it.each(numericTestCases)('🚫 Nên lỗi khi $label', async ({ payload, expectedCode }) => {
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload(getLicenseId()));
 
-                expect(res.status).toBe(200);
-                expect(res.body.success).toBe(true);
-                expect(res.body.data.id).toBe(testMatrixId);
+                    expect(res.status).toBe(400);
+                    expect(res.body.code).toBe(expectedCode);
+                });
             });
 
-            it('🚫 Nên trả về lỗi khi tổng % sau cập nhật không bằng 100', async () => {
-                if (!testMatrixId) return;
+            const getUpdateChapters = () => [
+                { id: getChapterId(), percent: 50, q: 15 },
+                { id: getChapterIdSecond(), percent: 50, q: 15 }
+            ];
 
-                const payload = EXAM_MATRIX_PAYLOAD.UPDATE_INVALID_PERCENTAGE(
-                    getChapterId(),
-                    getChapterIdSecond()
-                );
+            describe('🔐 Quyền truy cập & Luồng thành công', () => {
+                it('🚫 Nên bị từ chối (403) khi User thường cố gắng cập nhật', async () => {
+                    const payload = EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters());
 
-                const res = await request(app)
-                    .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
-                    .set(getAuthHeader(getAdminToken()))
-                    .send(payload);
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId)) // testMatrixId lấy từ case Create thành công
+                        .set(getAuthHeader(getRegularToken()))
+                        .send(payload);
 
-                expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
+                    expect(res.status).toBe(403);
+                });
+
+                it('✅ Nên cập nhật thành công khi Admin gửi dữ liệu hợp lệ', async () => {
+                    const payload = EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters());
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(200);
+                    expect(res.body.success).toBe(true);
+                    expect(res.body.data.name).toBe(payload.name);
+                    expect(res.body.data.totalQuestions).toBe(30);
+                });
+            });
+
+            describe('❌ Lỗi định danh & Tồn tại (404)', () => {
+                it('❌ Nên trả về lỗi 404 khi ID ma trận không tồn tại trong hệ thống', async () => {
+                    const payload = EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters());
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(fakeID)) // ID không tồn tại
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(404);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.NOT_FOUND);
+                });
+            });
+
+            describe('🛠 Lỗi logic nghiệp vụ (Dựa trên isValid)', () => {
+                it('🚫 Nên lỗi khi cập nhật tên quá dài > 100 ký tự', async () => {
+                    const payload = { ...EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters()), name: 'A'.repeat(101) };
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(400);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.NAME_TOO_LONG);
+                });
+
+                it('🚫 Nên lỗi khi điểm đạt mới cao hơn tổng số câu hỏi mới', async () => {
+                    const payload = {
+                        ...EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters()),
+                        totalQuestions: 20,
+                        passingScore: 25 // 25 > 20
+                    };
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(400);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
+                });
+
+                it('🚫 Nên lỗi khi tổng phần trăm sau khi cập nhật không bằng 100%', async () => {
+                    const invalidChapters = [
+                        { id: getChapterId(), percent: 30, q: 10 },
+                        { id: getChapterIdSecond(), percent: 30, q: 10 } // Tổng 60%
+                    ];
+                    const payload = EXAM_MATRIX_PAYLOAD.UPDATE_VALID(invalidChapters);
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(400);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
+                });
+
+                it('🚫 Nên lỗi khi gửi danh sách chương (details) rỗng', async () => {
+                    const payload = { ...EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters()), details: [] };
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(400);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.NO_DETAILS);
+                });
+
+                it('🚫 Nên lỗi khi có giá trị phần trăm chương <= 0', async () => {
+                    const payload = {
+                        ...EXAM_MATRIX_PAYLOAD.UPDATE_VALID(getUpdateChapters()),
+                        details: [{ chapterId: getChapterId(), percentage: 0, numberOfQuestions: 0 }]
+                    };
+
+                    const res = await request(app)
+                        .put(EXAM_MATRIX_ENDPOINTS.UPDATE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()))
+                        .send(payload);
+
+                    expect(res.status).toBe(400);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PERCENTAGE);
+                });
             });
         });
 
@@ -229,6 +419,34 @@ export const examMatrixSteps = (
 
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
+            });
+
+            describe('🗑️ Kịch bản: Xóa ma trận đề thi', () => {
+
+                it('❌ Nên trả về lỗi 404 khi cố xóa một Exam Matrix ID không tồn tại (Fake ID)', async () => {
+
+                    const res = await request(app)
+                        .delete(EXAM_MATRIX_ENDPOINTS.DELETE(fakeID))
+                        .set(getAuthHeader(getAdminToken()));
+
+                    expect(res.status).toBe(404);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.NOT_FOUND);
+                });
+
+                it('❌ Nên trả về lỗi 404 khi cố xóa lại một ma trận đã bị xóa trước đó', async () => {
+                    // Lần 1: Xóa thành công (giả định testMatrixId lấy từ bài test tạo mới trước đó)
+                    await request(app)
+                        .delete(EXAM_MATRIX_ENDPOINTS.DELETE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()));
+
+                    // Lần 2: Cố tình xóa lại chính ID đó
+                    const res = await request(app)
+                        .delete(EXAM_MATRIX_ENDPOINTS.DELETE(testMatrixId))
+                        .set(getAuthHeader(getAdminToken()));
+
+                    expect(res.status).toBe(404);
+                    expect(res.body.code).toBe(ErrorCode.MATRIX.NOT_FOUND);
+                });
             });
         });
 
@@ -259,3 +477,4 @@ export const examMatrixSteps = (
         // });
     });
 };
+

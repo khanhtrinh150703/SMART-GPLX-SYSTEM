@@ -32,8 +32,14 @@ export class ExamMatrixResponseDTO {
   /** @description Số câu điểm liệt tối thiểu phải có trong đề (US-026) */
   public readonly minCriticalQuestions: number;
 
+  /** @property {string} status - Trạng thái hiện tại (VD: 'active', 'draft', 'deleted'). */
+  public readonly status: string;
+
   /** @description Danh sách tỉ trọng câu hỏi theo từng chương */
   public readonly details: IExamMatrixDetailResponse[];
+
+  /** @description Xác định đây là ma trận mặc định cho hạng bằng lái này (Dịch: Is default matrix for license category) */
+  public readonly isDefault: boolean;
 
   constructor(props: ExamMatrixResponseDTO) {
     this.name = props.name;
@@ -44,5 +50,7 @@ export class ExamMatrixResponseDTO {
     this.durationMinutes = props.durationMinutes;
     this.minCriticalQuestions = props.minCriticalQuestions;
     this.details = props.details;
+    this.status = props.status;
+    this.isDefault = props.isDefault;
   }
 }

@@ -61,6 +61,7 @@ export function QuestionsContent() {
     licenseCategoryIds: searchParams.get("licenseCategoryIds") || "",
     difficultyLevel: searchParams.get("difficultyLevel") || "",
     isCritical: searchParams.get("isCritical") || "",
+    indexNumber: searchParams.get("indexNumber") || "",
   });
 
   // --- 2. EFFECTS ---
@@ -76,6 +77,7 @@ export function QuestionsContent() {
       licenseCategoryIds: searchParams.get("licenseCategoryIds") || "",
       difficultyLevel: searchParams.get("difficultyLevel") || "",
       isCritical: searchParams.get("isCritical") || "",
+      indexNumber: searchParams.get("indexNumber") || "",
     });
   }, [searchParams, activeValue, activeField]);
 
@@ -116,6 +118,7 @@ export function QuestionsContent() {
       licenseCategoryIds: "",
       difficultyLevel: "",
       isCritical: "",
+      indexNumber: "",
     });
   };
 
@@ -378,7 +381,7 @@ export function QuestionsContent() {
           onPageChange={(page) => updateMultipleUrlParams({ page })}
         />
       </div>
-      
+
       {/* Modals */}
       <CreateQuestionModal
         isOpen={isCreateModalOpen}

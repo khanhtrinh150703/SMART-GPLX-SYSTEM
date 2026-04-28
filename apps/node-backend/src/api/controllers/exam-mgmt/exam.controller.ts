@@ -1,4 +1,7 @@
+import { CreateManualExamDTO } from '@/application/dtos/request/exam/create-exam-manual.request.dto';
+import { ExamQueryDTO } from '@/application/dtos/request/exam/exam-query.request.dto';
 import { GenerateExamDTO } from '@/application/dtos/request/exam/generate-exam.request.dto';
+import { UpdateExamDTO } from '@/application/dtos/request/exam/update-exam.request.dto';
 import { IExamGeneratorService } from '@/domain/interfaces/services/exam-engine';
 import { IExamService } from '@/domain/interfaces/services/exam-mgmt';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
@@ -35,6 +38,27 @@ export class ExamController {
     }
 
     /**
+     * @description Truy vấn danh sách toàn bộ đề thi trong hệ thống.
+     * @route GET /api/v1/exams
+     * @returns {Promise<void>} Phản hồi danh sách ExamResponseDTO kèm Metadata phân trang.
+     */
+    public list = catchAsync(async (req: AuthRequest, res: Response) => {
+        // 1. Khởi tạo Query DTO từ req.query (Zero Any - ép kiểu unknown)
+        const query = new ExamQueryDTO(req.query as Record<string, unknown>);
+        // 2. Gọi Service xử lý nghiệp vụ
+        const response = await this._examService.getPaginatedExams(query);
+        console.log(response)
+
+        // 3. Trả về kết quả theo Standard Response
+        Result.ok(
+            res,
+            response,
+            Message.EXAM.FETCH_SUCCESS,
+            'EXAM_GET_SUCCESS'
+        );
+    });
+
+    /**
      * @description API khởi tạo một bài thi mới (Bốc đề) dựa trên Ma trận cấu hình.
      * @route POST /api/v1/exams/generate
      * @param {Request} req - Chứa matrixId trong body. userId lấy từ Token đã qua Middleware.
@@ -66,22 +90,106 @@ export class ExamController {
         );
     });
 
-    // /**
-    //  * @description API nộp bài thi và chấm điểm tự động.
-    //  * @route POST /api/v1/exams/:id/complete
-    //  */
-    // public complete = catchAsync(async (req: Request, res: Response) => {
-    //     const { id: examId } = req.params;
-    //     const userId = req.user?.id as string;
+    /**
+     * @description Cập nhật thông tin chi tiết của một bài thi (Tên, điểm số, hoặc trạng thái).
+     * @route PATCH /api/v1/exams/:id
+     * @param {AuthRequest} req - Chứa id trên params và UpdateExamDTO trong body.
+     * @param {Response} res - Đối tượng Response chuẩn của Express.
+     * @returns {Promise<void>} Phản hồi Result chứa ExamResponseDTO đã được cập nhật.
+     */
+    public edit = catchAsync(async (req: AuthRequest, res: Response) => {
+        const  id  = req.params.id as string;
 
-    //     // Logic nộp bài...
-    //     const response = await this._examService.completeExam(userId, examId, req.body);
+        // 1. Khởi tạo DTO từ body và params
+        const dto = new UpdateExamDTO({
+            ...req.body as Record<string, unknown>,
+            id: id
+        });
 
-    //     Result.ok(
-    //         res,
-    //         response,
-    //         Message.EXAM.SUBMIT_SUCCESS,
-    //         'EXAM_SUBMIT_SUCCESS'
-    //     );
-    // });
+        // 2. Tự thực hiện Validation logic
+        dto.isValid();
+
+        // 3. Ủy quyền xử lý cho Service
+        const response = await this._examService.updateExam(id, dto);
+
+        // 4. Trả về kết quả
+        Result.ok(
+            res,
+            response,
+            Message.EXAM.UPDATE_SUCCESS,
+            'EXAM_UPDATE_SUCCESS'
+        );
+    });
+
+    /**
+     * @description Thực hiện xóa mềm (Soft Delete) bài thi bằng cách cập nhật dấu mốc deletedAt.
+     * @route DELETE /api/v1/exams/:id
+     * @param {AuthRequest} req - Chứa id của bài thi cần xóa trên URL params.
+     * @param {Response} res - Đối tượng Response chuẩn của Express.
+     * @returns {Promise<void>} Phản hồi Result xác nhận xóa thành công (data: null).
+     */
+    public delete = catchAsync(async (req: AuthRequest, res: Response) => {
+        const  id  = req.params.id as string;
+
+        // Xử lý nghiệp vụ xóa qua Service
+        await this._examService.deleteExam(id);
+
+        Result.ok(
+            res,
+            null,
+            Message.EXAM.DELETE_SUCCESS,
+            'EXAM_DELETE_SUCCESS'
+        );
+    });
+
+    /**
+     * @description Khôi phục bài thi đã bị xóa mềm bằng cách gỡ bỏ dấu mốc deletedAt.
+     * @route PATCH /api/v1/exams/:id/restore
+     * @param {AuthRequest} req - Chứa id của bài thi cần khôi phục trên URL params.
+     * @param {Response} res - Đối tượng Response chuẩn của Express.
+     * @returns {Promise<void>} Phản hồi Result chứa thông tin bài thi sau khi khôi phục.
+     */
+    public restore = catchAsync(async (req: AuthRequest, res: Response) => {
+        const  id  = req.params.id as string;
+
+        // Xử lý nghiệp vụ khôi phục qua Service
+        const response = await this._examService.restoreExam(id);
+
+        Result.ok(
+            res,
+            response,
+            Message.EXAM.RESTORE_SUCCESS,
+            'EXAM_RESTORE_SUCCESS'
+        );
+    });
+
+    /**
+     * @description Khởi tạo bài thi thủ công bằng cách chỉ định danh sách câu hỏi cụ thể (Manual Snapshot).
+     * @route POST /api/v1/exams/manual
+     * @param {AuthRequest} req - Chứa CreateManualExamDTO (name, questionIds) trong body. userId lấy từ Token.
+     * @param {Response} res - Đối tượng Response chuẩn của Express.
+     * @returns {Promise<void>} Phản hồi Result chứa snapshot đề thi vừa được khởi tạo thủ công.
+     */
+    public createManual = catchAsync(async (req: AuthRequest, res: Response) => {
+        const userId = req.user?.userId;
+
+        // 1. Khởi tạo DTO thủ công (Yêu cầu truyền mảng questionIds)
+        const dto = new CreateManualExamDTO({
+            ...req.body as Record<string, unknown>,
+            userId: userId as string
+        });
+
+        // 2. Validate
+        dto.isValid();
+
+        // 3. Gọi Service Generator (Thường xử lý bốc đề/kiểm tra tính hợp lệ của câu hỏi)
+        const response = await this._examGeneratorService.createManual(dto);
+
+        Result.ok(
+            res,
+            response,
+            Message.EXAM.CREATE_SUCCESS,
+            'EXAM_MANUAL_CREATE_SUCCESS'
+        );
+    }); 
 }

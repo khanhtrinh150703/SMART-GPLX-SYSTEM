@@ -76,4 +76,18 @@ export interface IQuestionService {
    * @returns {Promise<Question[]>} Danh sách các thực thể câu hỏi.
    */
   getQuestionsByIds(questionIds: string[]): Promise<Question[]>;
+
+  /**
+   * @description Lấy toàn bộ câu hỏi khả dụng cho hạng bằng lái.
+   * @param licenseId - ID của hạng bằng (B1, B2, C...).
+   */
+  getByLicenseCategory(licenseId: string[]): Promise<Question[]>;
+
+  /**
+   * @description Kiểm tra tính toàn vẹn và sự hiện diện của một danh sách câu hỏi trong hệ thống.
+   * @param {string[]} ids - Mảng danh sách các ID câu hỏi cần xác thực.
+   * @returns {Promise<void>} Trả về Promise rỗng nếu tất cả ID đều hợp lệ.
+   * @throws {AppError} Ném lỗi QUESTION_DATA_INVALID nếu số lượng tìm thấy không khớp với số lượng ID truyền vào.
+   */
+  validateExistence(ids: string[]): Promise<void>;
 }

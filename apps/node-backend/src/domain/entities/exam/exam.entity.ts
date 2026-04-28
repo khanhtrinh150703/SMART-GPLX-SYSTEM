@@ -1,6 +1,6 @@
 import { AppError, ErrorCode } from "@/shared/errors";
 import { ExamStatus } from "@prisma/client";
-import { CreateExamProps, IExamProps } from "./exam.props";
+import { CreateExamProps, IExamProps, IExamQuestionProps } from "./exam.props";
 import { IUserAnswerDTO } from "@/application/dtos/request/exam/complete-exam.request.dto";
 import { BaseEntity } from "@/domain/seedwork/entity.base";
 
@@ -25,7 +25,7 @@ export class ExamEntity extends BaseEntity<IExamProps> {
       id: crypto.randomUUID(),
 
       // Mặc định khi mới bắt đầu thi
-      status: ExamStatus.IN_PROGRESS,
+      status: ExamStatus.PUBLISHED,
       score: 0,
       isPassed: false,
 
@@ -52,7 +52,7 @@ export class ExamEntity extends BaseEntity<IExamProps> {
   public static reconstitute(props: IExamProps): ExamEntity {
     return new ExamEntity(props);
   }
-  
+
   private touch(): void {
     this._props.updatedAt = new Date();
   }
@@ -65,7 +65,7 @@ export class ExamEntity extends BaseEntity<IExamProps> {
     const { props } = this;
 
     // 1. Chặn nếu đã hoàn thành trước đó
-    if (props.status === ExamStatus.COMPLETED) {
+    if (props.status === ExamStatus.PUBLISHED) {
       throw new AppError(ErrorCode.PROCESS.ALREADY_COMPLETED);
     }
 
@@ -109,10 +109,67 @@ export class ExamEntity extends BaseEntity<IExamProps> {
 
     // 5. Cập nhật trạng thái tổng quát của Entity
     this._props.score = correctCount;
-    this._props.status = ExamStatus.COMPLETED;
+    this._props.status = ExamStatus.PUBLISHED;
     this._props.endedAt = now;
 
     // Điều kiện đỗ: Đạt điểm sàn VÀ không sai bất kỳ câu điểm liệt nào
     this._props.isPassed = correctCount >= this._props.passingScore && !hasFailedCritical;
+  }
+
+  /**
+ * @description Cập nhật toàn diện thông tin thực thể bài thi.
+ * @param data - Dữ liệu cần cập nhật (Partial vì có thể chỉ update một vài trường).
+ */
+  public update(data: {
+    name?: string;
+    userId?: string;
+    status?: ExamStatus;
+    score?: number;
+    examMatrixId?: string | null;
+    licenseCategoryId?: string;
+    totalQuestions?: number;
+    passingScore?: number;
+    durationMinutes?: number;
+    minCriticalQuestions?: number;
+    questions?: IExamQuestionProps[];
+  }): void {
+    // 1. Kiểm tra tính hợp lệ sơ bộ (Business Invariants)
+    // "Validating exam name before assignment"
+    if (data.name !== undefined && data.name.trim() === '') {
+      throw new AppError(ErrorCode.EXAM.NAME_REQUIRED);
+    }
+
+    // 2. Cập nhật các trường thông tin cơ bản
+    if (data.name !== undefined) this._props.name = data.name;
+    if (data.userId !== undefined) this._props.userId = data.userId;
+    if (data.examMatrixId !== undefined) this._props.examMatrixId = data.examMatrixId;
+    if (data.licenseCategoryId !== undefined) this._props.licenseCategoryId = data.licenseCategoryId;
+
+    // 3. Cập nhật cấu hình Snapshot
+    // "Updating snapshot configuration values"
+    if (data.totalQuestions !== undefined) this._props.totalQuestions = data.totalQuestions;
+    if (data.passingScore !== undefined) this._props.passingScore = data.passingScore;
+    if (data.durationMinutes !== undefined) this._props.durationMinutes = data.durationMinutes;
+    if (data.minCriticalQuestions !== undefined) this._props.minCriticalQuestions = data.minCriticalQuestions;
+    if (data.score !== undefined) this._props.score = data.score;
+
+    if (data.status !== undefined) this._props.status = data.status;
+
+    // 4. Cập nhật danh sách câu hỏi (Snapshot Questions)
+    // "Replacing existing questions with a new snapshot array"
+    if (data.questions !== undefined) {
+      this._props.questions = data.questions;
+    }
+
+    // 5. Cập nhật dấu thời gian thay đổi
+    this.touch();
+  }
+
+  /**
+   * @description Kiểm tra xem thực thể có đang trong trạng thái bị xóa hay không.
+   * @returns {boolean} True nếu đã bị xóa mềm.
+   */
+  public isDeleted(): boolean {
+    return !!this.props.deletedAt;
   }
 }

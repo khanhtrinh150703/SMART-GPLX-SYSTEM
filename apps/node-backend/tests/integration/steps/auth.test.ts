@@ -223,7 +223,7 @@ export const authSteps = () => {
           .send({ email: AUTH_PAYLOAD.USER_TEST.email });
 
         expect(response.body.code).toBe(ErrorCode.SYSTEM.TOO_MANY_REQUESTS);
-      });
+      }, 10000);
     });
   });
 

@@ -2,6 +2,8 @@ import { ExamMatrix } from "@/domain/entities/exam-matrix/exam-matrix.entity";
 import { ExamMatrixResponseDTO } from "@/application/dtos/response/exam-matrix/exam-matrix-response.dto";
 import { Prisma } from "@prisma/client";
 import { IExamMatrixDetailProps } from "@/domain/entities/exam-matrix/exam-matrix.props";
+import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { ICachedExamMatrix } from "@/shared/master-data/exam-matrix";
 
 /**
  * @description Định nghĩa Type cho Record được trả về từ Prisma kèm theo quan hệ details.
@@ -23,7 +25,7 @@ export class ExamMatrixMapper {
     const details: IExamMatrixDetailProps[] = (raw.details ?? []).map((d) => ({
       id: d.id,
       chapterId: d.chapterId,
-      percentage: d.percentage
+      percentage: d.percentage,
     }));
 
     // Trả về thực thể Domain
@@ -48,26 +50,61 @@ export class ExamMatrixMapper {
    * @param {ExamMatrix} entity - Thực thể Domain.
    * @returns {Prisma.ExamMatrixUncheckedCreateInput} Dữ liệu đã chuẩn hóa cho Prisma.
    */
-  public static toPersistence(entity: ExamMatrix): Prisma.ExamMatrixUncheckedCreateInput {
+  /**
+     * @description Ánh xạ sang cấu trúc Prisma cho hành động CREATE.
+     * @param {ExamMatrix} entity - Thực thể Domain.
+     * @returns {Prisma.ExamMatrixCreateInput}
+     */
+  public static toCreatePersistence(entity: ExamMatrix): Prisma.ExamMatrixCreateInput {
     const props = entity.props;
 
     return {
-      id: props.id,
-      licenseCategoryId: props.licenseCategoryId,
+      id: props.id, // ID do Entity tự gen (UUID)
+      name: props.name,
       totalQuestions: props.totalQuestions,
       passingScore: props.passingScore,
       durationMinutes: props.durationMinutes,
       minCriticalQuestions: props.minCriticalQuestions,
-      name: props.name,
+      isDefault: props.isDefault,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
-      deletedAt: props.deletedAt ?? null,
-
+      // Kết nối với Hạng bằng lái thông qua connect (Chuẩn Prisma)
+      licenseCategory: {
+        connect: { id: props.licenseCategoryId }
+      },
+      // Tạo mới toàn bộ details lồng nhau
       details: {
         create: props.details.map(d => ({
-          id: d.id, // BẮT BUỘC: Phải có ID cho từng ExamMatrixDetail
-          chapterId: d.chapterId, // Đảm bảo d.chapterId là String
-          percentage: d.percentage
+          chapterId: d.chapterId,
+          percentage: d.percentage,
+        }))
+      }
+    };
+  }
+
+  /**
+   * @description Ánh xạ sang cấu trúc Prisma cho hành động UPDATE.
+   * @param {ExamMatrix} entity - Thực thể Domain.
+   * @returns {Prisma.ExamMatrixUpdateInput}
+   */
+  public static toUpdatePersistence(entity: ExamMatrix): Prisma.ExamMatrixUpdateInput {
+    const props = entity.props;
+
+    return {
+      name: props.name,
+      totalQuestions: props.totalQuestions,
+      passingScore: props.passingScore,
+      durationMinutes: props.durationMinutes,
+      minCriticalQuestions: props.minCriticalQuestions,
+      isDefault: props.isDefault,
+      updatedAt: new Date(), // Luôn cập nhật thời gian sửa
+
+      // Logic đồng bộ chi tiết (Re-sync pattern)
+      details: {
+        deleteMany: {}, // Xóa sạch cũ
+        create: props.details.map(d => ({
+          chapterId: d.chapterId,
+          percentage: d.percentage,
         }))
       }
     };
@@ -87,10 +124,12 @@ export class ExamMatrixMapper {
       totalQuestions: props.totalQuestions,
       passingScore: props.passingScore,
       durationMinutes: props.durationMinutes,
+      isDefault: props.isDefault,
+      status: props.deletedAt ? 'DELETED' : 'ACTIVE',
       minCriticalQuestions: props.minCriticalQuestions,
       details: props.details.map(d => ({
         chapterId: d.chapterId,
-        percentage: d.percentage
+        percentage: d.percentage,
       }))
     });
   }
@@ -102,5 +141,34 @@ export class ExamMatrixMapper {
    */
   public static toResponseList(entities: ExamMatrix[]): ExamMatrixResponseDTO[] {
     return entities.map(entity => this.toResponse(entity));
+  }
+
+  /**
+    * @description Chuyển đổi sang định dạng Selection (Value/Label) cho Dropdown
+    * @param {ExamMatrix} entity 
+    * @returns {SelectionResponseDto}
+    */
+  public static toSelectionResponse(entity: ICachedExamMatrix): SelectionResponseDto {
+    return new SelectionResponseDto({
+      value: entity.id!,
+      label: entity.name,
+      orderIndex: 1,
+    });
+  }
+
+  /**
+   * @description Chuyển đổi danh sách thực thể sang DTO dùng cho Dropdown.
+   * @param {ICachedExamMatrix[]} entities - Danh sách các thực thể ExamMatrix Domain.
+   * @returns {SelectionResponseDto[]} Mảng DTO đã sắp xếp theo thời gian.
+   */
+  public static toSelectionList(entities: ICachedExamMatrix[]): SelectionResponseDto[] {
+    // Nếu muốn cũ nhất lên đầu, hãy đổi thành a.props.createdAt.getTime() - b.props.createdAt.getTime().
+    return [...entities]
+      .sort((a, b) => {
+        const timeA = a.createdAt?.getTime() || 0;
+        const timeB = b.createdAt?.getTime() || 0;
+        return timeB - timeA; 
+      })
+      .map((entity) => this.toSelectionResponse(entity));
   }
 }
