@@ -83,6 +83,7 @@ import { ExamMatrixController } from "@/api/controllers/exam-session";
 
 // Nhóm Integration
 import { ImportController } from "@/api/controllers/integration";
+import { ExamPickerDomainService } from '@/domain/service/exam-picker.domain.service';
 
 
 // Service
@@ -151,6 +152,7 @@ container.register({
     importWorker: asClass(ImportWorker).singleton(),
     examService: asClass(ExamService).singleton(),
     examGeneratorService: asClass(ExamGeneratorService).singleton(),
+    examPickerService: asClass(ExamPickerDomainService).singleton(),
     masterDataCacheService: asClass(MasterDataCacheService).singleton(),
     mediaService: asClass(MediaService).singleton(),
 
@@ -164,5 +166,4 @@ container.register({
     importController: asClass(ImportController).singleton(),
     examMatrixController: asClass(ExamMatrixController).singleton(),
     examController: asClass(ExamController).singleton(),
-
 });

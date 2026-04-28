@@ -1,6 +1,6 @@
 import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-query.request.dto";
-import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
-import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
+import { CreateChapterRequestDto } from "@/application/dtos/request/chapter/create-chapter.request.dto";
+import { UpdateChapterRequestDto } from "@/application/dtos/request/chapter/update-chapter.request.dto";
 import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
 import { DeleteResponse } from "@/domain/constants/delete.constant";
 import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
@@ -33,17 +33,18 @@ export interface IChapterService {
 
   /**
    * @description Khởi tạo và lưu trữ một chương lý thuyết mới vào hệ thống.
-   * @param {CreateChapterRequestDTO} dto - Dữ liệu khởi tạo chương.
+   * @param {CreateChapterRequestDto} dto - Dữ liệu khởi tạo chương.
    * @returns {Promise<void>}
    */
-  createChapter(dto: CreateChapterRequestDTO): Promise<ChapterResponseDTO>;
+  createChapter( dto: CreateChapterRequestDto): Promise<ChapterResponseDTO>;
 
   /**
    * @description Cập nhật thông tin chi tiết hoặc thay đổi thứ tự hiển thị của chương.
-   * @param {UpdateChapterRequestDTO} dto - Dữ liệu cập nhật kèm ID định danh.
+   * @param {string} id - ID của chuong.
+   * @param {UpdateChapterRequestDto} dto - Dữ liệu cập nhật kèm ID định danh.
    * @returns {Promise<void>}
    */
-  updateChapter(dto: UpdateChapterRequestDTO): Promise<ChapterResponseDTO>;
+  updateChapter(id: string,dto: UpdateChapterRequestDto): Promise<ChapterResponseDTO>;
 
   /**
    * @description Xóa chương lý thuyết.

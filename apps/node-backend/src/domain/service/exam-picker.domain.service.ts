@@ -1,8 +1,9 @@
 import { IExamMatrixProps } from "@/domain/entities/exam-matrix/exam-matrix.props";
 import { IQuestionProps } from "@/domain/entities/question/question.props";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { IExamPickerDomainService } from "../interfaces/services/exam-engine/i-exam-picker.service";
 
-export class ExamPickerDomainService {
+export class ExamPickerDomainService implements IExamPickerDomainService {
 
   /**
    * @description Thực thi lọc và bốc câu hỏi theo đúng định mức ma trận.
@@ -10,7 +11,7 @@ export class ExamPickerDomainService {
    * @param {IExamMatrixProps} matrix - Cấu hình ma trận chi tiết.
    * @returns {IQuestionProps[]} Bộ câu hỏi hoàn chỉnh cho đề thi.
    */
-  public static execute(pool: IQuestionProps[], matrix: IExamMatrixProps): IQuestionProps[] {
+  public execute(pool: IQuestionProps[], matrix: IExamMatrixProps): IQuestionProps[] {
     const selected: IQuestionProps[] = [];
 
     // --- BƯỚC 0: CHECK TỔNG KHO ---
@@ -80,7 +81,7 @@ export class ExamPickerDomainService {
     * @private
     * @static
     */
-  private static _shuffle<T>(array: T[]): T[] {
+  private _shuffle<T>(array: T[]): T[] {
     return [...array].sort(() => Math.random() - 0.5);
   }
 }

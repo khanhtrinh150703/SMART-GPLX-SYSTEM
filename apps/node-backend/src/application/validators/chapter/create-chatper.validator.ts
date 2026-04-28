@@ -1,11 +1,11 @@
-import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
+import { CreateChapterRequestDto } from "@/application/dtos/request/chapter/create-chapter.request.dto";
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
  * @description Trình kiểm tra dữ liệu cho Chapter (Dịch: Chapter Validator)
  */
 export class CreateChapterValidator {
-  public static validate(dto: CreateChapterRequestDTO): void {
+  public static validate(dto: CreateChapterRequestDto): void {
     // 1. Kiểm tra tên không được trống
     if (!dto.name || dto.name.trim().length === 0) {
       throw new AppError(ErrorCode.CHAPTER.CREATE_FAILED, 400);

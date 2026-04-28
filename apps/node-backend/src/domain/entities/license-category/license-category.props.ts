@@ -3,6 +3,7 @@ export interface ILicenseCategoryProps {
   name: string;
   description: string;
   minAge: number;
+  orderIndex: number;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;

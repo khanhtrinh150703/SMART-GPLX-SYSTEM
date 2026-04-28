@@ -50,6 +50,7 @@ export function CreateQuestionModal({
       content: "",
       chapterId: "",
       licenseCategoryIds: [],
+      indexNumber: 1,
       difficultyLevel: 2,
       isCritical: false,
       status: "ACTIVE",
@@ -129,6 +130,7 @@ export function CreateQuestionModal({
       formData.append("difficultyLevel", String(values.difficultyLevel));
       formData.append("isCritical", String(values.isCritical));
       formData.append("status", values.status);
+      formData.append("indexNumber", String(values.indexNumber));
       values.licenseCategoryIds.forEach((id) =>
         formData.append("licenseCategoryIds[]", id),
       );

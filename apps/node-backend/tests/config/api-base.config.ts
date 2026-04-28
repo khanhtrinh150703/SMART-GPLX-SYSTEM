@@ -12,4 +12,5 @@ export const API_BASE = {
   QUESTION: `${API_CONFIG.BASE_URL}/questions`,
   EXAM_MATRIX: `${API_CONFIG.BASE_URL}/exam-matrices`,
   ROLE: `${API_CONFIG.BASE_URL}/roles`,
+  EXAM: `${API_CONFIG.BASE_URL}/exams`,
 } as const;

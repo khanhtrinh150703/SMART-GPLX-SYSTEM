@@ -11,4 +11,5 @@ export interface StandardResponse<T> {
 export interface SelectionData {
   value: string; // Thường là ID (UUID)
   label: string; // Tên hiển thị trên giao diện (ví dụ: "A1", "B2")
+  orderIndex?: number;
 }

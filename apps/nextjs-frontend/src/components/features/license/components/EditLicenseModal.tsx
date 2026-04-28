@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CreditCard, FileText, Activity, Info, User } from "lucide-react";
+import { CreditCard, FileText, Activity, Info, User, Hash } from "lucide-react";
 import axios from "axios";
 
 // Components
@@ -14,8 +14,12 @@ import Button from "@/components/ui/Button/Button";
 import { Alert } from "@/components/ui/Alert";
 
 // Types & Schemas
-import { editLicenseSchema, LicenseFormEditValues } from "../schema/license.schema";
-import { LicenseCategory } from "@/types/license-category.types";
+import {
+  editLicenseSchema,
+  LicenseFormEditValues,
+} from "../schema/license.schema";
+import { LicenseCategory } from "@/components/features/license/types/license-category.types";
+import { FormField } from "@/components/common/Form/FormField";
 
 /**
  * EditLicenseModal - Modal chỉnh sửa thông tin hạng bằng lái.
@@ -60,6 +64,7 @@ export default function EditLicenseModal({
         description: license.description,
         minAge: license.minAge,
         status: license.status,
+        orderIndex: license.orderIndex,
       });
     }
   }, [license, isOpen, reset]);
@@ -69,17 +74,17 @@ export default function EditLicenseModal({
     try {
       setMessage(null);
       await onSave(data);
-      
+
       // Nếu thành công (onSave không throw error), đóng Modal
       onClose();
     } catch (error) {
       // Hứng lỗi từ trang cha ném về (Catch error bubbled up from parent)
       let errorText = "Cập nhật thất bại. Vui lòng thử lại!";
-      
+
       if (axios.isAxiosError(error)) {
         errorText = error.response?.data?.message || errorText;
       }
-      
+
       setMessage({ type: "error", text: errorText });
     }
   };
@@ -136,6 +141,16 @@ export default function EditLicenseModal({
           </div>
         </div>
 
+        <FormField
+          label="Thứ tự hiển thị (Order Index)"
+          icon={Hash}
+          type="number"
+          placeholder="VD: 1"
+          {...register("orderIndex", { valueAsNumber: true })}
+          error={errors.orderIndex?.message}
+          disabled={isLoading}
+        />
+
         {/* SECTION 2: Chi tiết quyền hạn */}
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-sm font-bold text-slate-700 ml-1">
@@ -147,7 +162,7 @@ export default function EditLicenseModal({
             disabled={isLoading}
             className={cn(
               "w-full p-4 rounded-[2rem] border border-slate-200 min-h-[120px] outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm bg-white shadow-sm resize-none",
-              errors.description && "border-rose-500 ring-1 ring-rose-500"
+              errors.description && "border-rose-500 ring-1 ring-rose-500",
             )}
             placeholder="Mô tả các loại phương tiện được phép điều khiển..."
           />

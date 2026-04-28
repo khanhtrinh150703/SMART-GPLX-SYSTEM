@@ -1,7 +1,8 @@
 import { IExamMatrixRepository } from "@/domain/interfaces/repositories/exam-session/i-exam-matrix.repository";
 import { ExamMatrixMapper } from "@/infrastructure/database/mappers/exam-session/exam-matrix.mapper";
 import { ExamMatrix as ExamMatrixEntity } from "@/domain/entities/exam-matrix/exam-matrix.entity";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+import { ExamMatrixQueryDTO } from "@/application/dtos/request/exam-matrix/exam-matrix-query.request.dto";
 
 /**
  * @interface IMySQLExamMatrixRepositoryCradle
@@ -63,13 +64,117 @@ export class MySQLExamMatrixRepository implements IExamMatrixRepository {
   }
 
   /**
+    * @description Truy vấn danh sách ma trận đề thi.
+    * Logic: Xử lý tìm kiếm động và sắp xếp nâng cao (theo status và số lượng chương).
+    */
+  public async findAndCount(
+    query: ExamMatrixQueryDTO,
+    skip: number,
+    limit: number
+  ): Promise<[ExamMatrixEntity[], number]> {
+    const where: Prisma.ExamMatrixWhereInput = {};
+
+    // 1. LỌC TRẠNG THÁI (THEO TAB)
+    // (Filtering by status tabs based on deletedAt column)
+    if (query.status === 'active') {
+      where.deletedAt = null;
+    } else if (query.status === 'deleted') {
+      where.deletedAt = { not: null };
+    }
+
+    // 2. TÌM KIẾM ĐỘNG (DYNAMIC SEARCH - SWITCH CASE)
+    const searchVal = query.search?.trim();
+    const activeField = query.activeField;
+
+    if (searchVal && activeField) {
+      switch (activeField) {
+        case 'licenseCategory':
+          where.licenseCategory = {
+            name: { contains: searchVal }
+          };
+          break;
+        case 'name':
+          where.name = { contains: searchVal };
+          break;
+        case 'id':
+          where.id = { contains: searchVal };
+          break;
+        case 'totalQuestions':
+        case 'passingScore':
+        case 'durationMinutes': {
+          const numVal = Number(searchVal);
+          if (!isNaN(numVal)) {
+            if (activeField === 'totalQuestions') where.totalQuestions = numVal;
+            if (activeField === 'passingScore') where.passingScore = numVal;
+            if (activeField === 'durationMinutes') where.durationMinutes = numVal;
+          }
+          break;
+        }
+      }
+    }
+
+    // 3. ĐỊNH NGHĨA QUAN HỆ CẦN LẤY (INCLUDE)
+    const include = {
+      details: true,
+      licenseCategory: { select: { name: true } }
+    };
+
+    // 4. XỬ LÝ SẮP XẾP NÂNG CAO (ADVANCED SORTING)
+    // Mặc định sắp xếp theo ngày tạo mới nhất
+    let orderBy: Prisma.ExamMatrixOrderByWithRelationInput = { createdAt: 'desc' };
+
+    if (query.sortBy) {
+      const direction = query.sortOrder || 'desc';
+
+      // Trường hợp 1: Sắp xếp theo Trạng thái (status -> deletedAt)
+      if (query.sortBy === 'status') {
+        orderBy = { deletedAt: direction };
+      }
+      // Trường hợp 2: Sắp xếp theo Số lượng chương (details -> _count)
+      // (Sorting by count of related records in the 'details' collection)
+      else if (query.sortBy === 'details' || query.sortBy === 'detailsCount') {
+        orderBy = {
+          details: {
+            _count: direction
+          }
+        };
+      }
+      // Trường hợp 3: Các trường cơ bản có trong Schema
+      else {
+        const validFields = ['name', 'totalQuestions', 'passingScore', 'durationMinutes', 'createdAt'];
+        if (validFields.includes(query.sortBy)) {
+          orderBy = { [query.sortBy]: direction };
+        }
+      }
+    }
+
+    // 5. THỰC THI TRUY VẤN TRANSACTION
+    const [rawRecords, total] = await this._prisma.$transaction([
+      this._prisma.examMatrix.findMany({
+        where,
+        skip,
+        take: limit,
+        include,
+        orderBy,
+      }),
+      this._prisma.examMatrix.count({ where }),
+    ]);
+
+    // 6. CHUYỂN ĐỔI SANG DOMAIN ENTITY
+    return [
+      rawRecords.map((rec) => ExamMatrixMapper.toDomain(rec)),
+      total
+    ];
+  }
+
+  /**
    * @description Khởi tạo và lưu trữ một Ma trận đề thi mới vào hệ thống.
    * @param {ExamMatrixEntity} entity - Thực thể ma trận đề thi từ tầng Domain.
    * @returns {Promise<ExamMatrixEntity>} Thực thể đã được lưu kèm thông tin ID và quan hệ (details).
    */
   public async createExamMatrix(entity: ExamMatrixEntity): Promise<ExamMatrixEntity> {
     // 1. Chuyển đổi Thực thể Domain sang dạng dữ liệu có thể lưu trữ (Persistence)
-    const createData = ExamMatrixMapper.toPersistence(entity);
+    const createData = ExamMatrixMapper.toCreatePersistence(entity);
 
     // 2. Thực hiện lệnh tạo mới trong Database thông qua Prisma
     // include: { details: true } đảm bảo lấy về cả danh sách cấu trúc chi tiết của đề thi
@@ -89,16 +194,11 @@ export class MySQLExamMatrixRepository implements IExamMatrixRepository {
    * @returns {Promise<ExamMatrixEntity>} Thực thể sau khi cập nhật.
    */
   public async updateExamMatrix(id: string, entity: ExamMatrixEntity): Promise<ExamMatrixEntity> {
-    const data = ExamMatrixMapper.toPersistence(entity);
+    const data = ExamMatrixMapper.toUpdatePersistence(entity);
 
     const updated = await this._prisma.examMatrix.update({
       where: { id },
-      data: {
-        totalQuestions: data.totalQuestions,
-        passingScore: data.passingScore,
-        durationMinutes: data.durationMinutes,
-        minCriticalQuestions: data.minCriticalQuestions,
-      },
+      data: data,
       include: { details: true },
     });
 

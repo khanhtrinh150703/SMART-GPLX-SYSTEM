@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { GenericTable } from "@/components/common/Generic-Table/GenericTable";
 import { getLicenseColumns } from "@/components/features/license/components/license-columns";
-import { LicenseCategory } from "@/types/license-category.types";
+import { LicenseCategory } from "@/components/features/license/types/license-category.types";
 
 /**
  * LicenseTableProps - Thêm page và limit vào Interface

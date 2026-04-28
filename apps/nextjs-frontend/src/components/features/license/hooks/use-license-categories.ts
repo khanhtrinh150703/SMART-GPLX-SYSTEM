@@ -3,7 +3,7 @@ import { licenseCategoryService } from "@/components/features/license/service/li
 import {
   CreateLicenseCategoryRequest,
   UpdateLicenseCategoryRequest
-} from "@/types/license-category.types";
+} from "@/components/features/license/types/license-category.types";
 import { QueryParams } from "@/types/paginaton.type";
 
 /**

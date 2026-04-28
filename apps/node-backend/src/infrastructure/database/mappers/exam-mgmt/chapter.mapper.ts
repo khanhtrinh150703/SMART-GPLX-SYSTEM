@@ -2,7 +2,9 @@ import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterProps } from "@/domain/entities/chapter/chapter.props";
 import { IChapterRecord } from "@/infrastructure/persistence/exam-mgmt/chapter.record";
+import { ICachedChapter } from "@/shared/master-data";
 import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { Prisma } from "@prisma/client";
 
 /**
  * @description Lớp tiện ích ánh xạ dữ liệu (Data Mapper) cho phân hệ Chương lý thuyết (Chapter).
@@ -33,19 +35,33 @@ export class ChapterMapper {
   }
 
   /**
-   * @description Chuyển đổi thực thể nghiệp vụ sang định dạng lưu trữ bền vững (Persistence Model).
-   * @param {Chapter} chapter - Thực thể Domain chứa dữ liệu mới nhất.
-   * @returns {object} Đối tượng sẵn sàng để lưu trữ vào Database.
-   */
-  public static toPersistence(chapter: Chapter) {
+     * @description Ánh xạ sang cấu trúc Prisma dành cho hành động CREATE (Tạo mới).
+     * Dùng khi lần đầu lưu Chapter vào Database.
+     */
+  public static toCreatePersistence(chapter: Chapter): Prisma.ChapterCreateInput {
     return {
-      id: chapter.id,
+      id: chapter.id, // ID được tạo từ tầng Domain (UUID)
       name: chapter.name,
       description: chapter.description,
       orderIndex: chapter.orderIndex,
       code: chapter.code,
-      createdAt: chapter.createdAt,
-      updatedAt: chapter.updatedAt,
+      createdAt: chapter.createdAt || new Date(),
+      updatedAt: chapter.updatedAt || new Date(),
+      deletedAt: chapter.deletedAt ?? null,
+    };
+  }
+
+  /**
+   * @description Ánh xạ sang cấu trúc Prisma dành cho hành động UPDATE (Cập nhật).
+   * Tuyệt đối không bao gồm 'id' và 'createdAt' để bảo vệ dữ liệu.
+   */
+  public static toUpdatePersistence(chapter: Chapter): Prisma.ChapterUpdateInput {
+    return {
+      name: chapter.name,
+      description: chapter.description,
+      orderIndex: chapter.orderIndex,
+      code: chapter.code,
+      updatedAt: new Date(), // Luôn cập nhật dấu thời gian khi có chỉnh sửa
       deletedAt: chapter.deletedAt ?? null,
     };
   }
@@ -78,22 +94,28 @@ export class ChapterMapper {
 
   /**
    * @description Chuyển đổi sang định dạng Selection (Value/Label) cho Dropdown
-   * @param {Chapter} entity 
+   * @param {ICachedChapter} entity 
    * @returns {SelectionResponseDto}
    */
-  public static toSelectionResponse(entity: Chapter): SelectionResponseDto {
+  public static toSelectionResponse(entity: ICachedChapter): SelectionResponseDto {
     return new SelectionResponseDto({
       value: entity.id!,
-      label: entity.name
+      label: entity.name,
+      orderIndex: entity.orderIndex,
     });
   }
 
   /**
-   * @description Chuyển đổi danh sách Entity sang danh sách DTO dùng cho Selection (Dropdown).
-   * @param {Chapter[]} entities - Danh sách các đối tượng Chapter Domain.
-   * @returns {SelectionResponseDto[]} Mảng các DTO định dạng để hiển thị/lựa chọn.
+   * @description Chuyển đổi danh sách thực thể sang DTO dùng cho Dropdown.
+   * Dữ liệu được sắp xếp theo chỉ số thứ tự (orderIndex) tăng dần.
+   * @param {ICachedChapter[]} entities - Danh sách các thực thể Chapter Domain.
+   * @returns {SelectionResponseDto[]} Mảng DTO đã sắp xếp theo thứ tự (1 -> N).
    */
-  public static toSelectionList(entities: Chapter[]): SelectionResponseDto[] {
-    return entities.map(this.toSelectionResponse);
+  public static toSelectionList(entities: ICachedChapter[]): SelectionResponseDto[] {
+    // 1. Sử dụng Spread Operator để tạo bản sao, tránh "Mutate" mảng gốc
+    // 2. Sắp xếp theo orderIndex. Nếu orderIndex undefined, mặc định về 0.
+    return [...entities]
+      .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
+      .map((entity) => this.toSelectionResponse(entity));
   }
 }

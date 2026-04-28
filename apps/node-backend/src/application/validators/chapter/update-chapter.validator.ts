@@ -1,15 +1,15 @@
 
-import { UpdateChapterRequestDTO } from '@/application/dtos/request/chapter/update-chapter.request.dto';
+import { UpdateChapterRequestDto } from '@/application/dtos/request/chapter/update-chapter.request.dto';
 import { AppError, ErrorCode } from '@/shared/errors';
 
 // application/validators/update-chapter.validator.ts
 
 export class UpdateChapterValidator {
-    public static validate(dto: UpdateChapterRequestDTO): void {
+    public static validate(dto: UpdateChapterRequestDto): void {
         // 1. Phải có ID mới làm ăn được gì
-        if (!dto.id) {
-            throw new AppError(ErrorCode.CHAPTER.NOT_FOUND, 404);
-        }
+        // if (!dto.id) {
+        //     throw new AppError(ErrorCode.CHAPTER.NOT_FOUND, 404);
+        // }
 
         // 2. Nếu có gửi code, thì code không được để trống
         // CHỈ check định dạng, KHÔNG check trùng ở đây

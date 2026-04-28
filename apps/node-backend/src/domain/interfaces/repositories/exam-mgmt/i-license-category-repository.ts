@@ -45,7 +45,7 @@ export interface ILicenseCategoryRepository {
    * @param {LicenseCategory} category - Thực thể đã được thay đổi dữ liệu.
    * @returns {Promise<void>}
    */
-  updateLicenseCategory(category: LicenseCategory): Promise<void>;
+  updateLicenseCategory(id: string, category: LicenseCategory): Promise<void>;
 
   /**
    * @description Thống kê chi tiết số lượng các bản ghi đang tham chiếu đến Hạng bằng lái này.

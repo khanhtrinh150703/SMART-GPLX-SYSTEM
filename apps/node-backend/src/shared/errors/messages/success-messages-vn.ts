@@ -93,14 +93,24 @@ export class Message {
     RESTORE_SUCCESS: 'Khôi phục ma trận đề thi thành công.',
   } as const;;
 
-  static readonly EXAM = {
-    GENERATE_SUCCESS: 'Tạo đề thi thành công.',
+static readonly EXAM = {
+    // Nhóm Truy vấn (Query)
+    FETCH_SUCCESS: 'Tải danh sách đề thi thành công.',
+    GET_DETAIL_SUCCESS: 'Tải chi tiết kết quả bài làm thành công.',
+    GET_HISTORY_SUCCESS: 'Tải danh sách lịch sử thi thành công.',
+
+    // Nhóm Khởi tạo (Creation)
+    GENERATE_SUCCESS: 'Tạo đề thi tự động thành công.',
+    CREATE_SUCCESS: 'Khởi tạo đề thi thủ công thành công.',
+
+    // Nhóm Thao tác (Action)
     SUBMIT_SUCCESS: 'Nộp bài thi thành công.',
     COMPLETE_SUCCESS: 'Nộp bài thi và chấm điểm thành công.',
-    GET_HISTORY_SUCCESS: 'Tải danh sách lịch sử thi thành công.',
-    GET_DETAIL_SUCCESS: 'Tải chi tiết kết quả bài làm thành công.',
-    NOT_FOUND: 'Không tìm thấy thông tin bài thi.',
-  } as const;;
+    UPDATE_SUCCESS: 'Cập nhật thông tin đề thi thành công.',
+    DELETE_SUCCESS: 'Xóa đề thi thành công.',
+    RESTORE_SUCCESS: 'Khôi phục đề thi thành công.',
+
+  } as const;
 
   /**
    * Thông báo liên quan đến Phiên làm bài (Session - NoSQL)

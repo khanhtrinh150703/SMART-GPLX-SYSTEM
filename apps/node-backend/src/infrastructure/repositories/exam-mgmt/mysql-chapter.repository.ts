@@ -62,22 +62,19 @@ export class MySQLChapterRepository implements IChapterRepository {
 
   public async createChapter(chapter: Chapter): Promise<void> {
     // Ép kiểu chuẩn từ Mapper sang Prisma Input
-    const data = ChapterMapper.toPersistence(chapter) as Prisma.ChapterCreateInput;
+    const persistence = ChapterMapper.toCreatePersistence(chapter);
 
-    await this._prisma.chapter.create({ data });
+    await this._prisma.chapter.create({ data: persistence });
   }
 
-  public async updateChapter(chapter: Chapter): Promise<void> {
+  public async updateChapter(id: string, chapter: Chapter): Promise<void> {
     if (!chapter.id) return;
 
-    const data = ChapterMapper.toPersistence(chapter) as Prisma.ChapterUpdateInput;
+    const persistence = ChapterMapper.toUpdatePersistence(chapter);
 
     await this._prisma.chapter.update({
-      where: { id: chapter.id },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      }
+      where: { id },
+      data: persistence,
     });
   }
 
@@ -143,6 +140,7 @@ export class MySQLChapterRepository implements IChapterRepository {
     });
     return this._mapToDomain(record);
   }
+
   /**
    * @description Thống kê chi tiết các dữ liệu đang phụ thuộc vào Chương.
    * Giúp hệ thống quyết định có cho phép xóa (Soft Delete) chương này hay không.

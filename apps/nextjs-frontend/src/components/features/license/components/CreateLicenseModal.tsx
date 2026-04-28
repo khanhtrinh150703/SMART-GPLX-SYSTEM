@@ -14,7 +14,10 @@ import { FormGrid } from "@/components/common/Form/FormGrid";
 import { Alert } from "@/components/ui/Alert";
 
 // Types & Schemas
-import { CreateLicensePayload, createLicenseSchema } from "../schema/license.schema";
+import {
+  CreateLicensePayload,
+  createLicenseSchema,
+} from "../schema/license.schema";
 
 interface CreateLicenseModalProps {
   isOpen: boolean;
@@ -23,13 +26,12 @@ interface CreateLicenseModalProps {
   isLoading: boolean;
 }
 
-export default function CreateLicenseModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  isLoading 
+export default function CreateLicenseModal({
+  isOpen,
+  onClose,
+  onSave,
+  isLoading,
 }: CreateLicenseModalProps) {
-  
   // 1. Quản lý thông báo lỗi nội bộ (Internal Error State)
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -37,33 +39,33 @@ export default function CreateLicenseModal({
   } | null>(null);
 
   // 2. Khởi tạo Form
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors } 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
   } = useForm<CreateLicensePayload>({
     resolver: zodResolver(createLicenseSchema),
-    defaultValues: { name: "", description: "", minAge: 18 } 
+    defaultValues: { name: "", description: "", minAge: 18 },
   });
 
   // 3. Hàm xử lý nộp form (Handle Submit with Error Catching)
   const onSubmit = async (values: CreateLicensePayload) => {
     try {
       setMessage(null); // Xóa lỗi cũ trước khi thử lại
-      
+
       // Đợi trang cha thực hiện lưu dữ liệu
-      await onSave(values); 
-      
+      await onSave(values);
+
       // Nếu không có lỗi: Đóng modal (Thành công xử lý ở trang cha qua Toast)
       onClose();
     } catch (error) {
       // Nếu trang cha ném lỗi (mutateAsync fail), Modal sẽ bắt ở đây
       let errorText = "Không thể tạo hạng bằng lái. Vui lòng thử lại!";
-      
+
       if (axios.isAxiosError(error)) {
         errorText = error.response?.data?.message || errorText;
       }
-      
+
       setMessage({ type: "error", text: errorText });
     }
   };
@@ -78,7 +80,6 @@ export default function CreateLicenseModal({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        
         {/* HIỂN THỊ ALERT (Lỗi tự hiện tự mất theo Modal nhờ vào 'key' ở trang cha) */}
         {message && (
           <Alert
@@ -104,12 +105,22 @@ export default function CreateLicenseModal({
             label="Độ tuổi tối thiểu"
             icon={User}
             type="number"
-            {...register("minAge", { valueAsNumber: true })} 
+            {...register("minAge", { valueAsNumber: true })}
             error={errors.minAge?.message}
             disabled={isLoading}
           />
         </FormGrid>
 
+        <FormField
+          label="Thứ tự hiển thị (Order Index)"
+          icon={Hash}
+          type="number"
+          placeholder="VD: 1"
+          {...register("orderIndex", { valueAsNumber: true })}
+          error={errors.orderIndex?.message}
+          disabled={isLoading}
+        />
+        
         <FormField
           label="Mô tả quyền hạn"
           icon={Info}
@@ -129,12 +140,12 @@ export default function CreateLicenseModal({
           >
             Hủy bỏ
           </button>
-          <Button 
-            type="submit" 
-            variant="primary" 
-            isLoading={isLoading} 
-            text="Tạo hạng bằng" 
-            className="flex-1 h-[56px] rounded-2xl shadow-lg shadow-emerald-500/20" 
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isLoading}
+            text="Tạo hạng bằng"
+            className="flex-1 h-[56px] rounded-2xl shadow-lg shadow-emerald-500/20"
           />
         </div>
       </form>

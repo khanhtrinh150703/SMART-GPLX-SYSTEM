@@ -21,7 +21,7 @@ export const HomeNavigationButton = ({
 
   const { user } = useUserStore();
 
-  const destination = user ? "/dashboard" : "/";
+  const destination = user ? "/overview" : "/";
   const displayLabel = label || (user ? "Về bảng điều khiển" : "Về trang chủ");
 
   return (

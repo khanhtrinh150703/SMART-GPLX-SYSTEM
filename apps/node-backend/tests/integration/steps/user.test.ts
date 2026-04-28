@@ -47,6 +47,12 @@ export const userSteps = (
 
     // --- PHASE 1: USER SELF-MANAGEMENT ---
     describe('📝 Kịch bản: Người dùng tự quản lý thông tin', () => {
+      it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+        const res = await request(app)
+          .patch(USER_ENDPOINTS.ME_PROFILE)
+          .send(USER_UPDATE_DATA);
+        expect(res.status).toBe(401); // Unauthorized
+      });
 
       it('Nên cập nhật thông tin cá nhân thành công', async () => {
         const response = await request(app)
@@ -90,6 +96,22 @@ export const userSteps = (
     // --- PHASE 2: ADMIN MANAGEMENT ---
     describe('🚫 Kịch bản: Quyền Quản trị viên (Admin Actions)', () => {
 
+      it('Nên từ chối (403) khi User thường Xóa', async () => {
+        const response = await request(app)
+          .delete(USER_ENDPOINTS.USER_DELETE(regularUserId))
+          .set(getAuthHeader(regularToken)); // Dùng token User thường
+
+        expect(response.status).toBe(403); // Forbidden
+        expect(response.body.success).toBe(false);
+      });
+
+      it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+        const res = await request(app)
+          .patch(USER_ENDPOINTS.USER_STATUS(regularUserId))
+          .send({ status: 'active' });
+        expect(res.status).toBe(401); // Unauthorized
+      });
+
       it('Nên cho phép Admin cập nhật trạng thái người dùng khác', async () => {
         const response = await request(app)
           .patch(USER_ENDPOINTS.USER_STATUS(regularUserId))
@@ -98,6 +120,15 @@ export const userSteps = (
 
         expect(response.status).toBe(200);
         expect(response.body.message).toBe(Message.USER.STATUS_UPDATED);
+      });
+
+      it('Nên từ chối (403) khi User thường  Khôi phục tài khoản', async () => {
+        const response = await request(app)
+          .patch(USER_ENDPOINTS.USER_RESTORE(regularUserId))
+          .set(getAuthHeader(regularToken)); // Dùng token User thường
+
+        expect(response.status).toBe(403); // Forbidden
+        expect(response.body.success).toBe(false);
       });
 
       it('Nên cho phép Admin Xóa mềm và Khôi phục tài khoản', async () => {
@@ -146,14 +177,11 @@ export const userSteps = (
         expect(response.body.success).toBe(false);
       });
 
-      // it('Nên đăng xuất thành công và hủy bỏ phiên làm việc', async () => {
-      //   const res = await request(app)
-      //     .post(AUTH_ENDPOINTS.LOGOUT)
-      //     .set(getAuthHeader(regularToken));
-
-      //   expect(res.status).toBe(200);
-      //   expect(res.body.code).toBe('AUTH_LOGOUT_SUCCESS');
-      // });
+      it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+        const res = await request(app)
+          .get(USER_ENDPOINTS.USERS_LIST)
+        expect(res.status).toBe(401); // Unauthorized
+      });
     });
   });
 };

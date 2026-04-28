@@ -3,7 +3,6 @@
 import React from "react";
 import { ShieldAlert } from "lucide-react";
 import { containerVariants, iconBoxVariants } from "./global-error.variants";
-// 🚀 TRIỆU HỒI: Nút "Về nhà" thông minh, có Shimmer và Icon nhún nhảy
 import { HomeNavigationButton } from "../Navigation/HomeNavigationButton";
 
 /**

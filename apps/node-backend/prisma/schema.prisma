@@ -14,9 +14,10 @@ enum Status {
 }
 
 enum ExamStatus {
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
 }
 
 // ==========================================
@@ -104,7 +105,8 @@ model LicenseCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
   minAge      Int       @default(18) @map("min_age")
-  
+  orderIndex   Int       @default(0) @map("order_index") 
+
   questionLinks   QuestionLicenseCategory[]
   examMatrix      ExamMatrix[]
   examAttempts    ExamAttempt[]
@@ -229,7 +231,6 @@ model ExamMatrixDetail {
   examMatrixId  String     @map("exam_matrix_id") @db.VarChar(36)
   chapterId     String     @map("chapter_id") @db.VarChar(36)
   percentage    Int        @map("percentage")
-
   examMatrix    ExamMatrix @relation(fields: [examMatrixId], references: [id], onDelete: Cascade)
   chapter       Chapter    @relation(fields: [chapterId], references: [id])
 
@@ -241,15 +242,15 @@ model Exam {
   id                   String         @id @default(uuid()) @db.VarChar(36)
   name                 String         @db.VarChar(100)
   userId               String         @map("user_id") @db.VarChar(36)
-  examMatrixId         String         @map("exam_matrix_id") @db.VarChar(36)
+  examMatrixId         String?        @map("exam_matrix_id") @db.VarChar(36)
   licenseCategoryId    String         @map("license_category_id") @db.VarChar(36)
-  
+    
   totalQuestions       Int            @map("total_questions")
   passingScore         Int            @map("passing_score")
   durationMinutes      Int            @map("duration_minutes")
   minCriticalQuestions Int            @map("min_critical_questions")
 
-  status               ExamStatus     @default(IN_PROGRESS)
+  status               ExamStatus     @default(PUBLISHED)
   score                Int            @default(0)
   isPassed             Boolean        @default(false)
   
@@ -258,7 +259,7 @@ model Exam {
   deletedAt            DateTime?      @map("deleted_at")
 
   user                 User            @relation(fields: [userId], references: [id])
-  examMatrix           ExamMatrix      @relation(fields: [examMatrixId], references: [id])
+  examMatrix           ExamMatrix?      @relation(fields: [examMatrixId], references: [id])
   licenseCategory      LicenseCategory @relation(fields: [licenseCategoryId], references: [id]) 
   questions            ExamQuestion[]
   @@index([userId, status])

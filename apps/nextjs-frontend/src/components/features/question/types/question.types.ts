@@ -17,7 +17,7 @@ export interface Question {
   content: string;
   imageUrl: string | null;
   isCritical: boolean;
-
+  indexNumber: number;
   // difficulty: Cấu trúc độ khó dạng Object (Difficulty object structure)
   difficulty: {
     level: number;

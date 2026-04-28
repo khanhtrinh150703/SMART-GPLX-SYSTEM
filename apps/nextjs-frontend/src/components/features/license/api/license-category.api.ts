@@ -5,7 +5,7 @@ import {
     LicenseCategory,
     CreateLicenseCategoryRequest,
     UpdateLicenseCategoryRequest
-} from "@/types/license-category.types";
+} from "@/components/features/license/types/license-category.types";
 import { PaginatedResult, QueryParams } from "@/types/paginaton.type";
 
 /**

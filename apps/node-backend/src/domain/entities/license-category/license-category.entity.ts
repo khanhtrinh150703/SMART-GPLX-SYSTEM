@@ -67,6 +67,7 @@ export class LicenseCategory extends BaseEntity<ILicenseCategoryProps> {
   get name(): string { return this._props.name; }
   get description(): string { return this._props.description; }
   get minAge(): number { return this._props.minAge; }
+  get orderIndex(): number { return this._props.orderIndex; }
 
   // Fix: Thêm | undefined vì trong constructor chúng là optional
   get createdAt(): Date | undefined { return this._props.createdAt; }
@@ -76,7 +77,7 @@ export class LicenseCategory extends BaseEntity<ILicenseCategoryProps> {
   /**
    * Cập nhật thông tin hạng bằng với logic kiểm tra nghiệp vụ (Business Rules).
    */
-  public updateDetails(name: string, description: string, minAge: number): void {
+  public updateDetails(name: string, description: string, minAge: number, orderIndex: number): void {
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
 
@@ -111,6 +112,8 @@ export class LicenseCategory extends BaseEntity<ILicenseCategoryProps> {
     this._props.name = trimmedName;
     this._props.description = trimmedDescription;
     this._props.minAge = minAge;
+    this._props.orderIndex = orderIndex;
+    this.touch()
   }
 
   public restore(): void {

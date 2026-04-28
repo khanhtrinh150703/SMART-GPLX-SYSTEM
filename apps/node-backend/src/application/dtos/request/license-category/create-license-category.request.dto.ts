@@ -11,6 +11,7 @@ export class CreateLicenseCategoryRequestDTO {
   public readonly name: string;
   public readonly description: string;
   public readonly minAge: number;
+  public readonly orderIndex: number;
 
   /**
    * Constructor nhận vào dữ liệu thô để khởi tạo object.
@@ -21,6 +22,7 @@ export class CreateLicenseCategoryRequestDTO {
     this.name = data.name?.trim() || "";
     this.description = data.description?.trim() || "";
     this.minAge = data.minAge ?? 18;
+    this.orderIndex = data.orderIndex ?? 1;
   }
 
   /**
@@ -44,6 +46,10 @@ export class CreateLicenseCategoryRequestDTO {
 
     if (this.minAge < 18) {
       throw new AppError(ErrorCode.VALIDATION.AGE_INVALID); // "Độ tuổi tối thiểu không được nhỏ hơn 18."
+    }
+
+    if (this.orderIndex < 0) {
+      throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER); 
     }
 
     // Kiểm tra định dạng bằng Regex (VD: A1, B1, B2...)

@@ -15,11 +15,16 @@ export const selectVariants = cva(
       rounded: {
         xl: "rounded-2xl",
         "3xl": "rounded-[2rem]", // Phong cách Organic (Hữu cơ)
+      },
+      hasIcon: {
+        true: "pl-14", // Tạo khoảng trống bên trái cho icon (Left spacing for icon)
+        false: "pl-6",
       }
     },
     defaultVariants: {
       status: "default",
       rounded: "3xl",
+      hasIcon: false,
     },
   }
 );

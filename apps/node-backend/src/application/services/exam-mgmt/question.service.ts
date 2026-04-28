@@ -233,7 +233,7 @@ export class QuestionService implements IQuestionService {
     const entity = await this._questionRepo.findById(id);
     if (!entity) throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
     return QuestionMapper.toResponse(entity);
-  } 
+  }
 
   /**
    * @description Lấy danh sách thông tin chi tiết các câu hỏi theo danh sách IDs.
@@ -261,10 +261,35 @@ export class QuestionService implements IQuestionService {
     // SQL 'IN' không bảo đảm thứ tự. Map này giúp sắp xếp lại đúng thứ tự ids truyền vào.
     const orderedEntities = ids.map(id => {
       const found = entities.find(entity => entity.id === id);
-      return found!; 
+      return found!;
     });
 
     return orderedEntities;
+  }
+
+  /**
+   * @description Lấy danh sách thông tin chi tiết các câu hỏi theo danh sách IDs.
+   * @param {string[]} ids - Danh sách các ID câu hỏi cần truy vấn.
+   * @returns {Promise<Question[]>} Danh sách thực thể câu hỏi.
+   * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy đủ số lượng ID duy nhất được yêu cầu.
+   */
+  public async getByLicenseCategory(ids: string[]): Promise<Question[]> {
+    // 1. Chặn trường hợp mảng rỗng
+    if (!ids || ids.length === 0) return [];
+
+    // 2. Xử lý logic trùng lặp ID (Lỗi logic 1)
+    const uniqueIds = Array.from(new Set(ids));
+
+    // 3. Gọi Repository lấy danh sách Entities dựa trên danh sách ID duy nhất
+    const entities = await this._questionRepo.findByLicenseCategory(uniqueIds);
+
+    // 4. Kiểm tra tính toàn vẹn dựa trên UNIQUE IDs (Lỗi logic 1 - Fix)
+    // Phải so sánh với uniqueIds.length thay vì ids.length gốc
+    if (entities.length !== uniqueIds.length) {
+      throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
+    }
+
+    return entities;
   }
 
   /**
@@ -331,6 +356,27 @@ export class QuestionService implements IQuestionService {
   }
 
   /**
+   * @description Xác thực hàng loạt danh sách câu hỏi.
+   * "Ensuring bulk referential integrity by comparing counts"
+   */
+  public async validateExistence(ids: string[]): Promise<void> {
+    if (!ids || ids.length === 0) return;
+
+    // Loại bỏ các ID trùng lặp trước khi đếm (nếu có)
+    const uniqueIds = [...new Set(ids)];
+
+    // Gọi Repo để đếm số lượng bản ghi thực tế tồn tại trong DB (và chưa bị xóa)
+    const count = await this._questionRepo.countActiveByIds(uniqueIds);
+
+    if (count !== uniqueIds.length) {
+      // "Inconsistency detected: Some IDs provided do not match active records in DB"
+      throw new AppError(
+        ErrorCode.EXAM.QUESTION_DATA_INVALID,
+      );
+    }
+  }
+
+  /**
    * @description Kiểm tra sự tồn tại của Chương và các Hạng bằng lái.
    * @param {string} chapterId - ID chương cần check.
    * @param {string[]} licenseIds - Danh sách ID hạng bằng lái cần check.
@@ -362,20 +408,22 @@ export class QuestionService implements IQuestionService {
    * @throws {AppError} Ném lỗi nếu ID đáp án không thuộc về câu hỏi hiện tại.
    */
   private _validateAnswerOwnership(
-    existingAnswers: Array<{ id?: string }>,
+    existingAnswers: { id: string }[],
     incomingAnswers: UpdateAnswerPayload[]
   ): void {
-    // Lấy danh sách ID hiện có trong DB của câu hỏi này
-    const existingIds = existingAnswers.map(a => a.id).filter((id): id is string => !!id);
+    // 1. Chuyển danh sách ID hiện có vào Set để tìm kiếm cực nhanh
+    // "Using a Set for O(1) lookup performance"
+    const existingIds = new Set(existingAnswers.map(ans => ans.id));
 
-    // Lấy danh sách ID mà Admin gửi lên (những cái có ID là hàng cũ cần update)
-    const incomingIds = incomingAnswers
-      .map(a => a.id)
-      .filter((id): id is string => typeof id === 'string');
+    // 2. Lọc ra các ID từ Payload gửi lên (chỉ lấy những cái đã có ID - tức là hàng cũ cần update)
+    // "Filtering incoming IDs to identify which ones are being updated"
+    const invalidIds = incomingAnswers
+      .map(ans => ans.id)
+      .filter((id): id is string => !!id) // Type Guard để loại bỏ undefined/null và giữ kiểu string
+      .filter(id => !existingIds.has(id)); // Tìm những ID không tồn tại trong Set của DB
 
-    // Tìm xem có ID nào "lạ" không nằm trong danh sách cũ không
-    const invalidIds = incomingIds.filter(id => !existingIds.includes(id));
-
+    // 3. Nếu phát hiện ID "lạ", tung lỗi ngay lập tức
+    // "Throwing a sync error if foreign IDs are detected"
     if (invalidIds.length > 0) {
       throw new AppError(ErrorCode.QUESTION.ANSWERS_SYNC_ERROR);
     }
