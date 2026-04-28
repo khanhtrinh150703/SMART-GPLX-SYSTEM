@@ -45,6 +45,14 @@ export const questionSteps = (
                 expect(res.status).toBe(403);
             });
 
+            it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+                const res = await request(app)
+                    .post(QUESTION_ENDPOINTS.BASE)
+
+                expect(res.status).toBe(401); // Unauthorized
+            });
+
+
             it('❌ Nên thất bại (QST_001) khi thiếu id chương (Admin thực hiện)', async () => {
                 const res = await request(app)
                     .post(QUESTION_ENDPOINTS.BASE)
@@ -77,9 +85,9 @@ export const questionSteps = (
                     .post(QUESTION_ENDPOINTS.BASE)
                     .set(getAuthHeader(getAdminToken()));
 
-                const payload = { 
-                    ...QUESTION_DATA.MISSING_LICENSE, 
-                    chapterId: getChapterId() 
+                const payload = {
+                    ...QUESTION_DATA.MISSING_LICENSE,
+                    chapterId: getChapterId()
                 };
 
                 const res = await attachMultipart(req, payload);
@@ -124,9 +132,10 @@ export const questionSteps = (
         });
 
         // ==========================================
-        // SCENARIO 2: TẠO THÀNH CÔNG (HAPPY PATH)
+        // SCENARIO 2: TẠO THÀNH CÔNG 
         // ==========================================
         describe('📝 Kịch bản: Tạo mới câu hỏi', () => {
+
             it('✅ Nên tạo thành công câu hỏi BÌNH THƯỜNG', async () => {
                 const res = await request(app)
                     .post(QUESTION_ENDPOINTS.BASE)
@@ -138,7 +147,7 @@ export const questionSteps = (
                     });
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
-                normalQuestionId = res.body.data.id; 
+                normalQuestionId = res.body.data.id;
             });
 
             it('✅ Nên tạo thành công câu hỏi ĐIỂM LIỆT', async () => {
@@ -180,6 +189,26 @@ export const questionSteps = (
         // SCENARIO 4: CẬP NHẬT (UPDATE)
         // ==========================================
         describe('🔄 Kịch bản: Cập nhật câu hỏi', () => {
+            it('🚫 Nên bị từ chối (403) khi User thường cố tình tạo câu hỏi', async () => {
+                const res = await request(app)
+                    .put(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
+                    .set(getAuthHeader(getRegularToken())) // Gọi hàm lấy token user
+                    .send({
+                        ...QUESTION_DATA.NORMAL_PAYLOAD,
+                        chapterId: getChapterId(), // Gọi hàm lấy chapterId
+                        licenseCategoryIds: [getLicenseId()] // Gọi hàm lấy licenseId
+                    });
+
+                expect(res.status).toBe(403);
+            });
+
+            it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+                const res = await request(app)
+                    .put(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
+
+                expect(res.status).toBe(401); // Unauthorized
+            });
+
             it('✅ Nên cập nhật thành công nội dung câu hỏi (Admin)', async () => {
                 const res = await request(app)
                     .put(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
@@ -199,6 +228,37 @@ export const questionSteps = (
         // SCENARIO 5: XÓA VÀ KHÔI PHỤC
         // ==========================================
         describe('🗑️ Kịch bản: Xóa và Khôi phục', () => {
+            it('🚫 Nên bị từ chối (403) khi User thường xóa câu hỏi', async () => {
+                const res = await request(app)
+                    .delete(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
+                    .set(getAuthHeader(getRegularToken())) // Gọi hàm lấy token user
+
+                expect(res.status).toBe(403);
+            });
+
+            it('🚫 Nên bị từ chối (403) khi User thường khôi câu hỏi', async () => {
+                const res = await request(app)
+                    .patch(QUESTION_ENDPOINTS.RESTORE(normalQuestionId))
+
+                    .set(getAuthHeader(getRegularToken())) // Gọi hàm lấy token user
+
+                expect(res.status).toBe(403);
+            });
+
+            it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+                const res = await request(app)
+                    .delete(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
+
+                expect(res.status).toBe(401); // Unauthorized
+            });
+
+            it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
+                const res = await request(app)
+                    .patch(QUESTION_ENDPOINTS.RESTORE(normalQuestionId))
+
+
+                expect(res.status).toBe(401); // Unauthorized
+            });
             it('❌ Nên BỊ CHẶN (400) khi Admin cố tình xóa câu hỏi điểm liệt', async () => {
                 const res = await request(app)
                     .delete(QUESTION_ENDPOINTS.BY_ID(criticalQuestionId))

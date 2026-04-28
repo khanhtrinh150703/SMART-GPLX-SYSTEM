@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
-import { CreateExamMatrixDTO } from '@/application/dtos/request/exam-matrix/create-exam-matrix.dto';
-import { UpdateExamMatrixDTO } from '@/application/dtos/request/exam-matrix/update-exam-matrix.dto';
+import { CreateExamMatrixDTO } from '@/application/dtos/request/exam-matrix/create-exam-matrix.request.dto';
+import { UpdateExamMatrixDTO } from '@/application/dtos/request/exam-matrix/update-exam-matrix.request.dto';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { Result } from '@/shared/responses/api-response';
 import { IExamMatrixService } from '@/domain/interfaces/services/exam-session';
+import { ExamMatrixQueryDTO } from '@/application/dtos/request/exam-matrix/exam-matrix-query.request.dto';
 
 /**
  * @interface IExamMatrixControllerCradle
@@ -21,15 +22,35 @@ export interface IExamMatrixControllerCradle {
  * Đóng vai trò là "cửa ngõ" tiếp nhận data từ Client và trả về phản hồi chuẩn hóa.
  */
 export class ExamMatrixController {
-    private readonly _matrixService: IExamMatrixService;
+    private readonly _examMatrixService: IExamMatrixService;
 
     /**
      * @description Khởi tạo Controller với "vũ khí" Service được "tiêm" từ DI Container.
      * @param {IExamMatrixControllerCradle} cradle - Chứa ExamMatrixService.
      */
     constructor({ examMatrixService }: IExamMatrixControllerCradle) {
-        this._matrixService = examMatrixService;
+        this._examMatrixService = examMatrixService;
     }
+
+    /**
+     * @description Truy vấn danh sách toàn bộ ma trận đề thi trong hệ thống.
+     * @route GET /api/v1/exam-matrices
+     * @returns {Promise<void>} Phản hồi danh sách ExamMatrixResponseDTO.
+     */
+    public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
+        // Khởi tạo DTO từ query params với cơ chế Self-validating
+        const query = new ExamMatrixQueryDTO(req.query as Record<string, unknown>);
+
+        const response = await this._examMatrixService.getPaginatedExamMatrices(query);
+
+        // Trả về Standard Response sử dụng Result Pattern
+        Result.ok(
+            res,
+            response,
+            Message.MATRIX.FETCH_SUCCESS,
+            'EXAM_MATRIX_GET_SUCCESS'
+        );
+    });
 
     /**
      * @description Tiếp nhận yêu cầu tạo mới một ma trận đề thi.
@@ -42,8 +63,7 @@ export class ExamMatrixController {
         const dto = new CreateExamMatrixDTO(req.body);
         // Tự validate input trước khi xuống Service
         dto.isValid();
-
-        const data = await this._matrixService.create(dto);
+        const data = await this._examMatrixService.create(dto);
 
         Result.ok(
             res,
@@ -63,11 +83,11 @@ export class ExamMatrixController {
     public getById = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
 
-        const data = await this._matrixService.getById(id);
-
+        const data = await this._examMatrixService.getById(id);
+        const result = await this._examMatrixService.toResponse(data)
         Result.ok(
             res,
-            data,
+            result,
             Message.MATRIX.FETCH_SUCCESS,
             'MATRIX_FETCH_SUCCESS'
         );
@@ -82,11 +102,10 @@ export class ExamMatrixController {
      */
     public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
-        const dto = new UpdateExamMatrixDTO(req.body);
-
+        const dto = new UpdateExamMatrixDTO({ id, ...req.body });
         dto.isValid();
 
-        const data = await this._matrixService.update(id, dto);
+        const data = await this._examMatrixService.update(id, dto);
 
         Result.ok(
             res,
@@ -106,11 +125,11 @@ export class ExamMatrixController {
     public delete = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
 
-        await this._matrixService.delete(id);
+        const result = await this._examMatrixService.delete(id);
 
         Result.ok(
             res,
-            undefined,
+            result,
             Message.MATRIX.DELETE_SUCCESS,
             'MATRIX_DELETE_SUCCESS'
         );
@@ -125,8 +144,27 @@ export class ExamMatrixController {
      */
     public restore = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
-        const data = await this._matrixService.restore(id);
+        const data = await this._examMatrixService.restore(id);
 
         Result.ok(res, data, Message.MATRIX.RESTORE_SUCCESS, 'MATRIX_RESTORE_SUCCESS');
+    });
+
+    /**
+     * @description Lấy danh sách các ma trận đề thi định dạng selection (value/label) hỗ trợ hiển thị trên UI.
+     * @route GET /api/v1/exams/matrices/selection
+     * @param {Request} _req - Đối tượng Request của Express.
+     * @param {Response} res - Đối tượng Response của Express.
+     * @returns {Promise<void>} Phản hồi danh sách ma trận dạng { items, meta }.
+     */
+    public getExamMatrixSelections = catchAsync(async (_req: Request, res: Response) => {
+        // Gọi service để lấy danh sách ma trận (thường đã qua Mapper.toSelectionList và sort theo createdAt)
+        const result = await this._examMatrixService.getExamMatrixSelections();
+
+        Result.ok(
+            res,
+            result,
+            Message.EXAM.FETCH_SUCCESS, // Hoặc Message.EXAM_MATRIX.GET_SELECTION_SUCCESS nếu bạn tách riêng
+            'EXAM_MATRIX_SELECTION_SUCCESS'
+        );
     });
 }

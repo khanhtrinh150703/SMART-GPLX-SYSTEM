@@ -5,6 +5,8 @@ import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { ChapterQueryDTO } from '@/application/dtos/request/chapter/chapter-query.request.dto';
 import { IChapterService } from '@/domain/interfaces/services/exam-mgmt';
+import { CreateChapterRequestDto } from '@/application/dtos/request/chapter/create-chapter.request.dto';
+import { UpdateChapterRequestDto } from '@/application/dtos/request/chapter/update-chapter.request.dto';
 
 /**
  * @description Controller xử lý các yêu cầu HTTP liên quan đến quản lý Chương lý thuyết (Theory Chapters).
@@ -42,7 +44,9 @@ export class ChapterController {
      * @returns {Promise<void>} Phản hồi thông tin chương vừa được tạo.
      */
     public create = catchAsync(async (req: Request, res: Response) => {
-        const result = await this._chapterService.createChapter(req.body);
+        const dto = new CreateChapterRequestDto(req.body)
+        dto.isValid()
+        const result = await this._chapterService.createChapter(dto);
 
         Result.ok(
             res,
@@ -59,8 +63,10 @@ export class ChapterController {
      * @returns {Promise<void>} Phản hồi thông tin chương sau khi cập nhật.
      */
     public update = catchAsync(async (req: Request, res: Response) => {
-        const { id } = req.params;
-        const result = await this._chapterService.updateChapter({ ...req.body, id });
+        const id = req.params.id as string;
+        const dto = new UpdateChapterRequestDto({ id, ...req.body })
+        dto.isValid()
+        const result = await this._chapterService.updateChapter(id, dto);
 
         Result.ok(
             res,

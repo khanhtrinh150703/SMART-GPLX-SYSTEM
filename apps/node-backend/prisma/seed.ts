@@ -38,7 +38,7 @@ async function main(): Promise<void> {
   const instructorPerms = [
     ...studentPerms,
     'questions:read', 'questions:write', 'questions:import', 'questions:delete',
-    'chapters:manage', 'licenses:manage', 'exams:manage', 'matrices:read', 'matrices:manage'
+    'chapters:manage', 'licenses:manage', 'exams:manage', 'exams:read', 'matrices:read', 'matrices:manage'
   ];
 
   const roleMapping = [
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
   for (const l of SEED.licenses) {
     await prisma.licenseCategory.upsert({
       where: { name: l.name },
-      update: { description: l.description, minAge: l.minAge },
+      update: { description: l.description, minAge: l.minAge, orderIndex: l.orderIndex },
       create: l,
     });
   }

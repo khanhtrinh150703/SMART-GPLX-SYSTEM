@@ -65,9 +65,3 @@ export type PrismaQuestionWithRelations = Prisma.QuestionGetPayload<{
   };
 }>;
 
-export type PrismaExamWithRelations = Prisma.ExamGetPayload<{
-  include: {
-    questions: true; // Bao gồm danh sách câu hỏi trong đề
-    
-  }
-}>;

@@ -1,29 +1,36 @@
 import { NavItem } from "@/types/sidebar.types";
 import {
-  LayoutDashboard, FileText, History, UserCircle,
+  LayoutDashboard, History, UserCircle,
   Settings, Database, Users, CreditCard, BookOpen, FileUp,
+  ClipboardList, Grid3X3, Award, Pencil,
 } from "lucide-react";
 
 export const NAV_ITEMS: NavItem[] = [
   {
-    href: "/dashboard",
+    href: "/overview",
     title: "Tổng quan",
     label: "Dashboard",
     icon: LayoutDashboard,
-    // Không để requiredPermission = Mặc định ai cũng thấy (Public)
   },
   {
-    href: "/dashboard/exams",
-    title: "Quản lý Đề thi",
-    label: "Exams Management",
-    icon: FileText,
-    requiredPermission: "exams:manage", 
+    href: "/take-exam",
+    title: "Làm bài thi",
+    label: "Take an Exam",
+    icon: Pencil, // Icon cái bút cho việc làm bài (Icon for taking an exam)
+    requiredPermission: "exams:take",
   },
   {
-    href: "/dashboard/history",
+    href: "/history",
     title: "Lịch sử thi",
     label: "Exam History",
     icon: History,
+    requiredPermission: "results:read",
+  },
+  {
+    href: "/results",
+    title: "Kết quả bài thi",
+    label: "Exam Results",
+    icon: Award, // Icon huy chương cho kết quả (Icon for exam results)
     requiredPermission: "results:read",
   },
   {
@@ -36,35 +43,49 @@ export const NAV_ITEMS: NavItem[] = [
   
   // --- PHÂN ĐOẠN QUẢN TRỊ (ADMIN/INSTRUCTOR) ---
   {
-    href: "/admin/users",
+    href: "/admin/exams",
+    title: "Quản lý đề thi",
+    label: "Exam Management",
+    icon: ClipboardList, // Icon danh sách kiểm tra (Icon for management)
+    requiredPermission: "exams:manage", 
+  },
+  {
+    href: "/admin/exam-matrices",
+    title: "Quản lý ma trận đề thi",
+    label: "Exam Matrix",
+    icon: Grid3X3, // Icon lưới cho ma trận (Icon for matrix)
+    requiredPermission: "exam-matrix:manage",
+  },
+  {
+    href: "/admin/user",
     title: "Quản lý người dùng",
     label: "Users Management",
     icon: Users,
     requiredPermission: "users:read",
   },
   {
-    href: "/chapter",
+    href: "/admin/chapter",
     title: "Quản lý chương học",
     label: "Chapter Management",
     icon: BookOpen,
     requiredPermission: "chapters:manage",
   },
   {
-    href: "/questions",
+    href: "/admin/question",
     title: "Ngân hàng câu hỏi",
     label: "Question Bank",
     icon: Database,
     requiredPermission: "questions:read",
   },
   {
-    href: "/licenses",
+    href: "/admin/license",
     title: "Hạng bằng lái",
     label: "License Types",
     icon: CreditCard,
     requiredPermission: "licenses:manage",
   },
   {
-    href: "/admin/questions/import",
+    href: "/admin/question/import",
     title: "Import câu hỏi",
     label: "Import Questions",
     icon: FileUp,
@@ -75,7 +96,5 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Cài đặt",
     label: "System Settings",
     icon: Settings,
-    // Thường cài đặt hệ thống chỉ dành cho Admin tối thượng
-    // requiredPermission: "admin:all", 
   },
 ];

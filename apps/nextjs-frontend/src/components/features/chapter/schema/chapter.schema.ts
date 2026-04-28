@@ -21,6 +21,9 @@ export const chapterSchema = z.object({
  * chapterEditSchema - Lược đồ chỉnh sửa chương học
  */
 export const chapterEditSchema = z.object({
+  code: z
+    .string()
+    .min(1, "Mã dịnh danh không được để trống"),
   name: z
     .string()
     .min(1, "Tiêu đề không được để trống")
@@ -47,7 +50,7 @@ export const createChapterSchema = z.object({
   code: z
     .string()
     .min(1, { message: 'Mã độc nhất không được để trống' }),
-    
+
   orderIndex: z
     .union([z.number()])
     .pipe(z.coerce.number())

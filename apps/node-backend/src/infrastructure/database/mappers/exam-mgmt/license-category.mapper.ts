@@ -2,7 +2,9 @@ import { LicenseCategoryResponse } from "@/application/dtos/response/license-cat
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 import { ILicenseCategoryProps } from "@/domain/entities/license-category/license-category.props";
 import { ILicenseCategoryRecord } from "@/infrastructure/persistence/exam-mgmt/license-category.record";
+import { ICachedCategory } from "@/shared/master-data";
 import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { Prisma } from "@prisma/client";
 
 /**
  * @description Chuyển đổi dữ liệu giữa Database Record và Domain Entity.
@@ -19,6 +21,7 @@ export class LicenseCategoryMapper {
       name: raw.name,
       description: raw.description,
       minAge: raw.minAge,
+      orderIndex: raw.orderIndex,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt || undefined,
@@ -27,16 +30,33 @@ export class LicenseCategoryMapper {
   }
 
   /**
-   * @description Chuyển từ Domain Entity sang định dạng lưu trữ Database.
-   * @param {LicenseCategory} domain - Entity.
-   * @returns {Partial<ILicenseCategoryRecord>}
+   * @description Ánh xạ sang cấu trúc Prisma cho hành động CREATE (Tạo mới).
+   * Bao gồm cả ID vì ID thường được tạo từ tầng Domain.
    */
-  public static toPersistence(domain: LicenseCategory): Partial<ILicenseCategoryRecord> {
+  public static toCreatePersistence(domain: LicenseCategory): Prisma.LicenseCategoryCreateInput {
     return {
       id: domain.id,
       name: domain.name,
       description: domain.description,
       minAge: domain.minAge,
+      orderIndex: domain.orderIndex,
+      // Thêm các trường audit nếu cần
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  /**
+   * @description Ánh xạ sang cấu trúc Prisma cho hành động UPDATE (Cập nhật).
+   * Loại bỏ ID để tránh lỗi P2002 (Primary Key conflict).
+   */
+  public static toUpdatePersistence(domain: LicenseCategory): Prisma.LicenseCategoryUpdateInput {
+    return {
+      name: domain.name,
+      description: domain.description,
+      minAge: domain.minAge,
+      orderIndex: domain.orderIndex,
+      updatedAt: new Date(), // Tự động cập nhật dấu thời gian
     };
   }
 
@@ -67,22 +87,28 @@ export class LicenseCategoryMapper {
 
   /**
    * @description Chuyển đổi sang định dạng Selection dùng License Code làm Label (A1, B2...)
-   * @param {LicenseCategory} entity 
+   * @param {ICachedCategory} entity 
    * @returns {SelectionResponseDto}
    */
-  public static toSelectionResponse(entity: LicenseCategory): SelectionResponseDto {
+  public static toSelectionResponse(entity: ICachedCategory): SelectionResponseDto {
     return new SelectionResponseDto({
       value: entity.id!,
-      label: entity.name
+      label: entity.name,
+      orderIndex: entity.orderIndex,
     });
   }
 
   /**
    * @description Chuyển đổi danh sách thực thể hạng bằng lái sang DTO dùng cho lựa chọn.
-   * @param {LicenseCategory[]} entities - Mảng các thực thể LicenseCategory.
-   * @returns {SelectionResponseDto[]} Danh sách DTO hiển thị trong Dropdown/Selection.
+   * Dữ liệu được sắp xếp theo chỉ số thứ tự (orderIndex) để đảm bảo trình tự A1 -> A -> B1...
+   * @param {LicenseCategory[]} entities - Mảng các thực thể LicenseCategory Domain.
+   * @returns {SelectionResponseDto[]} Danh sách DTO đã sắp xếp để hiển thị trong Dropdown.
    */
-  public static toSelectionList(entities: LicenseCategory[]): SelectionResponseDto[] {
-    return entities.map(this.toSelectionResponse);
+  public static toSelectionList(entities: ICachedCategory[]): SelectionResponseDto[] {
+    // 1. Sử dụng Spread Operator để tạo bản sao, tránh gây ra Side Effect cho mảng gốc
+    // 2. Sắp xếp tăng dần theo orderIndex (ưu tiên thứ tự nghiệp vụ)
+    return [...entities]
+      .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
+      .map((entity) => this.toSelectionResponse(entity));
   }
 }

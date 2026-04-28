@@ -64,6 +64,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.EXAM.NAME_TOO_LONG]: 400,           // Bad Request
     [ErrorCode.EXAM.INVALID_MATRIX_ID]: 400,       // Bad Request
 
+
     // --- Nhóm 2xx: Business/Pool (Lỗi logic kho dữ liệu/ma trận) ---
     [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 400,     // Bad Request (Yêu cầu vượt quá khả năng đáp ứng của kho)
     [ErrorCode.EXAM.INSUFFICIENT_CHAPTER_QUESTIONS]: 400,  // Bad Request
@@ -86,27 +87,42 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.FILE.NOT_FOUND]: 404,             // Not Found
 
     // --- DATA VALIDATION ---
-    // --- VALIDATION (Tất cả đều là 400 Bad Request) ---
+    // --- 0xx: General Required & Format ---
     [ErrorCode.VALIDATION.REQUIRED]: 400,
     [ErrorCode.VALIDATION.ID_REQUIRED]: 400,
     [ErrorCode.VALIDATION.NAME_REQUIRED]: 400,
     [ErrorCode.VALIDATION.DESCRIPTION_REQUIRED]: 400,
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 400,
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 400,
+    [ErrorCode.VALIDATION.CODE_REQUIRED]: 400,
 
+    // --- 1xx: Identity & Contact ---
     [ErrorCode.VALIDATION.EMAIL_INVALID]: 400,
     [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 400,
     [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 400,
     [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 400,
 
+    // --- 2xx: Security & Authentication ---
     [ErrorCode.VALIDATION.PASSWORD_INVALID]: 400,
     [ErrorCode.VALIDATION.PASSWORD_CONFIRM_MISMATCH]: 400,
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 400,
     [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 400,
     [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID]: 400,
 
+    // --- 3xx: Specific Business Logic ---
     [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 400,
     [ErrorCode.VALIDATION.AGE_INVALID]: 400,
+
+    // --- 4xx: Exam & Training (Cập nhật mới) ---
+    [ErrorCode.VALIDATION.LICENSE_CATEGORY_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.EXAM_QUESTIONS_EMPTY]: 400,
+    [ErrorCode.VALIDATION.INVALID_DURATION]: 400,
+    [ErrorCode.VALIDATION.PASSING_SCORE_TOO_HIGH]: 400,
+    [ErrorCode.VALIDATION.MATRIX_ID_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.USER_ID_REQUIRED]: 400,
+    [ErrorCode.VALIDATION.MIN_CRITICAL_INVALID]: 400,
+    [ErrorCode.VALIDATION.RESTORE_FAILED_DUPLICATE]: 400,
+
 
     // --- LICENSE ---
     [ErrorCode.LICENSE.ALREADY_EXISTS]: 400,
@@ -150,7 +166,10 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.MATRIX.NAME_TOO_LONG]: 400,
     [ErrorCode.MATRIX.NO_DETAILS]: 400,
     [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 400,
+    [ErrorCode.MATRIX.INVALID_DURATION]: 400,
     [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 400,
+    [ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS]: 400,
+    [ErrorCode.MATRIX.CHAPTER_ID_REQUIRED]: 400,
     [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 409,
     [ErrorCode.MATRIX.NOT_FOUND]: 404,
     [ErrorCode.MATRIX.RESTORE_FAILED_DUPLICATE]: 409,
@@ -184,4 +203,10 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
     [ErrorCode.ACTIVE_SESSION.INVALID_TOKEN]: 401,
     [ErrorCode.ACTIVE_SESSION.DEVICE_MISMATCH]: 403,
     [ErrorCode.ACTIVE_SESSION.INVALID_EXPIRATION_TIME]: 400,
+
+    // --- Nhóm CACHE (CSH) ---
+    [ErrorCode.CACHE.NOT_INITIALIZED]: 500, // Lỗi máy chủ do chưa sẵn sàng dữ liệu
+    [ErrorCode.CACHE.EMPTY_DATA]: 500,      // Lỗi dữ liệu hệ thống trống
+    [ErrorCode.CACHE.REFRESH_FAILED]: 500,   // Lỗi khi đồng bộ dữ liệu DB - Cache
+    [ErrorCode.CACHE.KEY_NOT_FOUND]: 404,    // Không tìm thấy bản ghi trong Cache
 };

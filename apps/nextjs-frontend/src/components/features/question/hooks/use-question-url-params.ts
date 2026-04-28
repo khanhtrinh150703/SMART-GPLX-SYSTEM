@@ -92,13 +92,14 @@ export function useQuestionUrlParams() {
 
     // Các key filter nâng cao (Đã loại bỏ 'content' và các text field ra khỏi đây)
     // (Dịch: Advanced filter keys - Removed text search fields to avoid duplication)
-    const filterKeys = ["chapterId", "licenseCategoryIds", "difficultyLevel", "isCritical"];
+    const filterKeys = ["chapterId", "licenseCategoryIds", "difficultyLevel", "isCritical", "indexNumber"];
 
     filterKeys.forEach((key) => {
       const val = searchParams.get(key);
       if (val !== null && val !== "" && val !== "all") {
         if (key === "difficultyLevel") query[key] = Number(val);
         else if (key === "isCritical") query[key] = val === "true";
+        else if (key === "indexNumber") query[key] = val === "true";
         else query[key] = val;
       }
     });

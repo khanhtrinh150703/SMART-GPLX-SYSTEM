@@ -19,6 +19,10 @@ export const createLicenseSchema = z.object({
     .string()
     .min(10, "Mô tả phải có ít nhất 10 ký tự")
     .max(500, "Mô tả quá dài"),
+  orderIndex: z
+    .union([z.number()])
+    .pipe(z.coerce.number())
+    .refine((val) => val >= 1, "Thứ tự phải lớn hơn 0"),
 });
 
 /**
@@ -32,6 +36,10 @@ export const editLicenseSchema = z.object({
     .pipe(z.coerce.number())
     .refine((val) => val >= 18, "Độ tuổi tối thiểu phải từ 18"),
   status: z.enum(["active", "inactive", "deleted"]),
+  orderIndex: z
+    .union([z.number()])
+    .pipe(z.coerce.number())
+    .refine((val) => val >= 1, "Thứ tự phải lớn hơn 0"),
 });
 
 /** * --- ĐỊNH NGHĨA KIỂU DỮ LIỆU (TYPES) ---

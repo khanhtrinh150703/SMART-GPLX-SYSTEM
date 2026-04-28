@@ -35,8 +35,8 @@ export class RoleService implements IRoleService {
     }
 
     public async getRoleSelections(): Promise<SelectionResponseDto[]> {
-        const chapters = await this._roleRepo.findAll();
-        return RoleMapper.toSelectionList(chapters);
+        const roles = await this._cacheService.getAllRoles();
+        return RoleMapper.toSelectionList(roles);
     }
 
     /**

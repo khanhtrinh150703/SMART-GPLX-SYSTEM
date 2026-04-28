@@ -3,7 +3,6 @@ import { ENDPOINTS } from "@/constants/api-endpoints.constant";
 import { StandardResponse } from "@/types/common.type";
 import { PaginatedResult, QueryParams } from "@/types/paginaton.type";
 import { Question } from "../types/question.types";
-import { da } from "zod/v4/locales";
 
 /**
  * Question API: Quản lý nghiệp vụ câu hỏi (Lý thuyết GPLX).

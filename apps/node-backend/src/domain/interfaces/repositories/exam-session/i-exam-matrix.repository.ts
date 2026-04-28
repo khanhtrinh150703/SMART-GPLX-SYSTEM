@@ -1,3 +1,4 @@
+import { ExamMatrixQueryDTO } from "@/application/dtos/request/exam-matrix/exam-matrix-query.request.dto";
 import { ExamMatrix } from "@/domain/entities/exam-matrix/exam-matrix.entity";
 
 /**
@@ -21,11 +22,25 @@ export interface IExamMatrixRepository {
   findByIdSystem(id: string): Promise<ExamMatrix | null>;
 
   /**
+   * @description Tìm kiếm và đếm tổng số lượng ma trận đề thi có phân trang.
+   * @param {ExamMatrixQueryDTO} filter - Bộ lọc tìm kiếm chứa các tiêu chí nghiệp vụ.
+   * @param {number} skip - Số bản ghi cần bỏ qua (Offset).
+   * @param {number} take - Số bản ghi tối đa cần lấy (Limit).
+   * @returns {Promise<[ExamMatrix[], number]>} Một Tuple gồm danh sách Entity và tổng số bản ghi tìm thấy.
+   */
+  findAndCount(
+    filter: ExamMatrixQueryDTO,
+    skip: number,
+    take: number
+  ): Promise<[ExamMatrix[], number]>;
+
+  
+  /**
    * @description Khởi tạo và lưu trữ một Ma trận đề thi mới vào hệ thống.
    * @param {ExamMatrixEntity} entity - Thực thể ma trận đề thi từ tầng Domain.
    * @returns {Promise<ExamMatrixEntity>} Thực thể đã được lưu kèm thông tin ID và quan hệ (details).
    */
-  createExamMatrix(entity: ExamMatrix): Promise<ExamMatrix> 
+  createExamMatrix(entity: ExamMatrix): Promise<ExamMatrix>
 
   /**
    * @description Cập nhật dữ liệu cho một ma trận hiện có.

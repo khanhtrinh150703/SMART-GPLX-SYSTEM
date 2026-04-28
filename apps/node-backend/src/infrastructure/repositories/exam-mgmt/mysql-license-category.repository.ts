@@ -70,25 +70,19 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
   }
 
   public async createLicenseCategory(category: LicenseCategory): Promise<void> {
-    const data = LicenseCategoryMapper.toPersistence(category);
+    const record = LicenseCategoryMapper.toCreatePersistence(category);
+
     await this._prisma.licenseCategory.create({
-      data: {
-        id: data.id!,
-        name: data.name!,
-        description: data.description!,
-      }
+      data: record
     });
   }
 
-  public async updateLicenseCategory(category: LicenseCategory): Promise<void> {
-    const data = LicenseCategoryMapper.toPersistence(category);
+  public async updateLicenseCategory(id: string, category: LicenseCategory): Promise<void> {
+    const persistence = LicenseCategoryMapper.toCreatePersistence(category);
+
     await this._prisma.licenseCategory.update({
-      where: { id: data.id },
-      data: {
-        name: data.name,
-        description: data.description,
-        minAge: data.minAge,
-      }
+      where: { id },
+      data: persistence
     });
   }
 

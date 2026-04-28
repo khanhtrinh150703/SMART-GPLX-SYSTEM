@@ -8,7 +8,7 @@ export class QuestionsAdminQueryDto extends BaseQueryDTO {
   public readonly chapterId?: string;
   public readonly difficultyLevel?: number;
   public readonly isCritical?: boolean;
-  public readonly indexNumber?: number;
+  public readonly indexNumber?: boolean;
 
   constructor(data: Record<string, unknown>) {
     super();
@@ -30,7 +30,7 @@ export class QuestionsAdminQueryDto extends BaseQueryDTO {
     }
 
     if (data.indexNumber !== undefined && data.indexNumber !== '') {
-      this.indexNumber = Number(data.indexNumber);
+      this.indexNumber = String(data.indexNumber).toLowerCase() === 'true';
     }
 
     if (data.isCritical !== undefined && data.isCritical !== '') {

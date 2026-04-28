@@ -8,28 +8,51 @@ export type ExamWithQuestions = Prisma.ExamGetPayload<{
 }>;
 
 export interface IExamQuestionRecord {
-  examId: string;       
-  questionId: string;    
+  examId: string;
+  questionId: string;
   correctAnswer: number;
-  isCritical: boolean;   
+  isCritical: boolean;
   order: number;
-  userAnswer: number | null; 
-  isCorrect: boolean | null; 
+  userAnswer: number | null;
+  isCorrect: boolean | null;
 }
 
 export interface IExamRecord {
   id: string;
-  userId: string;            
-  examMatrixId: string;      
-  licenseCategoryId: string; 
-  totalQuestions: number;    
-  passingScore: number;     
-  durationMinutes: number;  
-  minCriticalQuestions: number; 
+  userId: string;
+  examMatrixId: string;
+  licenseCategoryId: string;
+  totalQuestions: number;
+  passingScore: number;
+  durationMinutes: number;
+  minCriticalQuestions: number;
   status: ExamStatus;
   score: number;
-  isPassed: boolean;        
-  startedAt: Date;           
-  endedAt: Date | null;    
+  isPassed: boolean;
+  startedAt: Date;
+  endedAt: Date | null;
   questions?: IExamQuestionRecord[];
 }
+
+export type PrismaExamWithRelations = Prisma.ExamGetPayload<{
+  include: typeof examInclude
+}>;
+
+export const examInclude = {
+  user: {
+    select: {
+      fullName: true,
+      email: true
+    }
+  },
+  licenseCategory: {
+    select: {
+      name: true,
+    }
+  },
+  questions: {
+    orderBy: {
+      indexNumber: 'asc'
+    }
+  },
+} as const;;

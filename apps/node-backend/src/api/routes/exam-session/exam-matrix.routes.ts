@@ -19,6 +19,29 @@ const controller = container.resolve('examMatrixController') as ExamMatrixContro
 router.use(authMiddleware);
 
 /**
+ * @description Lấy danh sách các ma trận đề thi có hỗ trợ tìm kiếm và phân trang.
+ * @route GET /api/v1/exam-matrices
+ * @returns {Promise<void>} Phản hồi danh sách ExamMatrixResponseDTO.
+ */
+router.get(
+    '/',
+    requirePermission('exam-matrices:read'),
+    controller.list
+);
+
+/**
+ * @description Lấy danh sách các ma trận đề thi học định dạng selection (value/label) cho dropdown.
+ * @route GET /api/v1/exam-matrices/selection
+ * @access Private (Admin/Instructor)
+ */
+router.get(
+    '/selection',
+    requirePermission('exam-matrices:read'),
+    controller.getExamMatrixSelections
+);
+
+
+/**
  * @description Áp dụng quyền quản lý ma trận cho toàn bộ các endpoint bên dưới
  * (Dịch: Apply matrix management permission for all endpoints below)
  */

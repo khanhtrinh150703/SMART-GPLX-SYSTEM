@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { StandardResponse } from '../types/response.type';
 import { ErrorCode, ErrorCodeType, ErrorStatus } from '@/shared/errors';
 import { Message } from '../errors/messages/success-messages-vn';
+import { StandardResponse } from '../types/response.type';
 
 export const Result = {
 

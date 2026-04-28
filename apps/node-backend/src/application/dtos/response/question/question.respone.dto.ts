@@ -28,6 +28,9 @@ export interface QuestionResponseDTO {
   /** @property {string} id - Mã định danh duy nhất của câu hỏi (UUID). */
   id: string;
 
+  /** @property {number} indexNumber - Số thứ tự câu hỏi trong bộ đề. */
+  indexNumber: number;
+
   /** @property {string} chapterId - ID của chương học chứa câu hỏi này. */
   chapterId: string;
 

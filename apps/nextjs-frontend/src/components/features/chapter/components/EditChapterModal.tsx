@@ -86,20 +86,24 @@ export default function EditChapterModal({
           />
         )}
         {/* Tiêu đề chương */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5 ml-1">
-            <FileText size={14} className="text-slate-400" />
-            Tiêu đề chương
-          </label>
-          <FormField
-            label="Tên chương học (Name)"
-            icon={FileText}
-            placeholder="VD: Khái niệm và quy tắc giao thông đường bộ."
-            {...register("name")}
-            error={errors.name?.message}
-            disabled={isLoading}
-          />
-        </div>
+
+        <FormField
+          label="Tên chương học (Name)"
+          icon={FileText}
+          placeholder="VD: Khái niệm và quy tắc giao thông đường bộ."
+          {...register("name")}
+          error={errors.name?.message}
+          disabled={isLoading}
+        />
+
+        {/* <FormField
+          label="Mã dịnh danh (code)"
+          icon={FileText}
+          placeholder="1,2,3."
+          {...register("code")}
+          error={errors.code?.message}
+          disabled={isLoading}
+        /> */}
 
         <div className="grid grid-cols-2 gap-4">
           {/* Thứ tự hiển thị */}

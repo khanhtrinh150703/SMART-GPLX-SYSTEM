@@ -242,9 +242,24 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     }
 
     if (dto.search) {
-      where.OR = [
-        { content: { contains: dto.search } }
-      ];
+      /**
+       * TRƯỜNG HỢP 1: Admin bật cờ tìm kiếm theo Số thứ tự (indexNumber = true)
+       */
+      if (dto.indexNumber === true) {
+        const searchAsNumber = Number(dto.search);
+        // Nếu search là số hợp lệ, tìm chính xác theo indexNumber
+        if (!isNaN(searchAsNumber)) {
+          where.indexNumber = searchAsNumber;
+        }
+      }
+      /**
+       * TRƯỜNG HỢP 2: Tìm kiếm mờ theo nội dung văn bản (Mặc định)
+       */
+      else {
+        where.OR = [
+          { content: { contains: dto.search } }
+        ];
+      }
     }
 
     // --- 4. XỬ LÝ SẮP XẾP PHỨC TẠP (Dịch: Complex Sorting Logic) ---
@@ -318,7 +333,7 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     return [entities, total];
   }
 
-  public async getByLicenseCategory(licenseNames: string[]): Promise<DomainQuestion[]> {
+  public async findByLicenseCategory(licenseNames: string[]): Promise<DomainQuestion[]> {
     const records = await this._prisma.question.findMany({
       where: {
         licenseLinks: {
@@ -340,6 +355,20 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     return records
       .map((rec) => this._toDomain(rec as unknown as PrismaQuestionWithRelations))
       .filter((q): q is DomainQuestion => q !== null);
+  }
 
+  /**
+   * @description Thực thi đếm số lượng bản ghi thỏa mãn điều kiện ID và chưa xóa.
+   */
+  public async countActiveByIds(ids: string[]): Promise<number> {
+    // Zero Any: Trả về kết quả trực tiếp từ Prisma (kiểu number)
+    return await this._prisma.question.count({
+      where: {
+        id: {
+          in: ids,
+        },
+        deletedAt: null, 
+      },
+    });
   }
 }
