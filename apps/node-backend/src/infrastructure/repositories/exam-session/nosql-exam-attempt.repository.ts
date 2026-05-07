@@ -9,7 +9,7 @@ export class MongoExamAttemptRepository implements IExamAttemptRepository {
      * @description Triển khai hàm tạo mới.
      */
     public async createExamAttempt(attempt: ExamAttemptEntity): Promise<ExamAttemptEntity> {
-        const persistenceData = ExamAttemptMapper.toPersistence(attempt);
+        const persistenceData = ExamAttemptMapper.toCreatePersistence(attempt);
 
         await ExamAttemptModel.exists({ _id: persistenceData._id });
 
@@ -24,7 +24,7 @@ export class MongoExamAttemptRepository implements IExamAttemptRepository {
      * @description Triển khai hàm cập nhật.
      */
     public async updateExamAttempt(attempt: ExamAttemptEntity): Promise<ExamAttemptEntity | null> {
-        const persistenceData = ExamAttemptMapper.toPersistence(attempt);
+        const persistenceData = ExamAttemptMapper.toUpdatePersistence(attempt);
 
         // Dùng findOneAndUpdate để lấy được Document sau khi update (option { new: true })
         const updatedDoc = await ExamAttemptModel.findOneAndUpdate(

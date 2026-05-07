@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { IFileStorageService } from '@/domain/interfaces/external/i-file-storage.service';
+import { IFileStorageService } from '@/domain/interfaces/services/external/i-file-storage.service';
 import { StorageFolder } from '@/domain/constants/storage.constant';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { IUploadedFile } from '@/shared/types/file.type';

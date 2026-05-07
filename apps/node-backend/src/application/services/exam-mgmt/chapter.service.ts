@@ -4,41 +4,41 @@ import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterService } from "@/domain/interfaces/services/exam-mgmt/i-chapter.service";
 import { AppError } from "@/shared/errors/error-app";
 import { ChapterMapper } from "@/infrastructure/database/mappers/exam-mgmt/chapter.mapper";
-import { PaginatedResult } from "@/shared/types/pagination.types";
-import { PaginationUtil } from "@/shared/utils/pagination.util";
-import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
-import { PAGINATION_CONFIG } from "@/shared/config/pagination.config";
-import { DeleteResponse, DeleteType } from "@/domain/constants/delete.constant";
-import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-query.request.dto";
-import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
-import { CreateChapterValidator } from "@/application/validators/chapter/create-chatper.validator";
-import { UpdateChapterValidator } from "@/application/validators/chapter/update-chapter.validator";
-import { CreateChapterRequestDto } from "@/application/dtos/request/chapter/create-chapter.request.dto";
-import { UpdateChapterRequestDto } from "@/application/dtos/request/chapter/update-chapter.request.dto";
+import { IChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
+import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
+import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
+import { DeleteResponseDTO, IDeleteResponseDTO } from "@/application/dtos/response/shared/delete.response.dto";
+import { DeleteType } from "@/domain/constants/delete.constant";
 
 /**
  * @interface IChapterServiceCradle
- * @description Các mảnh ghép (dependencies) dành riêng cho ChapterService.
- * Giúp TypeScript canh gác chặt chẽ, không cho các Repo "đi lạc" vào đây.
+ * @description Tập hợp các phụ thuộc (Dependencies) cần thiết cho việc quản lý nghiệp vụ Chương.
  */
 export interface IChapterServiceCradle {
+  /** @description Repository chịu trách nhiệm thay đổi và lưu trữ dữ liệu Chương trong Database. */
   chapterRepository: IChapterRepository;
+
+  /** @description Dịch vụ quản lý bộ nhớ đệm (Dùng để xóa hoặc cập nhật lại cache khi dữ liệu thay đổi). */
   masterDataCacheService: IMasterDataCacheService;
 }
 
 /**
  * @class ChapterService
- * @description Xử lý logic nghiệp vụ cho các Chương lý thuyết lái xe.
+ * @description Dịch vụ điều phối các logic nghiệp vụ (Write-side) liên quan đến các Chương lý thuyết lái xe.
+ * @principle Data Consistency - Đảm bảo dữ liệu trong Database và bộ nhớ đệm luôn đồng nhất sau khi thực hiện thay đổi.
  */
 export class ChapterService implements IChapterService {
+  /** @private @readonly @description Instance thực hiện các thao tác ghi dữ liệu Chapter. */
   private readonly _chapterRepo: IChapterRepository;
+
+  /** @private @readonly @description Dịch vụ xử lý làm mới/xóa bộ nhớ đệm Master Data. */
   private readonly _cacheService: IMasterDataCacheService;
 
-
   /**
-   * @description Khởi tạo Service với túi đồ nghề chuyên dụng.
-   * @param {IChapterServiceCradle} cradle - Chỉ bao gồm những gì cần thiết để quản lý Chapter.
+   * @constructor
+   * @description Khởi tạo ChapterService với các công cụ chuyên dụng để quản lý trạng thái dữ liệu Chương.
+   * @param {IChapterServiceCradle} cradle - Chứa các phụ thuộc phục vụ luồng nghiệp vụ ghi.
    */
   constructor({ chapterRepository, masterDataCacheService }: IChapterServiceCradle) {
     this._chapterRepo = chapterRepository;
@@ -46,58 +46,11 @@ export class ChapterService implements IChapterService {
   }
 
   /**
-   * @description Lấy danh sách các chương được định dạng cho Selection/Dropdown (Dịch: Fetch chapter list formatted for selection inputs)
-   * @returns {Promise<SelectionResponseDto[]>} - Danh sách các object thường có dạng { id, name } hoặc { value, label }.
-   */
-  public async getChapterSelections(): Promise<SelectionResponseDto[]> {
-    const chapters = await this._cacheService.getAllChapters();
-    return ChapterMapper.toSelectionList(chapters);
-  }
-
-  /**
-   * @description Lấy danh sách chương bài học đã qua bộ lọc (tìm kiếm/trạng thái) và ánh xạ sang DTO sạch.
-   * @param {ChapterQueryDTO} query - DTO chứa các tiêu chí lọc và thông số phân trang từ Request.
-   * @returns {Promise<PaginatedResult<ChapterResponseDTO>>} Trả về DTO thay vì Entity để đảm bảo tính đóng gói.
-   */
-  public async getPaginatedChapters(query: ChapterQueryDTO): Promise<PaginatedResult<ChapterResponseDTO>> {
-    // 1. Chuẩn hóa thông số phân trang (đảm bảo luôn là số dương)
-    const page = Number(query.page) || PAGINATION_CONFIG.DEFAULT_PAGE;
-    const limit = Math.min(
-      Number(query.limit) || PAGINATION_CONFIG.DEFAULT_LIMIT,
-      PAGINATION_CONFIG.MAX_LIMIT
-    );
-    // 2. Tính toán skip cho Repository (Logic phân trang tập trung tại Util)
-    const skip = PaginationUtil.getSkip(page, limit);
-
-    // 3. Truy vấn dữ liệu từ DB thông qua Chapter Repository
-    // Nhận về Tuple [Entity[], total] để phục vụ tính toán Metadata
-    const [chapters, total] = await this._chapterRepo.findAndCount(query, skip, limit);
-
-    // 4. ÁNH XẠ DỮ LIỆU (Mapping): Chuyển mảng Domain Entity sang mảng Chapter Response DTO
-    // Sử dụng ChapterMapper để lọc bỏ các trường nhạy cảm hoặc không cần thiết
-    const chapterResponses = chapters.map(chapter => ChapterMapper.toResponse(chapter));
-
-    // 5. Đóng gói kết quả cuối cùng kèm Metadata phân trang (total, page, limit, totalPages, hooks...)
-    return PaginationUtil.createPaginatedResponse(chapterResponses, total, page, limit);
-  }
-
-  /**
-   * @description Lấy thông tin chi tiết một chương theo ID và trả về DTO.
-   * @param {string} id - ID định danh chương.
-   * @returns {Promise<ChapterResponseDTO>}
-   */
-  public async getChapterById(id: string): Promise<ChapterResponseDTO> {
-    const chapter = await this._getChapterEntityOrThrow(id);
-    return ChapterMapper.toResponse(chapter);
-  }
-
-  /**
    * @description Khởi tạo chương mới và trả về thông tin chương vừa tạo (DTO).
    * @param {CreateChapterRequestDTO} dto - Dữ liệu khởi tạo chương.
-   * @returns {Promise<ChapterResponseDTO>}
+   * @returns {Promise<IChapterResponseDTO>}
    */
-  public async createChapter(dto: CreateChapterRequestDto): Promise<ChapterResponseDTO> {
-    CreateChapterValidator.validate(dto);
+  public async createChapter(dto: CreateChapterRequestDTO): Promise<IChapterResponseDTO> {
     // 1. Kiểm tra trùng tên (Dịch: Check duplicate name)
     const existingName = await this._chapterRepo.findByName(dto.name.trim());
     if (existingName) {
@@ -129,10 +82,9 @@ export class ChapterService implements IChapterService {
   /**
    * @description Cập nhật thông tin chương và trả về bản ghi mới sau khi cập nhật (DTO).
    * @param {UpdateChapterDTO} dto - Dữ liệu cập nhật.
-   * @returns {Promise<ChapterResponseDTO>}
+   * @returns {Promise<IChapterResponseDTO>}
    */
-  public async updateChapter(id: string, dto: UpdateChapterRequestDto): Promise<ChapterResponseDTO> {
-    UpdateChapterValidator.validate(dto);
+  public async updateChapter(id: string, dto: UpdateChapterRequestDTO): Promise<IChapterResponseDTO> {
     // Lấy Entity để thực hiện logic nghiệp vụ
     const chapter = await this._getChapterEntityOrThrow(id);
 
@@ -145,7 +97,7 @@ export class ChapterService implements IChapterService {
     if (existingCode) {
       throw new AppError(ErrorCode.CHAPTER.CODE_ALREADY_EXISTS);
     }
-    
+
     // Domain Logic cập nhật bên trong Entity
     chapter.updateDetails({
       name: dto.name?.trim(),
@@ -153,22 +105,25 @@ export class ChapterService implements IChapterService {
       orderIndex: dto.orderIndex,
     });
 
-    await this._chapterRepo.updateChapter(id, chapter);
+    await this._chapterRepo.updateChapter(chapter);
     this._cacheService.refresh();
 
     return ChapterMapper.toResponse(chapter);
   }
 
+
   /**
-   * @description Xóa chương lý thuyết với cơ chế thích nghi (Hybrid Delete):
-   * @param {string} id - ID của chương cần xóa.
-   * @returns {Promise<DeleteResponse>} Kết quả phân loại phương thức xóa đã thực hiện.
+   * @description Thực hiện xóa chương học dựa trên ràng buộc dữ liệu.
+   * @param {string} id - ID của chương học cần xóa. (The ID of the chapter to be deleted.)
+   * @returns {Promise<IDeleteResponseDTO>} Kết quả thao tác xóa (SOFT hoặc HARD).
    */
-  public async deleteChapter(id: string): Promise<DeleteResponse> {
+  public async deleteChapter(id: string): Promise<IDeleteResponseDTO> {
     // 1. Kiểm tra tồn tại (Ném lỗi 404 nếu không tìm thấy)
+    // (Check existence - Throws 404 if not found)
     const chapter = await this._getChapterEntityOrThrow(id);
 
     // 2. Thống kê chi tiết các ràng buộc (Questions, MatrixDetails, Weaknesses)
+    // (Detailed statistics of constraints)
     const related = await this._chapterRepo.countRelatedData(id);
 
     const totalRelated =
@@ -176,30 +131,38 @@ export class ChapterService implements IChapterService {
       related.matrixDetails +
       related.userWeaknesses;
 
-    // 3. Quyết định hướng xử lý
+    let deleteType: DeleteType;
+
+    // 3. Quyết định hướng xử lý (Decision logic)
     if (totalRelated > 0) {
-      // TRƯỜNG HỢP 1: CÓ RÀNG BUỘC -> XÓA MỀM
+      // TRƯỜNG HỢP 1: CÓ RÀNG BUỘC -> XÓA MỀM (Case 1: Has constraints -> Soft Delete)
       chapter.softDelete(); // Cập nhật trạng thái trong bộ nhớ Entity
 
       await this._chapterRepo.softDelete(id); // Gọi Repo để set deletedAt trong DB
-
-      await this._cacheService.refresh();
-      return { type: DeleteType.SOFT };
+      deleteType = DeleteType.SOFT;
+    } else {
+      // TRƯỜNG HỢP 2: DỮ LIỆU SẠCH -> XÓA CỨNG (Case 2: Clean data -> Hard Delete)
+      await this._chapterRepo.hardDelete(id);
+      deleteType = DeleteType.HARD;
     }
 
-    // TRƯỜNG HỢP 2: DỮ LIỆU SẠCH -> XÓA CỨNG
-    await this._chapterRepo.hardDelete(id);
-
+    // 4. Đồng bộ hóa Cache (Synchronize Cache)
     await this._cacheService.refresh();
-    return { type: DeleteType.HARD };
+
+    // 5. Trả về DTO phản hồi tiêu chuẩn (Return standard response DTO)
+    return new DeleteResponseDTO({
+      id: id,
+      type: deleteType,
+      count: totalRelated
+    });
   }
 
   /**
    * @description Khôi phục chương đã xóa mềm và trả về dữ liệu sau khôi phục (DTO).
    * @param {string} id - ID của chương cần khôi phục.
-   * @returns {Promise<ChapterResponseDTO>}
+   * @returns {Promise<IChapterResponseDTO>}
    */
-  public async restoreChapter(id: string): Promise<ChapterResponseDTO> {
+  public async restoreChapter(id: string): Promise<IChapterResponseDTO> {
     const chapter = await this._chapterRepo.findByIdIncludingDeleted(id);
 
     if (!chapter) {

@@ -2,9 +2,11 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { IQuestionRepository } from "@/domain/interfaces/repositories/exam-mgmt/i-question.repository";
 import { Question as DomainQuestion } from "@/domain/entities/question/question.entity";
 import { QuestionMapper } from "@/infrastructure/database/mappers/exam-mgmt/question.mapper";
-import { PrismaQuestionWithRelations } from "@/infrastructure/persistence/exam-mgmt/question.record";
+import { PrismaQuestionWithRelations, QuestionWithDetails } from "@/infrastructure/persistence/exam-mgmt/question.record";
 import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
 import { QuestionStatus } from "@/domain/entities/question/question.status";
+import { GetSelectionPoolDto } from "@/application/dtos/request/question/selection-question.request.dto";
+import { QuestionRelatedCount } from "@/shared/types/count.types";
 
 /**
  * @interface IMySQLQuestionRepositoryCradle
@@ -61,12 +63,12 @@ export class MySQLQuestionRepository implements IQuestionRepository {
   /**
   * @description Cập nhật nội dung Question và đồng bộ danh sách Answer.
   */
-  public async updateQuestion(id: string, entity: DomainQuestion): Promise<DomainQuestion> {
+  public async updateQuestion(entity: DomainQuestion): Promise<DomainQuestion> {
     const persistence = QuestionMapper.toUpdatePersistence(entity);
 
     // Prisma nested update tự động bọc trong transaction ngầm
     const updated = await this._prisma.question.update({
-      where: { id },
+      where: { id: entity.id },
       data: persistence,
       include: this._includeRelations
     });
@@ -167,16 +169,30 @@ export class MySQLQuestionRepository implements IQuestionRepository {
   }
 
   /**
-   * @description Xóa mềm câu hỏi bằng cách set deletedAt.
-   * @param {string} id - ID câu hỏi.
+   * @description Thực hiện xóa logic (Soft Delete) bằng cách ghi nhận thời điểm xóa và chuyển trạng thái về DELETED.
+   * @param {string} id - Định danh duy nhất (Unique Identifier) của hạng bằng lái cần xóa.
+   * @returns {Promise<void>}
+   * @principle Data Retention - Giữ lại dữ liệu vật lý để phục vụ mục đích tra soát (Audit) hoặc khôi phục khi cần.
    */
-  public async delete(id: string): Promise<void> {
+  public async softDelete(id: string): Promise<void> {
     await this._prisma.question.update({
       where: { id },
       data: {
         deletedAt: new Date(),
         status: "DELETED"
-      },
+      }
+    });
+  }
+
+  /**
+   * @description Thực hiện xóa vật lý (Hard Delete) - loại bỏ vĩnh viễn bản ghi khỏi cơ sở dữ liệu.
+   * @param {string} id - Định danh duy nhất (Unique Identifier) của hạng bằng lái.
+   * @returns {Promise<void>}
+   * @warning Irreversible - Thao tác này không thể hoàn tác và sẽ xóa sạch mọi dữ liệu liên quan trong DB.
+   */
+  public async hardDelete(id: string): Promise<void> {
+    await this._prisma.question.delete({
+      where: { id },
     });
   }
 
@@ -339,7 +355,7 @@ export class MySQLQuestionRepository implements IQuestionRepository {
         licenseLinks: {
           some: {
             licenseCategory: {
-              name: { in: licenseNames } // Nhận mảng và thực hiện query
+              name: { in: licenseNames }
             }
           }
         },
@@ -367,8 +383,97 @@ export class MySQLQuestionRepository implements IQuestionRepository {
         id: {
           in: ids,
         },
-        deletedAt: null, 
+        deletedAt: null,
       },
     });
+  }
+
+  /**
+   * @description Truy vấn kho câu hỏi dựa trên quan hệ n-n với hạng bằng lái.
+   * @param {GetSelectionPoolDto} filter - Bộ lọc từ Application Layer.
+   * @returns {Promise<QuestionWithDetails[]>} Danh sách câu hỏi.
+   */
+  public async findSelectionPool(filter: GetSelectionPoolDto): Promise<QuestionWithDetails[]> {
+    return await this._prisma.question.findMany({
+      where: {
+        // Nếu licenseId rỗng, ta truyền undefined để Prisma bỏ qua filter này
+        licenseLinks: filter.licenseId ? {
+          some: { licenseCategoryId: filter.licenseId }
+        } : undefined,
+
+        // Tương tự cho chapterId
+        chapterId: filter.chapterId || undefined,
+
+        isCritical: filter.isCritical, // undefined sẵn rồi nên ko sao
+        deletedAt: null,
+
+        // Search: Chỉ filter khi có nội dung
+        content: filter.search ? { contains: filter.search } : undefined,
+
+        // Loại trừ IDs: Chỉ filter khi mảng có phần tử
+        id: filter.excludeIds?.length ? { notIn: filter.excludeIds } : undefined,
+
+        // Trạng thái: isActive
+        status: filter.isActive ? 'ACTIVE' : undefined
+      },
+      orderBy: {
+        indexNumber: 'asc' // Sắp xếp tăng dần theo số thứ tự câu hỏi
+      },
+      include: {
+        chapter: true, // Lấy toàn bộ thông tin chương
+        licenseLinks: {
+          include: {
+            licenseCategory: { select: { name: true } } // Chỉ lấy tên hạng bằng
+          }
+        }
+      }
+    }) as QuestionWithDetails[];
+  }
+
+  /**
+   * @description Kiểm tra sự tồn tại của tập hợp ID câu hỏi.
+   * @param {string[]} ids - Danh sách ID cần check.
+   * @returns {Promise<boolean>}
+   */
+  public async existsAll(ids: string[]): Promise<boolean> {
+    const count = await this._prisma.question.count({
+      where: { id: { in: ids } },
+    });
+    return count === ids.length;
+  }
+
+  /**
+   * @description Thống kê các liên kết và thành phần phụ thuộc của Câu hỏi (Question) trên toàn hệ thống.
+   * @param {string} id - Định danh duy nhất (UUID) của câu hỏi cần kiểm tra. (Unique identifier of the question).
+   * @returns {Promise<QuestionRelatedCount>} Đối tượng chứa số lượng chi tiết các mối quan hệ. (Object containing counts of related entities).
+   */
+  public async countRelatedData(id: string): Promise<QuestionRelatedCount> {
+    // 1. Kiểm tra liên kết với Chương (Quan hệ 1-N, Foreign Key nằm tại bảng Question)
+    // (Check link with Chapter: 1-N relationship, Foreign Key is on Question table)
+    const question = await this._prisma.question.findUnique({
+      where: { id },
+      select: { chapterId: true }, // Chỉ select đúng trường cần thiết để tối ưu hiệu suất (Cheap Query)
+    });
+
+    // Nếu câu hỏi tồn tại và có giá trị chapterId, nghĩa là nó đang thuộc về 1 chương.
+    const chapterCount = (question && question.chapterId) ? 1 : 0;
+
+    // 2. Đếm số lượng hạng bằng lái đang liên kết (Bảng trung gian N-N)
+    // (Count linked license categories: N-N Pivot Table)
+    const licenseLinksCount = await this._prisma.questionLicenseCategory.count({
+      where: { questionId: id },
+    });
+
+    // 3. Đếm số lượng đề thi đang chứa câu hỏi này (Bảng trung gian N-N)
+    // (Count exams containing this question: N-N Pivot Table)
+    const examQuestionsCount = await this._prisma.examQuestion.count({
+      where: { questionId: id },
+    });
+
+    return {
+      chapter: chapterCount,
+      licenseLinks: licenseLinksCount,
+      examQuestions: examQuestionsCount,
+    };
   }
 }

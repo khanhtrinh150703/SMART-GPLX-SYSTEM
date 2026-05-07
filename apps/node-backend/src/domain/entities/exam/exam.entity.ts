@@ -1,6 +1,6 @@
 import { AppError, ErrorCode } from "@/shared/errors";
 import { ExamStatus } from "@prisma/client";
-import { CreateExamProps, IExamProps, IExamQuestionProps } from "./exam.props";
+import { CreateExamInput, IExamProps, IExamQuestionProps } from "./exam.props";
 import { IUserAnswerDTO } from "@/application/dtos/request/exam/complete-exam.request.dto";
 import { BaseEntity } from "@/domain/seedwork/entity.base";
 
@@ -9,37 +9,74 @@ import { BaseEntity } from "@/domain/seedwork/entity.base";
  * Tuân thủ Rich Domain Model để bảo vệ kết quả thi khỏi bị thay đổi tùy tiện.
  */
 export class ExamEntity extends BaseEntity<IExamProps> {
-
   private constructor(props: IExamProps) {
     super(props);
   }
 
   /**
-   * @description Factory Method: Khởi tạo một phiên thi mới (User bắt đầu làm bài).
+   * @description Factory method để tạo thực thể Exam mới.
+   * @param input Dữ liệu tạo đề thi từ Application Service.
+   * @returns Thực thể ExamEntity hoàn chỉnh.
    */
-  public static create(props: CreateExamProps): ExamEntity {
+  public static create(input: CreateExamInput): ExamEntity {
     const now = new Date();
 
+    // --- BƯỚC 1: MAPPING & VALIDATE SNAPSHOT (Domain Logic) ---
+    const examQuestions: IExamQuestionProps[] = input.rawQuestions.map(
+      (q, index) => {
+        // Tìm index của đáp án đúng (giả sử q.answers có thuộc tính isCorrect)
+        const correctAnsIndex = q.answers.findIndex((a) => a.isCorrect);
+
+        if (correctAnsIndex === -1 || correctAnsIndex === undefined) {
+          throw new AppError(
+            ErrorCode.EXAM.QUESTION_DATA_INVALID,
+            `Câu hỏi ID: ${q.id} không có đáp án đúng. Không thể tạo đề thi.`,
+          );
+        }
+
+        return {
+          questionId: q.id,
+          indexNumber: index + 1, // STT trong đề thi
+          isCritical: q.isCritical,
+          correctAnswer: correctAnsIndex + 1, // Chuyển sang 1-index để User dễ đọc
+          chapterId: q.props.chapterId,
+          chapterName: q.props.chapterName, // ChapterName đã được Service chuẩn bị từ Cache
+        };
+      },
+    );
+
+    // --- BƯỚC 2: VALIDATE BUSINESS INVARIANTS ---
+    const actualCriticalCount = examQuestions.filter(
+      (q) => q.isCritical,
+    ).length;
+    if (actualCriticalCount < input.minCriticalQuestions) {
+      throw new AppError(
+        ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS,
+        `Đề thi không đạt yêu cầu: Cần ít nhất ${input.minCriticalQuestions} câu điểm liệt (Hiện có: ${actualCriticalCount}).`,
+      );
+    }
+
+    // --- BƯỚC 3: ĐÓNG GÓI PROPS HOÀN CHỈNH ---
     const finalizedProps: IExamProps = {
-      ...props,
+      ...input,
       id: crypto.randomUUID(),
 
-      // Mặc định khi mới bắt đầu thi
-      status: ExamStatus.PUBLISHED,
+      // Logic khởi tạo trạng thái mặc định
+      status: input.status ?? ExamStatus.PUBLISHED,
       score: 0,
       isPassed: false,
 
-      // Thời gian bắt đầu làm bài
+      // Thời gian làm bài
       startedAt: now,
       endedAt: null,
 
-      // Snapshot câu hỏi (phải được truyền từ Service vào)
-      questions: props.questions || [],
-
-      // Timestamps hệ thống
+      // Gán snapshot đã qua xử lý
+      questions: examQuestions,
+      totalQuestions: input.totalQuestions ?? examQuestions.length,
+      // Timestamps
       createdAt: now,
       updatedAt: now,
-      deletedAt: undefined,
+      deletedAt: null,
     };
 
     return new ExamEntity(finalizedProps);
@@ -58,68 +95,83 @@ export class ExamEntity extends BaseEntity<IExamProps> {
   }
 
   /**
-   * @description Logic chấm điểm bài thi. 
+   * @description Logic chấm điểm bài thi.
    * Một bài thi ĐẠT khi: Điểm >= passingScore VÀ không sai câu điểm liệt nào.
    */
-  public complete(userAnswers: IUserAnswerDTO[]): void {
+  public complete(input: {
+    answers: IUserAnswerDTO[];
+    timeSpent: number;
+    timeRemaining: number;
+    isAutoSubmit: boolean;
+    clientFinishedAt: string;
+  }): void {
     const { props } = this;
-
-    // 1. Chặn nếu đã hoàn thành trước đó
-    if (props.status === ExamStatus.PUBLISHED) {
-      throw new AppError(ErrorCode.PROCESS.ALREADY_COMPLETED);
-    }
-
-    // 2. Kiểm tra nộp bài quá giờ (Grace period 30s)
     const now = new Date();
-    const durationMs = props.durationMinutes * 60 * 1000;
-    const deadline = new Date(props.startedAt.getTime() + durationMs + 30000);
 
-    if (now > deadline) {
-      // Tùy ông chọn: Thường thì vẫn cho nộp nhưng log lại, hoặc khóa luôn
-      // console.warn("User nộp bài quá giờ quy định");
-    }
+    // 1. Ghi nhận Metadata thời gian
+    this._props.resultMetadata = {
+      timeSpent: input.timeSpent,
+      timeRemaining: input.timeRemaining,
+      isAutoSubmit: input.isAutoSubmit,
+      clientFinishedAt: new Date(input.clientFinishedAt),
+    };
+    this._props.endedAt = now;
 
     let correctCount = 0;
+    let wrongCount = 0;
+    let skippedCount = 0;
     let hasFailedCritical = false;
 
-    // 3. Tối ưu hiệu năng: Lookup O(1)
-    const answerMap = new Map(userAnswers.map(ua => [ua.questionId, ua.answer]));
+    // 2. Tối ưu Lookup O(1)
+    const answerMap = new Map(
+      input.answers.map((ua) => [ua.questionId, ua.answer]),
+    );
 
-    // 4. Duyệt và chấm điểm trực tiếp vào mảng questions của Entity
+    // 3. Duyệt một lần duy nhất để tính toán tất cả các chỉ số
     this._props.questions = props.questions.map((q) => {
       const submittedAnswer = answerMap.get(q.questionId);
 
-      // So sánh đáp án: null/undefined hoặc sai thì là false
-      const isCorrect = submittedAnswer === q.correctAnswer;
+      // Kiểm tra trạng thái trả lời
+      const isSkipped =
+        submittedAnswer === undefined || submittedAnswer === null;
+      const isCorrect = !isSkipped && submittedAnswer === q.correctAnswer;
 
-      if (isCorrect) {
+      // Cập nhật các biến đếm
+      if (isSkipped) {
+        skippedCount++;
+      } else if (isCorrect) {
         correctCount++;
       } else {
-        if (q.isCritical) {
-          hasFailedCritical = true;
-        }
+        wrongCount++;
+        // Chỉ tính "liệt" nếu có trả lời nhưng bị sai
+        if (q.isCritical) hasFailedCritical = true;
       }
 
-      // Quan trọng: Ghi nhận kết quả vào snapshot câu hỏi
       return {
         ...q,
-        isCorrect: isCorrect
+        userAnswer: submittedAnswer,
+        isCorrect: isCorrect,
       };
     });
 
-    // 5. Cập nhật trạng thái tổng quát của Entity
+    // 4. Cập nhật kết quả vào Props
     this._props.score = correctCount;
+    this._props.wrongCount = wrongCount; // <--- Thêm mới
+    this._props.skippedCount = skippedCount; // <--- Thêm mới
+    this._props.hasFailedCritical = hasFailedCritical;
     this._props.status = ExamStatus.PUBLISHED;
-    this._props.endedAt = now;
 
-    // Điều kiện đỗ: Đạt điểm sàn VÀ không sai bất kỳ câu điểm liệt nào
-    this._props.isPassed = correctCount >= this._props.passingScore && !hasFailedCritical;
+    // Điều kiện ĐẠT
+    this._props.isPassed =
+      correctCount >= props.passingScore && !hasFailedCritical;
+
+    this.touch();
   }
 
   /**
- * @description Cập nhật toàn diện thông tin thực thể bài thi.
- * @param data - Dữ liệu cần cập nhật (Partial vì có thể chỉ update một vài trường).
- */
+   * @description Cập nhật thông tin đề thi và kiểm tra lại các ràng buộc nghiệp vụ.
+   * @param data - Dữ liệu cập nhật từng phần.
+   */
   public update(data: {
     name?: string;
     userId?: string;
@@ -133,35 +185,43 @@ export class ExamEntity extends BaseEntity<IExamProps> {
     minCriticalQuestions?: number;
     questions?: IExamQuestionProps[];
   }): void {
-    // 1. Kiểm tra tính hợp lệ sơ bộ (Business Invariants)
-    // "Validating exam name before assignment"
-    if (data.name !== undefined && data.name.trim() === '') {
-      throw new AppError(ErrorCode.EXAM.NAME_REQUIRED);
+    // 1. Validate các trường cơ bản
+    if (data.name !== undefined && data.name.trim() === "") {
+      throw new AppError(
+        ErrorCode.EXAM.NAME_REQUIRED,
+        "Tên đề thi không được để trống.",
+      );
     }
 
-    // 2. Cập nhật các trường thông tin cơ bản
-    if (data.name !== undefined) this._props.name = data.name;
-    if (data.userId !== undefined) this._props.userId = data.userId;
-    if (data.examMatrixId !== undefined) this._props.examMatrixId = data.examMatrixId;
-    if (data.licenseCategoryId !== undefined) this._props.licenseCategoryId = data.licenseCategoryId;
-
-    // 3. Cập nhật cấu hình Snapshot
-    // "Updating snapshot configuration values"
-    if (data.totalQuestions !== undefined) this._props.totalQuestions = data.totalQuestions;
-    if (data.passingScore !== undefined) this._props.passingScore = data.passingScore;
-    if (data.durationMinutes !== undefined) this._props.durationMinutes = data.durationMinutes;
-    if (data.minCriticalQuestions !== undefined) this._props.minCriticalQuestions = data.minCriticalQuestions;
-    if (data.score !== undefined) this._props.score = data.score;
-
-    if (data.status !== undefined) this._props.status = data.status;
-
-    // 4. Cập nhật danh sách câu hỏi (Snapshot Questions)
-    // "Replacing existing questions with a new snapshot array"
+    // 2. Logic cập nhật danh sách câu hỏi (Snapshot)
     if (data.questions !== undefined) {
+      // Đảm bảo số lượng câu hỏi điểm liệt vẫn thỏa mãn sau khi cập nhật
+      const minCritical =
+        data.minCriticalQuestions ?? this._props.minCriticalQuestions;
+      const actualCritical = data.questions.filter((q) => q.isCritical).length;
+
+      if (actualCritical < minCritical) {
+        throw new AppError(
+          ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS,
+          `Cập nhật thất bại: Danh sách mới chỉ có ${actualCritical}/${minCritical} câu điểm liệt.`,
+        );
+      }
+
+      // Tự động cập nhật lại totalQuestions nếu không được truyền vào
+      if (data.totalQuestions === undefined) {
+        this._props.totalQuestions = data.questions.length;
+      }
+
       this._props.questions = data.questions;
     }
 
-    // 5. Cập nhật dấu thời gian thay đổi
+    // 3. Mapping các trường còn lại (Gán hàng loạt một cách an toàn)
+    Object.assign(this._props, {
+      ...data,
+      name: data.name?.trim() ?? this._props.name,
+    });
+
+    // 4. Đánh dấu thời gian thay đổi
     this.touch();
   }
 

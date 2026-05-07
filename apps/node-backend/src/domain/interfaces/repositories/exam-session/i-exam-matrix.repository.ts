@@ -34,7 +34,6 @@ export interface IExamMatrixRepository {
     take: number
   ): Promise<[ExamMatrix[], number]>;
 
-  
   /**
    * @description Khởi tạo và lưu trữ một Ma trận đề thi mới vào hệ thống.
    * @param {ExamMatrixEntity} entity - Thực thể ma trận đề thi từ tầng Domain.
@@ -44,11 +43,10 @@ export interface IExamMatrixRepository {
 
   /**
    * @description Cập nhật dữ liệu cho một ma trận hiện có.
-   * @param {string} id - ID của ma trận cần cập nhật.
    * @param {ExamMatrix} entity - Thực thể chứa dữ liệu mới.
    * @returns {Promise<ExamMatrix>} Thực thể sau khi đã cập nhật.
    */
-  updateExamMatrix(id: string, entity: ExamMatrix): Promise<ExamMatrix>;
+  updateExamMatrix(entity: ExamMatrix): Promise<ExamMatrix>;
 
   /**
    * @description Xóa vĩnh viễn ma trận khỏi cơ sở dữ liệu (Hard Delete).

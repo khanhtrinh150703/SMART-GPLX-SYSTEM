@@ -1,6 +1,5 @@
-import { ITokenManager } from '@/domain/interfaces/external/i-token-manager';
+import { ITokenManager } from '@/domain/interfaces/services/external/i-token-manager.service';
 import { ITokenRepository } from '@/domain/interfaces/repositories/identity/i-token.repository';
-import { TokenPayload, Tokens } from '@/shared/types/auth.types';
 import { jwtUtil } from '@/shared/utils/jwt.util';
 import { User } from '@/domain/entities/user/user.entity';
 import { randomUUID } from 'node:crypto';
@@ -8,6 +7,7 @@ import { UserRole } from '@/domain/constants/roles.constant';
 import { ICradle } from '@/shared/types/container.types';
 import { AUTH_CONFIG } from '@/shared/config/auth.config';
 import { REDIS_KEYS } from '@/shared/config/redis.config';
+import { ITokenPayload, ITokens, TokenPayload } from '@/application/dtos/response/auth/token/token-payload.respone.dto';
 
 /**
  * Lớp quản lý vòng đời của Token (Tạo và Thu hồi).
@@ -30,9 +30,9 @@ export class JwtTokenManager implements ITokenManager {
   /**
    * Tác dụng: Tạo cặp Access/Refresh Token và lưu vào Redis.
    * @param {User} user - Thông tin người dùng cần mã hóa.
-   * @returns {Promise< Tokens = { accessToken: string; refreshToken: string }>}
+   * @returns {Promise< ITokens = { accessToken: string; refreshToken: string }>}
    */
-  public async generateAndStoreTokens(user: User): Promise<Tokens> {
+  public async generateAndStoreTokens(user: User): Promise<ITokens> {
     const { access, refresh } = AUTH_CONFIG.jwt;
     // 1. Trích xuất tên các Role
     const userRoles = user.roles.map(r => r.name as UserRole);
@@ -105,10 +105,10 @@ export class JwtTokenManager implements ITokenManager {
 
   /**
    * Tác dụng: Thu hồi cặp Token hiện tại dựa trên Payload (thường dùng cho Logout).
-   * @param {TokenPayload} payload - Chứa userId, jti, deviceId.
+   * @param {ITokenPayload} payload - Chứa userId, jti, deviceId.
    * @returns {Promise<void>}
    */
-  public async revokeTokenByPayLoad(payload: TokenPayload): Promise<void> {
+  public async revokeTokenByPayLoad(payload: ITokenPayload): Promise<void> {
     const deviceId = payload.deviceId || 'default';
 
     // Dựng lại chính xác 2 Key đã lưu lúc generate

@@ -1,51 +1,63 @@
+import { AppError, ErrorCode } from "@/shared/errors";
 import { IUploadedFile } from "@/shared/types/file.type";
-import { IUpdateProfileInput} from "@/shared/types/file.type";
+
 /**
- * Data Transfer Object cho việc cập nhật thông tin cá nhân
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật hồ sơ cá nhân.
  */
-export class UpdateProfileDTO {
-  readonly fullName?: string;
-  readonly pictureFile?: IUploadedFile; // Chuyển từ string sang object File
-
-  constructor(data: Partial<UpdateProfileDTO>) {
-    Object.assign(this, data);
-  }
-
-  /**
-   * Kiểm tra tính hợp lệ sơ bộ của DTO
-   * @returns {boolean}
-   */
-  isValid(): boolean {
-    // Thêm logic validate nếu cần (vd: fullName không được trống nếu có gửi lên)
-    return true;
-  }
+export interface IUpdateProfileInputDTO {
+    readonly fullName?: string;
+    readonly pictureFile?: IUploadedFile;
 }
 
 /**
- * @description DTO chứa dữ liệu yêu cầu cập nhật hồ sơ cá nhân.
- * Hỗ trợ cập nhật từng phần (Partial Update) cho họ tên và tệp tin ảnh đại diện.
+ * @description DTO xử lý cập nhật hồ sơ cá nhân.
+ * Đảm bảo dữ liệu được chuẩn hóa và ngăn chặn các yêu cầu rỗng.
  */
-export class UpdateProfileRequestDTO {
-  /** @property {string} fullName - Họ và tên đầy đủ của người dùng (Tùy chọn). */
-  readonly fullName?: string;
+export class UpdateProfileRequestDTO implements IUpdateProfileInputDTO {
+    public readonly fullName?: string;
+    public readonly pictureFile?: IUploadedFile;
 
-  /** @property {IUploadedFile} pictureFile - Đối tượng tệp tin ảnh đại diện mới (Tùy chọn). */
-  readonly pictureFile?: IUploadedFile;
+    constructor(data: IUpdateProfileInputDTO) {
+        // 1. Chặn đứng dữ liệu lỗi/undefined ngay từ constructor
+        this.validate(data);
 
-  /**
-   * @description Khởi tạo DTO từ dữ liệu đầu vào của dịch vụ.
-   * @param {IUpdateProfileInput} data - Dữ liệu trích xuất từ Multipart form-data.
-   */
-  constructor(data: IUpdateProfileInput) {
-    this.fullName = data.fullName?.trim();
-    this.pictureFile = data.pictureFile;
-  }
+        // 2. Làm sạch và gán giá trị
+        this.fullName = data.fullName?.trim();
+        this.pictureFile = data.pictureFile;
+    }
 
-  /**
-   * @description Kiểm tra xem yêu cầu có chứa ít nhất một thông tin cần thay đổi hay không.
-   * @returns {boolean} Trả về true nếu có dữ liệu hợp lệ để cập nhật.
-   */
-  public isValid(): boolean {
-    return !!(this.fullName || this.pictureFile);
-  }
+    /**
+     * @description Hàm gác cổng thực hiện ném AppError dựa trên mã lỗi hệ thống.
+     * @private
+     */
+    private validate(data: IUpdateProfileInputDTO): void {
+        // Guard Clause: Chống sập hệ thống
+        if (!data) {
+            throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+        }
+
+        const { USER } = ErrorCode;
+
+        // 1. Phải cung cấp ít nhất một trường để cập nhật (fullName hoặc avatar)
+        const hasFullName = data.fullName !== undefined;
+        const hasAvatar = data.pictureFile !== undefined;
+
+        if (!hasFullName && !hasAvatar) {
+            throw new AppError(USER.MISSING_UPDATE_FIELDS);
+        }
+
+        // 2. Kiểm tra độ dài tên (nếu có cung cấp)
+        if (hasFullName) {
+            const trimmedName = data.fullName?.trim() || '';
+
+            // Nếu gửi fullName nhưng lại để chuỗi rỗng
+            if (trimmedName.length === 0) {
+                throw new AppError(USER.NAME_REQUIRED); // Tận dụng lại USER_101
+            }
+
+            if (trimmedName.length > 50) {
+                throw new AppError(USER.NAME_TOO_LONG);
+            }
+        }
+    }
 }

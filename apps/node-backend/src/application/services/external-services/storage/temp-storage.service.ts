@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { ITempStorageService } from '@/domain/interfaces/external/i-temp-storage.service';
+import { ITempStorageService } from '@/domain/interfaces/services/external/i-temp-storage.service';
 import { AppError, ErrorCode } from '@/shared/errors';
 
 /**

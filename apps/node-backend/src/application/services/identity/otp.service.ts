@@ -1,21 +1,39 @@
 import crypto from 'crypto';
-import { IEmailService } from '@/domain/interfaces/external/i-email.service';
+import { IEmailService } from '@/domain/interfaces/services/external/i-email.service';
 import { IOtpRepository } from '@/domain/interfaces/repositories/identity/i-otp.repository';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { IOtpService } from '@/domain/interfaces/services/identity/i-otp.service';
 import { OTP_CONFIG } from '@/shared/config/otp.config';
 import { AUTH_CONFIG } from '@/shared/config/auth.config';
 
+/**
+ * @interface IOtpServiceCradle
+ * @description Tập hợp các phụ thuộc (Dependencies) cần thiết để vận hành OtpService.
+ */
 export interface IOtpServiceCradle {
+  /** @description Repository quản lý lưu trữ, kiểm tra trạng thái và vòng đời của mã OTP. */
   otpRepository: IOtpRepository;
+
+  /** @description Dịch vụ gửi thông báo mã xác thực đến người dùng qua Email. */
   emailService: IEmailService;
 }
 
+/**
+ * @class OtpService
+ * @description Quản lý vòng đời mã xác thực (OTP) bao gồm: sinh mã, kiểm tra và điều phối gửi thông báo.
+ */
 export class OtpService implements IOtpService {
+  /** @private @readonly @description Kho lưu trữ dữ liệu OTP tạm thời. */
   private readonly _otpRepo: IOtpRepository;
+
+  /** @private @readonly @description Dịch vụ gửi Email hệ thống. */
   private readonly _emailService: IEmailService;
 
-  // Thay ICradle bằng IOtpServiceCradle
+  /**
+   * @constructor
+   * @description Khởi tạo OtpService với các công cụ được tiêm (inject) từ DI Container.
+   * @param {IOtpServiceCradle} cradle - Chứa các Repository và Service bổ trợ cần thiết.
+   */
   constructor({ otpRepository, emailService }: IOtpServiceCradle) {
     this._otpRepo = otpRepository;
     this._emailService = emailService;
@@ -31,26 +49,15 @@ export class OtpService implements IOtpService {
   }
 
   /**
-   * @description Tác dụng: Xử lý luồng yêu cầu cấp mã OTP mới và gửi qua email.
-   * @param {string} userEmail - Email người dùng cần nhận OTP.
+   * @description Yêu cầu cấp mã OTP mới, thực hiện kiểm tra giới hạn gửi lại (Rate Limit) và gửi qua Email.
+   * @param {string} userEmail - Địa chỉ email của người dùng cần nhận mã xác thực. (User email to receive OTP).
    * @returns {Promise<void>}
+   * @throws {AppError} SYSTEM.TOO_MANY_REQUESTS - Nếu yêu cầu gửi lại quá nhanh hoặc đang trong thời gian khóa 60 giây.
    */
   public async requestOtp(userEmail: string): Promise<void> {
-
-    // import requestIp from 'request-ip';
-
-    // // Trong Controller
-    // const clientIp = requestIp.getClientIp(req);
-    // Chặn theo IP trước để bot không dùng nhiều email phá hoại
-    // await globalApiLimiter.consume(ip); 
-
-    // // Chặn theo Email để không làm phiền người dùng
-    // await otpLimiter.daily.consume(email);
-    // await otpLimiter.resend.consume(email);
     // 1. Kiểm tra xem người dùng có đang bị khóa tính năng gửi lại không
     const isLocked = await this._otpRepo.isResendLocked(userEmail);
     if (isLocked) {
-      // Lưu ý: Cần thêm mã lỗi TOO_MANY_REQUESTS vào ErrorCode của bạn
       throw new AppError(ErrorCode.SYSTEM.TOO_MANY_REQUESTS);
     }
 

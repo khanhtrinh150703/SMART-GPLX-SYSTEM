@@ -2,23 +2,35 @@ import { StorageFolder } from "@/domain/constants/storage.constant";
 import { IUploadFile } from "@/shared/types/storage.type";
 
 /**
- * @description Kiểu dữ liệu nguồn của Media: Có thể là File từ Request hoặc Path từ hệ thống.
+ * @typedef {Express.Multer.File | string | IUploadFile} MediaSource
+ * @description Nguồn media đầu vào (File, Path hoặc Object upload).
  */
-export type MediaSource = Express.Multer.File | string | IUploadFile; 
+export type MediaSource = Express.Multer.File | string | IUploadFile;
 
+/**
+ * @interface IMediaService
+ * @description Giao diện quản lý lưu trữ và xử lý tập tin.
+ */
 export interface IMediaService {
   /**
-   * @description Lưu trữ media từ bất kỳ nguồn nào và trả về URL bền vững.
+   * @description Lưu một tập tin và trả về URL cố định.
+   * @param source Nguồn dữ liệu cần lưu.
+   * @param folder Thư mục lưu trữ đích.
+   * @returns {Promise<string>} URL của tập tin sau khi lưu.
    */
   save(source: MediaSource, folder: StorageFolder): Promise<string>;
 
   /**
-   * @description Xử lý lưu trữ hàng loạt (Dùng cho ảnh đáp án).
+   * @description Lưu nhiều tập tin cùng lúc (thường dùng cho ảnh đáp án).
+   * @param sources Danh sách nguồn dữ liệu.
+   * @param folder Thư mục lưu trữ đích.
+   * @returns {Promise<string[]>} Danh sách các URL tương ứng.
    */
   saveMany(sources: MediaSource[], folder: StorageFolder): Promise<string[]>;
 
   /**
-   * @description Xóa media cũ khi cập nhật hoặc xóa thực thể.
+   * @description Xóa tập tin dựa trên URL.
+   * @param url Đường dẫn tập tin cần xóa.
    */
   deleteFile(url: string): Promise<void>;
 }

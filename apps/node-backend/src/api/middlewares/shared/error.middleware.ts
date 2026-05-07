@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ErrorCode, AppError, ErrorStatus, ErrorMessages } from '@/shared/errors';
-import { Result } from '@/shared/responses/api-response';
 import multer from 'multer';
+import { Result } from '@/application/dtos/response/shared/api.response.dto';
 
 export const globalErrorHandler = (
   err: AppError,

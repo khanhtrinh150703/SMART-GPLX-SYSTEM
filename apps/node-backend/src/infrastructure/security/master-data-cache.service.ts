@@ -72,9 +72,12 @@ export class MasterDataCacheService implements IMasterDataCacheService {
 
       // 5. Map ExamMatrices
       matricesFromDb.forEach(matrix => {
+        const categoryName = this._categoriesById.get(matrix.licenseCategoryId)?.name || "N/A";
         const cached: ICachedExamMatrix = {
           id: matrix.id,
           name: matrix.name,
+          minCriticalQuestions: matrix.minCriticalQuestions,
+          licenseCategoryName: categoryName,
           licenseCategoryId: matrix.licenseCategoryId,
           totalQuestions: matrix.totalQuestions,
           durationMinutes: matrix.durationMinutes,

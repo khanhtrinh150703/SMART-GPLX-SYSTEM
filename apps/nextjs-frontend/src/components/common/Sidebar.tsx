@@ -3,11 +3,11 @@
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
-import SidebarLogo from "../layouts/SideBar/SidebarLogo";
-import SidebarItem from "../layouts/SideBar/SidebarItem";
 import { sidebarVariants } from "@/components/layouts/SideBar/sidebar.variants";
 import { NAV_ITEMS } from "@/components/layouts/SideBar/sidebar.constants";
-import { useUserStore } from "@/store/user/user.store"; // 👈 Lấy trực tiếp từ Store cho chuẩn
+import { useUserStore } from "@/store/user/user.store"; 
+import SidebarItem from "../layouts/SideBar/SidebarItem";
+import SidebarLogo from "../layouts/SideBar/SidebarLogo";
 
 interface SidebarProps {
   className?: string;
@@ -20,31 +20,39 @@ export default function Sidebar({
   isOpen,
   setIsOpen,
 }: SidebarProps) {
-  const _hasHydrated = useUserStore((state) => state._hasHydrated);
-  const { permissions } = useUserStore();
+  // 1. Lấy thông tin từ User Store
+  const { accessToken, permissions, _hasHydrated } = useUserStore();
 
+  // 2. Xác định trạng thái đăng nhập (Authentication Check)
+  const isAuthenticated = !!accessToken && accessToken !== "undefined";
+
+  // 3. Logic lọc Menu theo quyền (Permission Filtering)
   const filteredNavItems = useMemo(() => {
+    if (!isAuthenticated) return []; // Nếu không đăng nhập, không trả về item nào
+
     return NAV_ITEMS.filter((item) => {
-      // ✅ TRƯỜNG HỢP 1: Menu công khai (Dashboard, Hồ sơ...)
-      // Nếu không yêu cầu quyền cụ thể, cho hiện luôn
       if (!item.requiredPermission) return true;
-
-      // ✅ TRƯỜNG HỢP 2: Quyền tối thượng (Super Admin)
-      // Nếu User có vé "admin:all", mở khóa tất cả menu không cần check thêm
       if (permissions.includes("admin:all")) return true;
-
-      // ✅ TRƯỜNG HỢP 3: Check "vé" cụ thể
-      // Kiểm tra xem mã quyền yêu cầu của Menu có nằm trong túi của User không
       return permissions.includes(item.requiredPermission);
     });
-  }, [permissions]); // 🚀 Chỉ tính toán lại khi bộ quyền trong Store thay đổi
+  }, [permissions, isAuthenticated]);
 
+  /**
+   * 🚀 LUỒNG XỬ LÝ ĐẶC BIỆT (Special Handling):
+   * 1. Hydration Guard: Đợi Zustand tải xong dữ liệu từ LocalStorage.
+   * 2. Auth Guard: Nếu không có Token, biến Sidebar thành "vô hình" (return null).
+   */
   if (!_hasHydrated) {
-    return <aside className="... animate-pulse bg-slate-100" />;
+    return <aside className="fixed left-0 top-0 h-full w-72 animate-pulse bg-slate-100 z-50" />;
   }
+
+  if (!isAuthenticated) {
+    return null; // Không render Sidebar nếu không có Token (Close/Hide Sidebar)
+  }
+
   return (
     <>
-      {/* Overlay - Giữ nguyên logic đóng mở */}
+      {/* Overlay: Chỉ hiện trên Mobile khi Sidebar mở */}
       <div
         className={cn(
           "fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-all duration-300 lg:hidden",
@@ -64,7 +72,7 @@ export default function Sidebar({
           className,
         )}
       >
-        {/* Header - Logo */}
+        {/* Header - Logo Section */}
         <div className="flex items-center justify-between px-6 h-24 shrink-0 border-b border-white/5">
           <div className="w-full flex items-center justify-center">
             <SidebarLogo />
@@ -74,11 +82,10 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* 🚀 NAV SECTION: Dùng danh sách đã được lọc logic ở trên */}
+        {/* Navigation Section */}
         <nav
           className={cn(
-            "flex-1 px-4 py-6 space-y-2 overflow-y-auto transition-opacity",
-            "custom-scrollbar",
+            "flex-1 px-4 py-6 space-y-2 overflow-y-auto transition-opacity custom-scrollbar",
             !isOpen && "opacity-0",
           )}
         >
@@ -86,13 +93,13 @@ export default function Sidebar({
             <SidebarItem
               key={item.href}
               href={item.href}
-              title={item.title} // Chú ý: Dùng title VN như NAV_ITEMS mới
+              title={item.title}
               icon={item.icon}
             />
           ))}
         </nav>
 
-        {/* Footer */}
+        {/* Footer Section */}
         <div className={cn("p-4 transition-opacity", !isOpen && "opacity-0")}>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">

@@ -160,13 +160,13 @@ export const authSteps = () => {
         label: 'Email sai định dạng',
         field: 'email',
         value: AUTH_PAYLOAD.INVALID_DATA.email,
-        code: ErrorCode.VALIDATION.EMAIL_INVALID,
+        code: ErrorCode.AUTH.EMAIL_INVALID,
       },
       {
         label: 'Mật khẩu quá yếu',
         field: 'password',
         value: AUTH_PAYLOAD.INVALID_DATA.shortPassword,
-        code: ErrorCode.VALIDATION.PASSWORD_INVALID,
+        code: ErrorCode.AUTH.PASSWORD_TOO_WEAK,
       },
     ];
 
@@ -179,7 +179,7 @@ export const authSteps = () => {
             [field]: value
           });
 
-        expect(response.status).toBe(ErrorStatus.USER_003);
+        expect(response.status).toBe(ErrorStatus.AUTH_003);
         expect(response.body.code).toBe(code);
       });
     });
@@ -309,7 +309,7 @@ export const authSteps = () => {
 
       // Kỳ vọng trả về lỗi 400 (Bad Request)
       expect(response.status).toBe(400);
-      expect(response.body.code).toBe(ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED);
+      expect(response.body.code).toBe(ErrorCode.AUTH.REFRESH_TOKEN_REQUIRED);
     });
 
     it('Nên báo lỗi khi Refresh Token sai định dạng (Quá ngắn)', async () => {
@@ -317,8 +317,8 @@ export const authSteps = () => {
         .post(AUTH_ENDPOINTS.REFRESH_TOKEN)
         .send({ refreshToken: 'chuoi-nay-qua-ngan-duoi-40-ky-tu' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.code).toBe(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID);
+      expect(response.status).toBe(401);
+      expect(response.body.code).toBe(ErrorCode.AUTH.INVALID_REFRESH_TOKEN);
     });
 
     it('Nên báo lỗi INVALID_TOKEN khi Token là giả mạo hoặc không tồn tại (Session không hợp lệ)', async () => {

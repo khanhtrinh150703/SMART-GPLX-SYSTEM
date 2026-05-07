@@ -6,7 +6,7 @@ import { ExamMatrixContent } from "@/components/features/exam-management/compone
 
 export default function ExamMatrixPage() {
   return (
-    <Suspense fallback={<SplashScreen variant="question" />}>
+    <Suspense fallback={<SplashScreen variant="exam-matrices" />}>
       <ExamMatrixContent />
     </Suspense>
   );

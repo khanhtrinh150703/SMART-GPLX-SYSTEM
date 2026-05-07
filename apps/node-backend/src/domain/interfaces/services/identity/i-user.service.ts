@@ -1,12 +1,11 @@
 import { User } from "@/domain/entities/user/user.entity";
-import { PaginatedResult } from "@/shared/types/pagination.types";
-import { UserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
 import { UpdateProfileRequestDTO } from "@/application/dtos/request/user/update-profile.request.dto";
 import { ChangePasswordRequestDTO } from "@/application/dtos/request/user/update-password.request.dto";
 import { ChangeStatusRequestDTO } from "@/application/dtos/request/user/update-status.request.dto";
-import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
 import { UpdateAdminRequestDTO } from "@/application/dtos/request/user/update-admin.request.dto";
 import { ILoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
+import { IDeleteResponseDTO } from "@/application/dtos/response/shared/delete.response.dto";
+import { IUserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
 
 /**
  * @description Interface định nghĩa các nghiệp vụ cốt lõi quản lý người dùng (User Domain).
@@ -35,7 +34,7 @@ export interface IUserService {
    * @param {ChangePasswordRequestDTO} dto - Chứa mật khẩu cũ và mật khẩu mới.
    * @returns {Promise<void>}
    */
-  changePassword(userId: string, dto: ChangePasswordRequestDTO): Promise<void>;
+  changePassword(userId: string, dto: ChangePasswordRequestDTO): Promise<IUserResponseDTO>;
 
   /**
    * @description Cập nhật trạng thái hoạt động của tài khoản người dùng.
@@ -43,42 +42,21 @@ export interface IUserService {
    * @param {ChangeStatusRequestDTO} dto - Trạng thái mới cần thiết lập.
    * @returns {Promise<void>}
    */
-  updateStatus(userId: string, dto: ChangeStatusRequestDTO): Promise<void>;
+  updateStatus(userId: string, dto: ChangeStatusRequestDTO): Promise<IUserResponseDTO>;
 
   /**
    * @description Thực hiện xóa mềm tài khoản (Soft Delete) khỏi hệ thống.
    * @param {string} userId - ID người dùng cần xóa.
    * @returns {Promise<void>}
    */
-  deleteUser(userId: string): Promise<void>;
+  deleteUser(userId: string): Promise<IDeleteResponseDTO>;
 
   /**
    * @description Khôi phục tài khoản người dùng đã bị xóa mềm trước đó.
    * @param {string} userId - ID người dùng cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<IUserResponseDTO>}
    */
-  restoreUser(userId: string): Promise<void>;
-
-  /**
-   * @description Tìm kiếm người dùng dựa trên tên đăng nhập.
-   * @param {string} username - Tên đăng nhập cần truy vấn.
-   * @returns {Promise<User>}
-   */
-  getUserByUserName(username: string): Promise<User>;
-
-  /**
-   * @description Tìm kiếm người dùng dựa trên địa chỉ Email.
-   * @param {string} email - Địa chỉ email cần truy vấn.
-   * @returns {Promise<User>}
-   */
-  getUserByEmail(email: string): Promise<User>;
-
-  /**
-   * @description Tìm kiếm người dùng linh hoạt qua Email hoặc Tên đăng nhập.
-   * @param {string} identifier - Chuỗi định danh (Email/Username).
-   * @returns {Promise<User>}
-   */
-  getUserByIdentifier(identifier: string): Promise<User>;
+  restoreUser(userId: string): Promise<IUserResponseDTO>;
 
   /**
    * @description Kiểm tra sự tồn tại của Tên đăng nhập hoặc Email trong hệ thống.
@@ -87,20 +65,6 @@ export interface IUserService {
    * @returns {Promise<boolean>} Trả về true nếu đã tồn tại bản ghi tương ứng.
    */
   checkExisting(username: string, email: string): Promise<boolean>;
-
-  /**
-   * @description Lấy thông tin chi tiết của một người dùng dựa trên mã định danh (ID).
-   * @param {string} userId - Mã định danh (ID) của người dùng cần truy xuất.
-   * @returns {Promise<User>} Trả về đối tượng người dùng (User) tương ứng.
-   */
-  getUserById(userId: string): Promise<User>;
-
-  /**
-   * @description Truy vấn danh sách người dùng có hỗ trợ phân trang và bộ lọc tìm kiếm.
-   * @param {UserQueryDTO} query - Tham số truy vấn (Page, Limit, Search, Role, Status).
-   * @returns {Promise<PaginatedResult<UserResponseDTO>>} Kết quả phân trang và siêu dữ liệu (Metadata).
-   */
-  getPaginatedUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>>;
 
   /**
    * @description Admin thực hiện cập nhật thông tin và quyền hạn của người dùng khác.

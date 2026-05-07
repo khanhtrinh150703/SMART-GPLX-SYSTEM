@@ -1,0 +1,1 @@
+export * from './i-user-exam-rank.repository'

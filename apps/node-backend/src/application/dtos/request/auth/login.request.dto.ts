@@ -1,55 +1,49 @@
+import { AppError } from "@/shared/errors/error-app";
+import { ErrorCode } from "@/shared/errors/error-codes";
+
 /**
- * @description DTO chứa dữ liệu yêu cầu đăng nhập hệ thống (Credentials).
- * Đảm nhận vai trò kiểm tra tính hiện diện và định dạng cơ bản của thông tin định danh trước khi đẩy vào tầng nghiệp vụ.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu đăng nhập.
  */
-export class LoginRequestDTO {
-  /** @property {string} username - Tên đăng nhập hoặc Email của người dùng. */
-  readonly username!: string;
+export interface ILoginInputDTO {
+  readonly username: string;
+  readonly password: string;
+}
 
-  /** @property {string} password - Mật khẩu chưa mã hóa (Plain text) gửi từ Client. */
-  readonly password!: string;
+/**
+ * @description DTO xử lý đăng nhập hệ thống.
+ * Đảm bảo dữ liệu luôn đúng định dạng và không được để trống trước khi đi vào tầng Auth Service.
+ */
+export class LoginRequestDTO implements ILoginInputDTO {
+  readonly username: string;
+  readonly password: string;
 
-  /**
-   * @description Khởi tạo DTO từ dữ liệu thô (Partial data).
-   * @param {Partial<LoginRequestDTO>} data - Dữ liệu trích xuất từ request body.
-   */
-  constructor(data: Partial<LoginRequestDTO>) {
-    Object.assign(this, data);
+  constructor(data: ILoginInputDTO) {
+    // 1. Chặn lỗi undefined ngay lập tức
+    this.validate(data);
+
+    // 2. Gán giá trị sau khi đã đảm bảo dữ liệu "sạch"
+    this.username = data.username.trim();
+    this.password = data.password;
   }
 
   /**
-   * @description Kiểm tra tổng thể tính hợp lệ của thông tin đăng nhập.
-   * Đối với Login, chúng ta chỉ tập trung kiểm tra việc dữ liệu không được để trống.
-   * @returns {boolean} Trả về true nếu tất cả các trường bắt buộc đã được nhập đầy đủ.
+   * @description Hàm xác thực logic đầu vào.
+   * @throws {AppError} Nếu dữ liệu không hợp lệ.
    */
-  public isValid(): boolean {
-    return this.isUsernameValid() && this.isPasswordValid();
-  }
+  private validate(data: ILoginInputDTO): void {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
 
-  /**
-   * @description Kiểm tra tính hợp lệ của tên đăng nhập (Không được trống và đã loại bỏ khoảng trắng).
-   * @private
-   * @returns {boolean}
-   */
-  private isUsernameValid(): boolean {
-    return !!this.username && this.username.trim().length > 0;
-  }
+    // Check Username
+    if (!data.username || typeof data.username !== 'string' || data.username.trim().length === 0) {
+      throw new AppError(ErrorCode.AUTH.USERNAME_REQUIRED);
+    }
 
-  /**
-   * @description Kiểm tra sự hiện diện của mật khẩu. 
-   * Lưu ý: Tại bước đăng nhập, không nên kiểm tra Regex phức tạp để tránh lộ quy tắc mật khẩu cho kẻ tấn công.
-   * @private
-   * @returns {boolean}
-   */
-  private isPasswordValid(): boolean {
-    return !!this.password && this.password.length > 0;
-  }
-
-  /**
-   * @description Hàm bí danh (Alias) nhằm duy trì tính tương thích với các logic kiểm tra mật khẩu hiện có.
-   * @returns {boolean}
-   */
-  public isPassword(): boolean {
-    return this.isPasswordValid();
+    // Check Password
+    if (!data.password || typeof data.password !== 'string' || data.password.length === 0) {
+      throw new AppError(
+        ErrorCode.AUTH.PASSWORD_REQUIRED);
+    }
   }
 }

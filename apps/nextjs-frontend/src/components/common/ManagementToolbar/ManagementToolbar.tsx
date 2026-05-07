@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Loader2, LucideIcon, X } from "lucide-react";
+import { Search, Plus,  LucideIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import Button from "@/components/ui/Button/Button";
 
@@ -10,11 +10,12 @@ interface ManagementToolbarProps {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
-  onAddClick: () => void;
-  addLabel: string;
+  onAddClick?: () => void; // Chuyển thành optional vì có thể nút bị ẩn (Optional because button can be hidden)
+  addLabel?: string;       // Chuyển thành optional (Optional)
   addIcon?: LucideIcon;
   isLoading?: boolean;
   className?: string;
+  showAddButton?: boolean; // THÊM MỚI: Prop điều khiển ẩn hiện nút (NEW: Prop to toggle button visibility)
 }
 
 export const ManagementToolbar = ({
@@ -22,10 +23,11 @@ export const ManagementToolbar = ({
   onSearchChange,
   searchPlaceholder = "Tìm kiếm...",
   onAddClick,
-  addLabel,
+  addLabel = "Thêm mới",
   addIcon: AddIcon = Plus,
   isLoading = false,
   className,
+  showAddButton = true, // Mặc định là hiển thị (Default to visible)
 }: ManagementToolbarProps) => {
   const [localSearch, setLocalSearch] = useState(searchValue);
 
@@ -74,16 +76,18 @@ export const ManagementToolbar = ({
         )}
       </div>
 
-      {/* NÚT THÊM MỚI: Dùng chuẩn Button Atom */}
-      <Button
-        onClick={onAddClick}
-        isLoading={isLoading}
-        variant="primary"
-        className="h-12 px-6 rounded-2xl flex items-center gap-2 shrink-0 font-bold text-[13px] uppercase tracking-wider shadow-lg shadow-emerald-500/20"
-      >
-        {!isLoading && <AddIcon size={18} />}
-        <span className="hidden md:inline">{addLabel}</span>
-      </Button>
+      {/* NÚT THÊM MỚI: Chỉ hiển thị khi showAddButton là true */}
+      {showAddButton && (
+        <Button
+          onClick={onAddClick}
+          isLoading={isLoading}
+          variant="primary"
+          className="h-12 px-6 rounded-2xl flex items-center gap-2 shrink-0 font-bold text-[13px] uppercase tracking-wider shadow-lg shadow-emerald-500/20"
+        >
+          {!isLoading && <AddIcon size={18} />}
+          <span className="hidden md:inline">{addLabel}</span>
+        </Button>
+      )}
     </div>
   );
 };

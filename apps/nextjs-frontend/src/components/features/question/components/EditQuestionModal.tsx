@@ -63,7 +63,7 @@ export function EditQuestionModal({
         difficultyLevel: initialData.difficulty.level,
         isCritical: initialData.isCritical,
         indexNumber: initialData.indexNumber,
-        status: (initialData.status === "active" ? "ACTIVE" : "DRAFT") as
+        status: (initialData.status.toLocaleLowerCase() === "active" ? "ACTIVE" : "DRAFT") as
           | "ACTIVE"
           | "DRAFT",
         existingImageUrl: initialData.imageUrl,

@@ -33,7 +33,7 @@ export interface IActiveSessionRepository {
 
   /**
    * @description Xóa bỏ phiên làm bài sau khi đã nộp bài thành công hoặc hết hạn.
-   * @param id - ID của phiên làm bài cần xóa.
+   * @param id - ID user.
    */
-  delete(id: string): Promise<void>;
+  deleteByUserId(id: string): Promise<void>;
 }

@@ -1,0 +1,1 @@
+export { default as userExamRankRoutes } from './user-rank.routes';

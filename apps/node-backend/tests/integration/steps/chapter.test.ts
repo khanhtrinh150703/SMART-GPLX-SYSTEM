@@ -65,7 +65,7 @@ export const chapterSteps = (
                     .set(getAuthHeader(getAdminToken()))
                     .send(CHAPTER_PAYLOAD.MISSING_NAME);
 
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.NAME_REQUIRED);
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.NAME_REQUIRED);
             });
 
             it('🚫 Check MÃ (Code) trống: Trả về VALIDATION.CODE_REQUIRED', async () => {
@@ -74,7 +74,7 @@ export const chapterSteps = (
                     .set(getAuthHeader(getAdminToken()))
                     .send(CHAPTER_PAYLOAD.MISSING_CODE);
 
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.CODE_REQUIRED);
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.CODE_REQUIRED);
             });
 
             it('🚫 Check thứ tự âm: Trả về CHPT_003', async () => {
@@ -92,7 +92,7 @@ export const chapterSteps = (
                     .set(getAuthHeader(getAdminToken()))
                     .send(CHAPTER_PAYLOAD.DESCRIPTION_TOO_LONG);
 
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.DESCRIPTION_TOO_LONG);
             });
 
             it('🚫 Check mô tả rỗng: Phải trả về CHPT_004', async () => {
@@ -101,7 +101,7 @@ export const chapterSteps = (
                     .set(getAuthHeader(getAdminToken()))
                     .send(CHAPTER_PAYLOAD.INVALID_DESCRIPTION);
 
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED); // 'CHPT_004'
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.DESCRIPTION_REQUIRED); // 'CHPT_004'
             });
 
             // --- NHÓM 4: LỖI NGHIỆP VỤ (BUSINESS LOGIC / DUPLICATE) ---
@@ -198,7 +198,7 @@ export const chapterSteps = (
                     .set(getAuthHeader(getAdminToken()))
                     .send({ ...CHAPTER_PAYLOAD.UPDATE_VALID, name: '' });
 
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.NAME_REQUIRED);
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.NAME_REQUIRED);
             });
 
             it('🚫 Check MÔ TẢ quá dài: Phải trả về DESCRIPTION_TOO_LONG', async () => {
@@ -210,7 +210,7 @@ export const chapterSteps = (
                         description: 'A'.repeat(501)
                     });
 
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.DESCRIPTION_TOO_LONG);
             });
 
             it('🚫 Check THỨ TỰ âm: Phải trả về INVALID_ORDER', async () => {
@@ -256,6 +256,7 @@ export const chapterSteps = (
                     .delete(CHAPTER_ENDPOINTS.DELETE(getChapterId()))
                     .set(getAuthHeader(getAdminToken()));
 
+                expect(res.body.data).toMatchObject({ type: DeleteType.SOFT });
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe(Message.CHAPTER.DELETE_SUCCESS);
             });
@@ -265,7 +266,7 @@ export const chapterSteps = (
                     .delete(CHAPTER_ENDPOINTS.DELETE(getChapterIdSecond()))
                     .set(getAuthHeader(getAdminToken()));
                 expect(res.status).toBe(200);
-                expect(res.body.data).toEqual({ type: DeleteType.HARD });
+                expect(res.body.data).toMatchObject({ type: DeleteType.HARD });
                 expect(res.body.message).toBe(Message.CHAPTER.DELETE_SUCCESS);
             });
 
@@ -273,15 +274,7 @@ export const chapterSteps = (
                 const res = await request(app)
                     .delete(CHAPTER_ENDPOINTS.DELETE(getChapterIdSecond()))
                     .set(getAuthHeader(getAdminToken()));
-
-                expect(res.status).toBe(404);
-            });
-
-            it('❌ Nên trả về lỗi 404 khi cố xóa một Chapter ID không tồn tại hoặc đã bị xóa', async () => {
-                const res = await request(app)
-                    .delete(CHAPTER_ENDPOINTS.DELETE(getChapterId()))
-                    .set(getAuthHeader(getAdminToken()));
-
+                expect(res.body.code).toBe(ErrorCode.CHAPTER.NOT_FOUND);
                 expect(res.status).toBe(404);
             });
 
@@ -300,6 +293,7 @@ export const chapterSteps = (
                 const res = await request(app)
                     .patch(CHAPTER_ENDPOINTS.RESTORE(getChapterId())) // Đổi sang RESTORE của CHAPTER
 
+                expect(res.body.code).toBe(ErrorCode.AUTH.UNAUTHORIZED);
                 expect(res.status).toBe(401); // Unauthorized
             });
 

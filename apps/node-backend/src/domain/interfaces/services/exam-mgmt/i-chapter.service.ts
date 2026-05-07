@@ -1,10 +1,7 @@
-import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-query.request.dto";
-import { CreateChapterRequestDto } from "@/application/dtos/request/chapter/create-chapter.request.dto";
-import { UpdateChapterRequestDto } from "@/application/dtos/request/chapter/update-chapter.request.dto";
-import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
-import { DeleteResponse } from "@/domain/constants/delete.constant";
-import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
-import { PaginatedResult } from "@/shared/types/pagination.types";
+import { CreateChapterRequestDTO } from "@/application/dtos/request/chapter/create-chapter.request.dto";
+import { UpdateChapterRequestDTO } from "@/application/dtos/request/chapter/update-chapter.request.dto";
+import { IChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
+import { IDeleteResponseDTO } from "@/application/dtos/response/shared/delete.response.dto";
 
 /**
  * @description Interface điều phối các nghiệp vụ quản lý Chương lý thuyết (Chapter Domain).
@@ -12,53 +9,33 @@ import { PaginatedResult } from "@/shared/types/pagination.types";
 export interface IChapterService {
 
   /**
-   * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) có hỗ trợ tìm kiếm (theo mã hạng hoặc tên).
-   * @returns {Promise<SelectionResponseDto[]>} - Danh sách các hạng bằng lái rút gọn cho dropdown.
-   */
-  getChapterSelections(): Promise<SelectionResponseDto[]>;
-
-  /**
-   * @description Lấy danh sách chương lý thuyết có phân trang, sắp xếp theo thứ tự hiển thị.
-   * @param {ChapterQueryDTO} query - Tham số truy vấn bao gồm phân trang và bộ lọc.
-   * @returns {Promise<PaginatedResult<ChapterResponse>>} Kết quả phân trang chứa danh sách Chapter.
-   */
-  getPaginatedChapters(query: ChapterQueryDTO): Promise<PaginatedResult<ChapterResponseDTO>>
-
-  /**
-   * @description Tìm kiếm thông tin chi tiết của một chương theo mã định danh.
-   * @param {string} id - ID của chương cần tìm.
-   * @returns {Promise<Chapter>} Thực thể chương lý thuyết.
-   */
-  getChapterById(id: string): Promise<ChapterResponseDTO>;
-
-  /**
    * @description Khởi tạo và lưu trữ một chương lý thuyết mới vào hệ thống.
-   * @param {CreateChapterRequestDto} dto - Dữ liệu khởi tạo chương.
-   * @returns {Promise<void>}
+   * @param {CreateChapterRequestDTO} dto - Dữ liệu khởi tạo chương.
+   * @returns {Promise<IChapterResponseDTO>}
    */
-  createChapter( dto: CreateChapterRequestDto): Promise<ChapterResponseDTO>;
+  createChapter(dto: CreateChapterRequestDTO): Promise<IChapterResponseDTO>;
 
   /**
    * @description Cập nhật thông tin chi tiết hoặc thay đổi thứ tự hiển thị của chương.
    * @param {string} id - ID của chuong.
-   * @param {UpdateChapterRequestDto} dto - Dữ liệu cập nhật kèm ID định danh.
+   * @param {UpdateChapterRequestDTO} dto - Dữ liệu cập nhật kèm ID định danh.
    * @returns {Promise<void>}
    */
-  updateChapter(id: string,dto: UpdateChapterRequestDto): Promise<ChapterResponseDTO>;
+  updateChapter(id: string, dto: UpdateChapterRequestDTO): Promise<IChapterResponseDTO>;
 
   /**
    * @description Xóa chương lý thuyết.
    * @param {string} id - ID của chương cần xóa.
-   * @returns {Promise<void>}
+   * @returns {Promise<IDeleteResponseDTO>}
    */
-  deleteChapter(id: string): Promise<DeleteResponse>
+  deleteChapter(id: string): Promise<IDeleteResponseDTO>
 
   /**
    * @description Khôi phục chương lý thuyết đã bị xóa mềm trước đó.
    * @param {string} id - ID của chương cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<IChapterResponseDTO>}
    */
-  restoreChapter(id: string): Promise<ChapterResponseDTO>;
+  restoreChapter(id: string): Promise<IChapterResponseDTO>;
 
   /**
    * @description Kiểm tra sự tồn tại của một bản ghi trong hệ thống dựa trên ID.

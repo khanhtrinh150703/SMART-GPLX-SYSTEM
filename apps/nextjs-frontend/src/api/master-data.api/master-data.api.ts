@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "@/constants/api-endpoints.constant";
 import axiosClient from "@/services/axios-client";
-import { SelectionData, StandardResponse } from "@/types/common.type";
+import { ISelectionExamMatrix, SelectionData, StandardResponse } from "@/types/common.type";
 
 /**
  * Master API - Quản lý các dữ liệu danh mục (Selection Data)
@@ -28,10 +28,17 @@ export const masterApi = {
     return response.data;
   },
 
-  
+
   getRoleSelection: async (): Promise<StandardResponse<SelectionData[]>> => {
     const response = await axiosClient.get<StandardResponse<SelectionData[]>>(
       ENDPOINTS.ROLE.SELECTION
+    );
+    return response.data;
+  },
+
+  getExamMatrixSelection: async (): Promise<StandardResponse<ISelectionExamMatrix[]>> => {
+    const response = await axiosClient.get<StandardResponse<ISelectionExamMatrix[]>>(
+      ENDPOINTS.EXAM_MATRICES.SELECTION
     );
     return response.data;
   },

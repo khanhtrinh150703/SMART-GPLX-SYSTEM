@@ -2,7 +2,7 @@ import { LoginRequestDTO } from "@/application/dtos/request/auth/login.request.d
 import { RefreshTokenRequestDTO } from "@/application/dtos/request/auth/refresh.token.request.dto";
 import { ResetPasswordRequestDTO } from "@/application/dtos/request/auth/reset-password.request.dto";
 import { ILoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
-import { TokenPayload, Tokens } from "@/shared/types/auth.types";
+import { ITokens, ITokenPayload } from "@/application/dtos/response/auth/token/token-payload.respone.dto";
 
 /**
  * @description Giao diện xử lý các quy trình xác thực và bảo mật tài khoản (Authentication & Account Security).
@@ -22,7 +22,7 @@ export interface IAuthService {
    * @param {TokenPayload} payload - Thông tin trích xuất từ Token (User ID, JTI) để xác định phiên cần hủy.
    * @returns {Promise<void>}
    */
-  logout(payload: TokenPayload): Promise<void>;
+  logout(payload: ITokenPayload): Promise<void>;
 
   /**
    * @description Khởi tạo quy trình khôi phục mật khẩu bằng cách gửi mã OTP xác thực qua Email.
@@ -41,7 +41,7 @@ export interface IAuthService {
   /**
    * @description Thực hiện làm mới cặp mã xác thực (Access & Refresh Token) bằng Refresh Token.
    * @param {RefreshTokenRequestDTO} dto - Đối tượng chứa mã Refresh Token hợp lệ.
-   * @returns {Promise<Tokens>} Trả về một "Promise" chứa cặp mã xác thực mới (Access Token & Refresh Token).
+   * @returns {Promise<ITokens>} Trả về một "Promise" chứa cặp mã xác thực mới (Access Token & Refresh Token).
    */
-  refresh(dto: RefreshTokenRequestDTO): Promise<Tokens>;
+  refresh(dto: RefreshTokenRequestDTO): Promise<ITokens>;
 }

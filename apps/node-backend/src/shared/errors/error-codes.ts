@@ -41,6 +41,13 @@ export const ErrorCode = {
         MISSING_FIELDS: 'AUTH_400',
         INVALID_TOKEN: 'AUTH_007', // Token không hợp lệ (Sai chữ ký, bị chỉnh sửa...)
         ROLES_NOT_INITIALIZED: 'AUTH_406',
+        USERNAME_REQUIRED: 'AUTH_008', // Tên đăng nhập là bắt buộc
+        PASSWORD_REQUIRED: 'AUTH_009', // Mật khẩu là bắt buộc
+        USERNAME_INVALID: 'AUTH_010',  // Định dạng username không đúng (nếu cần check string/trim)
+        REFRESH_TOKEN_REQUIRED: 'AUTH_011', // Thiếu Refresh Token
+        EMAIL_INVALID: 'AUTH_012',         // Email không đúng định dạng
+        PASSWORD_TOO_WEAK: 'AUTH_013',     // Mật khẩu không đủ độ dài hoặc thiếu độ phức tạp
+        PASSWORD_MISMATCH: 'AUTH_014',     // Mật khẩu xác nhận không khớp
     },
 
     /** * --- USER & PROFILE (USER) --- 
@@ -48,21 +55,33 @@ export const ErrorCode = {
      */
 
     USER: {
-        NOT_FOUND: 'USER_404',          // Không tìm thấy user
-        EMAIL_EXISTS: 'USER_409',       // Email đã dùng
-        USERNAME_EXISTS: 'USER_410',    // Username đã dùng
-        PHONE_EXISTS: 'USER_411',       // SĐT đã dùng
-        REGISTER_FAILED: 'USER_003',    // Đăng ký thất bại
-        UPDATE_FAILED: 'USER_004',      // Cập nhật profile lỗi
-        NAME_REQUIRED: 'USER_V001',     // Họ tên là bắt buộc
-        NAME_TOO_SHORT: 'USER_V002',    // Họ tên quá ngắn (< 2 ký tự)
-        NAME_TOO_LONG: 'USER_V003',     // Họ tên quá dài (> 100 ký tự)
-        NAME_INVALID: 'USER_V004',      // Họ tên chứa ký tự không hợp lệ
-        STATUS_INVALID: 'USER_V005',    // Trạng thái tài khoản không hợp lệ
-        ROLES_REQUIRED: 'USER_V006',    // Phải gán ít nhất một vai trò
-        INVALID_ROLE_ID: 'USER_V007',   // ID vai trò không tồn tại trong hệ thống
-        AVATAR_TOO_LARGE: 'USER_V008',  // Kích thước ảnh quá lớn
-        AVATAR_INVALID_TYPE: 'USER_V009' // Định dạng ảnh không hỗ trợ (chỉ jpg, png...)
+        // --- Nhóm 1xx: Validation (Dữ liệu đầu vào) ---
+        NAME_REQUIRED: 'USER_101',      // Họ tên là bắt buộc
+        NAME_TOO_SHORT: 'USER_102',     // Họ tên quá ngắn
+        NAME_TOO_LONG: 'USER_103',      // Họ tên quá dài
+        NAME_INVALID: 'USER_104',       // Họ tên chứa ký tự đặc biệt
+        STATUS_INVALID: 'USER_105',     // Trạng thái không hợp lệ
+        ROLES_REQUIRED: 'USER_106',     // Thiếu vai trò
+        INVALID_ROLE_ID: 'USER_107',    // ID vai trò sai định dạng
+        AVATAR_TOO_LARGE: 'USER_108',   // Ảnh quá nặng
+        AVATAR_INVALID_TYPE: 'USER_109',// Sai định dạng ảnh
+        MISSING_UPDATE_FIELDS: 'USER_110', // Không có dữ liệu để update
+        STATUS_REQUIRED: 'USER_112',    // Thiếu trạng thái cần cập nhật
+        INVALID_ROLES_FORMAT: 'USER_111',  // Roles phải là mảng
+        OLD_PASSWORD_REQUIRED: 'USER_120',   // Thiếu mật khẩu cũ
+        NEW_PASSWORD_REQUIRED: 'USER_121',   // Thiếu mật khẩu mới
+        PASSWORD_MUST_BE_DIFFERENT: 'USER_122', // Mật khẩu mới phải khác mật khẩu cũ
+        PASSWORD_TOO_WEAK: 'USER_123',       // Mật khẩu mới không đủ độ mạnh
+
+        // --- Nhóm 4xx: State & Conflict (Trạng thái & Trùng lặp) ---
+        NOT_FOUND: 'USER_404',
+        EMAIL_EXISTS: 'USER_409',
+        USERNAME_EXISTS: 'USER_410',
+        PHONE_EXISTS: 'USER_411',
+
+        // --- Nhóm 0xx/5xx: Operation (Lỗi thực thi) ---
+        REGISTER_FAILED: 'USER_003',
+        UPDATE_FAILED: 'USER_004',
     },
 
     /** * --- SMART-GPLX DOMAIN (EXAM) --- 
@@ -70,12 +89,21 @@ export const ErrorCode = {
      */
     EXAM: {
         // --- Nhóm 1xx: Lỗi dữ liệu đầu vào (Validation) ---
+        ID_REQUIRED: 'EXM_100',
         IMAGE_INVALID: 'EXM_101',           // Ảnh không hợp lệ
         ANSWERS_EMPTY: 'EXM_102',           // Danh sách câu trả lời trống
         ANSWER_FORMAT_INVALID: 'EXM_103',   // Định dạng câu trả lời sai
         NAME_REQUIRED: 'EXM_104',           // Tên không được để trống
         NAME_TOO_LONG: 'EXM_105',           // Tên quá dài
         INVALID_MATRIX_ID: 'EXM_106',       // Mã ma trận đề thi không hợp lệ
+        USER_ID_REQUIRED: 'EXM_107',        // Thiếu ID người tạo
+        LICENSE_CATEGORY_REQUIRED: 'EXM_108',// Thiếu hạng bằng lái
+        QUESTIONS_EMPTY: 'EXM_109',         // Danh sách câu hỏi không được trống
+        INVALID_DURATION: 'EXM_110',        // Thời gian thi không hợp lệ
+        PASSING_SCORE_TOO_HIGH: 'EXM_111',  // Điểm đạt vượt quá tổng số câu
+        MIN_CRITICAL_INVALID: 'EXM_112',    // Số câu điểm liệt tối thiểu không hợp lệ
+        INVALID_TIME_RANGE: 'EXM_113',      // Thời gian kết thúc phải sau thời gian bắt đầu
+        TOTAL_QUESTIONS_INVALID: 'EXM_114', // Tổng số câu hỏi không hợp lệ
 
         // --- Nhóm 2xx: Lỗi nghiệp vụ & Kho dữ liệu (Pool & Business) ---
         INSUFFICIENT_POOL_QUESTIONS: 'EXM_201',     // Tổng kho không đủ câu hỏi
@@ -114,6 +142,8 @@ export const ErrorCode = {
         INVALID_FORMAT: 'VAL_004',
         INVALID_LENGTH: 'VAL_005',
         CODE_REQUIRED: 'VAL_006',
+        INVALID_NUMBER: 'VAL_007', // Định dạng số không hợp lệ
+        INVALID_INPUT: 'VAL_008',
 
         // --- 1xx: Identity & Contact (Định danh & Liên lạc) ---
         EMAIL_INVALID: 'VAL_101',
@@ -127,10 +157,12 @@ export const ErrorCode = {
         PASSWORD_MUST_BE_DIFFERENT: 'VAL_203',
         REFRESH_TOKEN_REQUIRED: 'VAL_204',
         REFRESH_TOKEN_INVALID: 'VAL_205',
+        PASSWORD_TOO_SHORT: 'VAL_206',
 
         // --- 3xx: Specific Business Logic (Logic nghiệp vụ cụ thể) ---
         AGE_MUST_BE_NUMBER: 'VAL_301',
         AGE_INVALID: 'VAL_302',
+        INVALID_PERCENTAGE: 'VAL_303',
 
         // --- 4xx: Exam & Training (Đề thi & Đào tạo) ---
         LICENSE_CATEGORY_REQUIRED: 'VAL_401', // Hạng bằng lái bắt buộc
@@ -144,10 +176,19 @@ export const ErrorCode = {
     },
 
     LICENSE: {
-        NAME_ALREADY_EXISTS: 'LIC_409',
+        ID_REQUIRED: 'LIC_100',
         ALREADY_EXISTS: 'LIC_001',
         NOT_FOUND: 'LIC_002',
         IS_IN_USE: 'LIC_003',
+        NAME_REQUIRED: 'LIC_101',           // Tên hạng bằng không được trống
+        NAME_INVALID_LENGTH: 'LIC_102',     // Độ dài tên hạng bằng không hợp lệ (1-10 ký tự)
+        NAME_FORMAT_INVALID: 'LIC_103',     // Tên hạng bằng sai định dạng (Regex)
+        AGE_REQUIRED: 'LIC_104',            // Độ tuổi là bắt buộc và phải là số
+        AGE_INVALID: 'LIC_105',             // Độ tuổi không đạt yêu cầu tối thiểu (18 tuổi)
+        DESCRIPTION_REQUIRED: 'LIC_106',    // Mô tả không được trống
+        DESCRIPTION_TOO_LONG: 'LIC_107',    // Mô tả quá dài (max 500)
+        INVALID_ORDER: 'LIC_108',           // Thứ tự hiển thị không hợp lệ
+        NAME_ALREADY_EXISTS: 'LIC_409',
     },
 
     CHAPTER: {
@@ -159,19 +200,36 @@ export const ErrorCode = {
         UPDATE_FAILED: 'CHPT_002',           // Lỗi khi cập nhật
         INVALID_ORDER: 'CHPT_003',           // Thứ tự hiển thị không hợp lệ
         INVALID_DESCRIPTION: 'CHPT_004',
+        ID_REQUIRED: 'CHPT_100',          // Thiếu ID chương để cập nhật
+        NAME_REQUIRED: 'CHPT_101',        // Tên chương không được trống
+        CODE_REQUIRED: 'CHPT_102',        // Mã chương không được trống
+        DESCRIPTION_REQUIRED: 'CHPT_103', // Mô tả không được trống
+        DESCRIPTION_TOO_LONG: 'CHPT_104', // Mô tả quá dài
     },
 
     QUESTION: {
-        NOT_FOUND: 'QST_404',             // Không tìm thấy câu hỏi
         CHAPTER_REQUIRED: 'QST_001',      // Thiếu ID chương
         CONTENT_INVALID: 'QST_002',       // Nội dung không hợp lệ (ngắn quá)
         LICENSE_REQUIRED: 'QST_003',      // Thiếu hạng bằng lái
         ANSWERS_INSUFFICIENT: 'QST_004',  // Thiếu số lượng đáp án (min 2)
         CORRECT_ANSWER_MISSING: 'QST_005',// Thiếu đáp án đúng
         IMAGE_URL_INVALID: 'QST_006',     // Link ảnh không hợp lệ
+
+        ID_REQUIRED: 'QST_100',          // Thiếu ID câu hỏi để cập nhật
+        INVALID_FORMAT: 'QST_101',           // Dữ liệu câu hỏi gửi lên sai định dạng
+        MULTIPLE_CORRECT_ANSWERS: 'QST_102', // Có nhiều hơn 1 đáp án đúng (Luật mới chỉ cho phép 1)
+        ANSWER_CONTENT_REQUIRED: 'QST_103',  // Nội dung đáp án không được trống
+        EXPLANATION_TOO_LONG: 'QST_104',     // Giải thích đáp án quá dài (max 1000)
+        LICENSE_ID_INVALID: 'QST_105',       // Mã hạng bằng lái không hợp lệ
+        DIFFICULTY_INVALID: 'QST_106',       // Mức độ khó không hợp lệ
+        INDEX_INVALID: 'QST_107',            // Số thứ tự câu hỏi không hợp lệ
+        STATUS_INVALID: 'QST_108',           // Trạng thái câu hỏi không hợp lệ
+        IS_CRITICAL_INVALID: 'QST_109',      // Giá trị câu hỏi điểm liệt phải là boolean
+
+        NOT_FOUND: 'QST_404',             // Không tìm thấy câu hỏi
         ALREADY_EXISTS: 'QST_409',        // Câu hỏi đã tồn tại (trùng nội dung)
-        CANNOT_DELETE_CRITICAL: 'QUESTION_CANNOT_DELETE_CRITICAL',
-        ANSWERS_SYNC_ERROR: 'QUESTION_ANSWERS_SYNC_ERROR',
+        DELETE_CRITICAL_RESTRICTED: 'QST_403', // Dùng 403 (Forbidden) vì hành động bị cấm do luật nghiệp vụ
+        ANSWERS_SYNC_FAILED: 'QST_500',        // Dùng 500 hoặc 50x vì đây là lỗi xử lý dữ liệu hệ thống
     },
 
     IMPORT: {
@@ -182,10 +240,15 @@ export const ErrorCode = {
         FILE_MISSING: 'IMP_005',         // FILE_MISSING
         CHUNK_SIZE_EXCEEDED: 'IMP_006',  // CHUNK_SIZE_EXCEEDED
         SESSION_EXPIRED: 'IMP_007',      // IMPORT_SESSION_EXPIRED
+        FILE_NAME_REQUIRED: 'IMP_101',     // Tên tệp không được để trống
+        INVALID_TOTAL_SIZE: 'IMP_102',     // Kích thước tệp không hợp lệ
+        INVALID_TOTAL_CHUNKS: 'IMP_103',   // Số lượng mảnh (chunks) không hợp lệ
+        JOB_ID_REQUIRED: 'IMP_104', // Mã công việc import là bắt buộc
     },
 
     MATRIX: {
         // --- Nhóm 1xx: Validation (Lỗi nhập liệu) ---
+        ID_REQUIRED: 'MTX_100',             // Thiếu ID ma trận để cập nhật
         NAME_REQUIRED: 'MTX_101',           // Tên ma trận không được trống
         NAME_TOO_LONG: 'MTX_102',           // Tên ma trận quá dài
         NO_DETAILS: 'MTX_103',              // Ma trận không có chi tiết cấu trúc
@@ -195,6 +258,12 @@ export const ErrorCode = {
         INVALID_TOTAL_QUESTIONS: 'MTX_107',
         INVALID_DURATION: 'MTX_108',
         CHAPTER_ID_REQUIRED: 'MTX_109',
+        LICENSE_CATEGORY_REQUIRED: 'MTX_110', // Thiếu hạng bằng lái
+        MISSING_FIELDS: 'MTX_111',            // Thiếu các trường bắt buộc
+        PASSING_SCORE_TOO_HIGH: 'MTX_112',    // Điểm đạt vượt quá tổng số câu
+        MIN_CRITICAL_INVALID: 'MTX_113',  // Số câu điểm liệt không hợp lệ
+        IS_DEFAULT_INVALID: 'MTX_114',    // Giá trị isDefault phải là boolean
+
         // --- Nhóm 4xx: State/Management (Lỗi trạng thái/Quản lý) ---
         NOT_FOUND: 'MTX_404',                // Không tìm thấy ma trận
         RESTORE_FAILED_DUPLICATE: 'MTX_409', // Khôi phục thất bại do trùng tên đã tồn tại
@@ -245,6 +314,33 @@ export const ErrorCode = {
         REFRESH_FAILED: 'CSH_502',    // Làm mới bộ nhớ đệm thất bại
         KEY_NOT_FOUND: 'CSH_404',     // Không tìm thấy khóa dữ liệu trong cache
     },
+
+    /** --- MONGODB INFRASTRUCTURE (MDB) --- */
+    MONGODB: {
+        CONNECTION_ERROR: 'MDB_001',
+        NOT_INITIALIZED: 'MDB_002',
+        TRANSACTION_FAILED: 'MDB_003', // Lỗi liên quan đến session/transaction
+        QUERY_TIMEOUT: 'MDB_004',
+    },
+
+    SESSION: {
+        // --- 1xx: Validation (Lỗi đầu vào khi thao tác phiên thi) ---
+        EXAM_ID_REQUIRED: 'SES_100',
+        INVALID_EXAM_ID: 'SES_101',      // ID đề thi không hợp lệ khi start
+        INVALID_QUESTION_ID: 'SES_102',  // ID câu hỏi không thuộc phiên thi này
+        ANSWER_FORMAT_INVALID: 'SES_103',// Định dạng đáp án không đúng (number/null)
+        ANSWERS_REQUIRED: 'SES_104',      // Danh sách câu trả lời không được trống
+        DUPLICATE_QUESTION: 'SES_105',    // Một câu hỏi không thể có nhiều đáp án
+        INVALID_ANSWER_VALUE: 'SES_106',  // Giá trị đáp án phải là số nguyên dương
+        INVALID_QUESTION_INDEX: 'SES_107',   // Chỉ số câu hỏi không hợp lệ (không phải số hoặc âm)
+        CLIENT_TIMESTAMP_REQUIRED: 'SES_108', // Thiếu thời gian gửi từ client (clientTimestamp)
+        SESSION_ID_REQUIRED: 'SES_109',   // ID phiên làm việc không được để trống
+
+        // --- 4xx: Flow & State (Lỗi luồng nghiệp vụ) ---
+        NOT_FOUND: 'SES_404',            // Không tìm thấy phiên thi (Session ID sai)
+        ALREADY_SUBMITTED: 'SES_409',    // Đã nộp bài, không được sửa đáp án
+        EXPIRED: 'SES_410',              // Đã hết giờ làm bài
+    }
 } as const;
 
 export type ErrorCodeType = {

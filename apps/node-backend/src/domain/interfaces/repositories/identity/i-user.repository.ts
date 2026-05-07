@@ -1,5 +1,6 @@
 import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
 import { User } from '@/domain/entities/user/user.entity';
+import { UserRelatedCount } from '@/shared/types/count.types';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -88,9 +89,23 @@ export interface IUserRepository {
   updateUser(user: User, tx?: Prisma.TransactionClient): Promise<User>;
 
   /**
-   * @description Lưu trữ hoặc cập nhật thông tin người dùng vào hệ thống.
-   * @param user Đối tượng người dùng (Entity) cần lưu trữ.
-   * @returns Trả về thông tin người dùng sau khi đã được lưu thành công vào cơ sở dữ liệu.
+   * @description Xóa vĩnh viễn người dùng khỏi cơ sở dữ liệu (Hard Delete).
+   * @param {string} id - ID của người dùng.
+   * @returns {Promise<void>}
    */
-  save(user: User): Promise<User>;
+  hardDelete(id: string): Promise<void>;
+
+  /**
+   * @description Đánh dấu xóa người dùng (Soft Delete) bằng cách cập nhật trường deletedAt.
+   * @param {string} id - ID của người dùng. 
+   * @returns {Promise<void>}
+   */
+  softDelete(id: string): Promise<void>;
+
+  /**
+   * @description Thống kê chi tiết các dữ liệu nghiệp vụ đang liên kết với tài khoản người dùng này.
+   * @param {string} id - Định danh duy nhất (UUID) của người dùng. (Unique identifier of the user).
+   * @returns {Promise<UserRelatedCount>} Đối tượng chứa số lượng chi tiết các quan hệ (ví dụ: ExamAttempts, Payments, UserProgress). (Object containing counts of related entities).
+   */
+  countRelatedData(id: string): Promise<UserRelatedCount>;
 }
