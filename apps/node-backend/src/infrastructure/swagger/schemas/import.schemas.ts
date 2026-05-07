@@ -1,131 +1,85 @@
-// 1. SCHEMAS: Định nghĩa cấu trúc dữ liệu
 export const importSchemas = {
-    ImportStatus: {
-        type: 'string',
-        enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'QUEUED'],
-        description: 'Trạng thái tổng quát của phiên Import'
-    },
+  /**
+   * @description Các trạng thái của quá trình Import
+   */
+  ImportStatus: {
+    type: "string",
+    enum: ["PENDING", "UPLOADING", "PROCESSING", "COMPLETED", "FAILED"],
+  },
 
-    ImportStep: {
-        type: 'string',
-        enum: ['QUEUED', 'EXTRACTING', 'VALIDATING_EXCEL', 'UPLOADING_ASSETS', 'SAVING_DATABASE', 'COMPLETED', 'FAILED'],
-        description: 'Tiến độ xử lý chi tiết trong Worker'
+  /**
+   * @description Chi tiết lỗi xảy ra tại từng dòng trong file
+   */
+  ImportErrorDetail: {
+    type: "object",
+    properties: {
+      row: { type: "integer", example: 12, description: "Vị trí dòng bị lỗi" },
+      column: {
+        type: "string",
+        example: "B",
+        description: "Vị trí cột bị lỗi",
+      },
+      message: { type: "string", example: "Thiếu đáp án đúng cho câu hỏi." },
+      errorCode: {
+        type: "string",
+        example: "QST_005",
+        description: "Mã lỗi nghiệp vụ tương ứng",
+      },
     },
+  },
 
-    ImportError: {
-        type: 'object',
-        properties: {
-            row: { type: 'integer', example: 5 },
-            column: { type: 'string', example: 'C' },
-            message: { type: 'string', example: 'Hạng bằng lái không hợp lệ' },
-            timestamp: { type: 'string', format: 'date-time' }
-        }
+  /**
+   * @description Dữ liệu thống kê tiến độ
+   */
+  ImportProgressMetadata: {
+    type: "object",
+    properties: {
+      totalRows: { type: "integer", example: 500 },
+      processedRows: { type: "integer", example: 250 },
+      successCount: { type: "integer", example: 245 },
+      errorCount: { type: "integer", example: 5 },
     },
+  },
 
-    ImportResultData: {
-        type: 'object',
-        properties: {
-            totalRows: { type: 'integer', example: 100 },
-            processedRows: { type: 'integer', example: 45 },
-            successCount: { type: 'integer', example: 40 },
-            errorCount: { type: 'integer', example: 5 },
-            currentStep: { $ref: '#/components/schemas/ImportStep' },
-            errors: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/ImportError' }
-            },
-            lastError: { type: 'string', nullable: true }
-        }
+  /**
+   * @description Kết quả trả về sau khi Khởi tạo Job (Step 1)
+   */
+  ImportJobResponseDTO: {
+    type: "object",
+    properties: {
+      jobId: { type: "string", format: "uuid" },
+      fileName: { type: "string" },
+      status: { $ref: "#/components/schemas/ImportStatus" },
+      chunkSizeLimit: {
+        type: "integer",
+        description: "Giới hạn bytes mỗi chunk",
+      },
+      expectedChunks: { type: "integer" },
+      expiresAt: { type: "string", format: "date-time" },
+      message: { type: "string", nullable: true },
     },
+  },
 
-    InitImportDTO: {
-        type: 'object',
-        required: ['fileName', 'totalSize', 'totalChunks', 'chunkSizeLimit'],
-        properties: {
-            fileName: { type: 'string', example: 'cau_hoi_gplx.zip' },
-            totalSize: { type: 'integer', example: 10485760 },
-            totalChunks: { type: 'integer', example: 5 },
-            chunkSizeLimit: { type: 'integer', example: 2097152 }
-        }
+  /**
+   * @description Trạng thái chi tiết để Polling (Step 4)
+   */
+  ImportJobStatusResponseDTO: {
+    type: "object",
+    properties: {
+      jobId: { type: "string", format: "uuid" },
+      status: { $ref: "#/components/schemas/ImportStatus" },
+      progress: {
+        type: "number",
+        example: 75.5,
+        description: "Phần trăm hoàn thành",
+      },
+      currentStep: { type: "string", example: "EXTRACTING_DATA" },
+      metadata: { $ref: "#/components/schemas/ImportProgressMetadata" },
+      errors: {
+        type: "array",
+        items: { $ref: "#/components/schemas/ImportErrorDetail" },
+      },
+      lastError: { type: "string", nullable: true },
     },
-
-    ImportJob: {
-        type: 'object',
-        properties: {
-            id: { type: 'string', format: 'uuid' },
-            fileName: { type: 'string' },
-            totalSize: { type: 'integer' },
-            totalChunks: { type: 'integer' },
-            status: { $ref: '#/components/schemas/ImportStatus' },
-            resultData: { $ref: '#/components/schemas/ImportResultData' },
-            expiresAt: { type: 'string', format: 'date-time' },
-            createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' }
-        }
-    },
-
-    BaseResponse: {
-        type: 'object',
-        properties: {
-            success: { type: 'boolean', example: true },
-            message: { type: 'string', example: 'Thao tác thành công' },
-            timestamp: { type: 'string', format: 'date-time' },
-        },
-    },
-
-    StandardResponse: {
-        allOf: [
-            { $ref: '#/components/schemas/BaseResponse' },
-            {
-                type: 'object',
-                properties: {
-                    code: { type: 'string', example: 'SUCCESS' },
-                    statusCode: { type: 'integer', example: 200 },
-                    data: { type: 'object' }
-                }
-            }
-        ]
-    },
-
-    ErrorCode: {
-        type: 'string',
-        enum: ['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN', 'NOT_FOUND', 'INTERNAL_ERROR', 'VALIDATION_ERROR'],
-        description: 'Mã lỗi nghiệp vụ hệ thống'
-    },
-
-    BadRequestError: {
-        description: 'Lỗi yêu cầu không hợp lệ (400)',
-        content: {
-            'application/json': {
-                schema: {
-                    allOf: [
-                        { $ref: '#/components/schemas/BaseResponse' },
-                        {
-                            type: 'object',
-                            properties: {
-                                code: { $ref: '#/components/schemas/ErrorCode' },
-                            },
-                        },
-                    ],
-                },
-            },
-        },
-    },
-    UnauthorizedError: {
-        description: 'Lỗi chưa xác thực (401)',
-        content: {
-            'application/json': {
-                schema: { $ref: '#/components/schemas/BaseResponse' },
-            },
-        },
-    },
-    ForbiddenError: {
-        description: 'Không có quyền truy cập (403)',
-        content: {
-            'application/json': {
-                schema: { $ref: '#/components/schemas/BaseResponse' },
-            },
-        },
-    },
-
+  },
 };

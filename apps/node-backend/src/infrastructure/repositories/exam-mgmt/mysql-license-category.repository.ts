@@ -64,7 +64,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
 
   public async findByName(name: string): Promise<LicenseCategory | null> {
     const record = await this._prisma.licenseCategory.findFirst({
-      where: { name, deletedAt: null }
+      where: { name  }
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }

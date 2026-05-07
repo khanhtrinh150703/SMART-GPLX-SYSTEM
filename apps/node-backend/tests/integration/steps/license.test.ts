@@ -320,7 +320,7 @@ export const licenseSteps = (
                     .patch(LICENSE_ENDPOINTS.RESTORE(getLicenseId()))
                     .set(getAuthHeader(getAdminToken()))
                     .send();
-
+                    
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
                 expect(res.body.message).toBe(Message.LICENSE.RESTORE_SUCCESS);
