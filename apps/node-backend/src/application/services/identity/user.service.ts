@@ -2,393 +2,404 @@ import { AppError, ErrorCode } from "@/shared/errors";
 import { UserStatus } from "@/domain/entities/user/user.status";
 import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/identity/i-user.repository";
-import { REGEX } from "@/domain/constants/regex.constant";
-import { ITokenManager } from "@/domain/interfaces/external/i-token-manager";
+import { ITokenManager } from "@/domain/interfaces/services/external/i-token-manager.service";
 import { UserRole } from "@/domain/constants/roles.constant";
 import { IUserService } from "@/domain/interfaces/services/identity/i-user.service";
-import { PaginatedResult } from "@/shared/types/pagination.types";
-import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { UserMapper } from "@/infrastructure/database/mappers/identity/user.mapper";
 import { STORAGE_FOLDERS } from "@/domain/constants/storage.constant";
 import { IUserRoleRepository } from "@/domain/interfaces/repositories/identity/i-user-role.repository";
 import { PrismaClient } from "@prisma/client";
 import { IMediaService } from "@/domain/interfaces/services/integration/i-media.service";
 import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
-import bcrypt from 'bcrypt';
-import logger from '@/infrastructure/logging/winston.logger';
 import { Role } from "@/domain/entities/role/role.entity";
-import { PAGINATION_CONFIG } from "@/shared/config/pagination.config";
 import { UpdateAdminRequestDTO } from "@/application/dtos/request/user/update-admin.request.dto";
 import { ChangePasswordRequestDTO } from "@/application/dtos/request/user/update-password.request.dto";
 import { UpdateProfileRequestDTO } from "@/application/dtos/request/user/update-profile.request.dto";
 import { ChangeStatusRequestDTO } from "@/application/dtos/request/user/update-status.request.dto";
-import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
 import { ILoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
-import { UserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
+import bcrypt from "bcrypt";
+import { IUserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
+import {
+  IDeleteResponseDTO,
+  DeleteResponseDTO,
+} from "@/application/dtos/response/shared/delete.response.dto";
+import { DeleteType } from "@/domain/constants/delete.constant";
+import { ILogger } from "@/domain/interfaces/logging/i-logger.interface"; /**
 
 /**
  * @interface IUserServiceCradle
- * @description Định nghĩa các phụ thuộc cần thiết cho UserService.
- * Bao gồm Repository để truy cập DB, TokenManager cho bảo mật và FileStorage cho upload ảnh.
+ * @description Tập hợp các phụ thuộc (Dependencies) cần thiết cho UserService.
+ * Bao gồm các cổng truy xuất dữ liệu, bảo mật và lưu trữ tập tin.
  */
 export interface IUserServiceCradle {
-    userRepository: IUserRepository;
-    userRoleRepository: IUserRoleRepository;
-    tokenManager: ITokenManager;
-    mediaService: IMediaService;
-    masterDataCacheService: IMasterDataCacheService;
-    prisma: PrismaClient;
+  /** @description Repository quản lý các thao tác CRUD cơ bản trên thực thể Người dùng. */
+  userRepository: IUserRepository;
+
+  /** @description Repository chuyên biệt để quản lý mối quan hệ giữa Người dùng và Vai trò. */
+  userRoleRepository: IUserRoleRepository;
+
+  /** @description Dịch vụ quản lý vòng đời và mã hóa các loại Token (Access/Refresh). */
+  tokenManager: ITokenManager;
+
+  /** @description Dịch vụ xử lý lưu trữ và quản lý đường dẫn tập tin đa phương tiện. */
+  mediaService: IMediaService;
+
+  /** @description Dịch vụ truy xuất dữ liệu danh mục từ bộ nhớ đệm (Cache). */
+  masterDataCacheService: IMasterDataCacheService;
+
+  /** @description Instance Prisma dùng để thực hiện Transaction và truy vấn DB trực tiếp. */
+  prisma: PrismaClient;
+
+  /** @description Dịch vụ ghi log để theo dõi hoạt động và hỗ trợ gỡ lỗi hệ thống. */
+  logger: ILogger;
 }
 
 /**
  * @class UserService
  * @description Xử lý các nghiệp vụ lõi liên quan đến Người dùng (User Domain).
+ * Đóng vai trò Orchestrator điều phối giữa các lớp dữ liệu, bảo mật và hạ tầng lưu trữ.
  */
 export class UserService implements IUserService {
-    private readonly _userRepo: IUserRepository;
-    private readonly _tokenManager: ITokenManager;
-    private readonly _mediaService: IMediaService;
-    private readonly _userRoleRepo: IUserRoleRepository;
-    private readonly _cacheService: IMasterDataCacheService;
-    private readonly _prisma: PrismaClient;
+  /** @private @readonly @description Repository người dùng. */
+  private readonly _userRepo: IUserRepository;
 
-    constructor({
-        userRepository,
-        userRoleRepository,
-        tokenManager,
-        mediaService,
-        masterDataCacheService,
-        prisma
-    }: IUserServiceCradle) {
-        this._userRepo = userRepository;
-        this._userRoleRepo = userRoleRepository;
-        this._tokenManager = tokenManager;
-        this._mediaService = mediaService;
-        this._cacheService = masterDataCacheService;
-        this._prisma = prisma;
+  /** @private @readonly @description Repository vai trò người dùng. */
+  private readonly _userRoleRepo: IUserRoleRepository;
+
+  /** @private @readonly @description Trình quản lý Token bảo mật. */
+  private readonly _tokenManager: ITokenManager;
+
+  /** @private @readonly @description Dịch vụ xử lý Media (Ảnh đại diện, tài liệu). */
+  private readonly _mediaService: IMediaService;
+
+  /** @private @readonly @description Dịch vụ cache dữ liệu hệ thống. */
+  private readonly _cacheService: IMasterDataCacheService;
+
+  /** @private @readonly @description Client điều phối giao dịch Prisma. */
+  private readonly _prisma: PrismaClient;
+
+  /** @private @readonly @description Dịch vụ ghi log hệ thống. */
+  private readonly _logger: ILogger;
+
+  /**
+   * @constructor
+   * @description Khởi tạo Service với các phụ thuộc được tiêm (inject) từ DI Container.
+   * @param {IUserServiceCradle} cradle - Chứa danh sách đầy đủ các Repository và Service bổ trợ.
+   */
+  constructor({
+    userRepository,
+    userRoleRepository,
+    tokenManager,
+    mediaService,
+    masterDataCacheService,
+    prisma,
+    logger,
+  }: IUserServiceCradle) {
+    this._userRepo = userRepository;
+    this._userRoleRepo = userRoleRepository;
+    this._tokenManager = tokenManager;
+    this._mediaService = mediaService;
+    this._cacheService = masterDataCacheService;
+    this._prisma = prisma;
+    this._logger = logger;
+  }
+
+  /**
+   * @description Thực hiện cập nhật hồ sơ người dùng (Dịch: Update user profile logic)
+   * @param {string} userId - ID của người dùng cần cập nhật
+   * @param {UpdateProfileRequestDTO} dto - Dữ liệu yêu cầu từ Client
+   * @returns {Promise<ILoginResponseDTO>} DTO phản hồi sau khi cập nhật thành công
+   */
+  public async updateProfile(
+    userId: string,
+    dto: UpdateProfileRequestDTO,
+  ): Promise<ILoginResponseDTO> {
+    // 1. Lấy Entity từ Database (Dịch: Fetch entity from DB)
+    const user = await this.getActiveUserOrThrow(userId);
+
+    const oldPicturePath = user.props.urlPicture; // Truy cập qua props cho đúng chuẩn DDD
+    let newUrlPicture: string | undefined;
+
+    // 2. Xử lý File nếu có (Dịch: Handle file upload if exists)
+    if (dto.pictureFile) {
+      newUrlPicture = await this._mediaService.save(
+        dto.pictureFile,
+        STORAGE_FOLDERS.PROFILE,
+      );
     }
 
-    /**
-     * @description Thực hiện cập nhật hồ sơ người dùng (Dịch: Update user profile logic)
-     * @param {string} userId - ID của người dùng cần cập nhật
-     * @param {UpdateProfileRequestDTO} dto - Dữ liệu yêu cầu từ Client
-     * @returns {Promise<ILoginResponseDTO>} DTO phản hồi sau khi cập nhật thành công
-     */
-    public async updateProfile(userId: string, dto: UpdateProfileRequestDTO): Promise<ILoginResponseDTO> {
-        // 1. Lấy Entity từ Database (Dịch: Fetch entity from DB)
-        const user = await this.getActiveUserOrThrow(userId);
+    // 3. Thực hiện logic nghiệp vụ tại Entity (Rich Domain Model)
+    // (Dịch: Mô hình Domain giàu tính năng - chứa logic thay vì chỉ chứa dữ liệu)
+    user.updateProfile(dto.fullName, newUrlPicture);
 
-        const oldPicturePath = user.props.urlPicture; // Truy cập qua props cho đúng chuẩn DDD
-        let newUrlPicture: string | undefined;
+    // 4. Persistence - Lưu vào Database (Dịch: Tầng lưu trữ dữ liệu vĩnh viễn)
+    const updatedUser = await this._userRepo.updateUser(user);
+    if (!updatedUser) throw new AppError(ErrorCode.SYSTEM.DATABASE_ERROR);
 
-        // 2. Xử lý File nếu có (Dịch: Handle file upload if exists)
-        if (dto.pictureFile) {
-            newUrlPicture = await this._mediaService.save(
-                dto.pictureFile,
-                STORAGE_FOLDERS.PROFILE
-            );
-        }
-
-        // 3. Thực hiện logic nghiệp vụ tại Entity (Rich Domain Model)
-        // (Dịch: Mô hình Domain giàu tính năng - chứa logic thay vì chỉ chứa dữ liệu)
-        user.updateProfile(dto.fullName, newUrlPicture);
-
-        // 4. Persistence - Lưu vào Database (Dịch: Tầng lưu trữ dữ liệu vĩnh viễn)
-        const updatedUser = await this._userRepo.updateUser(user);
-        if (!updatedUser) throw new AppError(ErrorCode.SYSTEM.DATABASE_ERROR);
-
-        // 5. Cleanup - Xóa ảnh cũ nếu upload thành công (Dịch: Dọn dẹp tài nguyên)
-        if (newUrlPicture && oldPicturePath) {
-            this._mediaService.deleteFile(oldPicturePath).catch((err: unknown) => {
-                logger.error(`[Cleanup] Failed to delete old avatar: ${oldPicturePath}`, err);
-            });
-        }
-
-        // 6. Refresh Session (Single Session Policy)
-        await this._tokenManager.revokeTokenByPattern(updatedUser.id);
-        const tokens = await this._tokenManager.generateAndStoreTokens(updatedUser);
-
-        // 7. Mapping kết quả từ updatedUser (Source of Truth)
-        return UserMapper.toLoginResponse(updatedUser, tokens);
-    }
-
-    /**
-     * @description API dành cho Admin cập nhật thông tin và quyền hạn người dùng.
-     * @param userId - ID của người dùng mục tiêu.
-     * @param dto - Dữ liệu cập nhật từ Admin.
-     */
-    public async updateUserByAdmin(userId: string, dto: UpdateAdminRequestDTO): Promise<void> {
-        // 1. Kiểm tra nghiệp vụ (Dùng Entity Rich Logic)
-        const user = await this._userRepo.findActiveById(userId);
-        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
-
-        // 3. Kiểm tra tính hợp lệ sơ bộ của DTO trước khi xuống Service
-        if (!dto.isValid()) {
-            throw new AppError(ErrorCode.USER.UPDATE_FAILED);
-            // Hoặc dùng mã lỗi chi tiết hơn nếu ông đã định nghĩa trong DTO
-        }
-        // Cập nhật thông tin vào Entity (Validation thực hiện bên trong Entity)
-        if (dto.fullName) user.updateFullName(dto.fullName);
-
-        // 2. Chạy Transaction
-        await this._prisma.$transaction(async (tx) => {
-            // Lưu thông tin cơ bản (Cần ép kiểu tx về Prisma.TransactionClient trong Repo update)
-            await this._userRepo.updateUser(user, tx);
-
-            // Đồng bộ hóa Role nếu Admin có gửi danh sách mới
-            if (dto.roles) {
-                await this._userRoleRepo.syncUserRoles(userId, dto.roles, tx);
-            }
+    // 5. Cleanup - Xóa ảnh cũ nếu upload thành công (Dịch: Dọn dẹp tài nguyên)
+    if (newUrlPicture && oldPicturePath) {
+      // Thực hiện xóa file cũ và bắt lỗi để tránh treo luồng chính
+      this._mediaService.deleteFile(oldPicturePath).catch((err: unknown) => {
+        this._logger.error(`[Cleanup_Error] Không thể xóa ảnh cũ`, {
+          path: oldPicturePath,
+          error: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+          context: "UserAvatarCleanup",
         });
+      });
     }
 
-    /**
-     * @description  Tác dụng: Cập nhật thông tin người dùng vào cơ sở dữ liệu.
-     * @param {User} user - Đối tượng Entity User đã được thay đổi dữ liệu.
-     * @returns {Promise<User>} - Trả về Entity sau khi lưu thành công.
-     */
-    public update = async (user: User): Promise<User> => {
-        const updatedUser = await this._userRepo.updateUser(user);
-        return updatedUser;
-    };
+    // 6. Refresh Session (Single Session Policy)
+    await this._tokenManager.revokeTokenByPattern(updatedUser.id);
+    const tokens = await this._tokenManager.generateAndStoreTokens(updatedUser);
 
-    /**
-     * @description Tác dụng: Thực hiện nghiệp vụ đổi mật khẩu và thu hồi toàn bộ phiên đăng nhập cũ.
-     * @param {string} userId - ID người dùng lấy từ Token xác thực.
-     * @param {ChangePasswordRequestDTO} dto - Dữ liệu mật khẩu cũ và mới.
-     */
-    public async changePassword(userId: string, dto: ChangePasswordRequestDTO): Promise<void> {
-        // 1. Rule 8: DTO tự validate dữ liệu đầu vào (Cheap Check)
-        dto.validateOrThrow();
+    // 7. Mapping kết quả từ updatedUser (Source of Truth)
+    return UserMapper.toLoginResponse(updatedUser, tokens);
+  }
 
-        // 2. Kiểm tra sự tồn tại của người dùng
-        const user = await this._userRepo.findActiveById(userId);
-        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+  /**
+   * @description API dành cho Admin cập nhật thông tin và quyền hạn người dùng.
+   * @param userId - ID của người dùng mục tiêu.
+   * @param dto - Dữ liệu cập nhật từ Admin.
+   * @throws {AppError} USER.NOT_FOUND - Nếu người dùng không tồn tại hoặc đã bị xóa/khóa.
+   */
+  public async updateUserByAdmin(
+    userId: string,
+    dto: UpdateAdminRequestDTO,
+  ): Promise<void> {
+    // 1. Kiểm tra nghiệp vụ (Dùng Entity Rich Logic)
+    const user = await this._userRepo.findActiveById(userId);
+    if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
 
-        // 3. Rule 6: Rich Domain Model - Logic nghiệp vụ nằm trong Entity
-        // Bao gồm so sánh mật khẩu cũ và cập nhật mật khẩu mới (Heavy Check)
-        await user.updatePassword(
-            dto.oldPassword,
-            dto.newPassword,
-            bcrypt.compare
-        );
+    // 3. Kiểm tra tính hợp lệ sơ bộ của DTO trước khi xuống Service
 
-        // 4. Lưu thay đổi vào cơ sở dữ liệu
-        const updatedUser = await this.update(user);
+    // Cập nhật thông tin vào Entity (Validation thực hiện bên trong Entity)
+    if (dto.fullName) user.updateFullName(dto.fullName);
 
-        if (!updatedUser) throw new AppError(ErrorCode.SYSTEM.DATABASE_ERROR);
+    // 2. Chạy Transaction
+    await this._prisma.$transaction(async (tx) => {
+      // Lưu thông tin cơ bản (Cần ép kiểu tx về Prisma.TransactionClient trong Repo update)
+      await this._userRepo.updateUser(user, tx);
 
-        await this._tokenManager.revokeTokenByPattern(userId);
+      // Đồng bộ hóa Role nếu Admin có gửi danh sách mới
+      if (dto.roles) {
+        await this._userRoleRepo.syncUserRoles(userId, dto.roles, tx);
+      }
+    });
+  }
+
+  /**
+   * @description  Tác dụng: Cập nhật thông tin người dùng vào cơ sở dữ liệu.
+   * @param {User} user - Đối tượng Entity User đã được thay đổi dữ liệu.
+   * @returns {Promise<User>} - Trả về Entity sau khi lưu thành công.
+   */
+  public update = async (user: User): Promise<User> => {
+    const updatedUser = await this._userRepo.updateUser(user);
+    return updatedUser;
+  };
+
+  /**
+   * @description Thực hiện nghiệp vụ đổi mật khẩu và thu hồi toàn bộ phiên đăng nhập cũ.
+   * @param {string} userId - ID người dùng lấy từ Token xác thực. (User ID from Auth Token).
+   * @param {ChangePasswordRequestDTO} dto - Dữ liệu mật khẩu cũ và mới. (Old and new password data).
+   * @returns {Promise<IUserResponseDTO>} Thông tin người dùng sau khi cập nhật thành công.
+   * @throws {AppError} USER.NOT_FOUND - Nếu người dùng không tồn tại hoặc đã bị xóa/khóa.
+   */
+  public async changePassword(
+    userId: string,
+    dto: ChangePasswordRequestDTO,
+  ): Promise<IUserResponseDTO> {
+    // 1. Kiểm tra sự tồn tại của người dùng (Check user existence)
+    // Chỉ cho phép người dùng đang hoạt động thực hiện đổi mật khẩu
+    const user = await this._userRepo.findActiveById(userId);
+    if (!user) {
+      throw new AppError(ErrorCode.USER.NOT_FOUND);
     }
 
-    /**
-     * @description Cập nhật trạng thái hoạt động của tài khoản (Dành cho quản trị viên).
-     * @param {string} userId - ID của người dùng cần cập nhật.
-     * @param {ChangeStatusRequestDTO} dto - Dữ liệu trạng thái mới.
-     * @returns {Promise<void>}
-     */
-    public async updateStatus(userId: string, dto: ChangeStatusRequestDTO): Promise<void> {
-        const user = await this.getActiveUserOrThrow(userId);
-        user.updateStatus(dto.status as UserStatus);
-        await this._userRepo.updateUser(user);
+    // 2. Rule 6: Rich Domain Model - Logic nghiệp vụ nằm trong Entity
+    // (Business logic resides in the Entity - Heavy Check)
+    // Bao gồm so sánh mật khẩu cũ (bcrypt) và kiểm tra tính hợp lệ của mật khẩu mới
+    await user.updatePassword(dto.oldPassword, dto.newPassword, bcrypt.compare);
+
+    // 3. Lưu thay đổi vào cơ sở dữ liệu (Persist changes to Database)
+    const updatedUser = await this._userRepo.updateUser(user);
+    if (!updatedUser) {
+      throw new AppError(ErrorCode.SYSTEM.DATABASE_ERROR);
     }
 
-    /**
-     * Thực hiện xóa mềm (Soft Delete) tài khoản người dùng.
-     * @param {string} userId - ID của người dùng cần xóa.
-     * @returns {Promise<void>}
-     */
-    public async deleteUser(userId: string): Promise<void> {
-        const user = await this.getActiveUserOrThrow(userId);
-        user.softDelete();
-        await this._userRepo.updateUser(user);
+    // 4. Bảo mật: Thu hồi toàn bộ Token cũ (Security: Revoke all old tokens)
+    // Đảm bảo sau khi đổi mật khẩu, các thiết bị khác phải đăng nhập lại
+    await this._tokenManager.revokeTokenByPattern(userId);
+
+    // 5. Trả về DTO thông qua Mapper để đảm bảo tính đóng gói
+    // (Return DTO via Mapper to ensure encapsulation)
+    return UserMapper.toResponse(updatedUser);
+  }
+
+  /**
+   * @description Cập nhật trạng thái hoạt động của tài khoản (Dành cho quản trị viên).
+   * @param {string} userId - ID của người dùng cần cập nhật. (User ID to update).
+   * @param {ChangeStatusRequestDTO} dto - Dữ liệu trạng thái mới. (New status data).
+   * @returns {Promise<IUserResponseDTO>} Thông tin người dùng sau khi cập nhật.
+   */
+  public async updateStatus(
+    userId: string,
+    dto: ChangeStatusRequestDTO,
+  ): Promise<IUserResponseDTO> {
+    // 1. Lấy thực thể người dùng hoặc ném lỗi nếu không tìm thấy
+    const user = await this.getActiveUserOrThrow(userId);
+
+    // 2. Cập nhật trạng thái ngay trong Domain Entity
+    user.updateStatus(dto.status as UserStatus);
+
+    // 3. Persist thay đổi vào Database
+    const updatedUser = await this._userRepo.updateUser(user);
+
+    // 4. Trả về DTO thông qua Mapper
+    return UserMapper.toResponse(updatedUser);
+  }
+
+  /**
+   * @description Thực hiện chiến lược "Xóa thông minh" (Smart Delete) cho tài khoản người dùng.
+   * @param {string} userId - ID của người dùng cần xóa. (User ID to delete).
+   * @returns {Promise<IDeleteResponseDTO>} Kết quả thao tác xóa kèm thông báo chuẩn hóa.
+   */
+  public async deleteUser(userId: string): Promise<IDeleteResponseDTO> {
+    const user = await this.getActiveUserOrThrow(userId);
+
+    // Kiểm tra các ràng buộc dữ liệu (Kết quả thi, lượt làm bài)
+    const related = await this._userRepo.countRelatedData(userId);
+    const totalRelated = related.userRoles;
+
+    let type: DeleteType;
+
+    if (totalRelated > 0) {
+      // Có dữ liệu liên quan -> Xóa mềm (Soft Delete)
+      user.softDelete();
+      await this._userRepo.updateUser(user);
+      type = DeleteType.SOFT;
+    } else {
+      // Dữ liệu sạch -> Xóa vĩnh viễn (Hard Delete)
+      await this._userRepo.hardDelete(userId);
+      type = DeleteType.HARD;
     }
 
-    /**
-     * @description Khôi phục tài khoản người dùng đã bị xóa mềm về trạng thái hoạt động.
-     * @param {string} userId - ID của người dùng cần khôi phục.
-     * @returns {Promise<void>}
-     */
-    public async restoreUser(userId: string): Promise<void> {
-        const user = await this._userRepo.findByIdInSystem(userId);
+    // Trả về DTO - Message sẽ được tự động tạo dựa trên 'type' và 'count'
+    return new DeleteResponseDTO({
+      id: userId,
+      type,
+      count: totalRelated,
+    });
+  }
 
-        if (!user) {
-            throw new AppError(ErrorCode.USER.NOT_FOUND);
-        }
+  /**
+   * @description Khôi phục tài khoản người dùng đã bị xóa mềm về trạng thái hoạt động.
+   * @param {string} userId - ID của người dùng cần khôi phục. (User ID to restore).
+   * @returns {Promise<IUserResponseDTO>} Thông tin người dùng sau khi khôi phục thành công.
+   * @throws {AppError} USER.NOT_FOUND - Nếu người dùng không tồn tại hoặc đã bị xóa/khóa.
+   */
+  public async restoreUser(userId: string): Promise<IUserResponseDTO> {
+    // 1. Tìm kiếm cả những người dùng đã bị xóa trong hệ thống
+    const user = await this._userRepo.findByIdInSystem(userId);
 
-        user.restore();
-        await this._userRepo.updateUser(user);
+    if (!user) {
+      throw new AppError(ErrorCode.USER.NOT_FOUND);
     }
 
-    /**
-     * @description Tìm kiếm người dùng qua Username và xác thực trạng thái tài khoản.
-     * @param {string} username - Tên đăng nhập cần tìm.
-     * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
-     */
-    public async getUserByUserName(username: string): Promise<User> {
-        const user = await this._userRepo.findActiveByUsername(username);
+    // 2. Logic khôi phục nằm trong Domain Entity
+    user.restore();
 
-        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+    // 3. Cập nhật lại Database
+    const restoredUser = await this._userRepo.updateUser(user);
 
-        this.ensureAccountNotLocked(user);
+    // 4. Trả về DTO sạch sẽ thông qua Mapper
+    return UserMapper.toResponse(restoredUser);
+  }
 
-        return user;
+  /**
+   * @description Kiểm tra tính duy nhất của Username và Email trong hệ thống.
+   * Thực hiện chuẩn hóa dữ liệu trước khi truy vấn và ném lỗi cụ thể theo thứ tự ưu tiên.
+   * @param {string} username - Tên đăng nhập cần kiểm tra.
+   * @param {string} email - Địa chỉ email cần kiểm tra.
+   * @returns {Promise<false>} Trả về false nếu thông tin hợp lệ (không trùng lặp).
+   * @throws {AppError} USER.USERNAME_EXISTS - Nếu tên đăng nhập đã tồn tại trong hệ thống.
+   * @throws {AppError} USER.EMAIL_EXISTS - Nếu địa chỉ email đã tồn tại trong hệ thống.
+   */
+  public async checkExisting(
+    username: string,
+    email: string,
+  ): Promise<boolean> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
+
+    // 1. Lấy danh sách trùng từ Repo (findMany)
+    const existingUsers = await this._userRepo.findExistingInSystem(
+      normalizedEmail,
+      normalizedUsername,
+    );
+
+    // 2. Nếu có bản ghi trùng khớp
+    if (existingUsers.length > 0) {
+      const isUsernameTaken = existingUsers.some(
+        (u) => u.username === normalizedUsername,
+      );
+      const isEmailTaken = existingUsers.some(
+        (u) => u.email === normalizedEmail,
+      );
+
+      // Ném lỗi ưu tiên để UI hiển thị chính xác
+      if (isUsernameTaken) {
+        throw new AppError(ErrorCode.USER.USERNAME_EXISTS);
+      }
+
+      if (isEmailTaken) {
+        throw new AppError(ErrorCode.USER.EMAIL_EXISTS);
+      }
     }
 
-    /**
-     * @description Tìm kiếm người dùng qua Email và xác thực trạng thái tài khoản.
-     * @param {string} email - Địa chỉ email cần tìm.
-     * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
-     */
-    public async getUserByEmail(email: string): Promise<User> {
-        const user = await this._userRepo.findActiveByEmail(email);
+    // 3. Nếu chạy đến đây, nghĩa là không có ai trùng
+    return false;
+  }
 
-        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+  /**
+   * @description Đăng ký người dùng mới, tự động gán vai trò STUDENT từ cache và lưu trữ.
+   * @param {User} user - Thực thể người dùng đã qua bước khởi tạo cơ bản.
+   * @returns {Promise<User>} Thực thể người dùng đã có đầy đủ thông tin vai trò và ID lưu trữ.
+   * @throws {AppError} AUTH.ROLES_NOT_INITIALIZED - Nếu dữ liệu vai trò STUDENT không tồn tại trong cache hệ thống.
+   */
+  public async createUser(user: User): Promise<User> {
+    const roleData = this._cacheService.getRoleByName(UserRole.STUDENT);
 
-        this.ensureAccountNotLocked(user);
-
-        return user;
+    if (!roleData) {
+      throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);
     }
 
-    /**
-    * @description Tìm kiếm người dùng qua Email và xác thực trạng thái tài khoản.
-    * @param {string} userId - UserID cần tìm.
-    * @returns {Promise<User>} Thực thể người dùng đang hoạt động và không bị khóa.
-    */
-    public async getUserById(userId: string): Promise<User> {
-        const user = await this._userRepo.findActiveById(userId);
+    const defaultRole = Role.reconstitute({
+      id: roleData.id,
+      name: roleData.name,
+      description: roleData.description,
+      permissions: [],
+    });
 
-        if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+    user.assignRole(defaultRole);
 
-        this.ensureAccountNotLocked(user);
+    const newUser = await this._userRepo.createUser(user);
 
-        return user;
+    return newUser;
+  }
+
+  /**
+   * @description Tìm kiếm người dùng đang hoạt động theo ID.
+   * Đảm bảo trả về một thực thể hợp lệ, nếu không sẽ ngắt tiến trình bằng ngoại lệ.
+   * @param {string} userId - ID định danh của người dùng cần truy vấn.
+   * @returns {Promise<User>} Thực thể người dùng (User Entity) nếu tìm thấy.
+   * @throws {AppError} USER.NOT_FOUND - Nếu người dùng không tồn tại hoặc đã bị xóa/khóa.
+   */
+  private async getActiveUserOrThrow(userId: string): Promise<User> {
+    const user = await this._userRepo.findActiveById(userId);
+    if (!user) {
+      throw new AppError(ErrorCode.USER.NOT_FOUND);
     }
-
-    /**
-     * @description Tác dụng: Kiểm tra tính duy nhất của Username và Email.
-     * @throws {AppError} - Ném lỗi cụ thể nếu đã tồn tại.
-     * @returns {Promise<boolean>} - Trả về false nếu KHÔNG tìm thấy trùng lặp.
-     */
-    public async checkExisting(username: string, email: string): Promise<boolean> {
-        const normalizedEmail = email.trim().toLowerCase();
-        const normalizedUsername = username.trim().toLowerCase();
-
-        // 1. Lấy danh sách trùng từ Repo (findMany)
-        const existingUsers = await this._userRepo.findExistingInSystem(normalizedEmail, normalizedUsername);
-
-        // 2. Nếu có bản ghi trùng khớp
-        if (existingUsers.length > 0) {
-            const isUsernameTaken = existingUsers.some(u => u.username === normalizedUsername);
-            const isEmailTaken = existingUsers.some(u => u.email === normalizedEmail);
-
-            // Ném lỗi ưu tiên để UI hiển thị chính xác
-            if (isUsernameTaken) {
-                throw new AppError(ErrorCode.USER.USERNAME_EXISTS);
-            }
-
-            if (isEmailTaken) {
-                throw new AppError(ErrorCode.USER.EMAIL_EXISTS);
-            }
-        }
-
-        // 3. Nếu chạy đến đây, nghĩa là không có ai trùng
-        return false;
-    }
-
-    /**
-     * @description Tìm kiếm người dùng qua định danh linh hoạt (Email hoặc Username) và kiểm tra trạng thái tài khoản.
-     * @param {string} identifier - Email hoặc tên đăng nhập của người dùng.
-     * @returns {Promise<User>} Thực thể người dùng hợp lệ và không bị khóa.
-     */
-    public async getUserByIdentifier(identifier: string): Promise<User> {
-        const isEmail = REGEX.EMAIL.EMAIL.test(identifier);
-
-        const user = isEmail
-            ? await this._userRepo.findByEmailInSystem(identifier)
-            : await this._userRepo.findByUsernameInSystem(identifier);
-
-        if (!user) throw new AppError(ErrorCode.AUTH.INVALID_CREDENTIALS);
-
-        this.ensureAccountNotLocked(user);
-
-        return user;
-    }
-
-    /**
-     * @description Lấy danh sách người dùng đã qua bộ lọc và ánh xạ sang DTO sạch.
-     * @returns {Promise<PaginatedResult<UserResponseDTO>>} Trả về DTO thay vì Entity để bảo mật.
-     */
-    public async getPaginatedUsers(query: UserQueryDTO): Promise<PaginatedResult<UserResponseDTO>> {
-        // 1. Chuẩn hóa thông số phân trang
-        const page = Number(query.page) || PAGINATION_CONFIG.DEFAULT_PAGE;
-        const limit = Math.min(
-            Number(query.limit) || PAGINATION_CONFIG.DEFAULT_LIMIT,
-            PAGINATION_CONFIG.MAX_LIMIT
-        );
-
-        // 2. Tính toán skip cho Repository
-        const skip = PaginationUtil.getSkip(page, limit);
-
-        // 3. Truy vấn dữ liệu từ DB (Lấy Entity gốc)
-        const [users, total] = await this._userRepo.findAndCount(query, skip, limit);
-
-        // 4. ÁNH XẠ DỮ LIỆU (Mapping): Chuyển mảng Entity sang mảng Response DTO sạch
-        // Chúng ta dùng .map() vì users là một danh sách (Array)
-        const userResponses = users.map(user => UserMapper.toResponse(user));
-
-        // 5. Đóng gói và trả về kết quả cuối cùng
-        return PaginationUtil.createPaginatedResponse(userResponses, total, page, limit);
-    }
-
-    /**
-     * @description Tạo mới người dùng, thiết lập vai trò mặc định và lưu vào cơ sở dữ liệu.
-     * @param {Object} data - Tập hợp thông tin định danh và mật khẩu đã băm của người dùng.
-     * @returns {Promise<User>} Thực thể người dùng sau khi đã được gán vai trò và lưu trữ thành công.
-     */
-    public async createUser(user: User): Promise<User> {
-
-        const roleData = this._cacheService.getRoleByName(UserRole.STUDENT)
-
-        if (!roleData) {
-            throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);
-        }
-
-        const defaultRole = Role.reconstitute({
-            id: roleData.id,
-            name: roleData.name,
-            description: roleData.description,
-            permissions: []
-        });
-
-        user.assignRole(defaultRole)
-
-        const newUser = await this._userRepo.createUser(user);
-
-        return newUser;
-    }
-
-    /**
-     * Tìm kiếm người dùng đang hoạt động theo ID hoặc ném lỗi nếu không tồn tại.
-     * @param {string} userId 
-     * @returns {Promise<User>}
-     */
-    private async getActiveUserOrThrow(userId: string): Promise<User> {
-        const user = await this._userRepo.findActiveById(userId);
-        if (!user) {
-            throw new AppError(ErrorCode.USER.NOT_FOUND);
-        }
-        return user;
-    }
-
-    /**
-     * Kiểm tra trạng thái tài khoản và ném lỗi nếu đã bị xóa.
-     * @param {User} user 
-     */
-    private ensureAccountNotLocked(user: User): void {
-        if (user.isDeleted()) {
-            throw new AppError(ErrorCode.AUTH.ACCOUNT_LOCKED);
-        }
-    }
-
+    return user;
+  }
 }

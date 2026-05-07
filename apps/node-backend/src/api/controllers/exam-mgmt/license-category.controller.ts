@@ -1,35 +1,46 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { Result } from '@/shared/responses/api-response';
+import { Result } from '@/application/dtos/response/shared/api.response.dto';
 import { CreateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/create-license-category.request.dto';
 import { UpdateLicenseCategoryRequestDTO } from '@/application/dtos/request/license-category/update-license-category.request.dto';
 import { LicenseCategoryQueryDTO } from '@/application/dtos/request/license-category/license-category-query.request.dto';
 import { ILicenseCategoryService } from '@/domain/interfaces/services/exam-mgmt';
+import { ILicenseCategoryQueryService } from '@/domain/interfaces/services/exam-mgmt/queries';
 
 /**
  * @interface ILicenseCategoryControllerCradle
- * @description "Túi đồ nghề" chuyên biệt cho LicenseCategoryController.
- * Đảm bảo Controller chỉ có quyền tiếp cận đúng Service mà nó cần điều phối.
+ * @description "Túi đồ nghề" (Dependencies Container) chuyên biệt cho LicenseCategoryController.
+ * Đảm bảo tính đóng gói (Encapsulation) khi chỉ cho phép Controller tiếp cận các dịch vụ quản lý hạng bằng lái tương ứng.
  */
 export interface ILicenseCategoryControllerCradle {
+  /** @description Dịch vụ thực hiện các thay đổi về danh mục hạng bằng (Thêm/Sửa/Xóa). */
   licenseCategoryService: ILicenseCategoryService;
+
+  /** @description Dịch vụ xử lý các yêu cầu truy vấn thông tin hạng bằng lái. */
+  licenseCategoryQueryService: ILicenseCategoryQueryService;
 }
 
 /**
  * @class LicenseCategoryController
- * @description Tiếp nhận các yêu cầu HTTP và điều phối xử lý nghiệp vụ Danh mục hạng bằng lái.
+ * @description Lớp điều phối (Orchestrator) các yêu cầu HTTP liên quan đến Danh mục hạng bằng lái.
+ * @principle Domain Specificity - Tập trung hoàn toàn vào việc quản lý vòng đời và cấu trúc của các loại giấy phép lái xe. 
  */
 export class LicenseCategoryController {
+  /** @private @readonly @description Instance xử lý các logic nghiệp vụ thay đổi trạng thái hạng bằng. */
   private readonly _licenseService: ILicenseCategoryService;
 
+  /** @private @readonly @description Instance xử lý các yêu cầu đọc và tra cứu danh mục hạng bằng. */
+  private readonly _licenseQueryService: ILicenseCategoryQueryService;
+
   /**
-   * @description Khởi tạo Controller với các phụ thuộc chuyên biệt.
-   * @param {ILicenseCategoryControllerCradle} cradle - Dependencies được tiêm tự động từ Awilix.
+   * @constructor
+   * @description Khởi tạo LicenseCategoryController thông qua cơ chế tiêm phụ thuộc (DI).
+   * @param {ILicenseCategoryControllerCradle} cradle - Chứa các dịch vụ chuyên biệt được giải nén để sử dụng nội bộ.
    */
-  constructor({ licenseCategoryService }: ILicenseCategoryControllerCradle) {
-    // Gán instance service từ Cradle vào thuộc tính class
+  constructor({ licenseCategoryService, licenseCategoryQueryService }: ILicenseCategoryControllerCradle) {
     this._licenseService = licenseCategoryService;
+    this._licenseQueryService = licenseCategoryQueryService;
   }
 
   /**
@@ -42,7 +53,7 @@ export class LicenseCategoryController {
   public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
 
     const query = new LicenseCategoryQueryDTO(req.query as Record<string, unknown>);
-    const categories = await this._licenseService.getPaginatedCategories(query);
+    const categories = await this._licenseQueryService.getPaginatedCategories(query);
 
     Result.ok(
       res,
@@ -60,11 +71,10 @@ export class LicenseCategoryController {
    * @returns {Promise<void>}
    */
   public store = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const { name, description, minAge } = req.body;
+    const { name, description, minAge, orderIndex } = req.body;
 
     // Khởi tạo và thực thi tự kiểm tra dữ liệu (Self-Validating DTO)
-    const dto = new CreateLicenseCategoryRequestDTO({ name, description, minAge });
-    dto.isValid();
+    const dto = new CreateLicenseCategoryRequestDTO({ name, description, minAge, orderIndex });
 
     const result = await this._licenseService.createCategory(dto);
 
@@ -89,7 +99,6 @@ export class LicenseCategoryController {
 
     // Sử dụng DTO để validate dữ liệu cập nhật
     const dto = new UpdateLicenseCategoryRequestDTO({ id, name, description, minAge, orderIndex });
-    dto.isValid();
     const result = await this._licenseService.updateCategory(id, dto);
     Result.ok(
       res,
@@ -119,7 +128,6 @@ export class LicenseCategoryController {
     );
   });
 
-
   /**
    * @description API Khôi phục hạng bằng lái đã bị xóa mềm.
    * @route PATCH /api/v1/license-categories/:id/restore
@@ -141,13 +149,13 @@ export class LicenseCategoryController {
   });
 
   /**
-     * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) có hỗ trợ tìm kiếm.
-     * @route GET /api/v1/master-data/licenses/selection
-     * @param {Response} res - Đối tượng Response của Express.
-     * @returns {Promise<void>} Phản hồi danh sách hạng bằng dạng { items, meta }.
-     */
+   * @description Lấy danh sách các hạng bằng lái định dạng selection (value/label) có hỗ trợ tìm kiếm.
+   * @route GET /api/v1/master-data/licenses/selection
+   * @param {Response} res - Đối tượng Response của Express.
+   * @returns {Promise<void>} Phản hồi danh sách hạng bằng dạng { items, meta }.
+   */
   public getLicenseSelections = catchAsync(async (_req: Request, res: Response) => {
-    const result = await this._licenseService.getLicenseSelections();
+    const result = await this._licenseQueryService.getLicenseSelections();
     Result.ok(
       res,
       result,

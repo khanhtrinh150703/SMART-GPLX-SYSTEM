@@ -3,4 +3,7 @@ export * from './exam-mgmt'
 export * from './identity'
 export * from './exam-session'
 export * from './integration'
+export * from './user-rank'
+export * from './external'
+export * from './leaderboard'
 

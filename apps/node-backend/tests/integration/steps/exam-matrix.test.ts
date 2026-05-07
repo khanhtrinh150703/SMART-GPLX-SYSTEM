@@ -2,6 +2,7 @@ import request from 'supertest';
 import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
 import { ErrorCode, EXAM_MATRIX_ENDPOINTS, EXAM_MATRIX_PAYLOAD, fakeID } from '../../config/index'
+import { DeleteType } from '@/domain/constants/delete.constant';
 
 export const examMatrixSteps = (
     getAdminToken: () => string,
@@ -142,7 +143,7 @@ export const examMatrixSteps = (
                             .send(payload);
 
                         expect(res.status).toBe(400);
-                        expect(res.body.code).toBe(ErrorCode.VALIDATION.ID_REQUIRED);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.LICENSE_CATEGORY_REQUIRED);
                     });
 
                     describe('📝 Kịch bản: Kiểm tra tính hợp lệ của các giá trị số', () => {
@@ -184,7 +185,7 @@ export const examMatrixSteps = (
                             .send(payload);
 
                         expect(res.status).toBe(400);
-                        expect(res.body.code).toBe(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
+                        expect(res.body.code).toBe(ErrorCode.MATRIX.PASSING_SCORE_TOO_HIGH);
                     });
 
                     it('🚫 Nên lỗi khi tổng phần trăm các chương != 100%', async () => {
@@ -410,13 +411,14 @@ export const examMatrixSteps = (
         // ====================== XÓA MA TRẬN ======================
         describe('🗑️ Kịch bản: Xóa ma trận', () => {
 
-            it('✅ Admin xóa ma trận thành công (smart delete)', async () => {
+            it('✅ Admin xóa ma trận thành công (hard delete)', async () => {
                 if (!testMatrixId) return;
 
                 const res = await request(app)
                     .delete(EXAM_MATRIX_ENDPOINTS.DELETE(testMatrixId))
                     .set(getAuthHeader(getAdminToken()));
 
+                expect(res.body.data).toMatchObject({ type: DeleteType.HARD });
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
             });

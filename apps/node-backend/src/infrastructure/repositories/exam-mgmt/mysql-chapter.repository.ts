@@ -54,7 +54,7 @@ export class MySQLChapterRepository implements IChapterRepository {
 
   public async findByName(name: string): Promise<Chapter | null> {
     const record = await this._prisma.chapter.findFirst({
-      where: { name, deletedAt: null }
+      where: { name }
     });
     // Đã fix: Sử dụng helper để check null trước khi gọi Mapper
     return this._mapToDomain(record);
@@ -67,13 +67,13 @@ export class MySQLChapterRepository implements IChapterRepository {
     await this._prisma.chapter.create({ data: persistence });
   }
 
-  public async updateChapter(id: string, chapter: Chapter): Promise<void> {
+  public async updateChapter(chapter: Chapter): Promise<void> {
     if (!chapter.id) return;
 
     const persistence = ChapterMapper.toUpdatePersistence(chapter);
 
     await this._prisma.chapter.update({
-      where: { id },
+      where: { id: chapter.id },
       data: persistence,
     });
   }

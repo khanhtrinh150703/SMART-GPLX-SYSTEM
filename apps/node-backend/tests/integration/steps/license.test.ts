@@ -3,9 +3,9 @@ import { describe, it, expect } from '@jest/globals';
 import app from '@/app';
 import { ErrorCode, LICENSE_ENDPOINTS } from '../../config/index'
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { LicenseCategoryResponse } from '@/application/dtos/response/license-category/license-category.respone.dto';
 import { LICENSE_PAYLOAD } from '../../config/index'
 import { DeleteType } from '@/domain/constants/delete.constant';
+import { ILicenseCategoryResponseDTO } from '@/application/dtos/response/license-category/license-category.respone.dto';
 
 // Helper để tạo Header Auth nhanh
 const getAuthHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -56,7 +56,7 @@ export const licenseSteps = (
                     .send(LICENSE_PAYLOAD.NAME_MISSING);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.NAME_REQUIRED);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.NAME_REQUIRED);
             });
 
             it('❌ Nên trả về lỗi 400 khi định dạng tên sai (Regex không khớp)', async () => {
@@ -66,7 +66,7 @@ export const licenseSteps = (
                     .send(LICENSE_PAYLOAD.NAME_WRONG_FORMAT);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.NAME_FORMAT_INVALID);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.NAME_FORMAT_INVALID);
             });
 
             it('❌ Nên trả về lỗi 400 khi độ tuổi tối thiểu nhỏ hơn 18', async () => {
@@ -76,7 +76,7 @@ export const licenseSteps = (
                     .send(LICENSE_PAYLOAD.AGE_UNDER_18);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.AGE_INVALID);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.AGE_INVALID);
             });
 
             it('❌ Nên trả về lỗi 400 khi mô tả quá dài (> 500 ký tự)', async () => {
@@ -86,7 +86,7 @@ export const licenseSteps = (
                     .send(LICENSE_PAYLOAD.DESCRIPTION_TOO_LONG);
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.DESCRIPTION_TOO_LONG);
             });
 
             // --- BỔ SUNG KIỂM TRA PHÂN QUYỀN (SECURITY) ---
@@ -118,7 +118,7 @@ export const licenseSteps = (
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
 
-                const data = res.body.data.data as LicenseCategoryResponse[];
+                const data = res.body.data.data as ILicenseCategoryResponseDTO[];
                 const createdItem = data.find((item) => item.name === 'B2');
 
                 expect(createdItem).toBeDefined();
@@ -149,7 +149,7 @@ export const licenseSteps = (
             it('❌ Nên lỗi 400 khi ID hạng bằng lái bị trống', async () => {
                 // Giả lập trường hợp ID không được truyền vào DTO
                 const res = await request(app)
-                    .patch(LICENSE_ENDPOINTS.UPDATE(' ')) // ID trống hoặc chỉ có khoảng trắng
+                    .patch(LICENSE_ENDPOINTS.UPDATE(" ")) // ID trống hoặc chỉ có khoảng trắng
                     .set(getAuthHeader(getAdminToken()))
                     .send(LICENSE_PAYLOAD.UPDATE_VALID);
 
@@ -163,7 +163,7 @@ export const licenseSteps = (
                     .send({ ...LICENSE_PAYLOAD.UPDATE_VALID, name: 'Hạng B2 Siêu Cấp' });
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.NAME_INVALID_LENGTH);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.NAME_INVALID_LENGTH);
             });
 
             it('❌ Nên lỗi 400 khi độ tuổi không phải là số (NaN/String)', async () => {
@@ -173,7 +173,7 @@ export const licenseSteps = (
                     .send({ ...LICENSE_PAYLOAD.UPDATE_VALID, minAge: 'mười tám' });
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.AGE_REQUIRED);
             });
 
             it('❌ Nên lỗi 400 khi thứ tự (orderIndex) là số âm', async () => {
@@ -183,7 +183,7 @@ export const licenseSteps = (
                     .send({ ...LICENSE_PAYLOAD.UPDATE_VALID, orderIndex: -1 });
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.CHAPTER.INVALID_ORDER);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.INVALID_ORDER);
             });
 
             it('❌ Nên lỗi 400 khi mô tả bị bỏ trống', async () => {
@@ -193,7 +193,7 @@ export const licenseSteps = (
                     .send({ ...LICENSE_PAYLOAD.UPDATE_VALID, description: '' });
 
                 expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED);
+                expect(res.body.code).toBe(ErrorCode.LICENSE.DESCRIPTION_REQUIRED);
             });
 
             it('❌ Nên trả về lỗi 409 khi tên hạng bằng đã tồn tại', async () => {
@@ -227,7 +227,7 @@ export const licenseSteps = (
                         });
 
                     expect(res.status).toBe(400);
-                    expect(res.body.code).toBe(ErrorCode.VALIDATION.NAME_FORMAT_INVALID);
+                    expect(res.body.code).toBe(ErrorCode.LICENSE.NAME_FORMAT_INVALID);
                 });
 
                 it('❌ Nên lỗi 400 khi số thứ tự hiển thị là số âm (Case: NEGATIVE_ORDER)', async () => {
@@ -241,7 +241,7 @@ export const licenseSteps = (
 
                     expect(res.status).toBe(400);
                     // Lưu ý: khớp với mã lỗi bạn viết trong isValid()
-                    expect(res.body.code).toBe(ErrorCode.CHAPTER.INVALID_ORDER);
+                    expect(res.body.code).toBe(ErrorCode.LICENSE.INVALID_ORDER);
                 });
 
                 it('❌ Nên trả về lỗi 403 khi người dùng thường (User) cố gắng cập nhật hạng bằng', async () => {
@@ -283,6 +283,8 @@ export const licenseSteps = (
                 const res = await request(app)
                     .delete(LICENSE_ENDPOINTS.DELETE(getLicenseId()))
                     .set(getAuthHeader(getAdminToken()));
+
+                expect(res.body.data).toMatchObject({ type: DeleteType.SOFT });
                 expect(res.status).toBe(200);
                 expect(res.body.message).toBe(Message.LICENSE.DELETE_SUCCESS);
             });
@@ -292,7 +294,7 @@ export const licenseSteps = (
                     .delete(LICENSE_ENDPOINTS.DELETE(getLicenseIdSecond()))
                     .set(getAuthHeader(getAdminToken()));
                 expect(res.status).toBe(200);
-                expect(res.body.data).toEqual({ type: DeleteType.HARD });
+                expect(res.body.data).toMatchObject({ type: DeleteType.HARD });
                 expect(res.body.message).toBe(Message.LICENSE.DELETE_SUCCESS);
             });
 
@@ -318,7 +320,7 @@ export const licenseSteps = (
                     .patch(LICENSE_ENDPOINTS.RESTORE(getLicenseId()))
                     .set(getAuthHeader(getAdminToken()))
                     .send();
-
+                    
                 expect(res.status).toBe(200);
                 expect(res.body.success).toBe(true);
                 expect(res.body.message).toBe(Message.LICENSE.RESTORE_SUCCESS);

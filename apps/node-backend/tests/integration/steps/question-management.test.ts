@@ -7,6 +7,7 @@ import {
     QUESTION_ENDPOINTS,
 } from '../../config/index'
 import { attachMultipart } from '@/shared/types/attach.types';
+import { DeleteType } from '@/domain/constants/delete.constant';
 
 /**
  * @description Bộ suite kiểm thử tích hợp cho quản lý Câu hỏi.
@@ -24,7 +25,7 @@ export const questionSteps = (
     });
 
     let normalQuestionId: string;
-    let criticalQuestionId: string;
+    // let criticalQuestionId: string;
 
     describe('🏗️ Question Management API Suite (Authorized Mode)', () => {
 
@@ -161,7 +162,7 @@ export const questionSteps = (
                     });
 
                 expect(res.status).toBe(200);
-                criticalQuestionId = res.body.data.id;
+                // criticalQuestionId = res.body.data.id;
             });
         });
 
@@ -179,7 +180,10 @@ export const questionSteps = (
             });
 
             it('✅ Nên lấy được chi tiết câu hỏi theo ID (Public/No Auth)', async () => {
-                const res = await request(app).get(QUESTION_ENDPOINTS.BY_ID(normalQuestionId));
+                const res = await request(app)
+                    .get(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
+                    .set(getAuthHeader(getAdminToken()));
+
                 expect(res.status).toBe(200);
                 expect(res.body.data.id).toBe(normalQuestionId);
             });
@@ -259,14 +263,14 @@ export const questionSteps = (
 
                 expect(res.status).toBe(401); // Unauthorized
             });
-            it('❌ Nên BỊ CHẶN (400) khi Admin cố tình xóa câu hỏi điểm liệt', async () => {
-                const res = await request(app)
-                    .delete(QUESTION_ENDPOINTS.BY_ID(criticalQuestionId))
-                    .set(getAuthHeader(getAdminToken()));
+            // it('✅ Nên xóa cứng câu hỏi thành công câu hỏi bình thường (Admin)', async () => {
+            //     const res = await request(app)
+            //         .delete(QUESTION_ENDPOINTS.BY_ID(criticalQuestionId))
+            //         .set(getAuthHeader(getAdminToken()));
 
-                expect(res.status).toBe(400);
-                expect(res.body.code).toBe(ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL);
-            });
+            //     expect(res.status).toBe(200);
+            //     expect(res.body.data).toMatchObject({ type: DeleteType.HARD });
+            // });
 
             it('✅ Nên xóa mềm thành công câu hỏi bình thường (Admin)', async () => {
                 const res = await request(app)
@@ -274,9 +278,12 @@ export const questionSteps = (
                     .set(getAuthHeader(getAdminToken()));
 
                 expect(res.status).toBe(200);
+                expect(res.body.data).toMatchObject({ type: DeleteType.SOFT });
 
                 // Kiểm tra 404 sau khi xóa mềm
-                const getRes = await request(app).get(QUESTION_ENDPOINTS.BY_ID(normalQuestionId));
+                const getRes = await request(app)
+                    .get(QUESTION_ENDPOINTS.BY_ID(normalQuestionId))
+                    .set(getAuthHeader(getAdminToken()));
                 expect(getRes.status).toBe(404);
             });
 

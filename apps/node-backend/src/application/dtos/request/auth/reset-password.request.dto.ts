@@ -1,30 +1,66 @@
-import { AppError } from '@/shared/errors/error-app';
-import { ErrorCode } from '@/shared/errors/error-codes';
+import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
- * @description DTO chứa dữ liệu yêu cầu đặt lại mật khẩu bằng mã OTP.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu đặt lại mật khẩu bằng mã OTP.
  */
-export class ResetPasswordRequestDTO {
+export interface IResetPasswordInputDTO {
+  readonly email: string;
+  readonly otp: string;
+  readonly newPassword: string;
+}
+
+/**
+ * @description DTO xử lý đặt lại mật khẩu.
+ * Thực hiện gác cổng dữ liệu và kiểm tra định dạng OTP/Password ngay khi khởi tạo.
+ */
+export class ResetPasswordRequestDTO implements IResetPasswordInputDTO {
   public readonly email: string;
   public readonly otp: string;
   public readonly newPassword: string;
 
-  constructor(data: ResetPasswordRequestDTO) {
-    this.email = data.email;
-    this.otp = data.otp;
+  constructor(data: IResetPasswordInputDTO) {
+    // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
+    this.validate(data);
+
+    // 2. Chuẩn hóa và gán giá trị
+    this.email = data.email.trim().toLowerCase();
+    this.otp = data.otp.trim();
     this.newPassword = data.newPassword;
   }
 
   /**
-   * @description Xác thực dữ liệu đầu vào, ném lỗi AppError nếu không hợp lệ.
-   * @throws {AppError}
+   * @description Hàm gác cổng thực hiện ném AppError dựa trên mã lỗi hệ thống.
+   * @private
    */
-  public validateOrThrow(): void {
-    if (!this.email || !this.otp || !this.newPassword) {
-      throw new AppError(ErrorCode.AUTH.MISSING_FIELDS);
+  private validate(data: IResetPasswordInputDTO): void {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
-    if (this.otp.length !== 6) {
+
+    // 1. Kiểm tra các trường bắt buộc
+    if (!data.email) throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
+    if (!data.otp) throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
+    if (!data.newPassword)
+      throw new AppError(ErrorCode.AUTH.NEW_PASSWORD_REQUIRED);
+
+    // 2. Kiểm tra định dạng OTP (Giả định 6 ký tự số)F
+    if (data.otp.trim().length !== 6) {
       throw new AppError(ErrorCode.AUTH.OTP_INVALID);
+    }
+
+    // 3. Kiểm tra độ dài mật khẩu mới (Ví dụ: tối thiểu 6 ký tự)
+    if (data.newPassword.length < 6) {
+      throw new AppError(ErrorCode.AUTH.PASSWORD_TOO_WEAK);
+    }
+  }
+
+  /**
+   * @description Xác thực bổ sung nếu cần trước khi xử lý ở tầng Service.
+   */
+  public isValid(): void {
+    // Có thể thêm kiểm tra Regex cho email hoặc password complexity tại đây
+    if (this.newPassword.trim() === "") {
+      throw new AppError(ErrorCode.AUTH.MISSING_FIELDS);
     }
   }
 }

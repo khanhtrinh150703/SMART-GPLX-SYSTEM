@@ -8,40 +8,78 @@ import { RowValidationError } from '@/shared/errors/row-validation.error';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { STORAGE_CONFIG } from '@/shared/config/storage.config';
 import { QuestionImportEntity } from '@/domain/entities/import/import-question.entity';
-import path from 'node:path';
 import { IRawQuestion } from '@/domain/entities/import/raw-question.props';
 import { QuestionService } from '../exam-mgmt';
+import { IZipQueryService } from '@/domain/interfaces/services/integration/queries';
+import path from 'node:path';
 
+/**
+ * @interface ImportProcessorDependencies
+ * @description Tập hợp các phụ thuộc cần thiết cho tiến trình Import dữ liệu phức hợp.
+ */
 interface ImportProcessorDependencies {
+  /** @description Repository quản lý trạng thái, lịch sử và tiến độ của các Job Import. */
   importJobRepository: IImportJobRepository;
+
+  /** @description Dịch vụ thực thi nghiệp vụ lưu trữ và xử lý dữ liệu câu hỏi vào Domain. */
   questionService: QuestionService;
+
+  /** @description Dịch vụ hạ tầng xử lý nén, giải nén và quản lý tệp ZIP. */
   zipService: IZipService;
+
+  /** @description Dịch vụ xử lý đọc và phân tích dữ liệu từ bảng tính Excel. */
   excelService: IExcelService;
+
+  /** @description Dịch vụ truy xuất nhanh các dữ liệu danh mục (Hạng bằng lái, bộ đề) từ Cache. */
   masterDataCacheService: IMasterDataCacheService;
+
+  /** @description Dịch vụ truy vấn và kiểm tra cấu trúc thư mục bên trong tệp ZIP. */
+  zipQueryService: IZipQueryService;
 }
 
 /**
- * @description Service điều phối luồng Import dữ liệu (Application Service).
+ * @class ImportProcessorService
+ * @description Application Service điều phối luồng nhập liệu từ file (ZIP/Excel) vào hệ thống.
+ * @principle Separation of Concerns - Tách biệt logic xử lý tệp tin và logic nghiệp vụ Domain.
  */
 export class ImportProcessorService implements IImportProcessorService {
+  /** @private @readonly @description Repository theo dõi tiến trình Job. */
   private readonly _importRepo: IImportJobRepository;
+
+  /** @private @readonly @description Dịch vụ nghiệp vụ câu hỏi. */
   private readonly _questionService: QuestionService;
+
+  /** @private @readonly @description Dịch vụ xử lý file ZIP. */
   private readonly _zipService: IZipService;
+
+  /** @private @readonly @description Dịch vụ xử lý file Excel. */
   private readonly _excelService: IExcelService;
+
+  /** @private @readonly @description Dịch vụ cache dữ liệu gốc. */
   private readonly _cacheService: IMasterDataCacheService;
 
+  /** @private @readonly @description Dịch vụ truy vấn tệp nén. */
+  private readonly _zipQueryService: IZipQueryService;
+
+  /**
+   * @constructor
+   * @description Khởi tạo bộ điều phối Import với "túi đồ nghề" dependencies đầy đủ.
+   * @param {ImportProcessorDependencies} dependencies - Các phụ thuộc được tiêm qua DI Container.
+   */
   constructor({
     importJobRepository,
     questionService,
     zipService,
     excelService,
-    masterDataCacheService
+    masterDataCacheService,
+    zipQueryService
   }: ImportProcessorDependencies) {
     this._importRepo = importJobRepository;
     this._questionService = questionService;
     this._zipService = zipService;
     this._excelService = excelService;
     this._cacheService = masterDataCacheService;
+    this._zipQueryService = zipQueryService;
   }
 
   /**
@@ -51,7 +89,7 @@ export class ImportProcessorService implements IImportProcessorService {
    * @returns {Promise<void>}
    */
   public async process(jobId: string, zipPath: string): Promise<void> {
-    const extractedDir = this._zipService.getExtractionPath(jobId);
+    const extractedDir = this._zipQueryService.getExtractionPath(jobId);
     const job = await this._getValidatedJob(jobId);
 
     try {

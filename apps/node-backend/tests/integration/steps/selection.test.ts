@@ -41,7 +41,7 @@ export const selectionSteps = (
                 }
             });
 
-            it('Nên lấy danh sách hạng bằng lái (License Categories) thành công', async () => {
+            it('✅Nên lấy danh sách hạng bằng lái (License Categories) thành công', async () => {
                 const res = await request(app)
                     .get(LICENSE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getAdminToken()));
@@ -50,7 +50,7 @@ export const selectionSteps = (
                 expect(res.body.success).toBe(true);
             });
 
-            it('Nên lấy danh sách chức vụ (Roles) thành công', async () => {
+            it('✅Nên lấy danh sách chức vụ (Roles) thành công', async () => {
                 const res = await request(app)
                     .get(ROLE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getAdminToken()));
@@ -92,7 +92,7 @@ export const selectionSteps = (
                 expect(res.status).toBe(403);
             });
 
-            it('Nên trả về 403 khi User thường lấy danh sách chương học', async () => {
+            it('❌ Nên trả về 403 khi User thường lấy danh sách chương học', async () => {
                 const res = await request(app)
                     .get(CHAPTER_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));
@@ -100,7 +100,7 @@ export const selectionSteps = (
                 expect(res.status).toBe(403);
             });
 
-            it('Nên trả về 403 khi User thường lấy danh sách hạng bằng lái', async () => {
+            it('❌ Nên trả về 403 khi User thường lấy danh sách hạng bằng lái', async () => {
                 const res = await request(app)
                     .get(LICENSE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));
@@ -108,7 +108,7 @@ export const selectionSteps = (
                 expect(res.status).toBe(403);
             });
 
-            it('Nên trả về 403 khi User thường lấy danh sách chức vụ', async () => {
+            it('❌ Nên trả về 403 khi User thường lấy danh sách chức vụ', async () => {
                 const res = await request(app)
                     .get(ROLE_ENDPOINTS.SELECTION)
                     .set(getAuthHeader(getRegularToken()));

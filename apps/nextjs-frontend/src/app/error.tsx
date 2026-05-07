@@ -1,4 +1,4 @@
-'use client'; // BẮT BUỘC: Để nhận hàm reset() từ Next.js
+'use client'; 
 
 import { useEffect } from 'react';
 import { GlobalErrorView } from '@/components/common/Errors/GlobalErrorView';

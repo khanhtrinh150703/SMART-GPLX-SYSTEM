@@ -105,7 +105,7 @@ model LicenseCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
   minAge      Int       @default(18) @map("min_age")
-  orderIndex   Int       @default(0) @map("order_index") 
+  orderIndex   Int      @default(0) @map("order_index") 
 
   questionLinks   QuestionLicenseCategory[]
   examMatrix      ExamMatrix[]
@@ -254,6 +254,8 @@ model Exam {
   score                Int            @default(0)
   isPassed             Boolean        @default(false)
   
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
   startedAt            DateTime       @default(now()) @map("started_at")
   endedAt              DateTime?      @map("ended_at")
   deletedAt            DateTime?      @map("deleted_at")
@@ -282,6 +284,28 @@ model ExamQuestion {
   @@map("exam_questions")
 }
 
+model UserExamRank {
+  id                String   @id @default(uuid())
+  userId            String
+  examId            String
+  
+  bestScore         Int      @default(0)
+  fastestSeconds    Int      @default(0) 
+  
+  lastAttemptId     String?  
+  
+  licenseCategoryId String   
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, examId], name: "user_exam_unique_key")
+
+  @@index([examId, bestScore(sort: Desc), fastestSeconds(sort: Asc)])
+  
+  @@index([licenseCategoryId])
+  @@map("user_exam_rank")
+}
 
 // ==========================================
 // PHÂN HỆ 4: LỊCH SỬ THI (EXAM EXECUTION)

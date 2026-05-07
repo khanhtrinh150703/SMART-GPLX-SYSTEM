@@ -10,10 +10,10 @@ docker compose up -d
 
 # Hoặc chạy từng phần
 # Backend
-cd node-backend && npm run dev
+npm run dev:be
 
 # Frontend
-cd nextjs-frontend && npm run dev
+npm run dev:fe
 
 # AI Engine
 cd ai-engine && python src/main.py
@@ -23,7 +23,7 @@ cd ai-engine && python src/main.py
 
 Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn kết:
 
-1. **Authentication & Security (PBAC):** Kiểm soát truy cập dựa trên vai trò và quyền hạn chi tiết (Permissions).
+1. **Authentication & Security (RBAC):** Kiểm soát truy cập dựa trên vai trò và quyền hạn chi tiết (Permissions).
 2. **Knowledge & Question Bank:** Ngân hàng câu hỏi thông minh với cơ chế **Soft Delete**. 
 3. **Exam Engine:** Tự động sinh đề thi theo **Ma trận đề (Exam Matrix)** chuẩn Bộ GTVT.
 4. **Execution & Audit:** Ghi lại nhật ký thi chi tiết, phục vụ thống kê và làm dữ liệu đầu vào cho AI.

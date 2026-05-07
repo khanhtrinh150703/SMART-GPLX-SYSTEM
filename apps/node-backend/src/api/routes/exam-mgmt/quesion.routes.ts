@@ -5,7 +5,7 @@ import { QuestionController } from "@/api/controllers/exam-mgmt";
 
 // 2. Middlewares (Gom theo nhóm nghiệp vụ: Bảo mật | Tích hợp | Hệ thống)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
-import { upload } from "@/api/middlewares/integration"; 
+import { upload } from "@/api/middlewares/integration";
 import { validateFileSize } from "@/api/middlewares/shared";
 
 // 3. DI Container
@@ -27,12 +27,25 @@ const questionUpload = upload.fields([
 // Các route này không cần authMiddleware để học viên có thể vào xem/ôn tập.
 // ============================================================================
 
+
+
+// ============================================================================
+// NHÓM 2: QUẢN LÝ (ADMIN & INSTRUCTOR SCOPE)
+// Tất cả các route bên dưới dòng này đều yêu cầu Đăng nhập + Quyền hạn cao.
+// ============================================================================
+
+router.use(authMiddleware);
+
 /**
- * @description Lấy thông tin chi tiết của một câu hỏi theo ID.
- * @route GET /api/v1/questions/:id
- * @access Public/Private
+ * @description Lấy danh sách tóm tắt câu hỏi phục vụ Selection Pool (Ma trận/Đề thi).
+ * @route GET /api/v1/questions/selection-pool
+ * @access Private (Admin/Instructor) - Yêu cầu quyền đọc dữ liệu câu hỏi.
  */
-router.get("/:id", questionController.getById);
+router.get(
+  "/selection-pool",
+  requirePermission('questions:read'),
+  questionController.getSelectionPool
+);
 
 /**
  * @description Lấy danh sách các câu hỏi thuộc về một chương (Chapter) cụ thể.
@@ -41,12 +54,12 @@ router.get("/:id", questionController.getById);
  */
 router.get("/chapter/:chapterId", questionController.getByChapter);
 
-// ============================================================================
-// NHÓM 2: QUẢN LÝ (ADMIN & INSTRUCTOR SCOPE)
-// Tất cả các route bên dưới dòng này đều yêu cầu Đăng nhập + Quyền hạn cao.
-// ============================================================================
-
-router.use(authMiddleware);
+/**
+ * @description Lấy thông tin chi tiết của một câu hỏi theo ID.
+ * @route GET /api/v1/questions/:id
+ * @access Public/Private
+ */
+router.get("/:id", questionController.getById);
 
 /**
  * Quản lý danh sách câu hỏi tại root path "/"
@@ -92,6 +105,6 @@ router.route("/:id")
  * @route PATCH /api/v1/questions/:id/restore
  * @access Private (Admin/Instructor) - Yêu cầu vé questions:manage
  */
-router.patch("/:id/restore",questionController.restore);
+router.patch("/:id/restore", questionController.restore);
 
 export default router;

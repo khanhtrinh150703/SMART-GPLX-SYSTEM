@@ -1,12 +1,12 @@
 import { User } from '@/domain/entities/user/user.entity';
 import { UserStatus } from "@/domain/entities/user/user.status";
-import { ILoginResponseDTO } from '@/application/dtos/response/auth/auth.respone.dto';
-import { UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
+import { ILoginResponseDTO, LoginResponseDTO } from '@/application/dtos/response/auth/auth.respone.dto';
+import { IUserResponseDTO, UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
 import { Role } from '@/domain/entities/role/role.entity';
 import { Prisma } from '@prisma/client';
 import { IUserRecord } from '@/infrastructure/persistence/identity/user.record';
 import { IUserProps } from '@/domain/entities/user/user.props';
-import { ITokenResponse } from '@/application/dtos/response/auth/token/token.respone.dto';
+import { ITokenResponseDTO } from '@/application/dtos/response/auth/token/token.respone.dto';
 export class UserMapper {
 
   /**
@@ -58,12 +58,12 @@ export class UserMapper {
   /**
    * @description Chuyển đổi thực thể người dùng sang định dạng phản hồi (Response DTO).
    * @param {User} user - Thực thể người dùng từ tầng Domain.
-   * @returns {UserResponseDTO} DTO chứa dữ liệu người dùng được chuẩn hóa cho Client.
+   * @returns {IUserResponseDTO} DTO chứa dữ liệu người dùng được chuẩn hóa cho Client.
    */
-  public static toResponse(user: User): UserResponseDTO {
+  public static toResponse(user: User): IUserResponseDTO {
     const baseUrl = process.env.APP_URL || '';
 
-    return {
+    return new UserResponseDTO({
       id: user.id as string,
       email: user.email,
       username: user.username,
@@ -79,7 +79,7 @@ export class UserMapper {
         displayName: r.description
       })),
       permissions: user.getAllPermissionNames(),
-    };
+    });
   }
 
   /**
@@ -88,11 +88,11 @@ export class UserMapper {
    * @param {ITokenResponse} tokens - Cặp mã xác thực (Access & Refresh Token).
    * @returns {ILoginResponseDTO} DTO phản hồi đăng nhập hoàn chỉnh.
    */
-  public static toLoginResponse(user: User, tokens: ITokenResponse): ILoginResponseDTO {
-    return {
+  public static toLoginResponse(user: User, tokens: ITokenResponseDTO): ILoginResponseDTO {
+    return new LoginResponseDTO({
       user: this.toResponse(user),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-    };
+    });
   }
 }

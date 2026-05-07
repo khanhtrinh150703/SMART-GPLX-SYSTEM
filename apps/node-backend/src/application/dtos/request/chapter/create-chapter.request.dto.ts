@@ -1,47 +1,67 @@
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
- * @description DTO dùng để tạo mới một chương lý thuyết (Data Transfer Object for Chapter Creation).
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo chương lý thuyết.
  */
-export class CreateChapterRequestDto {
-  /** @property {string} name - Tên chương (Ví dụ: Khái niệm và quy tắc giao thông). */
+export interface ICreateChapterInputDTO {
+  readonly name: string;
+  readonly code: string;
+  readonly description: string;
+  readonly orderIndex: number;
+}
+
+/**
+ * @description DTO xử lý tạo mới chương lý thuyết.
+ * Đảm bảo tính toàn vẹn của dữ liệu và thứ tự sắp xếp ngay khi khởi tạo.
+ */
+export class CreateChapterRequestDTO implements ICreateChapterInputDTO {
   public readonly name: string;
-
-  /** @property {string} description - Mô tả nội dung chương (Mặc định: chuỗi rỗng). */
+  public readonly code: string;
   public readonly description: string;
-
-  /** @property {number} orderIndex - Thứ tự sắp xếp của chương (Mặc định: 0). */
   public readonly orderIndex: number;
 
-  /** @property {string} code - Mã nhận diện chương (Ví dụ: CH-01). */
-  public readonly code: string;
+  constructor(data: ICreateChapterInputDTO) {
+    // 1. Chặn đứng dữ liệu lỗi/undefined
+    this.validate(data);
 
-  /**
-   * @description Hàm khởi tạo với cơ chế gán giá trị mặc định.
-   * @param {Partial<CreateChapterRequestDto>} data - Dữ liệu thô từ Request.
-   */
-  constructor(data: Partial<CreateChapterRequestDto>) {
-    this.name = data.name?.trim() ?? '';
-    this.description = data.description?.trim() ?? '';
+    // 2. Làm sạch và gán giá trị
+    this.name = data.name.trim();
+    this.code = data.code.trim();
+    this.description = data.description.trim();
     this.orderIndex = data.orderIndex ?? 0;
-    this.code = data.code?.trim() ?? '';
   }
 
   /**
-   * @description Kiểm tra tính hợp lệ của dữ liệu (Manual Validation).
-   * @returns {{ isValid: boolean; errors: string[] }} Kết quả xác thực.
+   * @description Hàm gác cổng, thực hiện ném AppError dựa trên mã lỗi hệ thống.
+   * @private
    */
-  public isValid(): void {
-
-    if (!this.name) throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
-    if (!this.code) throw new AppError(ErrorCode.VALIDATION.CODE_REQUIRED);
-    if (this.orderIndex < 0) throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER);
-    if (!this.description) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED);
+  private validate(data: ICreateChapterInputDTO): void {
+    // Chặn lỗi truy cập thuộc tính của undefined
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    if (this.description.length > 500) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+    // Kiểm tra tên và mã chương
+    if (!data.name || data.name.trim().length === 0) {
+      throw new AppError(ErrorCode.CHAPTER.NAME_REQUIRED);
+    }
+
+    if (!data.code || data.code.trim().length === 0) {
+      throw new AppError(ErrorCode.CHAPTER.CODE_REQUIRED);
+    }
+
+    // Kiểm tra mô tả và độ dài
+    if (!data.description || data.description.trim().length === 0) {
+      throw new AppError(ErrorCode.CHAPTER.DESCRIPTION_REQUIRED);
+    }
+
+    if (data.description.length > 500) {
+      throw new AppError(ErrorCode.CHAPTER.DESCRIPTION_TOO_LONG);
+    }
+
+    // Kiểm tra tính hợp lệ của thứ tự sắp xếp
+    if (typeof data.orderIndex !== 'number' || data.orderIndex < 0) {
+      throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER);
     }
   }
 }

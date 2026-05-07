@@ -2,7 +2,7 @@ import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { AppError } from '../errors/error-app';
 import { ErrorCode } from '../errors/error-codes';
 import { env } from 'node:process';
-import { TokenPayload } from '../types/auth.types';
+import { TokenPayload } from '@/application/dtos/response/auth/token/token-payload.respone.dto';
 
 // 1. TẬP TRUNG CẤU HÌNH: Muốn đổi Secret hay Thời gian thì sửa ở đây
 const JWT_CONFIG = {

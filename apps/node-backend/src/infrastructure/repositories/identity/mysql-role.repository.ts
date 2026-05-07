@@ -28,6 +28,7 @@ export class MySQLRoleRepository implements IRoleRepository {
   constructor({ prisma }: IMySQLRoleRepositoryCradle) {
     this._prisma = prisma;
   }
+  
   private readonly _includePermissions = {
     rolePermissions: {
       include: {

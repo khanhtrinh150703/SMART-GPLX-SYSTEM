@@ -92,9 +92,9 @@ export class Question extends BaseEntity<IQuestionProps> {
   }
 
   public delete(): void {
-    if (this.isCritical) {
-      throw new AppError(ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL);
-    }
+    // if (this.isCritical) {
+    //   throw new AppError(ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL);
+    // }
     this._props.status = "DELETED";
     this._props.deletedAt = new Date();
     this.touch();

@@ -1,40 +1,49 @@
 import { Response } from 'express';
-import { Result } from '@/shared/responses/api-response';
+import { Result } from '@/application/dtos/response/shared/api.response.dto';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { AuthRequest } from '@/shared/types/auth.types';
+import { IAuthRequest } from '@/shared/types/authRequest.types';
 import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
 import { IUserService } from '@/domain/interfaces/services/identity/i-user.service';
-import { UpdateProfileDTO } from '@/application/dtos/request/user/update-profile.request.dto';
+import { UpdateProfileRequestDTO } from '@/application/dtos/request/user/update-profile.request.dto';
 import { ChangePasswordRequestDTO } from '@/application/dtos/request/user/update-password.request.dto';
 import { ChangeStatusRequestDTO } from '@/application/dtos/request/user/update-status.request.dto';
 import { UpdateAdminRequestDTO } from '@/application/dtos/request/user/update-admin.request.dto';
+import { IUserQueryService } from '@/domain/interfaces/services/identity/queries';
 
 /**
  * @interface IUserControllerCradle
- * @description Định nghĩa các phụ thuộc (dependencies) cần thiết cho UserController.
- * Giúp TypeScript canh gác chặt chẽ, chỉ cho phép tiêm đúng IUserService vào đây.
+ * @description "Túi đồ nghề" (Dependency Container) chứa các dịch vụ cần thiết để quản lý người dùng (Users).
+ * @guard TypeScript Guard - Đảm bảo tính an toàn về kiểu dữ liệu, chỉ cho phép tiêm đúng các Interface dịch vụ đã được định nghĩa.
  */
 export interface IUserControllerCradle {
+  /** @description Dịch vụ thực hiện các thao tác thay đổi dữ liệu người dùng (Cập nhật hồ sơ, đổi mật khẩu, xóa).*/
   userService: IUserService;
+
+  /** @description Dịch vụ chuyên trách truy vấn thông tin, tìm kiếm và thống kê danh sách người dùng. */
+  userQueryService: IUserQueryService;
 }
 
 /**
  * @class UserController
- * @description Tiếp nhận các HTTP Request và điều phối xử lý nghiệp vụ liên quan đến Người dùng.
+ * @description Lớp điều phối (Orchestrator) các yêu cầu HTTP liên quan đến quản lý người dùng.
+ * @principle Loose Coupling - Sử dụng Interface để giao tiếp với tầng Application, giúp giảm thiểu sự phụ thuộc trực tiếp vào các implementation cụ thể.
  */
 export class UserController {
-  // 1. Khai báo thuộc tính riêng tư (Sử dụng Interface để đạt tính Loose Coupling)
+  /** @private @readonly @description Instance xử lý các logic nghiệp vụ thay đổi trạng thái người dùng. */
   private readonly _userService: IUserService;
 
+  /** @private @readonly @description Instance xử lý các yêu cầu đọc và tra cứu dữ liệu người dùng. */
+  private readonly _userQueryService: IUserQueryService;
+
   /**
-   * @description Khởi tạo UserController với "túi đồ nghề" chuyên biệt cho User.
-   * @param {IUserControllerCradle} cradle - Object chứa các dependencies được tiêm tự động từ Awilix.
+   * @constructor
+   * @description Khởi tạo UserController bằng cách giải nén các phụ thuộc từ Cradle thông qua cơ chế DI.
+   * @param {IUserControllerCradle} cradle - Chứa các dịch vụ chuyên biệt cần thiết để vận hành module Người dùng.
    */
-  constructor({ userService }: IUserControllerCradle) {
-    // 2. Gán instance userService từ Cradle vào thuộc tính class
-    // LƯU Ý: Tên 'userService' phải khớp chính xác với Key trong file container.ts
+  constructor({ userService, userQueryService }: IUserControllerCradle) {
     this._userService = userService;
+    this._userQueryService = userQueryService;
   }
 
   /**
@@ -43,11 +52,11 @@ export class UserController {
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public updateProfile = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
-    const userId = req.user.userId; 
+  public updateProfile = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
+    const userId = req.user.userId;
 
     // 3. Đóng gói dữ liệu vào một Object duy nhất cho DTO
-    const dto = new UpdateProfileDTO({
+    const dto = new UpdateProfileRequestDTO({
       ...req.body,      // Lấy fullName, username, ...
       pictureFile: req.file // Lấy file từ multer
     });
@@ -68,11 +77,11 @@ export class UserController {
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public updateProfileAdmin = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+  public updateProfileAdmin = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     const userId = req.params.id as string; // Hoặc req.user.id tùy theo Payload cậu đặt
 
     // 3. Đóng gói dữ liệu vào một Object duy nhất cho DTO
-    const dto = new UpdateProfileDTO({
+    const dto = new UpdateProfileRequestDTO({
       ...req.body,      // Lấy fullName, username, ...
     });
 
@@ -89,16 +98,16 @@ export class UserController {
 
   /**
    * @description Tác dụng: API endpoint thay đổi mật khẩu người dùng.
-   * @param {AuthRequest} req - Đã được gán TokenPayload qua Middleware.
+   * @param {IAuthRequest} req - Đã được gán TokenPayload qua Middleware.
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public changePassword = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
-    // 1. Lấy userId trực tiếp (Hết lỗi đỏ nhờ AuthRequest và Middleware)
+  public changePassword = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
+    // 1. Lấy userId trực tiếp (Hết lỗi đỏ nhờ IAuthRequest và Middleware)
     const userId = req.user.userId;
 
     // 2. Khởi tạo DTO từ body (Ép kiểu sang Record để tránh any)
-    const dto = new ChangePasswordRequestDTO(req.body as Record<string, unknown>);
+    const dto = new ChangePasswordRequestDTO(req.body);
 
     // 3. Gọi Service
     await this._userService.changePassword(userId, dto);
@@ -118,7 +127,7 @@ export class UserController {
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public updateStatus = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+  public updateStatus = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     const userId = req.params.id as string;
     const dto = new ChangeStatusRequestDTO(req.body);
 
@@ -138,7 +147,7 @@ export class UserController {
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public deleteUser = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+  public deleteUser = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     const userId = req.params.id as string;
 
     // Chức năng xóa thường không cần DTO body, chỉ cần ID
@@ -158,7 +167,7 @@ export class UserController {
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public restoreUser = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+  public restoreUser = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     const userId = req.params.id as string;
 
     // Gọi Service để xử lý logic "hồi sinh" (xóa bỏ timestamp deletedAt)
@@ -180,12 +189,12 @@ export class UserController {
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public getUsers = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+  public getUsers = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     // 1. Thu thập Query Params từ URL (vd: ?page=1&limit=10&role=STUDENT)
     // Cậu có thể dùng class-transformer để ép kiểu sang UserQueryDTO ở đây
     const query: UserQueryDTO = req.query as unknown as UserQueryDTO;
     // 2. Gọi tầng Service xử lý nghiệp vụ
-    const result = await this._userService.getPaginatedUsers(query);
+    const result = await this._userQueryService.getPaginatedUsers(query);
 
     // 3. Trả về phản hồi thông qua BaseResponse để đồng nhất cấu trúc JSON
     Result.ok(
@@ -201,14 +210,14 @@ export class UserController {
    * @route PUT /api/v1/users/:id/admin
    * @access Private (Admin only)
    * @description Admin cập nhật thông tin và vai trò của người dùng.
-   * @param {AuthRequest} req - Yêu cầu chứa userId trong params và dữ liệu trong body.
+   * @param {IAuthRequest} req - Yêu cầu chứa userId trong params và dữ liệu trong body.
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @returns {Promise<void>}
    */
-  public updateUserByAdmin = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
+  public updateUserByAdmin = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     // 1. Lấy userId từ Path Parameters
     const userId = req.params.id as string;
-    
+
     // 2. Thu thập dữ liệu từ body và khởi tạo DTO
     // DTO này sẽ thực hiện logic validate (fullName, roles) ngay trong constructor hoặc hàm isValid()
     const dto = new UpdateAdminRequestDTO(req.body);

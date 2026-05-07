@@ -1,18 +1,18 @@
 import { Response, NextFunction } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
-import { AuthRequest } from '@/shared/types/auth.types';
 import { AppError } from '@/shared/errors/error-app';
 import { ErrorCode } from '@/shared/errors/error-codes';
 import { jwtUtil } from '@/shared/utils/jwt.util';
 import { container } from '@/shared/utils/container';
 import { RedisTokenRepository } from '@/infrastructure/repositories/identity/redis-token.repository';
 import { REDIS_KEYS } from '@/shared/config/redis.config';
+import { IAuthRequest } from '@/shared/types/authRequest.types';
 
 /**
  * Middleware xác thực người dùng và kiểm tra Session (JTI) trong Redis.
  */
-export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, next: NextFunction) => {
+export const authMiddleware = catchAsync(async (req: IAuthRequest, _: Response, next: NextFunction) => {
   // 1. Lấy token từ Header
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
@@ -36,6 +36,7 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
       deviceId,
       payload.jti
     );
+
     // Kiểm tra xem Key này có còn tồn tại trong Redis không
     const isValidSession = await tokenRepo.exists(accessKey);
 
@@ -62,6 +63,7 @@ export const authMiddleware = catchAsync(async (req: AuthRequest, _: Response, n
     if (err instanceof AppError) {
       throw err;
     }
+    console.log("AAAAAAAAAAACS")
 
     // Lỗi hệ thống bất ngờ
     throw new AppError(ErrorCode.AUTH.UNAUTHORIZED);

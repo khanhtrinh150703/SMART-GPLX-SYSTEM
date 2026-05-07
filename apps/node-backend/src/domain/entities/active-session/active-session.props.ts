@@ -5,7 +5,7 @@ import { IBaseProps } from "@/domain/seedwork/entity.base";
  */
 export interface IActiveSessionAnswer {
     readonly questionId: string;
-    readonly selectedAnswerId: number | null;
+    readonly selectedAnswerIndex: number | null;
     readonly updatedAt: Date;
 }
 
@@ -16,7 +16,8 @@ export interface IActiveSessionProps extends IBaseProps {
     readonly userId: string;
     readonly examId: string;
     currentAnswers: IActiveSessionAnswer[];
+    currentQuestionIndex: number; // Lưu vị trí câu hỏi cuối cùng User đứng
     expiresAt: Date; 
 }
 
-export type CreateActiveSessionProps = Omit<IActiveSessionProps, "id" | "createdAt" | "updatedAt" | "deletedAt">;
+export type CreateActiveSessionProps = Omit<IActiveSessionProps, "id" | "createdAt" | "updatedAt" | "deletedAt" | "currentQuestionIndex">;

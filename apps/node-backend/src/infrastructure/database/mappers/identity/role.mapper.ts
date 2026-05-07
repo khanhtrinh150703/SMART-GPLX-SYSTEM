@@ -1,7 +1,7 @@
 import { Role } from "@/domain/entities/role/role.entity";
 import { Permission } from "@/domain/entities/permission/permission.entity";
 import { IRoleRecord } from "@/infrastructure/persistence/identity/roles.record";
-import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { ISelectionResponseDTO, SelectionResponseDTO } from "@/application/dtos/response/shared/selection.response.dto";
 import { IRoleProps } from "@/domain/entities/role/role.props";
 import { IPermissionProps } from "@/domain/entities/permission/permission.props";
 import { ICachedRole } from "@/shared/master-data";
@@ -57,10 +57,10 @@ export class RoleMapper {
   /**
    * @description Chuyển đổi sang định dạng Selection dùng License Code làm Label (A1, B2...)
    * @param {ICachedRole} entity 
-   * @returns {SelectionResponseDto}
+   * @returns {ISelectionResponseDTO}
    */
-  public static toSelectionResponse(entity: ICachedRole): SelectionResponseDto {
-    return new SelectionResponseDto({
+  public static toSelectionResponse(entity: ICachedRole): ISelectionResponseDTO {
+    return new SelectionResponseDTO({
       value: entity.id!,
       label: entity.name,
       orderIndex: 1,
@@ -70,9 +70,9 @@ export class RoleMapper {
   /**
    * @description Chuyển đổi danh sách vai trò sang định dạng DTO cho các thành phần lựa chọn.
    * @param {ICachedRole[]} entities - Mảng các thực thể vai trò (Role Entities).
-   * @returns {SelectionResponseDto[]} Danh sách DTO dùng cho hiển thị/lựa chọn (Selection List).
+   * @returns {ISelectionResponseDTO[]} Danh sách DTO dùng cho hiển thị/lựa chọn (Selection List).
    */
-  public static toSelectionList(entities: ICachedRole[]): SelectionResponseDto[] {
+  public static toSelectionList(entities: ICachedRole[]): ISelectionResponseDTO[] {
     return entities.map(this.toSelectionResponse);
   }
 }

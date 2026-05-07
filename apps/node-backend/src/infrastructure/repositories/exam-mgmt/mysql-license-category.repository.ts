@@ -64,7 +64,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
 
   public async findByName(name: string): Promise<LicenseCategory | null> {
     const record = await this._prisma.licenseCategory.findFirst({
-      where: { name, deletedAt: null }
+      where: { name  }
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
@@ -77,11 +77,12 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     });
   }
 
-  public async updateLicenseCategory(id: string, category: LicenseCategory): Promise<void> {
-    const persistence = LicenseCategoryMapper.toCreatePersistence(category);
+  public async updateLicenseCategory(category: LicenseCategory): Promise<void> {
+    if(!category.id) return;
+    const persistence = LicenseCategoryMapper.toUpdatePersistence(category);
 
     await this._prisma.licenseCategory.update({
-      where: { id },
+      where: { id: category.id },
       data: persistence
     });
   }

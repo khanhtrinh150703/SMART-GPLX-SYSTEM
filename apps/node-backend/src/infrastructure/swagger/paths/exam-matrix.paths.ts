@@ -1,358 +1,454 @@
-export const examMatrixPaths = {
-    [`/exam-matrices`]: {
-        post: {
-            tags: ['Exam Matrix Management'],
-            summary: 'Tạo mới một ma trận đề thi',
-            operationId: 'createExamMatrix',
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: { $ref: '#/components/schemas/CreateExamMatrixDTO' },
-                    },
-                },
-            },
-            responses: {
-                '200': {
-                    description: 'Tạo ma trận thành công',
-                    content: {
-                        'application/json': {
-                            schema: {
-                                allOf: [
-                                    { $ref: '#/components/schemas/StandardResponse' },
-                                    {
-                                        type: 'object',
-                                        properties: {
-                                            data: { $ref: '#/components/schemas/ExamMatrixResponse' }
-                                        }
-                                    }
-                                ]
-                            },
-                        },
-                    },
-                },
-                '400': {
-                    description: 'Lỗi nghiệp vụ hoặc dữ liệu đầu vào không hợp lệ',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            examples: {
-                                InvalidInput: {
-                                    summary: 'Dữ liệu không hợp lệ',
-                                    value: { success: false, code: 'SYS_400', message: 'Dữ liệu đầu vào không đúng định dạng' }
-                                },
-                                LicenseNotFound: {
-                                    summary: 'Hạng bằng không tồn tại',
-                                    value: { success: false, code: 'LICENSE_NOT_FOUND', message: 'Hạng giấy phép lái xe không tồn tại' }
-                                },
-                                ChapterNotFound: {
-                                    summary: 'Chương học không tồn tại',
-                                    value: { success: false, code: 'CHAPTER_NOT_FOUND', message: 'Một hoặc nhiều chương học không tồn tại trong hệ thống' }
-                                },
-                                DuplicateChapter: {
-                                    summary: 'Trùng lặp chương học',
-                                    value: { success: false, code: 'DUPLICATE_CHAPTER', message: 'Một chương học không được xuất hiện hai lần trong một ma trận' }
-                                },
-                                NoDetails: {
-                                    summary: 'Thiếu chi tiết chương',
-                                    value: { success: false, code: 'MATRIX_NO_DETAILS', message: 'Ma trận phải có ít nhất một chương' }
-                                },
-                                InvalidPercentage: {
-                                    summary: 'Tổng % không bằng 100',
-                                    value: { success: false, code: 'INVALID_MATRIX_PERCENTAGE', message: 'Tổng tỉ trọng các chương phải bằng 100%' }
-                                },
-                                InvalidScore: {
-                                    summary: 'Điểm đạt không hợp lệ',
-                                    value: { success: false, code: 'INVALID_PASSING_SCORE', message: 'Điểm đạt không được lớn hơn tổng số câu hỏi' }
-                                }
-                            }
-                        }
-                    }
-                },
-                '404': {
-                    description: 'Không tìm thấy tài nguyên liên quan',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            examples: {
-                                LicenseNotFound: {
-                                    summary: 'Không thấy hạng bằng',
-                                    value: { success: false, code: 'LICENSE_NOT_FOUND', message: 'Hạng bằng lái không tồn tại' }
-                                },
-                                ChapterNotFound: {
-                                    summary: 'Không thấy chương',
-                                    value: { success: false, code: 'CHAPTER_NOT_FOUND', message: 'Một hoặc nhiều chương cung cấp không tồn tại' }
-                                }
-                            }
-                        }
-                    }
-                },
-                '409': {
-                    description: 'Lỗi nghiệp vụ hoặc dữ liệu đầu vào không hợp lệ',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            examples: {
-                                DuplicateChapter: {
-                                    summary: 'Trùng lặp chương',
-                                    value: { success: false, code: 'DUPLICATE_CHAPTER_IN_MATRIX', message: 'Một chương không được xuất hiện nhiều lần trong ma trận' }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
+import { securityResponses, deleteResponse } from "../swaggerHelpers";
+
+export const exanMatrixPaths = {
+  /**
+   * ==========================================
+   * 1. DANH SÁCH & TẠO MỚI (ROOT)
+   * ==========================================
+   */
+  [`/exam-matrices`]: {
+    get: {
+      tags: ["Exam Matrix (Private)"],
+      summary: "Lấy danh sách ma trận (Dynamic Search)",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: "page", in: "query", schema: { type: "integer" } },
+        { name: "limit", in: "query", schema: { type: "integer" } },
+        { name: "search", in: "query", schema: { type: "string" } },
+        {
+          name: "activeField",
+          in: "query",
+          schema: { type: "string" },
+          description: "Trường lọc động (name, licenseCategoryId)",
         },
+      ],
+      responses: {
+        200: {
+          description: "Thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PaginatedResponse" },
+            },
+          },
+        },
+        ...securityResponses,
+      },
     },
-
-    // ==================== MA TRẬN THEO ID (GET - PUT - DELETE) ====================
-    [`/exam-matrices/{id}`]: {
-        put: {
-            tags: ['Exam Matrix Management'],
-            summary: 'Cập nhật thông tin ma trận',
-            operationId: 'updateExamMatrix',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    name: 'id',
-                    in: 'path',
-                    required: true,
-                    schema: { type: 'string', format: 'uuid' }
-                }
-            ],
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: { $ref: '#/components/schemas/UpdateExamMatrixDTO' },
-                    },
-                },
-            },
-            responses: {
-                '200': {
-                    description: 'Cập nhật thành công',
-                    content: {
-                        'application/json': {
-                            schema: {
-                                allOf: [
-                                    { $ref: '#/components/schemas/StandardResponse' },
-                                    {
-                                        type: 'object',
-                                        properties: {
-                                            data: { $ref: '#/components/schemas/ExamMatrixResponse' }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                },
-                '400': {
-                    description: 'Lỗi dữ liệu cập nhật',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            examples: {
-                                IdRequired: {
-                                    summary: 'Thiếu ID',
-                                    value: { success: false, code: 'ID_REQUIRED', message: 'ID ma trận là bắt buộc' }
-                                },
-                                InvalidPercentage: {
-                                    summary: 'Tổng % không bằng 100',
-                                    value: { success: false, code: 'INVALID_MATRIX_PERCENTAGE', message: 'Tổng tỉ trọng các chương phải bằng 100%' }
-                                },
-                            }
-                        }
-                    }
-                },
-                '404': {
-                    description: 'Không tìm thấy ma trận hoặc chương',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            examples: {
-                                MatrixNotFound: {
-                                    summary: 'Không thấy ma trận',
-                                    value: { success: false, code: 'MATRIX_NOT_FOUND', message: 'Không tìm thấy ma trận đề thi yêu cầu' }
-                                },
-                                ChapterNotFound: {
-                                    summary: 'Không thấy chương',
-                                    value: { success: false, code: 'CHAPTER_NOT_FOUND', message: 'Chương cập nhật không tồn tại' }
-                                }
-                            }
-                        }
-                    }
-                },
-                '409': {
-                    description: 'Lỗi nghiệp vụ hoặc dữ liệu đầu vào không hợp lệ',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            examples: {
-                                DuplicateChapter: {
-                                    summary: 'Trùng lặp chương',
-                                    value: { success: false, code: 'DUPLICATE_CHAPTER_IN_MATRIX', message: 'Một chương không được xuất hiện nhiều lần trong ma trận' }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
+    post: {
+      tags: ["Exam Matrix (Private)"],
+      summary: "Tạo mới ma trận đề thi",
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/CreateExamMatrixRequest" },
+          },
         },
-
-        get: {
-            tags: ['Exam Matrix Management'],
-            summary: 'Lấy thông tin chi tiết Ma trận',
-            operationId: 'getExamMatrixById',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    name: 'id',
-                    in: 'path',
-                    required: true,
-                    description: 'ID của ma trận cần lấy thông tin',
-                    schema: { type: 'string', format: 'uuid' }
-                }
-            ],
-            responses: {
-                '200': {
-                    description: 'Lấy dữ liệu thành công',
-                    content: {
-                        'application/json': {
-                            schema: {
-                                allOf: [
-                                    { $ref: '#/components/schemas/StandardResponse' },
-                                    { type: 'object', properties: { data: { $ref: '#/components/schemas/ExamMatrixResponse' } } }
-                                ]
-                            }
-                        }
-                    }
-                },
-                '400': {
-                    description: 'Lỗi tham số đầu vào',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            example: {
-                                success: false,
-                                code: 'ID_REQUIRED',
-                                statusCode: 400,
-                                message: 'ID ma trận là bắt buộc và phải đúng định dạng UUID'
-                            }
-                        }
-                    }
-                },
-                '404': {
-                    description: 'Không tìm thấy ma trận',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            example: {
-                                success: false,
-                                code: 'MATRIX_NOT_FOUND',
-                                statusCode: 404,
-                                message: 'Không tìm thấy ma trận đề thi yêu cầu'
-                            }
-                        }
-                    }
-                }
-            }
+      },
+      responses: {
+        201: {
+          description: "Tạo thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ExamMatrixSingleResponse" },
+            },
+          },
         },
+        400: {
+          description: "Lỗi Xác thực & Nghiệp vụ (101 -> 114)",
+          content: {
+            "application/json": {
+              examples: {
+                // Nhóm 1xx: Validation cơ bản
+                missingFields: {
+                  value: {
+                    success: false,
+                    code: "MTX_111",
+                    message:
+                      "Thiếu các trường bắt buộc (name, licenseCategoryId, totalQuestions, ...)",
+                  },
+                },
+                nameReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_101",
+                    message: "Tên ma trận không được trống",
+                  },
+                },
+                nameLong: {
+                  value: {
+                    success: false,
+                    code: "MTX_102",
+                    message: "Tên ma trận quá dài (max 100)",
+                  },
+                },
+                licenseReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_110",
+                    message: "Thiếu hạng bằng lái liên quan",
+                  },
+                },
 
-        delete: {
-            tags: ['Exam Matrix Management'],
-            summary: 'Xóa thông minh Ma trận (Smart Delete)',
-            operationId: 'deleteExamMatrix',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    name: 'id',
-                    in: 'path',
-                    required: true,
-                    description: 'ID của ma trận cần xóa',
-                    schema: { type: 'string', format: 'uuid' }
-                }
-            ],
-            responses: {
-                '200': {
-                    description: 'Xóa thành công',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/StandardResponse' }
-                        }
-                    }
+                // Nhóm 1xx: Thông số kỹ thuật
+                totalInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_107",
+                    message: "Tổng số câu hỏi không hợp lệ (phải > 0)",
+                  },
                 },
-                '400': {
-                    description: 'Lỗi tham số đầu vào',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            example: {
-                                success: false,
-                                code: 'ID_REQUIRED',
-                                statusCode: 400,
-                                message: 'ID ma trận không được để trống'
-                            }
-                        }
-                    }
+                scoreInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_105",
+                    message: "Điểm đạt không hợp lệ (phải > 0)",
+                  },
                 },
-                '404': {
-                    description: 'Không tìm thấy ma trận để xóa',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            example: {
-                                success: false,
-                                code: 'MATRIX_NOT_FOUND',
-                                statusCode: 404,
-                                message: 'Ma trận không tồn tại để thực hiện thao tác xóa'
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                scoreHigh: {
+                  value: {
+                    success: false,
+                    code: "MTX_112",
+                    message: "Điểm đạt vượt quá tổng số câu",
+                  },
+                },
+                durationInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_108",
+                    message: "Thời gian làm bài không hợp lệ (phải > 0)",
+                  },
+                },
+                minCritInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_113",
+                    message: "Số câu điểm liệt không hợp lệ",
+                  },
+                },
+                isDefInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_114",
+                    message: "Giá trị mặc định phải là Boolean",
+                  },
+                },
+
+                // Nhóm 1xx: Logic Details (Chương & Tỉ lệ)
+                noDetails: {
+                  value: {
+                    success: false,
+                    code: "MTX_103",
+                    message: "Ma trận không có chi tiết cấu trúc",
+                  },
+                },
+                chapterReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_109",
+                    message: "Thiếu ID chương trong danh sách chi tiết",
+                  },
+                },
+                percentInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_104",
+                    message:
+                      "Tổng tỉ lệ phần trăm không bằng 100% hoặc tỉ lệ chương < 0",
+                  },
+                },
+                dupChapter: {
+                  value: {
+                    success: false,
+                    code: "MTX_106",
+                    message: "Trùng lặp chương trong cùng một ma trận",
+                  },
+                },
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
     },
+  },
 
-    // ==================== KHÔI PHỤC MA TRẬN ====================
-    [`/exam-matrices/{id}/restore`]: {
-        patch: {
-            tags: ['Exam Matrix Management'],
-            summary: 'Khôi phục Ma trận đã xóa mềm',
-            operationId: 'restoreExamMatrix',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    name: 'id',
-                    in: 'path',
-                    required: true,
-                    schema: { type: 'string', format: 'uuid' }
-                }
-            ],
-            responses: {
-                '200': {
-                    description: 'Khôi phục thành công',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/StandardResponse' }
-                        }
-                    }
+  /**
+   * ==========================================
+   * 2. CHI TIẾT & CẬP NHẬT (ID PATH)
+   * ==========================================
+   */
+  [`/exam-matrices/{id}`]: {
+    get: {
+      tags: ["Exam Matrix (Private)"],
+      summary: "Chi tiết ma trận theo ID",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ExamMatrixSingleResponse" },
+            },
+          },
+        },
+        404: {
+          description: "Không tìm thấy",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "MTX_404",
+                message: "Không tìm thấy ma trận yêu cầu",
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+    put: {
+      tags: ["Exam Matrix (Private)"],
+      summary: "Cập nhật ma trận",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/CreateExamMatrixRequest" },
+          },
+        },
+      },
+      responses: {
+        200: { description: "Cập nhật thành công" },
+        400: {
+          description: "Lỗi dữ liệu cập nhật (100 -> 114)",
+          content: {
+            "application/json": {
+              examples: {
+                idReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_100",
+                    message: "Thiếu ID ma trận để cập nhật",
+                  },
                 },
-                '400': {
-                    description: 'Lỗi khôi phục (Ví dụ: Đã có ma trận khác cho hạng bằng này)',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/ErrorResponse' },
-                            example: {
-                                success: false,
-                                code: 'MATRIX_RESTORE_FAILED_DUPLICATE',
-                                message: 'Đã tồn tại ma trận hoạt động cho hạng bằng này, không thể khôi phục.'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+                // Nhóm 1xx: Validation cơ bản
+                missingFields: {
+                  value: {
+                    success: false,
+                    code: "MTX_111",
+                    message:
+                      "Thiếu các trường bắt buộc (name, licenseCategoryId, totalQuestions, ...)",
+                  },
+                },
+                nameReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_101",
+                    message: "Tên ma trận không được trống",
+                  },
+                },
+                nameLong: {
+                  value: {
+                    success: false,
+                    code: "MTX_102",
+                    message: "Tên ma trận quá dài (max 100)",
+                  },
+                },
+                licenseReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_110",
+                    message: "Thiếu hạng bằng lái liên quan",
+                  },
+                },
+
+                // Nhóm 1xx: Thông số kỹ thuật
+                totalInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_107",
+                    message: "Tổng số câu hỏi không hợp lệ (phải > 0)",
+                  },
+                },
+                scoreInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_105",
+                    message: "Điểm đạt không hợp lệ (phải > 0)",
+                  },
+                },
+                scoreHigh: {
+                  value: {
+                    success: false,
+                    code: "MTX_112",
+                    message: "Điểm đạt vượt quá tổng số câu",
+                  },
+                },
+                durationInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_108",
+                    message: "Thời gian làm bài không hợp lệ (phải > 0)",
+                  },
+                },
+                minCritInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_113",
+                    message: "Số câu điểm liệt không hợp lệ",
+                  },
+                },
+                isDefInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_114",
+                    message: "Giá trị mặc định phải là Boolean",
+                  },
+                },
+
+                // Nhóm 1xx: Logic Details (Chương & Tỉ lệ)
+                noDetails: {
+                  value: {
+                    success: false,
+                    code: "MTX_103",
+                    message: "Ma trận không có chi tiết cấu trúc",
+                  },
+                },
+                chapterReq: {
+                  value: {
+                    success: false,
+                    code: "MTX_109",
+                    message: "Thiếu ID chương trong danh sách chi tiết",
+                  },
+                },
+                percentInv: {
+                  value: {
+                    success: false,
+                    code: "MTX_104",
+                    message:
+                      "Tổng tỉ lệ phần trăm không bằng 100% hoặc tỉ lệ chương < 0",
+                  },
+                },
+                dupChapter: {
+                  value: {
+                    success: false,
+                    code: "MTX_106",
+                    message: "Trùng lặp chương trong cùng một ma trận",
+                  },
+                },
+              },
+            },
+          },
+        },
+        404: {
+          description: "Không tìm thấy",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "MTX_404",
+                message: "Không tìm thấy ma trận để sửa",
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+    delete: {
+      tags: ["Exam Matrix (Private)"],
+      summary: "Xóa ma trận (Smart Delete)",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        ...deleteResponse,
+        404: {
+          description: "Không tìm thấy",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "MTX_404",
+                message: "Ma trận không tồn tại để xóa",
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+  },
+
+  /**
+   * ==========================================
+   * 3. KHÔI PHỤC (RESTORE)
+   * ==========================================
+   */
+  [`/exam-matrices/{id}/restore`]: {
+    patch: {
+      tags: ["Exam Matrix (Private)"],
+      summary: "Khôi phục ma trận đã xóa mềm",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: { description: "Khôi phục thành công" },
+        404: {
+          description: "Không tìm thấy",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "MTX_404",
+                message: "Ma trận không tồn tại trong thùng rác",
+              },
+            },
+          },
+        },
+        409: {
+          description: "Xung đột khi khôi phục",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "MTX_409",
+                message: "Khôi phục thất bại do trùng tên đã tồn tại",
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+  },
 };
