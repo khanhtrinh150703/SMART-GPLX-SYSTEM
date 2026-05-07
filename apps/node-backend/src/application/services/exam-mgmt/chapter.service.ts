@@ -111,7 +111,6 @@ export class ChapterService implements IChapterService {
     return ChapterMapper.toResponse(chapter);
   }
 
-
   /**
    * @description Thực hiện xóa chương học dựa trên ràng buộc dữ liệu.
    * @param {string} id - ID của chương học cần xóa. (The ID of the chapter to be deleted.)

@@ -7,6 +7,9 @@ import { questionSchemas } from './question.schemas';
 import { importSchemas } from './import.schemas';
 import { examMatrixSchemas } from './exam-matrix.schemas';
 import { examSchemas } from './exam.schemas';
+import { roleSchemas } from './role.schema';
+import { activeSessionSchemas } from './active-session.schemas';
+import { examAttemptSchemas } from './exam-attempt.schema';
 
 export const schemas = {
   ...commonSchemas,
@@ -19,4 +22,7 @@ export const schemas = {
   ...importSchemas,
   ...examMatrixSchemas,
   ...examSchemas,
+  ...roleSchemas,
+  ...activeSessionSchemas,
+  ...examAttemptSchemas,
 };

@@ -36,13 +36,14 @@ export class ResetPasswordRequestDTO implements IResetPasswordInputDTO {
     if (!data) {
       throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
-    
-    // 1. Kiểm tra các trường bắt buộc
-    if (!data.email || !data.otp || !data.newPassword) {
-      throw new AppError(ErrorCode.AUTH.MISSING_FIELDS);
-    }
 
-    // 2. Kiểm tra định dạng OTP (Giả định 6 ký tự số)
+    // 1. Kiểm tra các trường bắt buộc
+    if (!data.email) throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
+    if (!data.otp) throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
+    if (!data.newPassword)
+      throw new AppError(ErrorCode.AUTH.NEW_PASSWORD_REQUIRED);
+
+    // 2. Kiểm tra định dạng OTP (Giả định 6 ký tự số)F
     if (data.otp.trim().length !== 6) {
       throw new AppError(ErrorCode.AUTH.OTP_INVALID);
     }
