@@ -1,91 +1,185 @@
 export const questionSchemas = {
-    // Định nghĩa mức độ khó (Dễ/TB/Khó)
-    DifficultySchema: {
-        type: 'object',
+  /**
+   * @description Schema cho từng đáp án đơn lẻ
+   */
+  AnswerResponseDTO: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid", description: "ID của đáp án" },
+      content: {
+        type: "string",
+        example: "Giảm tốc độ, chú ý quan sát và nhường đường.",
+      },
+      isCorrect: {
+        type: "boolean",
+        example: true,
+        description: "Đây có phải đáp án đúng không",
+      },
+      imageUrl: {
+        type: "string",
+        format: "url",
+        nullable: true,
+        example: null,
+      },
+    },
+  },
+
+  /**
+   * @description Schema câu hỏi cơ bản (Dành cho người dùng/thí sinh)
+   */
+  QuestionResponseDTO: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      indexNumber: { type: "integer", example: 1 },
+      chapterId: { type: "string", format: "uuid" },
+      content: { type: "string", example: "Câu hỏi về quy tắc giao thông..." },
+      imageUrl: { type: "string", format: "url", nullable: true },
+      isCritical: {
+        type: "boolean",
+        example: false,
+        description: "Câu điểm liệt",
+      },
+      difficulty: {
+        type: "object",
         properties: {
-            level: { type: 'integer', example: 2, description: '1: Dễ, 2: TB, 3: Khó' },
-            label: { type: 'string', example: 'Trung bình' },
+          level: { type: "integer", example: 1 },
+          label: { type: "string", example: "Dễ" },
         },
+      },
+      status: { type: "string", enum: ["active", "hidden", "draft"] },
+      answers: {
+        type: "array",
+        items: { $ref: "#/components/schemas/AnswerResponseDTO" },
+      },
+      licenseCategoryIds: {
+        type: "array",
+        items: { type: "string" },
+        example: ["B1", "B2"],
+      },
     },
+  },
 
-    // Định nghĩa Đáp án trả về
-    AnswerResponseDTO: {
-        type: 'object',
+  /**
+   * @description Schema câu hỏi dành cho Admin (Có thêm thông tin quản trị)
+   */
+  QuestionAdminResponseDTO: {
+    allOf: [
+      { $ref: "#/components/schemas/QuestionResponseDTO" },
+      {
+        type: "object",
         properties: {
-            id: { type: 'string', format: 'uuid', example: 'ans-uuid-123' },
-            content: { type: 'string', example: 'Gồm ô tô, máy kéo, rơ moóc...' },
-            imageUrl: { type: 'string', nullable: true, example: null },
-            isCorrect: { type: 'boolean', example: true },
+          chapterName: { type: "string", example: "Khái niệm và quy tắc" },
+          licenseCategoryNames: {
+            type: "array",
+            items: { type: "string" },
+            example: ["Hạng B1", "Hạng B2"],
+          },
+          createdAt: { type: "string", format: "date-time" },
+          deletedAt: { type: "string", format: "date-time", nullable: true },
         },
-    },
+      },
+    ],
+  },
 
-    // Định nghĩa Câu hỏi trả về
-    QuestionResponseDTO: {
-        type: 'object',
+  /**
+   * @description Schema tóm tắt phục vụ làm đề thi (Exam Pool)
+   */
+  ExamQuestionSummaryResponseDTO: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      content: { type: "string" },
+      chapterName: { type: "string" },
+      chapterOrder: { type: "integer" },
+      isCritical: { type: "boolean" },
+      indexNumber: { type: "integer" },
+      licenseIds: { type: "array", items: { type: "string" } },
+      licenseCategoryNames: { type: "array", items: { type: "string" } },
+    },
+  },
+
+  /**
+   * @description Request Schema khi tạo mới câu hỏi (Multipart Form)
+   */
+  CreateQuestionRequest: {
+    type: "object",
+    required: [
+      "chapterId",
+      "content",
+      "answers",
+      "licenseCategoryIds",
+      "isCritical",
+    ],
+    properties: {
+      chapterId: { type: "string", format: "uuid" },
+      content: { type: "string", minLength: 10 },
+      answers: {
+        type: "string",
+        description:
+          'Mảng JSON String chứa các đáp án. VD: \'[{"content": "...", "isCorrect": true}]\'',
+      },
+      licenseCategoryIds: { type: "array", items: { type: "string" } },
+      isCritical: { type: "boolean" },
+      difficultyLevel: { type: "integer", default: 1 },
+      questionImage: {
+        type: "string",
+        format: "binary",
+        description: "File ảnh minh họa",
+      },
+    },
+  },
+
+  /**
+   * @description Request Schema khi cập nhật câu hỏi
+   */
+  UpdateQuestionRequest: {
+    allOf: [
+      { $ref: "#/components/schemas/CreateQuestionRequest" },
+      {
+        type: "object",
         properties: {
-            id: { type: 'string', format: 'uuid' },
-            chapterId: { type: 'string', format: 'uuid' },
-            content: { type: 'string', example: 'Khái niệm phương tiện giao thông cơ giới?' },
-            imageUrl: { type: 'string', nullable: true },
-            isCritical: { type: 'boolean', example: true },
-            difficulty: { $ref: '#/components/schemas/DifficultySchema' },
-            answers: {
-                type: Array,
-                items: { $ref: '#/components/schemas/AnswerResponseDTO' },
-            },
-            licenseCategoryIds: {
-                type: 'array',
-                items: { type: 'string', format: 'uuid' },
-            },
+          indexNumber: { type: "integer" },
+          status: { type: "string", enum: ["active", "hidden", "draft"] },
         },
-    },
+      },
+    ],
+  },
 
-    QuestionErrorResponse: {
-        type: 'object',
-        properties: {
-            success: { type: 'boolean', example: false },
-            code: {
-                type: 'string',
-                description: 'Mã lỗi nghiệp vụ (e.g., QST_001, QST_404)',
-                example: 'QST_001'
-            },
-            message: {
-                type: 'string',
-                example: 'ID chương lý thuyết không được để trống.'
-            },
-            details: { type: 'object', nullable: true }
-        }
-    },
+  // --- WRAPPERS (CẤU TRÚC PHẢN HỒI CHUẨN) ---
 
-    CreateUpdateQuestionDTO: {
-        type: 'object',
-        required: ['chapterId', 'content', 'difficultyLevel', 'licenseCategoryIds', 'answers'],
+  QuestionSingleResponse: {
+    allOf: [
+      { $ref: "#/components/schemas/StandardResponse" },
+      {
+        type: "object",
         properties: {
-            chapterId: { type: 'string', format: 'uuid', example: 'chapter-uuid' },
-            content: { type: 'string', minLength: 10, example: 'Khái niệm phương tiện giao thông cơ giới?' },
-            imageUrl: { type: 'string', format: 'uri', nullable: true },
-            isCritical: { type: 'boolean', default: false },
-            difficultyLevel: { type: 'integer', enum: [1, 2, 3] },
-            licenseCategoryIds: {
-                type: 'array',
-                minItems: 1,
-                items: { type: 'string' },
-                example: ['license-uuid-a1']
-            },
-            answers: {
-                type: 'array',
-                minItems: 2,
+          data: { $ref: "#/components/schemas/QuestionAdminResponseDTO" },
+        },
+      },
+    ],
+  },
+
+  QuestionListResponse: {
+    allOf: [
+      { $ref: "#/components/schemas/StandardResponse" },
+      {
+        type: "object",
+        properties: {
+          data: {
+            type: "object",
+            properties: {
+              data: {
+                type: "array",
                 items: {
-                    type: 'object',
-                    required: ['content', 'isCorrect'],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        content: { type: 'string' },
-                        isCorrect: { type: 'boolean' },
-                        imageUrl: { type: 'string', nullable: true }
-                    }
-                }
-            }
-        }
-    }
+                  $ref: "#/components/schemas/QuestionAdminResponseDTO",
+                },
+              },
+              meta: { $ref: "#/components/schemas/PaginationMeta" },
+            },
+          },
+        },
+      },
+    ],
+  },
 };

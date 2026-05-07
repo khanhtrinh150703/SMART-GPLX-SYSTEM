@@ -43,6 +43,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.PASSWORD_TOO_WEAK]: 'Mật khẩu phải từ 8 ký tự trở lên và bao gồm chữ hoa, chữ thường, số.',
     [ErrorCode.AUTH.PASSWORD_MISMATCH]: 'Mật khẩu xác nhận không khớp.',
     [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
+    [ErrorCode.AUTH.EMAIL_REQUIRED]: 'Vui lòng nhập địa chỉ email.',
+    [ErrorCode.AUTH.OTP_REQUIRED]: 'Vui lòng nhập mã xác thực OTP.',
+    [ErrorCode.AUTH.NEW_PASSWORD_REQUIRED]: 'Vui lòng nhập mật khẩu mới.',
+
 
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',
@@ -165,7 +169,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.CHAPTER.NOT_FOUND]: 'Không tìm thấy chương lý thuyết yêu cầu.',
     [ErrorCode.CHAPTER.NAME_ALREADY_EXISTS]: 'Tên chương này đã tồn tại trong hệ thống.',
     [ErrorCode.CHAPTER.CODE_ALREADY_EXISTS]: 'Mã chương (Code) này đã được sử dụng.',
-    [ErrorCode.CHAPTER.HAS_RELATED_QUESTIONS]: 'Không thể xóa chương này vì đang có dữ liệu câu hỏi liên quan.',
+    [ErrorCode.CHAPTER.IS_IN_USE]: 'Không thể xóa chương này vì đang có dữ liệu liên quan.',
     [ErrorCode.CHAPTER.CREATE_FAILED]: 'Quá trình tạo mới chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
@@ -283,6 +287,9 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.SESSION.INVALID_QUESTION_INDEX]: 'Vị trí câu hỏi hiện tại không hợp lệ.',
     [ErrorCode.SESSION.CLIENT_TIMESTAMP_REQUIRED]: 'Thời gian gửi yêu cầu không được để trống.',
     [ErrorCode.SESSION.SESSION_ID_REQUIRED]: 'Mã phiên làm việc (session_id) không được để trống.',
+    [ErrorCode.SESSION.INVALID_TIME_SPENT]: 'Thời gian làm bài không hợp lệ.',
+    [ErrorCode.SESSION.INVALID_TIME_REMAINING]: 'Thời gian còn lại không hợp lệ.',
+    [ErrorCode.SESSION.INVALID_FINISHED_DATE]: 'Định dạng thời gian kết thúc không chính xác.',
 
     [ErrorCode.SESSION.NOT_FOUND]: 'Không tìm thấy thông tin phiên thi hiện tại.',
     [ErrorCode.SESSION.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp trước đó, không thể thay đổi đáp án.',

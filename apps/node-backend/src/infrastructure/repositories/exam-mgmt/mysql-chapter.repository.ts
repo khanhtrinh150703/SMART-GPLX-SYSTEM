@@ -54,7 +54,7 @@ export class MySQLChapterRepository implements IChapterRepository {
 
   public async findByName(name: string): Promise<Chapter | null> {
     const record = await this._prisma.chapter.findFirst({
-      where: { name, deletedAt: null }
+      where: { name }
     });
     // Đã fix: Sử dụng helper để check null trước khi gọi Mapper
     return this._mapToDomain(record);

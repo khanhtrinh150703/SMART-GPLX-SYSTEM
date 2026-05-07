@@ -52,7 +52,7 @@ export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
     if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
     // 1. Kiểm tra các trường định danh và cơ bản
-    if (!data.id || data.id.trim() === '') {
+    if (!data.id || data.id.trim() === "") {
       throw new AppError(ErrorCode.MATRIX.ID_REQUIRED);
     }
 
@@ -77,7 +77,10 @@ export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
       throw new AppError(ErrorCode.MATRIX.INVALID_DURATION);
     }
 
-    if (typeof data.minCriticalQuestions !== 'number' || data.minCriticalQuestions < 0) {
+    if (
+      typeof data.minCriticalQuestions !== "number" ||
+      data.minCriticalQuestions < 0
+    ) {
       throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_INVALID);
     }
 
@@ -88,7 +91,7 @@ export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
 
     let totalPercent = 0;
     for (const detail of data.details) {
-      if (!detail.chapterId || typeof detail.percentage !== 'number') {
+      if (!detail.chapterId || typeof detail.percentage !== "number") {
         throw new AppError(ErrorCode.MATRIX.CHAPTER_ID_REQUIRED);
       }
 
@@ -104,8 +107,19 @@ export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
     }
 
     // 4. Kiểm tra kiểu boolean cho isDefault
-    if (typeof data.isDefault !== 'boolean') {
+    if (typeof data.isDefault !== "boolean") {
       throw new AppError(ErrorCode.MATRIX.IS_DEFAULT_INVALID);
+    }
+
+    // 5. Check trùng lặp chương (Fix MTX_106)
+    const chapterIds = data.details.map((d) => d.chapterId);
+    if (new Set(chapterIds).size !== chapterIds.length) {
+      throw new AppError(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
+    }
+
+    // 6. Check logic câu điểm liệt (Fix MTX_113)
+    if (data.minCriticalQuestions > data.totalQuestions) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_INVALID);
     }
   }
 }

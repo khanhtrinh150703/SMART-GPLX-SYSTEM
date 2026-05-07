@@ -6,8 +6,10 @@ import { chapterPaths } from './chapter.paths';
 import { questionPaths } from './question.paths';
 import { selectionPaths } from './selection.paths';
 import { importPaths } from './import.paths';
-import { examMatrixPaths } from './exam-matrix.paths';
+import { exanMatrixPaths } from './exam-matrix.paths';
 import { examPaths } from './exam.paths';
+import { activeSessionPaths } from './active-session.paths';
+import { examAttemptPaths } from './exam-attempt.paths';
 
 /**
  * @description Danh sách các module đã được định nghĩa.
@@ -21,8 +23,10 @@ const modules: SwaggerPaths[] = [
   questionPaths,
   selectionPaths,
   importPaths,
-  examMatrixPaths,
+  exanMatrixPaths,
   examPaths,
+  activeSessionPaths,
+  examAttemptPaths,
 ];
 
 /**

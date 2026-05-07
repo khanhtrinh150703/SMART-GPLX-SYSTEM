@@ -163,20 +163,13 @@ export class LicenseCategoryService implements ILicenseCategoryService {
         }
 
         // 2. Kiểm tra xem có đang thực sự bị xóa không
-        // (Lưu ý: Domain Entity LicenseCategory cần có getter cho deletedAt hoặc prop tương đương)
         // Nếu bản ghi chưa xóa thì không cần restore
         if (!category.isDeleted()) {
             throw new AppError(ErrorCode.LICENSE.ALREADY_EXISTS);
         }
 
-        // 3. QUAN TRỌNG: Kiểm tra trùng tên với các bản ghi đang Active
-        const existingActive = await this._repo.findByName(category.name);
-        if (existingActive) {
-            throw new AppError(ErrorCode.LICENSE.ALREADY_EXISTS);
-        }
-
         category.restore();
-        // 4. Thực hiện khôi phục
+        // 3. Thực hiện khôi phục
         await this._repo.restore(id);
         this._cacheService.refresh();
         return LicenseCategoryMapper.toResponse(category);

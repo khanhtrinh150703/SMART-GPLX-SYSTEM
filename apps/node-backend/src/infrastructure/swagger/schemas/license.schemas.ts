@@ -1,85 +1,134 @@
+/**
+ * @description Swagger configuration for License Categories Module
+ * Project: Smart-GPLX-System
+ * Role: Senior Backend Architect
+ */
+
 export const licenseSchemas = {
-  // --- INPUT DTOs ---
-  CreateLicenseCategoryDTO: {
-    type: 'object',
-    required: ['name', 'description', 'minAge'],
+  // --- BASE WRAPPER ---
+  StandardResponse: {
+    type: "object",
     properties: {
-      name: {
-        type: 'string',
-        example: 'A1',
-        description: 'Tên hạng bằng lái (Viết hoa và số)'
+      success: { type: "boolean", example: true },
+      code: { type: "string", example: "SUCCESS" },
+      statusCode: { type: "number", example: 200 },
+      message: { type: "string", example: "Thao tác thành công" },
+      permission: {
+        type: "string",
+        example: "licenses:manage",
+        description: "Chỉ xuất hiện trong lỗi 403",
       },
-      minAge: {
-        type: 'integer',
-        example: 18,
-        description: 'Độ tuổi tối thiểu để được cấp bằng'
+    },
+  },
+
+  // --- CORE DOMAIN MODEL ---
+  LicenseCategory: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string",
+        format: "uuid",
+        example: "550e8400-e29b-41d4-a716-446655440000",
+      },
+      name: {
+        type: "string",
+        description: "Tên hạng bằng lái (VD: A1, B2, C)",
+        example: "B2",
       },
       description: {
-        type: 'string',
-        example: 'Xe mô tô hai bánh có dung tích xi-lanh đến 125 cm3',
-        description: 'Mô tả chi tiết về phạm vi của hạng bằng'
+        type: "string",
+        description: "Mô tả chi tiết về hạng bằng",
+        example: "Xe ô tô chở người đến 9 chỗ ngồi...",
+      },
+      minAge: {
+        type: "number",
+        description: "Độ tuổi tối thiểu để thi hạng này",
+        example: 18,
+      },
+      orderIndex: {
+        type: "number",
+        description: "Thứ tự hiển thị",
+        example: 1,
+      },
+      createdAt: { type: "string", format: "date-time" },
+      updatedAt: { type: "string", format: "date-time" },
+      deletedAt: { type: "string", format: "date-time", nullable: true },
+    },
+  },
+
+  // --- INPUT DTOs (Bám sát hàm validate) ---
+  CreateLicenseCategoryDTO: {
+    type: "object",
+    required: ["name", "description", "minAge"],
+    properties: {
+      name: {
+        type: "string",
+        maxLength: 10,
+        example: "A1",
+        description:
+          "Bắt buộc (LIC_101), Max 10 ký tự (LIC_102), Đúng định dạng (LIC_103)",
+      },
+      description: {
+        type: "string",
+        maxLength: 500,
+        description: "Bắt buộc (LIC_106), Max 500 ký tự (LIC_107)",
+      },
+      minAge: {
+        type: "number",
+        minimum: 18,
+        default: 18,
+        description: "Bắt buộc (LIC_104), Tối thiểu 18 tuổi (LIC_105)",
+      },
+      orderIndex: {
+        type: "number",
+        minimum: 0,
+        default: 1,
+        description: "Không được âm (LIC_108)",
       },
     },
   },
 
   UpdateLicenseCategoryDTO: {
-    type: 'object',
+    type: "object",
+    required: ["id", "name", "description", "minAge", "orderIndex"],
     properties: {
-      name: { type: 'string', example: 'A1' },
-      minAge: { type: 'integer', example: 18 },
-      description: { type: 'string', example: 'Mô tả đã được cập nhật mới' },
+      id: { type: "string", format: "uuid", description: "Bắt buộc (LIC_100)" },
+      name: { type: "string", maxLength: 10 },
+      description: { type: "string", maxLength: 500 },
+      minAge: { type: "number", minimum: 18 },
+      orderIndex: { type: "number", minimum: 0 },
     },
   },
 
-  // --- DATA OBJECT (Phần "ruột" của data) ---
-  LicenseCategoryDTO: {
-    type: 'object',
-    properties: {
-      id: { type: 'string', format: 'uuid', example: 'aca0ad33-59bf-4d9f-b21d-6be1bc7b7c57' },
-      name: { type: 'string', example: 'A1' },
-      minAge: { type: 'integer', example: 18 },
-      description: { type: 'string', example: 'Cấp cho người lái xe mô tô hai bánh...' },
-      createdAt: { type: 'string', format: 'date-time', example: '2026-04-06T04:16:01.920Z' },
-      updatedAt: { type: 'string', format: 'date-time' },
-    },
-  },
-
-  // --- RESPONSES (Cấu trúc trả về đầy đủ) ---
+  // --- RESPONSES ---
   LicenseCategoryResponse: {
     allOf: [
-      { $ref: '#/components/schemas/StandardResponse' }, // Chứa success, code, statusCode, message
+      { $ref: "#/components/schemas/StandardResponse" },
       {
-        type: 'object',
+        type: "object",
         properties: {
-          data: { $ref: '#/components/schemas/LicenseCategoryDTO' }, // Trả về 1 object đơn lẻ
+          data: { $ref: "#/components/schemas/LicenseCategory" },
         },
       },
     ],
   },
+
   LicenseCategoryListResponse: {
     allOf: [
-      { $ref: '#/components/schemas/StandardResponse' },
+      { $ref: "#/components/schemas/StandardResponse" },
       {
-        type: 'object',
+        type: "object",
         properties: {
           data: {
-            type: 'object',
+            type: "object",
             properties: {
               data: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/LicenseCategoryDTO' },
+                type: "array",
+                items: { $ref: "#/components/schemas/LicenseCategory" },
               },
-              meta: {
-                type: 'object',
-                properties: {
-                  total: { type: 'integer', example: 100 },
-                  page: { type: 'integer', example: 1 },
-                  limit: { type: 'integer', example: 10 },
-                  totalPages: { type: 'integer', example: 10 },
-                },
-              },
-            } // Đừng quên đóng ngoặc properties ở đây nhé
-          }
+              meta: { $ref: "#/components/schemas/PaginationMeta" },
+            },
+          },
         },
       },
     ],
