@@ -7,10 +7,11 @@ export class QuestionExcelMapper {
   public static toRawDto(row: Row): IRawQuestion {
     const getCell = (col: number) => row.getCell(col).text?.toString().trim() || '';
 
-    // Logic parse linh hoạt cho isCritical
     const isCriticalRaw = this.TRUTHY_VALUES.includes(getCell(6).toLowerCase());
 
-    // Thu thập câu trả lời (Cột 8-15)
+    const rawLicenseValue = getCell(4); // Lấy giá trị gốc từ cột 4
+    const licenseCategoryArray = rawLicenseValue.split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+
     const rawAnswers = [];
     for (let i = 0; i < 4; i++) {
       const text = getCell(8 + i * 2);
@@ -24,7 +25,7 @@ export class QuestionExcelMapper {
       indexNumber: Number(getCell(1)) || 0,
       content: getCell(2),
       chapter: getCell(3),
-      licenseCategory: getCell(4).split(' ').map(s => s.trim()), 
+      licenseCategory: licenseCategoryArray, // Dùng biến đã log ở trên
       difficultyLevel: Number(getCell(5)) || 1,
       isCriticalRaw,
       questionImage: getCell(7) || undefined,

@@ -7,6 +7,26 @@ const router = Router();
 const examController = container.resolve('examController') as ExamController;
 
 /**
+ * @route   GET /api/v1/exams/list
+ * @desc    Truy vấn danh sách bài thi cho người dùng (Phân trang & Bộ lọc).
+ * @access  Public 
+ */
+router.get(
+    '/list', 
+    examController.getExams
+);
+
+/**
+ * @route   GET /api/v1/exams/detail/:id
+ * @desc    Lấy chi tiết và câu hỏi để User làm bài.
+ * @access  Public 
+ */
+router.get(
+    '/detail/:id', 
+    examController.getDetail 
+);
+
+/**
  * @description Yêu cầu xác thực JWT cho toàn bộ các tài nguyên về Đề thi.
  * @access Private
  */

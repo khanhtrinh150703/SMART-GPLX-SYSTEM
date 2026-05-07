@@ -1,24 +1,14 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import unzipper from 'unzipper';
 import { IZipService } from '@/domain/interfaces/services/integration/i-zip.service';
-import { STORAGE_CONFIG } from '@/shared/config/storage.config';
 import { QUEUE_CONFIG } from '@/shared/config/queue.config';
 
 /**
- * @description Dịch vụ xử lý giải nén file ZIP và dọn dẹp hệ thống file.
- * Nằm ở tầng Infrastructure để cách ly logic I/O (File System) khỏi tầng Application.
+ * @class ZipService
+ * @description Dịch vụ hạ tầng (Infrastructure Service) chuyên trách các thao tác giải nén tệp ZIP và quản trị tệp tin tạm thời.
+ * @principle Infrastructure Isolation - Cách ly hoàn toàn các logic tương tác trực tiếp với hệ thống tệp.
  */
 export class ZipService implements IZipService {
-
-  /**
-   * @description Lấy đường dẫn thư mục giải nén dựa trên ID của Job.
-   * @param {string} jobId - ID của tiến trình Import.
-   * @returns {string} Đường dẫn tuyệt đối đến thư mục giải nén tạm thời.
-   */
-  public getExtractionPath(jobId: string): string {
-    return path.join(STORAGE_CONFIG.TEMP_DIR, jobId);
-  }
 
   /**
    * @description Thực hiện giải nén tệp tin (Execute file extraction).

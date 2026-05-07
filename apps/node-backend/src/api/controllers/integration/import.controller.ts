@@ -1,28 +1,37 @@
-import { CompleteImportRequestDto, InitImportRequestDto, UploadChunkRequestDto } from '@/application/dtos/request/import/import.dto';
+import { CompleteImportRequestDTO, InitImportRequestDTO, UploadChunkRequestDTO } from '@/application/dtos/request/import/import.dto';
 import { IImportService } from '@/domain/interfaces/services/integration';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { Result } from '@/shared/responses/api-response';
+import { Result } from '@/application/dtos/response/shared/api.response.dto';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Request, Response } from 'express';
 
 /**
- * @description Interface định nghĩa các phụ thuộc cho ImportController (Dịch: Controller Dependencies)
+ * @interface IImportControllerCradle
+ * @description "Túi đồ nghề" (Dependency Container) chứa các dịch vụ cần thiết để vận hành luồng nhập dữ liệu hàng loạt (Bulk Import).
+ * @guard Interface Segregation - Đảm bảo Controller chỉ tiếp cận đúng dịch vụ Import, tuân thủ nguyên tắc phân tách giao diện.
  */
 export interface IImportControllerCradle {
+    /** @description Dịch vụ xử lý logic giải nén, đọc file Excel và chuyển đổi dữ liệu vào DB.*/
     importService: IImportService;
 }
 
+/**
+ * @class ImportController
+ * @description Lớp điều phối (Orchestrator) các yêu cầu HTTP liên quan đến việc nhập dữ liệu từ tệp tin bên ngoài.
+ * @principle Boundary Control - Đóng vai trò là cửa ngõ tiếp nhận các tệp tin thô (Multipart/form-data) và điều phối chúng vào quy trình xử lý của tầng Application.
+ */
 export class ImportController {
+    /** @private @readonly @description Instance chuyên trách xử lý luồng nghiệp vụ Import câu hỏi/dữ liệu. */
     private readonly _importService: IImportService;
 
     /**
-     * @description Khởi tạo ImportController với các phụ thuộc chuyên biệt.
-     * (Dịch: Initializes ImportController with specialized dependencies.)
-     * @param {IImportControllerCradle} cradle - Dependencies được tiêm tự động từ DI Container.
+     * @constructor
+     * @description Khởi tạo ImportController bằng cách giải nén các phụ thuộc từ Cradle thông qua Awilix.
+     * @param {IImportControllerCradle} cradle - Chứa các dịch vụ chuyên biệt cần thiết để xử lý tệp tin.
      */
     constructor({ importService }: IImportControllerCradle) {
-        // CHỈ NHẬN NHỮNG THỨ CẦN THIẾT CHO IMPORT
+        // Tuân thủ triết lý: Chỉ nhận những gì tối cần thiết để giảm thiểu sự phụ thuộc (Tight Coupling).
         this._importService = importService;
     }
 
@@ -35,7 +44,7 @@ export class ImportController {
     public init = catchAsync(async (req: Request, res: Response) => {
         // Lưu ý: Bạn nên gửi thêm fileName và totalChunks từ FE
         // 1. Khởi tạo DTO từ dữ liệu multipart (Dịch: Initialize DTO from multipart data)
-        const dto = new InitImportRequestDto(req.body);
+        const dto = new InitImportRequestDTO(req.body);
 
         // 2. Truyền dto vào service - Không còn lỗi "any" nữa
         const job = await this._importService.initSession(dto);
@@ -57,10 +66,9 @@ export class ImportController {
         const file = req.file;
 
         // 1. Khởi tạo DTO từ req.body (Loại bỏ hoàn toàn any nhờ constructor đã viết)
-        const dto = new UploadChunkRequestDto(req.body);
+        const dto = new UploadChunkRequestDTO(req.body);
 
         // 2. Chạy logic xác thực dữ liệu ngay lập tức
-        dto.isValid();
 
         // 3. Kiểm tra tệp tin mảnh từ Multer
         if (!file) {
@@ -87,11 +95,10 @@ export class ImportController {
     public complete = catchAsync(async (req: Request, res: Response) => {
         // 1. Khởi tạo DTO từ req.body (Dịch: Initialize DTO from req.body)
         // Không sử dụng any nhờ vào việc ép kiểu an toàn trong constructor của DTO
-        const dto = new CompleteImportRequestDto(req.body);
+        const dto = new CompleteImportRequestDTO(req.body);
 
         // 2. Tự xác thực dữ liệu (Dịch: Self-validation)
         // Ném lỗi ngay lập tức nếu không có jobId hợp lệ
-        dto.isValid();
 
         // 3. Gọi service để thực hiện gộp file và đẩy vào hàng đợi (Dịch: Process and Queue)
         await this._importService.completeProcess(dto);

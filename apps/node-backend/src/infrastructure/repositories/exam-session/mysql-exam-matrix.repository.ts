@@ -193,11 +193,11 @@ export class MySQLExamMatrixRepository implements IExamMatrixRepository {
    * @param {ExamMatrixEntity} entity - Dữ liệu cập nhật.
    * @returns {Promise<ExamMatrixEntity>} Thực thể sau khi cập nhật.
    */
-  public async updateExamMatrix(id: string, entity: ExamMatrixEntity): Promise<ExamMatrixEntity> {
+  public async updateExamMatrix(entity: ExamMatrixEntity): Promise<ExamMatrixEntity> {
     const data = ExamMatrixMapper.toUpdatePersistence(entity);
 
     const updated = await this._prisma.examMatrix.update({
-      where: { id },
+      where: { id: entity.id },
       data: data,
       include: { details: true },
     });

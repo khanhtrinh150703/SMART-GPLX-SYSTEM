@@ -34,10 +34,6 @@ export interface IExamRecord {
   questions?: IExamQuestionRecord[];
 }
 
-export type PrismaExamWithRelations = Prisma.ExamGetPayload<{
-  include: typeof examInclude
-}>;
-
 export const examInclude = {
   user: {
     select: {
@@ -51,8 +47,20 @@ export const examInclude = {
     }
   },
   questions: {
+    include: {
+      question: {
+        include: {
+          answers: true,
+          chapter: true  
+        }
+      }
+    },
     orderBy: {
       indexNumber: 'asc'
     }
   },
-} as const;;
+} as const;
+
+export type PrismaExamWithRelations = Prisma.ExamGetPayload<{
+  include: typeof examInclude
+}>;

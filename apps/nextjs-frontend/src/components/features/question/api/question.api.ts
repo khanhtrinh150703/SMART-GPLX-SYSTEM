@@ -1,8 +1,9 @@
 import axiosClient from "@/services/axios-client";
 import { ENDPOINTS } from "@/constants/api-endpoints.constant";
 import { StandardResponse } from "@/types/common.type";
-import { PaginatedResult, QueryParams } from "@/types/paginaton.type";
+import { ISelectionPoolParams, PaginatedResult, QueryParams } from "@/types/paginaton.type";
 import { Question } from "../types/question.types";
+import { IExamQuestionSummary } from "../types/question-summary.types";
 
 /**
  * Question API: Quản lý nghiệp vụ câu hỏi (Lý thuyết GPLX).
@@ -80,6 +81,24 @@ export const questionApi = {
   restore: async (id: string): Promise<StandardResponse<Question>> => {
     const response = await axiosClient.patch<StandardResponse<Question>>(
       `${ENDPOINTS.QUESTION.BASE}/${id}/restore`
+    );
+    return response.data;
+  },
+
+  /**
+   * Lấy kho câu hỏi rút gọn để lập đề thi thủ công.
+   * (Fetch summary selection pool for manual exam creation)
+   */
+  selectionPool: async (params: ISelectionPoolParams): Promise<StandardResponse<IExamQuestionSummary[]>> => {
+    const response = await axiosClient.get<StandardResponse<IExamQuestionSummary[]>>(
+      `${ENDPOINTS.QUESTION.SLECTION}`,
+      {
+        params: {
+          licenseId: params.licenseCategoryId, // Map lại cho đúng với Backend DTO
+          search: params.search,
+          chapterId: params.chapterId,
+        }
+      }
     );
     return response.data;
   },

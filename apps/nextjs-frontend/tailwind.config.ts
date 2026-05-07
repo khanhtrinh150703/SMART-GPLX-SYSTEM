@@ -30,6 +30,14 @@ const config: Config = {
       },
       borderRadius: {
         'theme': '0.75rem',
+      },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      boxShadow: {
+        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
       }
     },
   },

@@ -1,0 +1,4 @@
+export * from './i-chapter-query.service'
+export * from './i-exam-query.service'
+export * from './i-license-query.service'
+export * from './i-question-query.service'

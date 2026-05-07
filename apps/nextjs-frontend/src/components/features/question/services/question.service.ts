@@ -1,4 +1,4 @@
-import { QueryParams } from "@/types/paginaton.type";
+import { ISelectionPoolParams, QueryParams } from "@/types/paginaton.type";
 import { questionApi } from "../api/question.api"; // Điều chỉnh đường dẫn cho đúng dự án của bạn
 
 /**
@@ -58,5 +58,19 @@ export const questionService = {
     async restore(id: string) {
         const response = await questionApi.restore(id);
         return response.data;
+    },
+
+
+    /**
+     * Lấy kho câu hỏi rút gọn để phục vụ việc chọn câu hỏi cho đề thi.
+     * (Fetch summary questions for exam selection pool)
+     */
+    async selectionPool(params: ISelectionPoolParams) {
+        // Gọi xuống API service đã định nghĩa trước đó
+        const response = await questionApi.selectionPool(params);
+
+        // Vì ở file api Trinh đã return response.data rồi, 
+        // nên ở đây chỉ cần trả về kết quả cuối cùng là mảng hoặc object data.
+        return response;
     },
 };

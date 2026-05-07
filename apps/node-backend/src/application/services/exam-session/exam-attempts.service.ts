@@ -7,7 +7,7 @@ import { IExamAttemptService } from "@/domain/interfaces/services/exam-session/i
 import { ExamAttemptMapper } from "@/infrastructure/database/mappers/exam-session/exam-attempt.mapper";
 
 export interface IExamAttemptCradle {
-    attemptRepository: IExamAttemptRepository;
+    examAttemptRepository: IExamAttemptRepository;
 }
 
 /**
@@ -18,13 +18,14 @@ export interface IExamAttemptCradle {
 export class ExamAttemptService implements IExamAttemptService {
     private readonly _attemptRepo: IExamAttemptRepository;
 
-    constructor({ attemptRepository }: IExamAttemptCradle) {
-        this._attemptRepo = attemptRepository;
+    constructor({ examAttemptRepository }: IExamAttemptCradle) {
+        this._attemptRepo = examAttemptRepository;
     }
 
     /**
-     * @description Tạo và lưu một bản ghi lượt thi mới (Snapshot).
-     * @param props Dữ liệu khởi tạo lượt thi từ kết quả chấm điểm.
+     * @description Thực hiện quy trình khởi tạo, lưu trữ snapshot và trả về dữ liệu lượt thi mới.
+     * @param {CreateExamAttemptProps} props - Các thuộc tính nghiệp vụ cần thiết để cấu thành một bản ghi lượt thi hoàn chỉnh.
+     * @returns {Promise<IExamAttemptResponseDTO>} DTO đại diện cho lượt thi đã được đồng bộ hóa thành công xuống cơ sở dữ liệu.
      */
     public async createAttempt(props: CreateExamAttemptProps): Promise<IExamAttemptResponseDTO> {
         // 1. Khởi tạo thực thể Domain (Tự sinh ID và timestamps nội bộ)
@@ -38,33 +39,10 @@ export class ExamAttemptService implements IExamAttemptService {
     }
 
     /**
-     * @description Lấy chi tiết một lượt thi để hiển thị bài làm.
-     * @param id ID của lượt thi (NoSQL UUID).
-     */
-    public async getAttemptDetail(id: string): Promise<IExamAttemptResponseDTO> {
-        const attempt = await this._attemptRepo.findById(id);
-
-        if (!attempt) {
-            throw new AppError(ErrorCode.EXAM_ATTEMPT.NOT_FOUND);
-        }
-
-        return ExamAttemptMapper.toResponseDTO(attempt);
-    }
-
-    /**
-     * @description Lấy danh sách lịch sử thi của người dùng.
-     * @param userId ID người dùng.
-     */
-    public async getUserAttemptHistory(userId: string): Promise<IExamAttemptResponseDTO[]> {
-        const attempts = await this._attemptRepo.findByUserId(userId);
-
-        // Map mảng các thực thể sang mảng DTOs
-        return ExamAttemptMapper.toResponseDTOList(attempts);
-    }
-
-    /**
-     * @description Xóa mềm một lượt thi.
-     * @param id ID của lượt thi.
+     * @description Thực hiện xóa mềm lượt thi (Soft Delete) để ẩn dữ liệu phía người dùng nhưng vẫn giữ lại bản ghi phục vụ mục đích thống kê.
+     * @param {string} id - ID định danh của lượt thi cần xử lý.
+     * @returns {Promise<void>} 
+     * @throws {AppError} EXAM_ATTEMPT.NOT_FOUND nếu lượt thi không tồn tại trong hệ thống.
      */
     public async softDeleteAttempt(id: string): Promise<void> {
         const attempt = await this._attemptRepo.findById(id);
@@ -77,8 +55,10 @@ export class ExamAttemptService implements IExamAttemptService {
     }
 
     /**
-     * @description Xóa  một lượt thi.
-     * @param id ID của lượt thi.
+     * @description Xóa vĩnh viễn (Hard Delete) bản ghi lượt thi khỏi cơ sở dữ liệu. Hành động này không thể hoàn tác.
+     * @param {string} id - ID định danh của lượt thi cần xóa bỏ hoàn toàn.
+     * @returns {Promise<void>} 
+     * @throws {AppError} EXAM_ATTEMPT.NOT_FOUND nếu lượt thi không tồn tại trong hệ thống.
      */
     public async hardDeleteAttempt(id: string): Promise<void> {
         const attempt = await this._attemptRepo.findById(id);

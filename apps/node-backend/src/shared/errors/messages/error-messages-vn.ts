@@ -35,6 +35,14 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 'Liên kết đăng ký đã hết hạn hoặc không còn tồn tại, vui lòng thực hiện lại quy trình đăng ký.',
     [ErrorCode.AUTH.MISSING_FIELDS]: "Vui lòng nhập đầy đủ các thông tin bắt buộc.",
     [ErrorCode.AUTH.INVALID_TOKEN]: "Mã xác thực không hợp lệ",
+    [ErrorCode.AUTH.USERNAME_REQUIRED]: 'Tên đăng nhập không được để trống.',
+    [ErrorCode.AUTH.PASSWORD_REQUIRED]: 'Mật khẩu không được để trống.',
+    [ErrorCode.AUTH.USERNAME_INVALID]: 'Tên đăng nhập không hợp lệ (phải là chuỗi ký tự).',
+    [ErrorCode.AUTH.REFRESH_TOKEN_REQUIRED]: 'Refresh Token không được để trống.',
+    [ErrorCode.AUTH.EMAIL_INVALID]: 'Địa chỉ email không hợp lệ.',
+    [ErrorCode.AUTH.PASSWORD_TOO_WEAK]: 'Mật khẩu phải từ 8 ký tự trở lên và bao gồm chữ hoa, chữ thường, số.',
+    [ErrorCode.AUTH.PASSWORD_MISMATCH]: 'Mật khẩu xác nhận không khớp.',
+    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
 
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',
@@ -43,7 +51,6 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.PHONE_EXISTS]: 'Số điện thoại này đã được đăng ký.',
     [ErrorCode.USER.REGISTER_FAILED]: 'Quá trình đăng ký gặp lỗi, vui lòng kiểm tra lại.',
     [ErrorCode.USER.UPDATE_FAILED]: 'Cập nhật thông tin không thành công.',
-    [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 'Vai trò người dùng chưa được khởi tạo hoặc không tồn tại trong hệ thống.',
     [ErrorCode.USER.NAME_REQUIRED]: 'Họ và tên không được để trống.',
     [ErrorCode.USER.NAME_TOO_SHORT]: 'Họ tên quá ngắn, vui lòng nhập tối thiểu 2 ký tự.',
     [ErrorCode.USER.NAME_TOO_LONG]: 'Họ tên quá dài, tối đa không quá 100 ký tự.',
@@ -53,14 +60,30 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.USER.INVALID_ROLE_ID]: 'Một hoặc nhiều vai trò được chọn không tồn tại trên hệ thống.',
     [ErrorCode.USER.AVATAR_TOO_LARGE]: 'Dung lượng ảnh đại diện không được vượt quá 5MB.',
     [ErrorCode.USER.AVATAR_INVALID_TYPE]: 'Định dạng tệp không hỗ trợ. Vui lòng sử dụng JPG, PNG hoặc WEBP.',
+    [ErrorCode.USER.MISSING_UPDATE_FIELDS]: 'Vui lòng cung cấp thông tin cần cập nhật.',
+    [ErrorCode.USER.INVALID_ROLES_FORMAT]: 'Danh sách vai trò không đúng định dạng.',
+    [ErrorCode.USER.OLD_PASSWORD_REQUIRED]: 'Vui lòng nhập mật khẩu hiện tại.',
+    [ErrorCode.USER.NEW_PASSWORD_REQUIRED]: 'Vui lòng nhập mật khẩu mới.',
+    [ErrorCode.USER.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được trùng với mật khẩu hiện tại.',
+    [ErrorCode.USER.PASSWORD_TOO_WEAK]: 'Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.',
+    [ErrorCode.USER.STATUS_REQUIRED]: 'Trạng thái tài khoản là bắt buộc.',
 
     // === SMART-GPLX (EXAM & AI) ===
+    [ErrorCode.EXAM.ID_REQUIRED]: 'Mã định danh (ID) đề thi là bắt buộc.',
     [ErrorCode.EXAM.IMAGE_INVALID]: 'Ảnh minh họa không hợp lệ hoặc không rõ nét. Vui lòng kiểm tra lại.',
     [ErrorCode.EXAM.ANSWERS_EMPTY]: 'Danh sách câu trả lời không được để trống.',
     [ErrorCode.EXAM.ANSWER_FORMAT_INVALID]: 'Định dạng dữ liệu câu trả lời không hợp lệ.',
     [ErrorCode.EXAM.NAME_REQUIRED]: 'Tên đề thi không được để trống.',
     [ErrorCode.EXAM.NAME_TOO_LONG]: 'Tên đề thi không được vượt quá 100 ký tự.',
     [ErrorCode.EXAM.INVALID_MATRIX_ID]: 'Mã ma trận đề thi không tồn tại hoặc không đúng định dạng.',
+    [ErrorCode.EXAM.USER_ID_REQUIRED]: 'Mã người dùng tạo đề là bắt buộc.',
+    [ErrorCode.EXAM.LICENSE_CATEGORY_REQUIRED]: 'Hạng bằng lái của đề thi không được để trống.',
+    [ErrorCode.EXAM.QUESTIONS_EMPTY]: 'Đề thi phải có ít nhất một câu hỏi.',
+    [ErrorCode.EXAM.INVALID_DURATION]: 'Thời gian làm bài phải lớn hơn 0 phút.',
+    [ErrorCode.EXAM.PASSING_SCORE_TOO_HIGH]: 'Điểm đạt không được lớn hơn tổng số câu hỏi của đề.',
+    [ErrorCode.EXAM.MIN_CRITICAL_INVALID]: 'Số lượng câu hỏi điểm liệt không hợp lệ.',
+    [ErrorCode.EXAM.INVALID_TIME_RANGE]: 'Thời gian kết thúc phải sau thời gian bắt đầu.',
+    [ErrorCode.EXAM.TOTAL_QUESTIONS_INVALID]: 'Tổng số câu hỏi phải lớn hơn 0.',
 
     // --- Nhóm 2xx: Business/Pool (Lỗi kho dữ liệu & Nghiệp vụ) ---
     [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 'Tổng kho câu hỏi không đủ số lượng để đáp ứng cấu trúc đề thi.',
@@ -72,7 +95,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.EXAM.NOT_FOUND]: 'Thông tin bài thi không tồn tại trên hệ thống.',
     [ErrorCode.EXAM.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp và ghi nhận kết quả trước đó.',
     [ErrorCode.EXAM.EXPIRED]: 'Đã hết thời gian làm bài. Thao tác nộp bài không còn hiệu lực.',
-    
+
     // --- Nhóm 5xx: Infrastructure/AI (Lỗi hệ thống & AI) ---
     [ErrorCode.EXAM.AI_PROCESSING_ERROR]: 'Hệ thống AI gặp sự cố trong quá trình xử lý dữ liệu. Vui lòng thử lại sau.',
 
@@ -91,6 +114,8 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.INVALID_FORMAT]: 'Dữ liệu không đúng định dạng yêu cầu.',
     [ErrorCode.VALIDATION.INVALID_LENGTH]: 'Độ dài dữ liệu không hợp lệ.',
     [ErrorCode.VALIDATION.CODE_REQUIRED]: 'Mã (Code) không được để trống.',
+    [ErrorCode.VALIDATION.INVALID_NUMBER]: 'Định dạng số không hợp lệ.',
+    [ErrorCode.VALIDATION.INVALID_INPUT]: 'Dữ liệu đầu vào không hợp lệ, vui lòng kiểm tra lại.',
 
     // --- VALIDATION (1xx: Identity) ---
     [ErrorCode.VALIDATION.EMAIL_INVALID]: 'Địa chỉ email không hợp lệ (ví dụ: name@example.com).',
@@ -102,13 +127,15 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.PASSWORD_INVALID]: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm cả chữ và số.',
     [ErrorCode.VALIDATION.PASSWORD_CONFIRM_MISMATCH]: 'Mật khẩu xác nhận không trùng khớp.',
     [ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT]: 'Mật khẩu mới không được trùng với mật khẩu cũ.',
+    [ErrorCode.VALIDATION.PASSWORD_TOO_SHORT]: 'Mật khẩu quá ngắn, vui lòng nhập tối thiểu 8 ký tự.',
     [ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED]: 'Phiên làm việc đã hết hạn hoặc thiếu mã làm mới (Refresh Token).',
     [ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID]: 'Mã làm mới không hợp lệ hoặc không đúng định dạng.',
 
     // --- VALIDATION (3xx: Specific) ---
     [ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER]: 'Độ tuổi phải là một con số nguyên.',
     [ErrorCode.VALIDATION.AGE_INVALID]: 'Độ tuổi không hợp lệ (phải từ 18 tuổi trở lên).',
-    
+    [ErrorCode.VALIDATION.INVALID_PERCENTAGE]: 'Tỷ lệ phần trăm không hợp lệ (giá trị phải nằm trong khoảng từ 0 đến 100).',
+
     // --- VALIDATION (4xx: Exam & Training) ---
     [ErrorCode.VALIDATION.LICENSE_CATEGORY_REQUIRED]: 'Vui lòng chọn hạng bằng lái (A1, B2, ...).',
     [ErrorCode.VALIDATION.EXAM_QUESTIONS_EMPTY]: 'Danh sách câu hỏi không được để trống.',
@@ -124,6 +151,15 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.LICENSE.NOT_FOUND]: 'Không tìm thấy hạng bằng lái yêu cầu.',
     [ErrorCode.LICENSE.IS_IN_USE]: 'Không thể xóa: Đang có câu hỏi hoặc đề thi thuộc hạng bằng này.',
     [ErrorCode.LICENSE.NAME_ALREADY_EXISTS]: 'Tên hạng bằng lái này đã tồn tại trong hệ thống.',
+    [ErrorCode.LICENSE.NAME_REQUIRED]: 'Tên hạng giấy phép lái xe không được để trống.',
+    [ErrorCode.LICENSE.NAME_INVALID_LENGTH]: 'Tên hạng bằng phải có độ dài từ 1 đến 10 ký tự.',
+    [ErrorCode.LICENSE.NAME_FORMAT_INVALID]: 'Tên hạng bằng không đúng định dạng quy định.',
+    [ErrorCode.LICENSE.AGE_REQUIRED]: 'Độ tuổi tối thiểu phải là một con số hợp lệ.',
+    [ErrorCode.LICENSE.AGE_INVALID]: 'Độ tuổi tối thiểu để cấp bằng lái xe phải từ 18 tuổi trở lên.',
+    [ErrorCode.LICENSE.DESCRIPTION_REQUIRED]: 'Mô tả hạng bằng không được để trống.',
+    [ErrorCode.LICENSE.DESCRIPTION_TOO_LONG]: 'Mô tả không được vượt quá 500 ký tự.',
+    [ErrorCode.LICENSE.INVALID_ORDER]: 'Thứ tự sắp xếp không hợp lệ (phải lớn hơn hoặc bằng 0).',
+    [ErrorCode.LICENSE.ID_REQUIRED]: 'Mã định danh (ID) hạng bằng là bắt buộc để cập nhật.',
 
     // === CHAPTER (CHƯƠNG LÝ THUYẾT) ===
     [ErrorCode.CHAPTER.NOT_FOUND]: 'Không tìm thấy chương lý thuyết yêu cầu.',
@@ -134,6 +170,11 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
     [ErrorCode.CHAPTER.INVALID_DESCRIPTION]: 'Mô tả chương không được để trống hoặc chỉ chứa khoảng trắng.',
+    [ErrorCode.CHAPTER.ID_REQUIRED]: 'Mã định danh (ID) chương là bắt buộc để cập nhật.',
+    [ErrorCode.CHAPTER.NAME_REQUIRED]: 'Tên chương không được để trống.',
+    [ErrorCode.CHAPTER.CODE_REQUIRED]: 'Mã chương không được để trống.',
+    [ErrorCode.CHAPTER.DESCRIPTION_REQUIRED]: 'Mô tả chương không được để trống.',
+    [ErrorCode.CHAPTER.DESCRIPTION_TOO_LONG]: 'Mô tả chương không được vượt quá 500 ký tự.',
 
     // --- QUESTION ---
     [ErrorCode.QUESTION.NOT_FOUND]: 'Câu hỏi không tồn tại trong hệ thống.',
@@ -144,8 +185,18 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 'Câu hỏi bắt buộc phải có ít nhất một đáp án đúng.',
     [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 'Đường dẫn hình ảnh minh họa không hợp lệ.',
     [ErrorCode.QUESTION.ALREADY_EXISTS]: 'Nội dung câu hỏi này đã tồn tại trong hệ thống.',
-    [ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
-    [ErrorCode.QUESTION.ANSWERS_SYNC_ERROR]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
+    [ErrorCode.QUESTION.DELETE_CRITICAL_RESTRICTED]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
+    [ErrorCode.QUESTION.ANSWERS_SYNC_FAILED]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
+    [ErrorCode.QUESTION.INVALID_FORMAT]: 'Định dạng dữ liệu câu hỏi không hợp lệ.',
+    [ErrorCode.QUESTION.MULTIPLE_CORRECT_ANSWERS]: 'Chỉ được phép có duy nhất một đáp án đúng cho mỗi câu hỏi.',
+    [ErrorCode.QUESTION.ANSWER_CONTENT_REQUIRED]: 'Nội dung của các đáp án không được để trống.',
+    [ErrorCode.QUESTION.EXPLANATION_TOO_LONG]: 'Phần giải thích không được vượt quá 1000 ký tự.',
+    [ErrorCode.QUESTION.LICENSE_ID_INVALID]: 'Danh sách mã hạng bằng lái chứa giá trị không hợp lệ.',
+    [ErrorCode.QUESTION.DIFFICULTY_INVALID]: 'Mức độ khó phải là một con số hợp lệ.',
+    [ErrorCode.QUESTION.INDEX_INVALID]: 'Thứ tự câu hỏi (Index) không hợp lệ.',
+    [ErrorCode.QUESTION.ID_REQUIRED]: 'Mã định danh (ID) câu hỏi là bắt buộc để cập nhật.',
+    [ErrorCode.QUESTION.STATUS_INVALID]: 'Trạng thái câu hỏi không hợp lệ.',
+    [ErrorCode.QUESTION.IS_CRITICAL_INVALID]: 'Giá trị câu hỏi điểm liệt phải là boolean',
 
     // IMPORT
     [ErrorCode.IMPORT.JOB_NOT_FOUND]: 'Không tìm thấy phiên làm việc (Import Job). Có thể phiên đã hết hạn.',
@@ -155,6 +206,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.IMPORT.FILE_MISSING]: 'Không tìm thấy tập tin yêu cầu hoặc tập tin đã bị xóa khỏi hệ thống.',
     [ErrorCode.IMPORT.CHUNK_SIZE_EXCEEDED]: 'Kích thước của mảnh dữ liệu (chunk) vượt quá giới hạn cho phép của hệ thống.',
     [ErrorCode.IMPORT.SESSION_EXPIRED]: 'Phiên nhập liệu đã hết hạn do quá thời gian quy định. Vui lòng khởi tạo lại quy trình.',
+    [ErrorCode.IMPORT.FILE_NAME_REQUIRED]: 'Tên tệp tin không được để trống.',
+    [ErrorCode.IMPORT.INVALID_TOTAL_SIZE]: 'Tổng kích thước tệp tin phải lớn hơn 0.',
+    [ErrorCode.IMPORT.INVALID_TOTAL_CHUNKS]: 'Tổng số mảnh (chunks) phải lớn hơn 0.',
+    [ErrorCode.IMPORT.JOB_ID_REQUIRED]: 'Mã công việc (Job ID) không được để trống.',
 
     // --- MATRIX MESSAGES ---
     [ErrorCode.MATRIX.NAME_REQUIRED]: 'Tên ma trận đề thi không được để trống.',
@@ -168,7 +223,12 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.MATRIX.INVALID_DURATION]: 'Thời lượng làm bài phải lớn hơn 0 phút.',
     [ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS]: 'Tổng số câu hỏi của ma trận phải lớn hơn 0.',
     [ErrorCode.MATRIX.CHAPTER_ID_REQUIRED]: 'ID chương học trong danh sách chi tiết không được để trống.',
-
+    [ErrorCode.MATRIX.LICENSE_CATEGORY_REQUIRED]: 'Hạng bằng lái cho ma trận là bắt buộc.',
+    [ErrorCode.MATRIX.PASSING_SCORE_TOO_HIGH]: 'Điểm đạt không được lớn hơn tổng số câu hỏi.',
+    [ErrorCode.MATRIX.MISSING_FIELDS]: 'Vui lòng điền đầy đủ các thông tin bắt buộc cho ma trận.',
+    [ErrorCode.MATRIX.ID_REQUIRED]: 'Mã định danh (ID) ma trận là bắt buộc để cập nhật.',
+    [ErrorCode.MATRIX.MIN_CRITICAL_INVALID]: 'Số lượng câu hỏi điểm liệt tối thiểu không hợp lệ.',
+    [ErrorCode.MATRIX.IS_DEFAULT_INVALID]: 'Trạng thái mặc định (isDefault) phải là kiểu đúng/sai (boolean).',
 
     // Nhóm EXCEL
     [ErrorCode.EXCEL.WORKSHEET_NOT_FOUND]: 'Không tìm thấy Worksheet yêu cầu trong file Excel.',
@@ -206,4 +266,25 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.CACHE.EMPTY_DATA]: 'Dữ liệu gốc từ máy chủ trống, không thể nạp bộ nhớ đệm.',
     [ErrorCode.CACHE.REFRESH_FAILED]: 'Làm mới dữ liệu bộ nhớ đệm thất bại, vui lòng kiểm tra kết nối.',
     [ErrorCode.CACHE.KEY_NOT_FOUND]: 'Thông tin yêu cầu không tồn tại trong bộ nhớ đệm của hệ thống.',
+
+    [ErrorCode.MONGODB.CONNECTION_ERROR]: 'Không thể kết nối đến cơ sở dữ liệu.',
+    [ErrorCode.MONGODB.NOT_INITIALIZED]: 'Hệ thống lưu trữ chưa được khởi tạo.',
+    [ErrorCode.MONGODB.TRANSACTION_FAILED]: 'Tiến trình xử lý dữ liệu thất bại.',
+    [ErrorCode.MONGODB.QUERY_TIMEOUT]: 'Truy vấn cơ sở dữ liệu quá thời gian quy định.',
+
+    // --- SESSION ---
+    [ErrorCode.SESSION.EXAM_ID_REQUIRED]: 'Mã đề thi không được để trống..',
+    [ErrorCode.SESSION.INVALID_EXAM_ID]: 'Mã đề thi không hợp lệ, không thể bắt đầu phiên thi.',
+    [ErrorCode.SESSION.INVALID_QUESTION_ID]: 'Câu hỏi không tồn tại trong phiên thi này.',
+    [ErrorCode.SESSION.ANSWER_FORMAT_INVALID]: 'Định dạng đáp án đã chọn không hợp lệ.',
+    [ErrorCode.SESSION.ANSWERS_REQUIRED]: 'Danh sách câu trả lời không được để trống.',
+    [ErrorCode.SESSION.DUPLICATE_QUESTION]: 'Phát hiện câu hỏi bị lặp lại trong danh sách nộp bài.',
+    [ErrorCode.SESSION.INVALID_ANSWER_VALUE]: 'Giá trị đáp án phải là số nguyên dương.',
+    [ErrorCode.SESSION.INVALID_QUESTION_INDEX]: 'Vị trí câu hỏi hiện tại không hợp lệ.',
+    [ErrorCode.SESSION.CLIENT_TIMESTAMP_REQUIRED]: 'Thời gian gửi yêu cầu không được để trống.',
+    [ErrorCode.SESSION.SESSION_ID_REQUIRED]: 'Mã phiên làm việc (session_id) không được để trống.',
+
+    [ErrorCode.SESSION.NOT_FOUND]: 'Không tìm thấy thông tin phiên thi hiện tại.',
+    [ErrorCode.SESSION.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp trước đó, không thể thay đổi đáp án.',
+    [ErrorCode.SESSION.EXPIRED]: 'Thời gian làm bài đã kết thúc.',
 };

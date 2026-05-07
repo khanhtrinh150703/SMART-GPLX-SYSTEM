@@ -1,79 +1,60 @@
-"use client"; // Đánh dấu đây là Component phía máy khách (Client Component) để dùng Hooks
+"use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Bộ điều hướng (Router)
-import axios from "axios"; // Thư viện gọi HTTP (HTTP Client)
-import { useForm } from "react-hook-form"; // Thư viện quản lý biểu mẫu (Form Library)
-import { zodResolver } from "@hookform/resolvers/zod"; // Trình giải quyết Zod (Zod Resolver)
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
+
+// Đảm bảo dùng đường dẫn Absolute Import (@/...) thống nhất
 import { GoogleButton, Divider } from "@/components/features/auth/SocialLogin/SocialLogin";
-import Input from "@/components/ui/Input/Input";
+import { Alert } from "@/components/ui/Alert";
 import Button from "@/components/ui/Button/Button";
-import { authService } from "@/services/auth/auth.service";
-import TextLink from "../../ui/TextLink/TextLink";
-import { Alert } from "../../ui/Alert/Alert";
+import Input from "@/components/ui/Input/Input";
+import TextLink from "@/components/ui/TextLink/TextLink";
+import { useAuthSync } from "@/hooks/use-auth-sync";
 import { LoginSchemaType } from "@/lib/validations/auth.schema";
 import { loginSchema } from "@/lib/validations/common";
-
-// 1. Định nghĩa Lược đồ kiểm tra (Validation Schema) ngay tại đây hoặc import từ thư mục lib/validations
+import { authService } from "@/services/auth/auth.service";
 
 
 export default function LoginForm() {
   const router = useRouter();
-
-  // State (Trạng thái) quản lý UI khi gọi API
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Khởi tạo React Hook Form
+  // 1. Kích hoạt Hook Đồng bộ hóa liên Tab (Cross-tab Sync)
+  useAuthSync();
+
   const {
-    register, // Hàm đăng ký input (Register function)
-    handleSubmit, // Hàm xử lý gửi form (Submit handler)
-    formState: { errors }, // Trạng thái lỗi của form (Form errors)
+    register,
+    handleSubmit,
+    formState: { errors },
   } = useForm<LoginSchemaType>({
     resolver: zodResolver(loginSchema),
   });
 
-  // 2. Xử lý submit (Đã bỏ qua phần validate thủ công vì Zod đã lo)
-  /**
-   * Hàm xử lý Gửi Form (Submit Handler)
-   * Đã được tinh chỉnh để tuân thủ tính Đóng gói (Encapsulation)
-   */
+  // 2. Hàm xử lý gửi biểu mẫu (Submit Handler)
   const onSubmit = async (data: LoginSchemaType) => {
-    // 1. Khởi tạo trạng thái (Reset States)
     setErrorMsg(null);
     setIsLoading(true);
 
     try {
-      /**
-       * LUỒNG 3 LỚP (3-Tier Flow): UI -> Service -> API
-       * Mọi logic lưu localStorage và setUser đã được đóng gói bên trong authService.login
-       */
-      const authData = await authService.login({
+      // Tầng UI chỉ gọi Service, không tự can thiệp vào Zustand Store
+      await authService.login({
         username: data.username.trim(),
         password: data.password,
       });
-
-      // 2. Nếu đăng nhập thành công, điều hướng về trang Dashboard
-      // Dùng '/' hoặc '/overview' tùy vào cấu hình Route Group của bạn
-      if (authData) {
-        router.push("/overview");
-      }
+      
+      router.push("/overview");
     } catch (error: unknown) {
-      /**
-       * Xử lý lỗi tại UI (UI Error Handling)
-       * Sử dụng axios.isAxiosError để lấy message chuẩn xác từ Backend
-       */
+      // Xử lý lỗi an toàn kiểu dữ liệu (Type-Safe Error Handling)
       if (axios.isAxiosError(error)) {
-        // Backend Message: Thông báo từ máy chủ
-        const backendMessage = error.response?.data?.message;
-        setErrorMsg(
-          backendMessage || "Tên đăng nhập hoặc mật khẩu không chính xác.",
-        );
+        setErrorMsg(error.response?.data?.message || "Thông tin đăng nhập không chính xác.");
       } else {
-        setErrorMsg("Đã có sự cố kết nối đến máy chủ (Network Error).");
+        setErrorMsg("Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.");
       }
     } finally {
-      // 3. Kết thúc trạng thái tải (Loading State)
       setIsLoading(false);
     }
   };
@@ -86,17 +67,17 @@ export default function LoginForm() {
 
       <Divider text="Hoặc dùng tài khoản hệ thống" />
 
-      {/* Khung hiển thị lỗi từ Server (Server Error Alert) */}
+      {/* Cảnh báo lỗi từ máy chủ (Server Error Alert) */}
       {errorMsg && (
         <Alert
-          intent="error"
+          intent="error" // Biến thể màu đỏ Rose-500
           message={errorMsg}
-          className="mb-6" 
+          className="mb-6"
           duration={10000}
         />
       )}
 
-      {/* Form đăng nhập */}
+      {/* Biểu mẫu đăng nhập (Login Form) */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
           <Input
@@ -104,8 +85,8 @@ export default function LoginForm() {
             type="text"
             placeholder="Nhập tên đăng nhập của bạn"
             disabled={isLoading}
-            {...register("username")} 
-            error={errors.username?.message}// Kết nối input với Hook Form
+            {...register("username")}
+            error={errors.username?.message} 
           />
         </div>
 
@@ -116,28 +97,26 @@ export default function LoginForm() {
             placeholder="••••••••"
             disabled={isLoading}
             {...register("password")}
+            error={errors.password?.message} // SỬA LẠI: Đồng bộ cách hiển thị lỗi giống username
           />
-          {errors.password && (
-            <p className="text-rose-500 text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
 
-          <div className="flex justify-end mt-2">
+          <div className="mt-2 flex justify-end">
             <TextLink href="/forgot-password" intent="primary">
               Quên mật khẩu?
             </TextLink>
           </div>
         </div>
 
-        <div className="pt-2">
+        <div className="flex justify-end pt-2">
           <Button
             type="submit"
-            variant="primary" // 🟢 Đã bao gồm màu emerald-600, hover, text-white
-            size="lg" // 🟢 Đã bao gồm w-full, py-3, rounded-xl
+            variant="primary"
+            size="lg"
             isLoading={isLoading}
-            text={isLoading ? "Đang xác thực..." : "Đăng nhập"}
-          />
+            className="w-full" // Thay thế size nếu size="lg" không bao gồm w-full
+          >
+            {isLoading ? "Đang xác thực..." : "Đăng nhập"}
+          </Button>
         </div>
       </form>
 

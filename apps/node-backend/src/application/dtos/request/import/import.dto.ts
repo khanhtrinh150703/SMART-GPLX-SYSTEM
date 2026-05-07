@@ -1,78 +1,102 @@
 import { AppError, ErrorCode } from "@/shared/errors";
 
-/**
- * @description DTO cho Endpoint 1: Init Session (Dịch: Initialize Session DTO)
- */
-export class InitImportRequestDto {
+export interface IInitImportInputDTO {
+    readonly fileName: string;
+    readonly totalSize: number;
+    readonly totalChunks: number;
+}
+
+export class InitImportRequestDTO implements IInitImportInputDTO {
     public readonly fileName: string;
     public readonly totalSize: number;
     public readonly totalChunks: number;
 
-    constructor(body: unknown) {
-        // Kiểm tra xem body có phải là object không (Dịch: Type guarding for object)
-        const data = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+    constructor(data: IInitImportInputDTO) {
+        this.validate(data);
 
-        this.fileName = typeof data.fileName === 'string' ? data.fileName : '';
-        
-        // Chuyển đổi sang number đề phòng trường hợp nhận từ form-data là string
-        // (Dịch: Safe numeric conversion)
-        this.totalSize = Number(data.totalSize) || 0;
-        this.totalChunks = Number(data.totalChunks) || 0;
+        this.fileName = data.fileName.trim();
+        this.totalSize = Number(data.totalSize);
+        this.totalChunks = Number(data.totalChunks);
     }
 
-    public isValid(): void {
-        if (!this.fileName || this.totalSize <= 0 || this.totalChunks <= 0) {
-            throw new AppError(ErrorCode.VALIDATION.REQUIRED);
+    private validate(data: IInitImportInputDTO): void {
+        if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+
+        // 1. Kiểm tra tên tệp
+        if (!data.fileName || data.fileName.trim() === '') {
+            throw new AppError(ErrorCode.IMPORT.FILE_NAME_REQUIRED);
+        }
+
+        // 2. Kiểm tra kích thước tệp (phải lớn hơn 0)
+        if (!data.totalSize || Number(data.totalSize) <= 0) {
+            throw new AppError(ErrorCode.IMPORT.INVALID_TOTAL_SIZE);
+        }
+
+        // 3. Kiểm tra số lượng mảnh (phải lớn hơn 0)
+        if (!data.totalChunks || Number(data.totalChunks) <= 0) {
+            throw new AppError(ErrorCode.IMPORT.INVALID_TOTAL_CHUNKS);
         }
     }
 }
 
-/**
- * @description DTO cho Endpoint 2: Upload Chunk
- */
-/**
- * @description DTO cho Endpoint 2: Upload Chunk (Dịch: Upload file chunk DTO)
- */
-export class UploadChunkRequestDto {
+export interface IUploadChunkInputDTO {
+    readonly jobId: string;
+    readonly index: number;
+}
+
+export class UploadChunkRequestDTO implements IUploadChunkInputDTO {
     public readonly jobId: string;
     public readonly index: number;
 
-    constructor(body: unknown) {
-        const data = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+    constructor(data: IUploadChunkInputDTO) {
+        this.validate(data);
 
-        this.jobId = typeof data.jobId === 'string' ? data.jobId : '';
-        
-        // Luôn ép kiểu number vì Multer fields thường là string (Dịch: Numeric indexing)
-        this.index = data.index !== undefined ? Number(data.index) : -1;
+        this.jobId = data.jobId.trim();
+        this.index = Number(data.index);
     }
 
-    public isValid(): void {
-        if (!this.jobId) {
-            throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED);
+    private validate(data: IUploadChunkInputDTO): void {
+        if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+
+        // 1. Kiểm tra Job ID
+        if (!data.jobId || data.jobId.trim() === '') {
+            throw new AppError(ErrorCode.IMPORT.JOB_ID_REQUIRED);
         }
 
-        if (this.index < 0) {
+        // 2. Kiểm tra Index (Chấp nhận giá trị 0)
+        if (
+            data.index === undefined ||
+            data.index === null ||
+            isNaN(Number(data.index)) ||
+            Number(data.index) < 0
+        ) {
             throw new AppError(ErrorCode.IMPORT.INVALID_CHUNK_INDEX);
         }
     }
 }
 
 
-/**
- * @description DTO cho Endpoint 3: Complete & Process
- */
-export class CompleteImportRequestDto {
+export interface ICompleteImportInputDTO {
+    readonly jobId: string;
+}
+
+export class CompleteImportRequestDTO implements ICompleteImportInputDTO {
     public readonly jobId: string;
 
-    constructor(body: unknown) {
-        const data = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
-
-        this.jobId = typeof data.jobId === 'string' ? data.jobId : '';
+    constructor(data: ICompleteImportInputDTO) {
+        this.validate(data);
+        this.jobId = data.jobId.trim();
     }
 
-    public isValid(): void {
-        if (!this.jobId) {
-            throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED);
+    private validate(data: ICompleteImportInputDTO): void {
+        // 1. Kiểm tra object data
+        if (!data) {
+            throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+        }
+
+        // 2. Kiểm tra Job ID
+        if (!data.jobId || data.jobId.trim() === '') {
+            throw new AppError(ErrorCode.IMPORT.JOB_ID_REQUIRED);
         }
     }
 }

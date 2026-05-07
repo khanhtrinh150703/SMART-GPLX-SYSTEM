@@ -9,7 +9,7 @@ export class MongoActiveSessionRepository implements IActiveSessionRepository {
      * @description Lưu phiên nháp mới.
      */
     public async createActiveSession(entity: ActiveSessionEntity): Promise<void> {
-        const persistence = ActiveSessionMapper.toPersistence(entity);
+        const persistence = ActiveSessionMapper.toCreateActiveSession(entity);
         await ActiveSessionModel.create(persistence);
     }
 
@@ -17,15 +17,12 @@ export class MongoActiveSessionRepository implements IActiveSessionRepository {
      * @description Cập nhật câu trả lời nháp.
      */
     public async updateActiveSession(entity: ActiveSessionEntity): Promise<void> {
-        const persistence = ActiveSessionMapper.toPersistence(entity);
-        await ActiveSessionModel.updateOne(
-            { _id: persistence._id },
-            {
-                $set: {
-                    currentAnswers: persistence.currentAnswers,
-                    updatedAt: new Date()
-                }
-            }
+        const persistence = ActiveSessionMapper.toUpdateActiveSession(entity);
+
+        await ActiveSessionModel.findOneAndUpdate(
+            { _id: persistence._id }, // Lấy trực tiếp từ Entity thay vì lấy từ object mapper bị thiếu
+            { $set: persistence },
+            { runValidators: true }
         );
     }
 
@@ -41,10 +38,11 @@ export class MongoActiveSessionRepository implements IActiveSessionRepository {
     }
 
     /**
-     * @description Xóa phiên sau khi hoàn thành.
+     * @description Xóa phiên đang dang dở dựa trên userId.
      */
-    public async delete(id: string): Promise<void> {
-        await ActiveSessionModel.findByIdAndDelete(id);
+    public async deleteByUserId(userId: string): Promise<void> {
+        // ✅ SỬA LẠI ĐÚNG TRƯỜNG userId TRONG MONGODB
+        await ActiveSessionModel.deleteMany({ userId: userId });
     }
 
     /**

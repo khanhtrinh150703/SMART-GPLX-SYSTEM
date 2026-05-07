@@ -4,34 +4,51 @@ import { Question } from "@/domain/entities/question/question.entity";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { IQuestionService } from "@/domain/interfaces/services/exam-mgmt/i-question.service";
 import { STORAGE_FOLDERS } from "@/domain/constants/storage.constant";
-import { PaginatedResult } from "@/shared/types/pagination.types";
-import { PaginationUtil } from "@/shared/utils/pagination.util";
 import { IMediaService } from "@/domain/interfaces/services/integration/i-media.service";
 import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
 import { Answer } from "@/domain/entities/question/answer.entity";
 import { QuestionImportEntity } from "@/domain/entities/import/import-question.entity";
-import { PAGINATION_CONFIG } from "@/shared/config/pagination.config";
-import { CreateQuestionRequestDto } from "@/application/dtos/request/question/create-question.request.dto";
-import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
-import { UpdateQuestionRequestDto, UpdateAnswerPayload } from "@/application/dtos/request/question/update-question.request.dto";
-import { QuestionAdminResponseDTO } from "@/application/dtos/response/question/admin-question.respone.dto";
-import { QuestionResponseDTO } from "@/application/dtos/response/question/question.respone.dto";
+import { IQuestionResponseDTO } from "@/application/dtos/response/question/question.respone.dto";
+import { CreateQuestionRequestDTO } from "@/application/dtos/request/question/create-question.request.dto";
+import { IUpdateAnswerPayload, UpdateQuestionRequestDTO } from "@/application/dtos/request/question/update-question.request.dto";
+import { IDeleteResponseDTO, DeleteResponseDTO } from "@/application/dtos/response/shared/delete.response.dto";
+import { DeleteType } from "@/domain/constants/delete.constant";
 
+/**
+ * @interface IQuestionServiceCradle
+ * @description Tập hợp các phụ thuộc (Dependencies) cần thiết để quản lý nghiệp vụ Câu hỏi.
+ */
 export interface IQuestionServiceCradle {
+  /** @description Repository chịu trách nhiệm lưu trữ và thay đổi dữ liệu câu hỏi trong Database. */
   questionRepository: IQuestionRepository;
+
+  /** @description Dịch vụ xử lý tài nguyên đa phương tiện (Hình ảnh biển báo, video sa hình). */
   mediaService: IMediaService;
+
+  /** @description Dịch vụ quản lý bộ nhớ đệm (Dùng để đồng bộ lại danh sách câu hỏi sau khi cập nhật). */
   masterDataCacheService: IMasterDataCacheService;
 }
 
 /**
  * @class QuestionService
- * @description Xử lý logic nghiệp vụ cho module Câu hỏi.
+ * @description Dịch vụ điều phối (Write-side) các logic nghiệp vụ liên quan đến Ngân hàng câu hỏi.
+ * @principle Resource Integrity - Đảm bảo sự đồng bộ giữa dữ liệu câu hỏi và tệp tin đa phương tiện đính kèm.
  */
 export class QuestionService implements IQuestionService {
+  /** @private @readonly @description Instance thực hiện các thao tác ghi dữ liệu Câu hỏi. */
   private readonly _questionRepo: IQuestionRepository;
+
+  /** @private @readonly @description Dịch vụ quản lý tệp tin (Upload/Delete media). */
   private readonly _mediaService: IMediaService;
+
+  /** @private @readonly @description Dịch vụ xử lý làm mới bộ nhớ đệm Master Data. */
   private readonly _cacheService: IMasterDataCacheService;
 
+  /**
+   * @constructor
+   * @description Khởi tạo QuestionService với các công cụ quản lý nội dung và tài nguyên.
+   * @param {IQuestionServiceCradle} cradle - Chứa các phụ thuộc phục vụ luồng nghiệp vụ ghi và xử lý Media.
+   */
   constructor({ questionRepository, mediaService, masterDataCacheService }: IQuestionServiceCradle) {
     this._questionRepo = questionRepository;
     this._mediaService = mediaService;
@@ -40,10 +57,10 @@ export class QuestionService implements IQuestionService {
 
   /**
    * @description Tạo câu hỏi mới và xử lý tải lên hình ảnh đính kèm nếu có.
-   * @param {CreateQuestionRequestDto} dto - Dữ liệu nội dung câu hỏi và thông tin file ảnh.
-   * @returns {Promise<QuestionResponseDTO>} Thông tin chi tiết câu hỏi sau khi khởi tạo thành công.
+   * @param {CreateQuestionRequestDTO} dto - Dữ liệu nội dung câu hỏi và thông tin file ảnh.
+   * @returns {Promise<IQuestionResponseDTO>} Thông tin chi tiết câu hỏi sau khi khởi tạo thành công.
    */
-  public async createQuestion(dto: CreateQuestionRequestDto): Promise<QuestionResponseDTO> {
+  public async createQuestion(dto: CreateQuestionRequestDTO): Promise<IQuestionResponseDTO> {
 
     // 1. Kiểm tra sự tồn tại của Chương và Hạng bằng lái (Cross-Service Validation)
     await this._validateRelations(dto.chapterId, dto.licenseCategoryIds);
@@ -144,10 +161,11 @@ export class QuestionService implements IQuestionService {
   /**
    * @description Cập nhật thông tin câu hỏi theo tư duy hướng hành vi (Behavior-Oriented).
    * @param {string} id - ID của câu hỏi cần cập nhật.
-   * @param {UpdateQuestionRequestDto} dto - Dữ liệu các trường cần thay đổi.
-   * @returns {Promise<QuestionResponseDTO>} Thông tin câu hỏi sau khi cập nhật.
+   * @param {UpdateQuestionRequestDTO} dto - Dữ liệu các trường cần thay đổi.
+   * @returns {Promise<IQuestionResponseDTO>} Thông tin câu hỏi sau khi cập nhật.
+   * @throws {AppError} QUESTION.NOT_FOUND - Khi không tìm thấy câu hỏi yêu cầu trong ngân hàng dữ liệu. (Question not found).
    */
-  public async updateQuestion(id: string, dto: UpdateQuestionRequestDto): Promise<QuestionResponseDTO> {
+  public async updateQuestion(id: string, dto: UpdateQuestionRequestDTO): Promise<IQuestionResponseDTO> {
     // 1. Tìm thực thể (Fetch Aggregate Root)
     const question = await this._questionRepo.findById(id);
     if (!question) throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
@@ -209,111 +227,63 @@ export class QuestionService implements IQuestionService {
     });
 
     // 6. Lưu trữ và Phản hồi
-    const saved = await this._questionRepo.updateQuestion(id, question);
+    const saved = await this._questionRepo.updateQuestion(question);
     return QuestionMapper.toResponse(saved);
   }
 
   /**
-   * @description Truy vấn danh sách câu hỏi thuộc một chương cụ thể.
-   * @param {string} chapterId - ID của chương cần lấy dữ liệu.
-   * @returns {Promise<QuestionResponseDTO[]>} Danh sách câu hỏi đã được format.
+   * @description Thực hiện chiến lược "Xóa thông minh" (Smart Delete) cho câu hỏi.
+   * @param {string} id - ID của câu hỏi cần xóa. (The ID of the question to be deleted.)
+   * @returns {Promise<IDeleteResponseDTO>} Kết quả thao tác xóa kèm thông báo chuẩn hóa.
+   * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy câu hỏi.
    */
-  public async getQuestionsByChapter(chapterId: string): Promise<QuestionResponseDTO[]> {
-    const entities = await this._questionRepo.findByChapterId(chapterId);
-    return QuestionMapper.toResponseList(entities);
-  }
-
-  /**
-   * @description Lấy thông tin chi tiết của một câu hỏi theo ID.
-   * @param {string} id - ID của câu hỏi cần truy vấn.
-   * @returns {Promise<QuestionResponseDTO>} Dữ liệu chi tiết câu hỏi.
-   * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy.
-   */
-  public async getQuestionById(id: string): Promise<QuestionResponseDTO> {
-    const entity = await this._questionRepo.findById(id);
-    if (!entity) throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
-    return QuestionMapper.toResponse(entity);
-  }
-
-  /**
-   * @description Lấy danh sách thông tin chi tiết các câu hỏi theo danh sách IDs.
-   * @param {string[]} ids - Danh sách các ID câu hỏi cần truy vấn.
-   * @returns {Promise<Question[]>} Danh sách thực thể câu hỏi.
-   * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy đủ số lượng ID duy nhất được yêu cầu.
-   */
-  public async getQuestionsByIds(ids: string[]): Promise<Question[]> {
-    // 1. Chặn trường hợp mảng rỗng
-    if (!ids || ids.length === 0) return [];
-
-    // 2. Xử lý logic trùng lặp ID (Lỗi logic 1)
-    const uniqueIds = Array.from(new Set(ids));
-
-    // 3. Gọi Repository lấy danh sách Entities dựa trên danh sách ID duy nhất
-    const entities = await this._questionRepo.findByIds(uniqueIds);
-
-    // 4. Kiểm tra tính toàn vẹn dựa trên UNIQUE IDs (Lỗi logic 1 - Fix)
-    // Phải so sánh với uniqueIds.length thay vì ids.length gốc
-    if (entities.length !== uniqueIds.length) {
-      throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
-    }
-
-    // 5. Đảm bảo thứ tự trả về khớp với mảng 'ids' ban đầu (Lỗi logic 2)
-    // SQL 'IN' không bảo đảm thứ tự. Map này giúp sắp xếp lại đúng thứ tự ids truyền vào.
-    const orderedEntities = ids.map(id => {
-      const found = entities.find(entity => entity.id === id);
-      return found!;
-    });
-
-    return orderedEntities;
-  }
-
-  /**
-   * @description Lấy danh sách thông tin chi tiết các câu hỏi theo danh sách IDs.
-   * @param {string[]} ids - Danh sách các ID câu hỏi cần truy vấn.
-   * @returns {Promise<Question[]>} Danh sách thực thể câu hỏi.
-   * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy đủ số lượng ID duy nhất được yêu cầu.
-   */
-  public async getByLicenseCategory(ids: string[]): Promise<Question[]> {
-    // 1. Chặn trường hợp mảng rỗng
-    if (!ids || ids.length === 0) return [];
-
-    // 2. Xử lý logic trùng lặp ID (Lỗi logic 1)
-    const uniqueIds = Array.from(new Set(ids));
-
-    // 3. Gọi Repository lấy danh sách Entities dựa trên danh sách ID duy nhất
-    const entities = await this._questionRepo.findByLicenseCategory(uniqueIds);
-
-    // 4. Kiểm tra tính toàn vẹn dựa trên UNIQUE IDs (Lỗi logic 1 - Fix)
-    // Phải so sánh với uniqueIds.length thay vì ids.length gốc
-    if (entities.length !== uniqueIds.length) {
-      throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
-    }
-
-    return entities;
-  }
-
-  /**
-   * @description Thực hiện xóa mềm (Soft Delete) câu hỏi khỏi hệ thống.
-   * @param {string} id - ID của câu hỏi cần xóa.
-   * @returns {Promise<void>}
-   * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy.
-   */
-  public async deleteQuestion(id: string): Promise<void> {
+  public async deleteQuestion(id: string): Promise<IDeleteResponseDTO> {
+    // 1. Kiểm tra tồn tại (Ném lỗi 404 nếu không tìm thấy)
+    // (Check existence - Throws 404 if not found)
     const question = await this._questionRepo.findById(id);
-    if (!question) throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
+    if (!question) {
+      throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
+    }
 
-    question.delete();
+    // 2. Thống kê ràng buộc (Câu hỏi đã nằm trong đề thi hoặc có lịch sử làm bài)
+    // (Statistics of constraints - Question in exams or has attempt history)
+    const related = await this._questionRepo.countRelatedData(id);
 
-    await this._questionRepo.delete(id);
+    // Giả sử các ràng buộc gồm: chi tiết ma trận đề và câu trả lời của người dùng
+    const totalRelated = related.chapter + related.examQuestions + related.licenseLinks;
+    let type: DeleteType;
+
+    // 3. Quyết định hướng xử lý (Decision logic)
+    if (totalRelated > 0) {
+      // TRƯỜNG HỢP 1: CÓ RÀNG BUỘC -> XÓA MỀM (Case 1: Has constraints -> Soft Delete)
+      question.delete(); // Cập nhật trạng thái xóa trong Entity (Domain Logic)
+      await this._questionRepo.softDelete(id);
+      type = DeleteType.SOFT;
+    } else {
+      // TRƯỜNG HỢP 2: DỮ LIỆU SẠCH -> XÓA VĨNH VIỄN (Case 2: Clean data -> Hard Delete)
+      await this._questionRepo.hardDelete(id);
+      type = DeleteType.HARD;
+    }
+
+    // 4. Đồng bộ Cache nếu cần thiết (Sync cache if necessary)
+    await this._cacheService.refresh();
+
+    // 5. Trả về DTO - Tận dụng Class để tự động tạo message
+    // (Return DTO - Utilize Class for automated message generation)
+    return new DeleteResponseDTO({
+      id,
+      type,
+      count: totalRelated
+    });
   }
 
   /**
    * @description Khôi phục câu hỏi đã bị xóa mềm trở lại trạng thái hoạt động.
    * @param {string} id - ID của câu hỏi cần phục hồi.
-   * @returns {Promise<QuestionResponseDTO>} Thông tin câu hỏi sau khi khôi phục.
+   * @returns {Promise<IQuestionResponseDTO>} Thông tin câu hỏi sau khi khôi phục.
    * @throws {AppError} QUESTION.NOT_FOUND nếu không tìm thấy hoặc câu hỏi chưa bị xóa.
    */
-  public async restoreQuestion(id: string): Promise<QuestionResponseDTO> {
+  public async restoreQuestion(id: string): Promise<IQuestionResponseDTO> {
     const question = await this._questionRepo.findByIdSystem(id);
     if (!question) throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
     if (!question.isDeleted()) {
@@ -323,36 +293,6 @@ export class QuestionService implements IQuestionService {
     question.restore(); // Gán deletedAt = null
     const saved = await this._questionRepo.restore(id);
     return QuestionMapper.toResponse(saved);
-  }
-
-  /**
-   * @description Lấy danh sách câu hỏi đã qua bộ lọc (Dịch: Get filtered paginated questions)
-   * @param {QuestionsAdminQueryDto} query - DTO chứa tiêu chí lọc (Chapter, License, Difficulty...) và phân trang.
-   * @returns {Promise<PaginatedResult<QuestionAdminResponseDTO>>} Trả về kết quả phân trang chứa DTO sạch.
-   */
-  public async getPaginatedQuestions(query: QuestionsAdminQueryDto): Promise<PaginatedResult<QuestionAdminResponseDTO>> {
-    // 1. Chuẩn hóa thông số phân trang (Dịch: Pagination normalization)
-    const page = Number(query.page) || PAGINATION_CONFIG.DEFAULT_PAGE;
-    const limit = Math.min(
-      Number(query.limit) || PAGINATION_CONFIG.DEFAULT_LIMIT,
-      PAGINATION_CONFIG.MAX_LIMIT
-    );
-
-    // 2. Tính toán skip (Dịch: Skip calculation)
-    // Logic tập trung tại Util để đảm bảo tính đồng nhất toàn hệ thống
-    const skip = PaginationUtil.getSkip(page, limit);
-
-    // 3. Truy vấn dữ liệu từ DB thông qua Question Repository
-    const [questions, total] = await this._questionRepo.findAndCountAdmin(query, skip, limit);
-
-    // 4. ÁNH XẠ DỮ LIỆU (Mapping): Chuyển mảng Domain Entity sang mảng Question Response DTO
-    const questionResponses = questions.map((question) =>
-      QuestionMapper.toAdminResponse(question)
-    );
-
-    // 5. Đóng gói kết quả cuối cùng kèm Metadata (Dịch: Encapsulate result with metadata)
-    // Trả về định dạng: { success, data: { items, meta: { total, totalPages... } } }
-    return PaginationUtil.createPaginatedResponse(questionResponses, total, page, limit);
   }
 
   /**
@@ -380,6 +320,8 @@ export class QuestionService implements IQuestionService {
    * @description Kiểm tra sự tồn tại của Chương và các Hạng bằng lái.
    * @param {string} chapterId - ID chương cần check.
    * @param {string[]} licenseIds - Danh sách ID hạng bằng lái cần check.
+   * @throws {AppError} CHAPTER.NOT_FOUND - Khi không tìm thấy thông tin chương lý thuyết yêu cầu trong hệ thống.
+   * @throws {AppError} LICENSE.NOT_FOUND - Khi hạng bằng lái hoặc thông tin giấy phép không tồn tại trong cơ sở dữ liệu. 
    */
   private async _validateRelations(chapterId: string, licenseIds: string[]): Promise<void> {
     // 1. Kiểm tra Chương 
@@ -404,12 +346,13 @@ export class QuestionService implements IQuestionService {
   /**
    * @description Kiểm tra tính hợp lệ và quyền sở hữu của danh sách đáp án truyền vào.
    * @param {Array<{ id?: string }>} existingAnswers - Danh sách đáp án hiện có trong Database.
-   * @param {UpdateAnswerPayload[]} incomingAnswers - Danh sách đáp án mới cần cập nhật.
+   * @param {IUpdateAnswerPayload[]} incomingAnswers - Danh sách đáp án mới cần cập nhật.
    * @throws {AppError} Ném lỗi nếu ID đáp án không thuộc về câu hỏi hiện tại.
+   * @throws {AppError} QUESTION.ANSWERS_SYNC_ERROR - Lỗi xảy ra khi dữ liệu các phương án trả lời không đồng bộ được với câu hỏi chính trong cơ sở dữ liệu. 
    */
   private _validateAnswerOwnership(
     existingAnswers: { id: string }[],
-    incomingAnswers: UpdateAnswerPayload[]
+    incomingAnswers: IUpdateAnswerPayload[]
   ): void {
     // 1. Chuyển danh sách ID hiện có vào Set để tìm kiếm cực nhanh
     // "Using a Set for O(1) lookup performance"
@@ -425,7 +368,7 @@ export class QuestionService implements IQuestionService {
     // 3. Nếu phát hiện ID "lạ", tung lỗi ngay lập tức
     // "Throwing a sync error if foreign IDs are detected"
     if (invalidIds.length > 0) {
-      throw new AppError(ErrorCode.QUESTION.ANSWERS_SYNC_ERROR);
+      throw new AppError(ErrorCode.QUESTION.ANSWERS_SYNC_FAILED);
     }
   }
 }

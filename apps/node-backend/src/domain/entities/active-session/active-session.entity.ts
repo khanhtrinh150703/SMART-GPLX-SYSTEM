@@ -19,6 +19,7 @@ export class ActiveSessionEntity extends BaseEntity<IActiveSessionProps> {
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
+      currentQuestionIndex : 0,
     });
   }
 
@@ -33,7 +34,7 @@ export class ActiveSessionEntity extends BaseEntity<IActiveSessionProps> {
   public updateAnswer(questionId: string, answerId: number | null): void {
     const newAnswer: IActiveSessionAnswer = {
       questionId,
-      selectedAnswerId: answerId,
+      selectedAnswerIndex: answerId,
       updatedAt: new Date()
     };
 
@@ -51,6 +52,47 @@ export class ActiveSessionEntity extends BaseEntity<IActiveSessionProps> {
     }
 
     this._props.updatedAt = new Date();
+  }
+
+  /**
+   * @description Đồng bộ hàng loạt câu trả lời và vị trí câu hỏi hiện tại.
+   * English: Bulk synchronize answers and the current question position.
+   */
+  public syncAnswers(
+    answersRecord: Record<string, number | null>,
+    currentIndex: number
+  ): void {
+    const now = new Date();
+
+    // 1. Cập nhật vị trí câu hỏi hiện tại
+    this._props.currentQuestionIndex = currentIndex;
+
+    // 2. Tạo một bản sao của mảng hiện tại để thao tác (Immutability)
+    const updatedAnswers = [...this._props.currentAnswers];
+
+    // 3. Duyệt qua Record để cập nhật từng câu trả lời
+    // Object.entries giúp tách QuestionId (key) và AnswerIndex (value)
+    Object.entries(answersRecord).forEach(([qId, ansIndex]) => {
+      const existingIdx = updatedAnswers.findIndex(a => a.questionId === qId);
+
+      const newAnswerData: IActiveSessionAnswer = {
+        questionId: qId,
+        selectedAnswerIndex: ansIndex,
+        updatedAt: now
+      };
+
+      if (existingIdx > -1) {
+        // Nếu đã có trong danh sách -> Cập nhật
+        updatedAnswers[existingIdx] = newAnswerData;
+      } else {
+        // Nếu chưa có -> Push mới
+        updatedAnswers.push(newAnswerData);
+      }
+    });
+
+    // 4. Gán lại mảng đã xử lý xong và cập nhật thời gian sync của Entity
+    this._props.currentAnswers = updatedAnswers;
+    this._props.updatedAt = now;
   }
 
   public get props(): Readonly<IActiveSessionProps> {

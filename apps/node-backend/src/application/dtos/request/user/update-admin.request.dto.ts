@@ -1,52 +1,64 @@
+import { AppError, ErrorCode } from "@/shared/errors";
+
 /**
- * @description Input interface cho việc khởi tạo DTO từ Controller.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật Admin.
  */
-export interface IUpdateAdminInput {
-  fullName?: string;
-  roles?: string[]; // Danh sách ID hoặc Name của Role gửi từ Frontend
+export interface IUpdateAdminInputDto {
+  readonly fullName?: string;
+  readonly roles?: string[];
 }
 
 /**
  * @description DTO xử lý yêu cầu cập nhật thông tin tài khoản Admin.
- * Được sử dụng trong kịch bản Quản trị viên cập nhật thông tin người dùng khác hoặc chính mình.
+ * Đảm bảo dữ liệu đầu vào hợp lệ và ngăn chặn việc gửi yêu cầu rỗng.
  */
-export class UpdateAdminRequestDTO {
-  /** @property {string} fullName - Họ tên đầy đủ mới (Tùy chọn). */
-  readonly fullName?: string;
+export class UpdateAdminRequestDTO implements IUpdateAdminInputDto {
+  public readonly fullName?: string;
+  public readonly roles?: string[];
 
-  /** @property {string[]} roles - Danh sách các vai trò mới được gán cho người dùng (Tùy chọn). */
-  readonly roles?: string[];
+  constructor(data: IUpdateAdminInputDto) {
+    // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
+    this.validate(data);
 
-  /**
-   * @description Khởi tạo DTO với dữ liệu thô từ Request.
-   * @param {IUpdateAdminInput} data - Dữ liệu đầu vào.
-   */
-  constructor(data: IUpdateAdminInput) {
-    this.fullName = data.fullName?.trim();
-    this.roles = data.roles;
+    // 2. Gán giá trị và chuẩn hóa dữ liệu
+    if (data.fullName !== undefined) {
+      this.fullName = data.fullName.trim();
+    }
+
+    if (data.roles !== undefined) {
+      this.roles = Array.isArray(data.roles) ? data.roles : [];
+    }
   }
 
   /**
-   * @description Kiểm tra tính hợp lệ của dữ liệu cập nhật.
-   * Đảm bảo ít nhất một trường được cung cấp và dữ liệu đúng định dạng.
-   * @returns {boolean}
+   * @description Hàm gác cổng thực hiện kiểm tra tính hợp lệ đa tầng.
+   * @private
    */
-  public isValid(): boolean {
-    // 1. Phải có ít nhất một trong hai trường để cập nhật
-    if (!this.fullName && (!this.roles || this.roles.length === 0)) {
-      return false;
+  private validate(data: IUpdateAdminInputDto): void {
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+
+    const { USER } = ErrorCode;
+
+    const hasFullName = data.fullName !== undefined;
+    const hasRoles = data.roles !== undefined;
+
+    // 1. Check xem có trường nào được gửi lên không
+    if (!hasFullName && !hasRoles) {
+      throw new AppError(USER.MISSING_UPDATE_FIELDS);
     }
 
-    // 2. Nếu có gửi fullName, không được để chuỗi rỗng sau khi trim
-    if (this.fullName !== undefined && this.fullName.length === 0) {
-      return false;
+    // 2. Validate Name
+    if (hasFullName) {
+      const name = data.fullName?.trim() || '';
+      if (name.length === 0) throw new AppError(USER.NAME_REQUIRED);
+      if (name.length < 2) throw new AppError(USER.NAME_TOO_SHORT);
+      if (name.length > 100) throw new AppError(USER.NAME_TOO_LONG);
     }
 
-    // 3. Nếu có gửi roles, phải là một mảng
-    if (this.roles !== undefined && !Array.isArray(this.roles)) {
-      return false;
+    // 3. Validate Roles
+    if (hasRoles) {
+      if (!Array.isArray(data.roles)) throw new AppError(USER.INVALID_ROLES_FORMAT);
+      if (data.roles.length === 0) throw new AppError(USER.ROLES_REQUIRED);
     }
-
-    return true;
   }
 }

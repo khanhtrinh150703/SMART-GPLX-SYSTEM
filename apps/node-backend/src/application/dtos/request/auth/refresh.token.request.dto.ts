@@ -2,39 +2,45 @@ import { AppError } from '@/shared/errors';
 import { ErrorCode } from '@/shared/errors/error-codes';
 
 /**
- * @description Data Transfer Object cho yêu cầu làm mới Access Token.
- * Tiếp nhận Refresh Token từ Client để thực hiện cấp phát Token mới.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu làm mới Token.
  */
-export class RefreshTokenRequestDTO {
+export interface IRefreshTokenInputDTO {
+  readonly refreshToken: string;
+}
+
+/**
+ * @description DTO đảm nhận việc tiếp nhận và xác thực thô Refresh Token.
+ * Ngăn chặn các token rỗng hoặc không đúng định dạng cơ bản ngay từ vòng gửi xe.
+ */
+export class RefreshTokenRequestDTO implements IRefreshTokenInputDTO {
   public readonly refreshToken: string;
 
-  /**
-   * @description Constructor nhận dữ liệu thô và thực hiện chuẩn hóa.
-   * @param {Partial<RefreshTokenRequestDTO>} data - Dữ liệu từ Request Body.
-   */
-  constructor(data: Partial<RefreshTokenRequestDTO>) {
-    // Tránh lỗi undefined khi truy cập string methods, đồng thời đảm bảo Zero Any
-    this.refreshToken = data.refreshToken?.trim() || "";
+  constructor(data: IRefreshTokenInputDTO) {
+    // 1. Kiểm tra tính hiện diện của data (Null Guard) và logic bên trong
+    this.validate(data);
+
+    // 2. Gán giá trị sau khi đã trim() để làm sạch dữ liệu
+    this.refreshToken = data.refreshToken.trim();
   }
 
   /**
-   * @description Tự kiểm tra tính hợp lệ của Refresh Token trước khi vào Service.
-   * @throws {AppError} - Ném lỗi nếu token trống hoặc định dạng không hợp lệ.
+   * @description Hàm bảo vệ, ném AppError ngay nếu dữ liệu không đạt yêu cầu.
+   * @private
    */
-  public isValid(): void {
-    // 1. Kiểm tra sự tồn tại
-    if (!this.refreshToken) {
-      throw new AppError(ErrorCode.VALIDATION.REFRESH_TOKEN_REQUIRED);
+  private validate(data: IRefreshTokenInputDTO): void {
+    // Chặn đứng lỗi "Cannot read properties of undefined"
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // 2. Kiểm tra độ dài cơ bản (Refresh Token thường là JWT nên không thể quá ngắn)
-    // Giả định tối thiểu 40 ký tự để lọc bớt rác ban đầu
-    if (this.refreshToken.length < 40) {
-      throw new AppError(ErrorCode.VALIDATION.REFRESH_TOKEN_INVALID);
+    // Kiểm tra sự tồn tại của Token
+    if (!data.refreshToken || typeof data.refreshToken !== 'string') {
+      throw new AppError(ErrorCode.AUTH.REFRESH_TOKEN_REQUIRED);
     }
 
-    // 💡 Lưu ý cho Cậu Vàng: 
-    // Logic kiểm tra chữ ký JWT và hết hạn sẽ được thực hiện ở tầng Infrastructure/Service 
-    // bằng thư viện jsonwebtoken, DTO chỉ check định dạng thô.
+    // Kiểm tra độ dài cơ bản (JWT thường > 40 ký tự)
+    if (data.refreshToken.trim().length < 40) {
+      throw new AppError(ErrorCode.AUTH.INVALID_REFRESH_TOKEN);
+    }
   }
 }
