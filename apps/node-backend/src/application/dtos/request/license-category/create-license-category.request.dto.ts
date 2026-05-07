@@ -1,69 +1,83 @@
 import { REGEX } from "@/domain/constants/regex.constant";
-import { AppError } from "@/shared/errors";
-import { ErrorCode } from "@/shared/errors/error-codes";
+import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
- * Data Transfer Object cho việc tạo mới Hạng bằng lái.
- * Sử dụng cho việc nhận và kiểm tra dữ liệu từ Request Body.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo mới Hạng bằng lái.
  */
-export class CreateLicenseCategoryRequestDTO {
-  public readonly id?: string; // ID thường là optional khi tạo mới (DB tự gen)
-  public readonly name: string;
-  public readonly description: string;
-  public readonly minAge: number;
-  public readonly orderIndex: number;
+export interface ICreateLicenseCategoryInputDTO {
+    readonly id?: string;
+    readonly name: string;
+    readonly description: string;
+    readonly minAge: number;
+    readonly orderIndex: number;
+}
 
-  /**
-   * Constructor nhận vào dữ liệu thô để khởi tạo object.
-   * Thực hiện trim() dữ liệu ngay từ đầu để tránh lỗi khoảng trắng.
-   */
-  constructor(data: Partial<CreateLicenseCategoryRequestDTO>) {
-    this.id = data.id;
-    this.name = data.name?.trim() || "";
-    this.description = data.description?.trim() || "";
-    this.minAge = data.minAge ?? 18;
-    this.orderIndex = data.orderIndex ?? 1;
-  }
+/**
+ * @description DTO xử lý tạo mới Hạng bằng lái.
+ * Thực hiện gác cổng (validate) và làm sạch dữ liệu ngay trong constructor.
+ */
+export class CreateLicenseCategoryRequestDTO implements ICreateLicenseCategoryInputDTO {
+    public readonly id?: string;
+    public readonly name: string;
+    public readonly description: string;
+    public readonly minAge: number;
+    public readonly orderIndex: number;
 
-  /**
-   * Kiểm tra tính hợp lệ của dữ liệu đầu vào.
-   * Tự động lookup Message và Status Code thông qua ValidationError.
-   * @throws {AppError}
-   */
-  public isValid(): void {
-    // 1. Kiểm tra Tên hạng bằng (Name Validation)
-    if (!this.name) {
-      throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
+    constructor(data: ICreateLicenseCategoryInputDTO) {
+        // 1. Chặn đứng dữ liệu lỗi ngay lập tức
+        this.validate(data);
+
+        // 2. Làm sạch và gán giá trị (Sanitization)
+        this.id = data.id;
+        this.name = data.name.trim();
+        this.description = data.description.trim();
+        this.minAge = data.minAge ?? 18;
+        this.orderIndex = data.orderIndex ?? 1;
     }
 
-    if (this.name.length < 1 || this.name.length > 10) {
-      throw new AppError(ErrorCode.VALIDATION.NAME_INVALID_LENGTH);
-    }
+    /**
+     * @description Hàm gác cổng thực hiện ném AppError dựa trên mã lỗi hệ thống.
+     * @private
+     */
+    private validate(data: ICreateLicenseCategoryInputDTO): void {
+        if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
-    if (this.minAge === undefined || this.minAge === null || typeof this.minAge !== 'number' || Number.isNaN(this.minAge)) {
-      throw new AppError(ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER); // "Độ tuổi phải là một con số hợp lệ."
-    }
+        // 1. Kiểm tra Tên hạng bằng
+        const trimmedName = data.name?.trim() || '';
+        if (trimmedName.length === 0) {
+            throw new AppError(ErrorCode.LICENSE.NAME_REQUIRED);
+        }
 
-    if (this.minAge < 18) {
-      throw new AppError(ErrorCode.VALIDATION.AGE_INVALID); // "Độ tuổi tối thiểu không được nhỏ hơn 18."
-    }
+        if (trimmedName.length > 10) {
+            throw new AppError(ErrorCode.LICENSE.NAME_INVALID_LENGTH);
+        }
 
-    if (this.orderIndex < 0) {
-      throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER); 
-    }
+        if (!REGEX.LICENSE.NAME_FORMAT.test(trimmedName)) {
+            throw new AppError(ErrorCode.LICENSE.NAME_FORMAT_INVALID);
+        }
 
-    // Kiểm tra định dạng bằng Regex (VD: A1, B1, B2...)
-    if (!REGEX.LICENSE.NAME_FORMAT.test(this.name)) {
-      throw new AppError(ErrorCode.VALIDATION.NAME_FORMAT_INVALID);
-    }
+        // 2. Kiểm tra Độ tuổi
+        if (data.minAge === undefined || data.minAge === null || typeof data.minAge !== 'number' || Number.isNaN(data.minAge)) {
+            throw new AppError(ErrorCode.LICENSE.AGE_REQUIRED);
+        }
 
-    // 2. Kiểm tra Mô tả (Description Validation)
-    if (!this.description) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED);
-    }
+        if (data.minAge < 18) {
+            throw new AppError(ErrorCode.LICENSE.AGE_INVALID);
+        }
 
-    if (this.description.length > 500) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+        // 3. Kiểm tra Thứ tự sắp xếp
+        if (data.orderIndex !== undefined && data.orderIndex < 0) {
+            throw new AppError(ErrorCode.LICENSE.INVALID_ORDER);
+        }
+
+        // 4. Kiểm tra Mô tả
+        const trimmedDesc = data.description?.trim() || '';
+        if (trimmedDesc.length === 0) {
+            throw new AppError(ErrorCode.LICENSE.DESCRIPTION_REQUIRED);
+        }
+
+        if (trimmedDesc.length > 500) {
+            throw new AppError(ErrorCode.LICENSE.DESCRIPTION_TOO_LONG);
+        }
     }
-  }
 }

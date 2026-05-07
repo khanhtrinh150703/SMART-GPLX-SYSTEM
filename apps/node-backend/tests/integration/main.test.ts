@@ -71,21 +71,24 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         const licenses = (licenseRes.body.data?.data || []) as LicenseCategory[];
         const examMatrix = (examMatrixRes.body.data?.data || []) as ExamMatrix[];
 
+        const getChapter = (code: string) => chapters.find((c: Chapter) => c.code === code)?.id;
+        const getLicense = (name: string) => licenses.find((l: LicenseCategory) => l.name === name)?.id;
+        const getexamMatrix = (name: string) => examMatrix.find((ex: ExamMatrix) => ex.name === name)?.id;
 
         // 4. Tìm kiếm ID chính xác theo nghiệp vụ (c giờ đây là Chapter, l là License)
-        chapterId = chapters.find((c: Chapter) => c.code === '1')?.id;
-        chapterIdSecond = chapters.find((c: Chapter) => c.code === '5')?.id;
-        chapterIdThird = chapters.find((c: Chapter) => c.code === '6')?.id;
-        chapterIdFour = chapters.find((c: Chapter) => c.code === '7')?.id;
-        licenseId = licenses.find((l: LicenseCategory) => l.name === 'CE')?.id;
-        licenseSecond = licenses.find((l: LicenseCategory) => l.name === 'I')?.id;
-        examMatrixId = examMatrix.find((examMatrix: ExamMatrix) => examMatrix.name === 'Ma trận chuẩn Hạng CE')?.id;
+        chapterId = getChapter('1');
+        chapterIdSecond = getChapter('5');
+        chapterIdThird = getChapter('6');
+        chapterIdFour = getChapter('7');
+
+        licenseId = getLicense('CE');
+        licenseSecond = getLicense('I');
+        examMatrixId = getexamMatrix('Ma trận chuẩn Hạng CE');
 
         // 5. Kiểm tra an toàn (Guard Clause)
         if (!chapterId || !chapterIdSecond || !licenseId || !examMatrixId) {
             throw new Error('❌ Test Fail: Không tìm thấy Seed Data cho Code 1, 5 hoặc License A1');
         }
-
     });
 
     // =========================================================================

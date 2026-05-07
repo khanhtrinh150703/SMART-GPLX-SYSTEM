@@ -7,32 +7,54 @@ import { IOtpService } from '@/domain/interfaces/services/identity/i-otp.service
 import { AUTH_CONFIG } from '@/shared/config/auth.config';
 import { RegisterRequestDTO } from '@/application/dtos/request/auth/register.request.dto';
 import { UserMapper } from '@/infrastructure/database/mappers/identity';
-import { UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
+import { IUserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
 
 /**
  * @interface IRegistrationServiceCradle
- * @description "Bộ lọc" dependencies cho RegistrationService.
- * Đảm bảo service này chỉ tiếp cận đúng các công cụ cần thiết cho việc đăng ký.
+ * @description Định nghĩa tập hợp các phụ thuộc (Dependencies) chuyên biệt cho quy trình đăng ký.
  */
 export interface IRegistrationServiceCradle {
+  /** @description Dịch vụ xử lý nghiệp vụ chính liên quan đến thực thể Người dùng. */
   userService: IUserService;
+
+  /** @description Dịch vụ quản lý vòng đời và xác thực mã OTP. */
   otpService: IOtpService;
+
+  /** @description Kho lưu trữ tạm thời cho dữ liệu đăng ký chưa xác thực (thường dùng Redis). */
   pendingUserRepository: IPendingUserRepository;
 }
 
 /**
  * @class RegistrationService
  * @description Điều phối quy trình đăng ký tài khoản mới và xác thực OTP đầu vào.
+ * @principle Loose Coupling - Sử dụng các Interface để giảm sự phụ thuộc trực tiếp giữa các thành phần.
  */
 export class RegistrationService implements IRegistrationService {
-  // Sử dụng Interface thay vì Class trực tiếp để tăng tính linh hoạt (Loose Coupling)
+  /** 
+   * @private 
+   * @readonly 
+   * @description Instance điều phối logic người dùng. 
+   */
   private readonly _userService: IUserService;
+
+  /** 
+   * @private 
+   * @readonly 
+   * @description Instance điều phối logic mã xác thực. 
+   */
   private readonly _otpService: IOtpService;
+
+  /** 
+   * @private 
+   * @readonly 
+   * @description Instance quản lý bộ nhớ tạm cho luồng đăng ký. 
+   */
   private readonly _pendingRepo: IPendingUserRepository;
 
   /**
-   * @description Khởi tạo Service với túi đồ nghề chuyên biệt.
-   * @param {IRegistrationServiceCradle} cradle - Dependencies được tiêm tự động từ Awilix.
+   * @constructor
+   * @description Khởi tạo Service với "túi đồ nghề" được tiêm từ DI Container (Awilix).
+   * @param {IRegistrationServiceCradle} cradle - Chứa các Service và Repository cần thiết.
    */
   constructor({ userService, otpService, pendingUserRepository }: IRegistrationServiceCradle) {
     this._userService = userService;
@@ -46,7 +68,6 @@ export class RegistrationService implements IRegistrationService {
    * @returns {Promise<void>}
    */
   public async initiate(dto: RegisterRequestDTO): Promise<void> {
-    this.validate(dto);
     const normalizedEmail = dto.email.trim().toLowerCase();
     const normalizedUsername = dto.username.trim().toLowerCase();
 
@@ -68,9 +89,10 @@ export class RegistrationService implements IRegistrationService {
    * @description Tác dụng: Hoàn tất đăng ký, kiểm tra OTP, tạo User chính thức và dọn dẹp dữ liệu tạm.
    * @param {string} email - Email người dùng.
    * @param {string} otp - Mã xác thực OTP.
-   * @returns {Promise<UserResponseDTO>} - Trả về Entity UserResponseDTO sau khi tạo thành công.
+   * @returns {Promise<IUserResponseDTO>} - Trả về Entity IUserResponseDTO sau khi tạo thành công.
+   * @throws {AppError} AUTH.REGISTRATION_EXPIRED - Nếu phiên đăng ký tạm không tồn tại hoặc đã quá hạn.
    */
-  public async complete(email: string, otp: string): Promise<UserResponseDTO> {
+  public async complete(email: string, otp: string): Promise<IUserResponseDTO> {
     const normalizedEmail = email.trim().toLowerCase();
     // 1. Lấy dữ liệu tạm từ PendingRepo để kiểm tra xem họ có thực sự đang đăng ký không
     const rawData = await this._pendingRepo.get(normalizedEmail);
@@ -104,9 +126,11 @@ export class RegistrationService implements IRegistrationService {
   }
 
   /**
-   * @description Tác dụng: Xử lý yêu cầu gửi lại mã OTP cho người dùng đang đăng ký dở dang.
-   * @param {string} email - Email người dùng.
+   * @description Gửi lại mã OTP cho quy trình.
+   * Kiểm tra sự tồn tại của phiên đăng ký tạm thời và thực thi logic gửi mã kèm chống spam.
+   * @param {string} email - Địa chỉ email người dùng cần nhận lại mã.
    * @returns {Promise<void>}
+   * @throws {AppError} AUTH.REGISTRATION_EXPIRED - Nếu phiên đăng ký tạm không tồn tại hoặc đã quá hạn.
    */
   public async resend(email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -119,14 +143,5 @@ export class RegistrationService implements IRegistrationService {
 
     // 2. Yêu cầu OtpService gửi lại mã (Logic chống spam 60s đã được bọc bên trong requestOtp)
     await this._otpService.requestOtp(normalizedEmail);
-  }
-
-  /**
-   * @description Tác dụng: Validate dữ liệu đầu vào cơ bản (Tốt nhất nên để ngoài Middleware, 
-   * @param {RegisterDTO} dto - Dữ liệu cần kiểm tra.
-   */
-  private validate(dto: RegisterRequestDTO): void {
-    if (!dto.isEmail()) throw new AppError(ErrorCode.VALIDATION.EMAIL_INVALID);
-    if (!dto.isPassword()) throw new AppError(ErrorCode.VALIDATION.PASSWORD_INVALID);
   }
 }

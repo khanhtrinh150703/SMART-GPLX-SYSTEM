@@ -1,9 +1,9 @@
 import { ExamMatrix } from "@/domain/entities/exam-matrix/exam-matrix.entity";
-import { ExamMatrixResponseDTO } from "@/application/dtos/response/exam-matrix/exam-matrix-response.dto";
+import { ExamMatrixResponseDTO, IExamMatrixResponseDTO } from "@/application/dtos/response/exam-matrix/exam-matrix-response.dto";
 import { Prisma } from "@prisma/client";
 import { IExamMatrixDetailProps } from "@/domain/entities/exam-matrix/exam-matrix.props";
-import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
 import { ICachedExamMatrix } from "@/shared/master-data/exam-matrix";
+import { ExamMatrixSelectionResponseDTO, IExamMatrixSelectionResponseDTO } from "@/application/dtos/response/exam-matrix/selection-exam-matrix.respone.dto";
 
 /**
  * @description Định nghĩa Type cho Record được trả về từ Prisma kèm theo quan hệ details.
@@ -113,9 +113,9 @@ export class ExamMatrixMapper {
   /**
    * @description Chuyển đổi thực thể Domain sang DTO trả về cho phía Client.
    * @param {ExamMatrix} entity - Thực thể Domain.
-   * @returns {ExamMatrixResponseDTO} Dữ liệu đã lọc và chuẩn hóa.
+   * @returns {IExamMatrixResponseDTO} Dữ liệu đã lọc và chuẩn hóa.
    */
-  public static toResponse(entity: ExamMatrix): ExamMatrixResponseDTO {
+  public static toResponse(entity: ExamMatrix): IExamMatrixResponseDTO {
     const props = entity.props;
     return new ExamMatrixResponseDTO({
       id: props.id ?? "",
@@ -137,37 +137,46 @@ export class ExamMatrixMapper {
   /**
    * @description Chuyển đổi danh sách thực thể sang danh sách DTO.
    * @param {ExamMatrix[]} entities - Danh sách thực thể.
-   * @returns {ExamMatrixResponseDTO[]} Danh sách DTO.
+   * @returns {IExamMatrixResponseDTO[]} Danh sách DTO.
    */
-  public static toResponseList(entities: ExamMatrix[]): ExamMatrixResponseDTO[] {
+  public static toResponseList(entities: ExamMatrix[]): IExamMatrixResponseDTO[] {
     return entities.map(entity => this.toResponse(entity));
   }
 
   /**
-    * @description Chuyển đổi sang định dạng Selection (Value/Label) cho Dropdown
-    * @param {ExamMatrix} entity 
-    * @returns {SelectionResponseDto}
-    */
-  public static toSelectionResponse(entity: ICachedExamMatrix): SelectionResponseDto {
-    return new SelectionResponseDto({
+   * @description Chuyển đổi sang định dạng Selection (Value/Label) cho Dropdown
+   * @param {ExamMatrix} entity 
+   * @returns {IExamMatrixSelectionResponseDTO}
+   */
+  public static toSelectionResponse(entity: ICachedExamMatrix): IExamMatrixSelectionResponseDTO {
+    return new ExamMatrixSelectionResponseDTO({
       value: entity.id!,
       label: entity.name,
       orderIndex: 1,
+
+      // Các thuộc tính bổ sung (Extended metadata)
+      createdAt: entity.createdAt,
+      minCriticalQuestions: entity.minCriticalQuestions,
+      licenseCategoryId: entity.licenseCategoryId,
+      licenseCategoryName: entity.licenseCategoryName,
+      totalQuestions: entity.totalQuestions,
+      durationMinutes: entity.durationMinutes,
+      passingScore: entity.passingScore,
     });
   }
 
   /**
    * @description Chuyển đổi danh sách thực thể sang DTO dùng cho Dropdown.
    * @param {ICachedExamMatrix[]} entities - Danh sách các thực thể ExamMatrix Domain.
-   * @returns {SelectionResponseDto[]} Mảng DTO đã sắp xếp theo thời gian.
+   * @returns {ExamMatrixSelectionResponseDto[]} Mảng DTO đã sắp xếp theo thời gian.
    */
-  public static toSelectionList(entities: ICachedExamMatrix[]): SelectionResponseDto[] {
+  public static toSelectionList(entities: ICachedExamMatrix[]): ExamMatrixSelectionResponseDTO[] {
     // Nếu muốn cũ nhất lên đầu, hãy đổi thành a.props.createdAt.getTime() - b.props.createdAt.getTime().
     return [...entities]
       .sort((a, b) => {
         const timeA = a.createdAt?.getTime() || 0;
         const timeB = b.createdAt?.getTime() || 0;
-        return timeB - timeA; 
+        return timeB - timeA;
       })
       .map((entity) => this.toSelectionResponse(entity));
   }

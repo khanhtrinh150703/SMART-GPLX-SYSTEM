@@ -1,25 +1,36 @@
 /**
- * @description DTO phản hồi thông tin chương lý thuyết cho Client.
- * (DTO responding with theoretical chapter information for the Client)
+ * @description Giao diện dữ liệu trả về cho thông tin chương lý thuyết.
  */
-export interface ChapterResponseDTO {
-  /** @property {string} id - Mã định danh duy nhất của chương (UUID). */
+export interface IChapterResponseDTO {
   readonly id: string;
-
-  /** @property {string} name - Tiêu đề của chương học (VD: Khái niệm và quy tắc). */
   readonly name: string;
-
-  /** @property {string | null} description - Mô tả tóm tắt nội dung chương (có thể để trống). */
   readonly description: string | null;
-
-  /** @property {number} orderIndex - Thứ tự hiển thị của chương trong danh sách đào tạo. */
   readonly orderIndex: number;
-
-  /** @property {Date} createdAt - Thời điểm tạo chương học hệ thống. */
   readonly createdAt: Date;
-
-  /** @property {string} status - Trạng thái hiện tại (VD: 'active', 'draft', 'deleted'). */
   readonly status: string;
-
   readonly code: string;
+}
+
+/**
+ * @description DTO vận chuyển thông tin chương lý thuyết.
+ * Đóng vai trò mang dữ liệu sạch (Data Carrier) để phản hồi cho phía Client.
+ */
+export class ChapterResponseDTO implements IChapterResponseDTO {
+  public readonly id: string;
+  public readonly name: string;
+  public readonly description: string | null;
+  public readonly orderIndex: number;
+  public readonly createdAt: Date;
+  public readonly status: string;
+  public readonly code: string;
+
+  constructor(data: IChapterResponseDTO) {
+    this.id = data.id;
+    this.name = data.name;
+    this.description = data.description;
+    this.orderIndex = data.orderIndex;
+    this.createdAt = data.createdAt;
+    this.status = data.status;
+    this.code = data.code;
+  }
 }

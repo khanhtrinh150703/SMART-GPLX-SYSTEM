@@ -11,6 +11,7 @@ export const ENDPOINTS = {
     RESEND_OTP: `/auth/resend-otp`,
     FORGOT_PASSWORD: `/auth/forgot-password`,
     RESET_PASSWORD: `/auth/reset-password`,
+    REFRESH_TOKEN: '/auth/refresh-token'
   },
 
   USER: {
@@ -39,6 +40,7 @@ export const ENDPOINTS = {
 
   QUESTION: {
     BASE: "/questions",
+    SLECTION: "questions/selection-pool",
     DETAIL: (id: string) => `/questions/${id}`,
     RESTORE: (id: string) => `/questions/${id}/restore`,
   },
@@ -53,14 +55,40 @@ export const ENDPOINTS = {
     COMPLETE: "/import/complete",
     STATUS: "/import/status",
   },
+
   EXAM_MATRICES: {
     BASE: '/exam-matrices',
     DETAILS: (id: string) => `/exam-matrices/${id}`,
     RESTORE: (id: string) => `/exam-matrices/${id}/restore`,
+    SELECTION: "/exam-matrices/selection",
   },
 
   EXAM: {
+    AUTO: '/exams/generate-auto',
+    MANUAL: '/exams/manual',
     BASE: '/exams',
+    DETAILS: (id: string) => `/exams/${id}`,
+    USER_DETAILS: (id: string) => `/exams/detail/${id}`,
+    RESTORE: (id: string) => `/exams/${id}/restore`,
     GENERATION: "/exams/generate-auto",
+    LIST: '/exams/list',
+    SUBMIT : '/exam-attempts/complete',
+    GUEST_SUBMIT: "/exam-attempts/guest/complete",
+  },
+
+  /**
+   * ACTIVE SESSION ENDPOINTS
+   * (Định tuyến cho Dịch vụ Phiên làm bài)
+   */
+  ACTIVE_SESSION: {
+    // 1. GUEST ROUTES (PUBLIC)
+    GUEST_START: '/active-sessions/guest/start',
+
+    // 2. PROTECTED ROUTES (PRIVATE)
+    CURRENT: '/active-sessions/current',
+    START: '/active-sessions/start',
+    SYNC: '/active-sessions/sync',
+    // Nếu tương lai ông cần lấy chi tiết một session cũ theo ID
+    // DETAILS: (id: string) => `/active-sessions/${id}`, 
   }
 };

@@ -1,8 +1,17 @@
 import { NavItem } from "@/types/sidebar.types";
 import {
-  LayoutDashboard, History, UserCircle,
-  Settings, Database, Users, CreditCard, BookOpen, FileUp,
-  ClipboardList, Grid3X3, Award, Pencil,
+  LayoutDashboard,
+  History,
+  UserCircle,
+  Settings,
+  Database,
+  Users,
+  CreditCard,
+  BookOpen,
+  FileUp,
+  ClipboardList,
+  Grid3X3,
+  Pencil,
 } from "lucide-react";
 
 export const NAV_ITEMS: NavItem[] = [
@@ -27,27 +36,20 @@ export const NAV_ITEMS: NavItem[] = [
     requiredPermission: "results:read",
   },
   {
-    href: "/results",
-    title: "Kết quả bài thi",
-    label: "Exam Results",
-    icon: Award, // Icon huy chương cho kết quả (Icon for exam results)
-    requiredPermission: "results:read",
-  },
-  {
     href: "/profile",
     title: "Hồ sơ cá nhân",
     label: "Personal Profile",
     icon: UserCircle,
     requiredPermission: "profile:manage",
   },
-  
+
   // --- PHÂN ĐOẠN QUẢN TRỊ (ADMIN/INSTRUCTOR) ---
   {
     href: "/admin/exams",
     title: "Quản lý đề thi",
     label: "Exam Management",
     icon: ClipboardList, // Icon danh sách kiểm tra (Icon for management)
-    requiredPermission: "exams:manage", 
+    requiredPermission: "exams:manage",
   },
   {
     href: "/admin/exam-matrices",
@@ -96,5 +98,6 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Cài đặt",
     label: "System Settings",
     icon: Settings,
+    requiredPermission: "admin:settings",
   },
 ];

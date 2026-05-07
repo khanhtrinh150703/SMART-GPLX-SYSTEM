@@ -1,9 +1,9 @@
-import { ChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
+import { ChapterResponseDTO, IChapterResponseDTO } from "@/application/dtos/response/chapter/chapter.respone.dto";
 import { Chapter } from "@/domain/entities/chapter/chapter.entity";
 import { IChapterProps } from "@/domain/entities/chapter/chapter.props";
 import { IChapterRecord } from "@/infrastructure/persistence/exam-mgmt/chapter.record";
 import { ICachedChapter } from "@/shared/master-data";
-import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { ISelectionResponseDTO, SelectionResponseDTO } from "@/application/dtos/response/shared/selection.response.dto";
 import { Prisma } from "@prisma/client";
 
 /**
@@ -69,10 +69,10 @@ export class ChapterMapper {
   /**
    * @description Chuyển đổi thực thể nghiệp vụ sang đối tượng phản hồi (DTO) để gửi về phía Client.
    * @param {Chapter} chapter - Thực thể Domain cần ánh xạ.
-   * @returns {ChapterResponseDTO} Đối tượng truyền tải dữ liệu phía Client.
+   * @returns {IChapterResponseDTO} Đối tượng truyền tải dữ liệu phía Client.
    */
-  public static toResponse(chapter: Chapter): ChapterResponseDTO {
-    return {
+  public static toResponse(chapter: Chapter): IChapterResponseDTO {
+    return new ChapterResponseDTO({
       id: chapter.id as string,
       name: chapter.name,
       description: chapter.description,
@@ -80,15 +80,15 @@ export class ChapterMapper {
       orderIndex: chapter.orderIndex,
       createdAt: chapter.createdAt as Date,
       status: chapter.isDeleted() ? 'deleted' : 'active'
-    };
+    });
   }
 
   /**
    * @description Chuyển đổi danh sách thực thể Chương sang danh sách DTO để trả về Client.
    * @param {Chapter[]} chapters - Danh sách thực thể Chương lý thuyết.
-   * @returns {ChapterResponseDTO[]}
+   * @returns {IChapterResponseDTO[]}
    */
-  public static toResponseList(chapters: Chapter[]): ChapterResponseDTO[] {
+  public static toResponseList(chapters: Chapter[]): IChapterResponseDTO[] {
     return chapters.map((chapter) => this.toResponse(chapter));
   }
 
@@ -97,8 +97,8 @@ export class ChapterMapper {
    * @param {ICachedChapter} entity 
    * @returns {SelectionResponseDto}
    */
-  public static toSelectionResponse(entity: ICachedChapter): SelectionResponseDto {
-    return new SelectionResponseDto({
+  public static toSelectionResponse(entity: ICachedChapter): ISelectionResponseDTO {
+    return new SelectionResponseDTO({
       value: entity.id!,
       label: entity.name,
       orderIndex: entity.orderIndex,
@@ -109,9 +109,9 @@ export class ChapterMapper {
    * @description Chuyển đổi danh sách thực thể sang DTO dùng cho Dropdown.
    * Dữ liệu được sắp xếp theo chỉ số thứ tự (orderIndex) tăng dần.
    * @param {ICachedChapter[]} entities - Danh sách các thực thể Chapter Domain.
-   * @returns {SelectionResponseDto[]} Mảng DTO đã sắp xếp theo thứ tự (1 -> N).
+   * @returns {ISelectionResponseDTO[]} Mảng DTO đã sắp xếp theo thứ tự (1 -> N).
    */
-  public static toSelectionList(entities: ICachedChapter[]): SelectionResponseDto[] {
+  public static toSelectionList(entities: ICachedChapter[]): ISelectionResponseDTO[] {
     // 1. Sử dụng Spread Operator để tạo bản sao, tránh "Mutate" mảng gốc
     // 2. Sắp xếp theo orderIndex. Nếu orderIndex undefined, mặc định về 0.
     return [...entities]

@@ -46,7 +46,7 @@ export interface IChapterRepository {
    * @param {Chapter} chapter - Thực thể chứa các thông tin đã cập nhật.
    * @returns {Promise<void>}
    */
-  updateChapter(id: string, chapter: Chapter): Promise<void>;
+  updateChapter(chapter: Chapter): Promise<void>;
 
   /**
    * @description Thống kê chi tiết số lượng các bản ghi đang tham chiếu đến Chương này.

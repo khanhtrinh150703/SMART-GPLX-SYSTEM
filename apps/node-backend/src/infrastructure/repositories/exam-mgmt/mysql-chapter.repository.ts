@@ -67,13 +67,13 @@ export class MySQLChapterRepository implements IChapterRepository {
     await this._prisma.chapter.create({ data: persistence });
   }
 
-  public async updateChapter(id: string, chapter: Chapter): Promise<void> {
+  public async updateChapter(chapter: Chapter): Promise<void> {
     if (!chapter.id) return;
 
     const persistence = ChapterMapper.toUpdatePersistence(chapter);
 
     await this._prisma.chapter.update({
-      where: { id },
+      where: { id: chapter.id },
       data: persistence,
     });
   }

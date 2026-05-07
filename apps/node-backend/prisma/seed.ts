@@ -1,6 +1,6 @@
 import { PrismaClient, Role, Permission } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import * as SEED from './data.seed';
+import * as SEED from './data';
 
 const prisma = new PrismaClient();
 
@@ -33,8 +33,14 @@ async function main(): Promise<void> {
   const allRoles: Role[] = await prisma.role.findMany();
 
   // 2. Mapping Role - Permission (RBAC Matrix)
-  console.log('🔗 2. Đang thiết lập ma trận quyền hạn (PBAC)...');
-  const studentPerms = ['exams:take', 'profile:manage', 'results:read'];
+  console.log('🔗 2. Đang thiết lập ma trận quyền hạn (RBAC)...');
+  const studentPerms = ['exams:take',
+    'profile:manage',
+    'results:read',
+    'active-sessions:read',
+    'active-sessions:write',
+    'active-sessions:submit'
+  ];
   const instructorPerms = [
     ...studentPerms,
     'questions:read', 'questions:write', 'questions:import', 'questions:delete',

@@ -20,11 +20,19 @@ export const masterService = {
     return response.data;
   },
 
-   /**
-   * Lấy danh sách roles
-   */
+  /**
+  * Lấy danh sách roles
+  */
   async getRoleSelection() {
     const response = await masterApi.getRoleSelection();
+    return response.data;
+  },
+
+  /**
+  * Lấy danh sách exam-Matrix
+  */
+  async getExamMatrixSelection() {
+    const response = await masterApi.getExamMatrixSelection();
     return response.data;
   },
 };

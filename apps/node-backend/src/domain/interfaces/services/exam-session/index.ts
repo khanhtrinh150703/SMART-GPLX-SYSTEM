@@ -2,4 +2,4 @@ export * from './i-active-session.service'
 export * from './i-complete-exam.service'
 export * from './i-exam-attempts.service'
 export * from './i-exam-matrix.service'
-
+export * from './queries'

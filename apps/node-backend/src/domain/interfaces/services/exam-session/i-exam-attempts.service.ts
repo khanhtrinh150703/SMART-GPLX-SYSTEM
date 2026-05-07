@@ -3,34 +3,28 @@ import { CreateExamAttemptProps } from "@/domain/entities/exam-attempt/exam-atte
 
 /**
  * @interface IExamAttemptService
- * @description Quản lý lịch sử và truy xuất kết quả các lượt thi.
- * Snapshot là dữ liệu bất biến, tập trung vào việc lưu và đọc.
+ * @description Dịch vụ quản lý nghiệp vụ thay đổi trạng thái (Write-side) cho các lượt thi.
+ * Chịu trách nhiệm lưu trữ Snapshot bất biến và điều phối việc xóa dữ liệu.
  */
 export interface IExamAttemptService {
-    /**
-     * @description Lưu một lượt thi mới. 
-     * Thường được gọi sau khi logic chấm điểm tại CompleteExamService hoàn tất.
-     */
-    createAttempt(props: CreateExamAttemptProps): Promise<IExamAttemptResponseDTO>;
+  /**
+   * @description Lưu kết quả một lượt thi mới vào hệ thống.
+   * Thường được kích hoạt sau khi hoàn tất quy trình chấm điểm (Grading logic).
+   * @param {CreateExamAttemptProps} props - Dữ liệu khởi tạo bao gồm thông tin Snapshot và kết quả đạt/trượt.
+   * @returns {Promise<IExamAttemptResponseDTO>} DTO của lượt thi vừa được tạo.
+   */
+  createAttempt(props: CreateExamAttemptProps): Promise<IExamAttemptResponseDTO>;
 
-    /**
-     * @description Lấy chi tiết kết quả thi (bao gồm cả Snapshot câu hỏi).
-     * Dùng để hiển thị trang "Review kết quả".
-     */
-    getAttemptDetail(id: string): Promise<IExamAttemptResponseDTO>;
+  /**
+   * @description Xóa mềm (Soft Delete) lượt thi.
+   * Ẩn dữ liệu phía người dùng nhưng vẫn giữ lại trong Database phục vụ thống kê và Audit.
+   * @param {string} id - ID định danh lượt thi.
+   */
+  softDeleteAttempt(id: string): Promise<void>;
 
-    /**
-     * @description Lấy danh sách lịch sử thi của User 
-     */
-    getUserAttemptHistory(userId: string): Promise<IExamAttemptResponseDTO[]>;
-
-    /**
-     * @description Xóa lượt thi (thường là xóa mềm để phục vụ thống kê hoặc khi User muốn dọn dẹp).
-     */
-    softDeleteAttempt(id: string): Promise<void>;
-
-    /**
-     * @description Xóa lượt thi 
-     */
-    hardDeleteAttempt(id: string): Promise<void>;
+  /**
+   * @description Xóa vĩnh viễn (Hard Delete) bản ghi lượt thi khỏi hệ thống.
+   * @param {string} id - ID định danh lượt thi.
+   */
+  hardDeleteAttempt(id: string): Promise<void>;
 }

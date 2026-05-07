@@ -1,3 +1,5 @@
+
+import { IExamUserFilterOptions } from "@/application/dtos/request/exam/exam-query-list.request.dto";
 import { ExamQueryDTO } from "@/application/dtos/request/exam/exam-query.request.dto";
 import { ExamEntity } from "@/domain/entities/exam/exam.entity";
 import { ExamRelatedCount } from "@/shared/types/count.types";
@@ -35,11 +37,31 @@ export interface IExamRepository {
   findByIdSystem(id: string): Promise<ExamEntity | null>;
 
   /**
+   * @description Lấy chi tiết bộ đề.
+   * @param id - ID bộ đề.
+   * @returns Thông tin bộ đề hoặc null.
+   */
+  findDetailById(id: string): Promise<ExamEntity | null>;
+
+  /**
+   * @description Tìm kiếm bài thi theo ID kết hợp với các điều kiện lọc bổ sung.
+   * @param options - (Tùy chọn) Các tiêu chí lọc/tìm kiếm bổ sung.
+   * @param skip - Số lượng bản ghi cần bỏ qua (Offset).
+   * @param take - Số lượng bản ghi tối đa cần lấy trên một trang (Limit).
+   * @returns {Promise<ExamEntity | null>} Trả về thực thể bài thi hoặc null nếu không khớp.
+   */
+  findAllUser(
+    options: IExamUserFilterOptions,
+    skip: number,
+    take: number
+  ): Promise<[ExamEntity[], number]>;
+
+  /**
    * @description Cập nhật thông tin bài thi đã tồn tại trong cơ sở dữ liệu.
    * @param exam - Đối tượng thực thể bài thi (ExamEntity) mang dữ liệu cần cập nhật.
    * @returns {Promise<ExamEntity>} Trả về thực thể bài thi sau khi đã cập nhật thành công.
    */
-  updateExam(id: string, exam: ExamEntity): Promise<ExamEntity>;
+  updateExam(exam: ExamEntity): Promise<ExamEntity>;
 
   /**
    * @description Xóa vĩnh viễn đề thi khỏi cơ sở dữ liệu (Hard Delete).

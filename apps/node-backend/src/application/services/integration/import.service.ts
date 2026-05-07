@@ -2,32 +2,51 @@ import { stat } from 'node:fs/promises';
 import { ImportJobEntity } from '@/domain/entities/import/import-job.entity';
 import { AppError, ErrorCode } from '@/shared/errors';
 import { IImportJobRepository } from '@/domain/interfaces/repositories/integration/i-import-job.repository';
-import { ITempStorageService } from '@/domain/interfaces/external/i-temp-storage.service';
+import { ITempStorageService } from '@/domain/interfaces/services/external/i-temp-storage.service';
 import { ImportMapper } from '@/infrastructure/database/mappers/integration/import.mapper';
 import { IImportService } from '@/domain/interfaces/services/integration/i-import.service';
 import { IImportQueue } from '@/domain/interfaces/queues/i-import.queue';
-import { InitImportRequestDto, UploadChunkRequestDto, CompleteImportRequestDto } from '@/application/dtos/request/import/import.dto';
+import { InitImportRequestDTO, UploadChunkRequestDTO, CompleteImportRequestDTO } from '@/application/dtos/request/import/import.dto';
 import { IImportJobResponseDTO } from '@/application/dtos/response/import/import-job.dto.respone';
 import { IImportJobStatusResponseDTO } from '@/application/dtos/response/import/import-status-response.dto';
 
 /**
- * @description Interface định nghĩa các phụ thuộc (Dịch: Service Dependencies)
+ * @interface IImportServiceCradle
+ * @description Tập hợp các phụ thuộc (Dependencies) cần thiết để vận hành luồng Import.
+ * Đảm bảo tính đóng gói và dễ dàng mở rộng các công cụ hỗ trợ.
  */
 export interface IImportServiceCradle {
+    /** @description Repository quản lý vòng đời, trạng thái (Pending/Success/Failed) của các tiến trình Import. */
     importJobRepository: IImportJobRepository;
+
+    /** @description Dịch vụ xử lý lưu trữ tạm thời các tệp tin thô trước khi phân tích. */
     tempStorageService: ITempStorageService;
+
+    /** @description Hàng đợi điều phối việc xử lý Job bất đồng bộ để tránh gây nghẽn hệ thống. */
     importQueue: IImportQueue;
 }
 
 /**
- * @description Application Service điều phối tiến trình Import 
- * (Dịch: Import Orchestration Application Service)
+ * @class ImportService
+ * @description Application Service điều phối tiến trình Import dữ liệu vào hệ thống.
+ * Chịu trách nhiệm khởi tạo Job, quản lý tệp tạm và đẩy công việc vào hàng đợi xử lý.
+ * @principle Clean Architecture - Đóng vai trò Orchestrator kết nối giữa API và hệ thống xử lý ngầm (Worker).
  */
 export class ImportService implements IImportService {
+    /** @private @readonly @description Repository theo dõi trạng thái tiến trình. */
     private readonly _importRepo: IImportJobRepository;
-    private readonly _tempStorage: ITempStorageService;
-    private readonly _importQueue: IImportQueue 
 
+    /** @private @readonly @description Dịch vụ quản lý tệp tin tạm thời. */
+    private readonly _tempStorage: ITempStorageService;
+
+    /** @private @readonly @description Hệ thống hàng đợi xử lý Job. */
+    private readonly _importQueue: IImportQueue;
+
+    /**
+     * @constructor
+     * @description Khởi tạo Service với các phụ thuộc được "tiêm" từ hệ thống DI.
+     * @param {IImportServiceCradle} cradle - Chứa các công cụ cần thiết cho việc điều phối Import.
+     */
     constructor({
         importJobRepository,
         tempStorageService,
@@ -40,10 +59,10 @@ export class ImportService implements IImportService {
 
     /**
      * @description Bước 1: Khởi tạo phiên làm việc (Dịch: Initialize Import Session)
-     * @param {InitImportRequestDto} dto - Dữ liệu yêu cầu từ Client
+     * @param {InitImportRequesDTO} dto - Dữ liệu yêu cầu từ Client
      * @returns {Promise<IImportJobResponseDTO>}
      */
-    public async initSession(dto: InitImportRequestDto): Promise<IImportJobResponseDTO> {
+    public async initSession(dto: InitImportRequestDTO): Promise<IImportJobResponseDTO> {
         // 1. Khởi tạo Entity (Dịch: Initialize Rich Domain Model Entity)
         // Tính toán số lượng mảnh cần thiết dựa trên cấu hình hệ thống
         const entity = ImportJobEntity.create({
@@ -67,12 +86,17 @@ export class ImportService implements IImportService {
     }
 
     /**
-     * @description Bước 2: Lưu trữ mảnh file (Chunk) vào bộ nhớ tạm
-     * @param {UploadChunkRequestDto} dto - Dữ liệu chứa jobId và index của mảnh
-     * @param {Buffer} chunkBuffer - Dữ liệu nhị phân của mảnh file
+     * @description Lưu trữ mảnh dữ liệu (Chunk) vào vùng nhớ tạm thời của Job.
+     * Thực hiện kiểm tra trạng thái tiến trình, tính hợp lệ của kích thước mảnh và thời hạn phiên thông qua Domain Entity.
+     * @param {UploadChunkRequestDTO} dto - DTO chứa mã định danh Job và thứ tự (index) của mảnh file.
+     * @param {Buffer} chunkBuffer - Dữ liệu nhị phân của mảnh file được gửi từ Client.
      * @returns {Promise<void>}
+     * @throws {AppError} IMPORT.JOB_NOT_FOUND - Nếu mã Job không tồn tại trong hệ thống.
+     * @throws {AppError} IMPORT.JOB_INVALID_STATUS - Nếu Job không còn ở trạng thái cho phép nạp dữ liệu (Pending).
+     * @throws {AppError} IMPORT.SESSION_EXPIRED - Nếu phiên làm việc của Job đã quá hạn.
+     * @throws {AppError} Các lỗi Validation từ Entity liên quan đến kích thước mảnh dữ liệu.
      */
-    public async saveChunk(dto: UploadChunkRequestDto, chunkBuffer: Buffer): Promise<void> {
+    public async saveChunk(dto: UploadChunkRequestDTO, chunkBuffer: Buffer): Promise<void> {
         // 1. Tìm kiếm thực thể từ Repository
         const job = await this._importRepo.findById(dto.jobId);
 
@@ -100,9 +124,15 @@ export class ImportService implements IImportService {
     }
 
     /**
-     * @description Bước 3: Gộp file, xử lý nghiệp vụ và dọn dẹp
+     * @description Hoàn tất tiến trình upload: Gộp các mảnh tệp tin, kiểm tra tính toàn vẹn và đẩy vào hàng đợi xử lý ngầm.
+     * Tự động dọn dẹp dữ liệu tạm nếu phát hiện sai lệch về kích thước tệp tin sau khi gộp.
+     * @param {CompleteImportRequestDTO} dto - DTO chứa mã định danh Job cần hoàn tất.
+     * @returns {Promise<void>}
+     * @throws {AppError} IMPORT.JOB_NOT_FOUND - Nếu mã Job không tồn tại.
+     * @throws {AppError} IMPORT.JOB_INVALID_STATUS - Nếu Job không ở trạng thái có thể hoàn tất (ví dụ: đã xong hoặc đã hủy).
+     * @throws {AppError} IMPORT.EXTRACT_FAILED - Nếu kích thước tệp sau khi gộp không khớp với khai báo ban đầu.
      */
-    public async completeProcess(dto: CompleteImportRequestDto): Promise<void> {
+    public async completeProcess(dto: CompleteImportRequestDTO): Promise<void> {
         const job = await this._importRepo.findById(dto.jobId);
 
         // 1. Kiểm tra sự tồn tại của Job
@@ -139,6 +169,7 @@ export class ImportService implements IImportService {
      * @description Lấy trạng thái và tiến độ xử lý hiện tại (Polling API)
      * @param {string} jobId - ID của phiên làm việc
      * @returns {Promise<IImportJobStatusResponseDTO>} DTO chứa tiến độ chi tiết
+     * @throws {AppError} IMPORT.JOB_NOT_FOUND - Nếu mã Job không tồn tại trong hệ thống.
      */
     public async getJobStatus(jobId: string): Promise<IImportJobStatusResponseDTO> {
         // 1. Tìm Job trong DB (Không dùng try-catch)

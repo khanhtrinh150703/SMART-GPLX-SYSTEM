@@ -1,9 +1,9 @@
-import { LicenseCategoryResponse } from "@/application/dtos/response/license-category/license-category.respone.dto";
+import { ILicenseCategoryResponseDTO, LicenseCategoryResponseDTO } from "@/application/dtos/response/license-category/license-category.respone.dto";
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 import { ILicenseCategoryProps } from "@/domain/entities/license-category/license-category.props";
 import { ILicenseCategoryRecord } from "@/infrastructure/persistence/exam-mgmt/license-category.record";
 import { ICachedCategory } from "@/shared/master-data";
-import { SelectionResponseDto } from "@/shared/responses/selection-response.dto";
+import { ISelectionResponseDTO, SelectionResponseDTO } from "@/application/dtos/response/shared/selection.response.dto";
 import { Prisma } from "@prisma/client";
 
 /**
@@ -39,7 +39,7 @@ export class LicenseCategoryMapper {
       name: domain.name,
       description: domain.description,
       minAge: domain.minAge,
-      orderIndex: domain.orderIndex,
+      orderIndex: domain.orderIndex ?? 0,
       // Thêm các trường audit nếu cần
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -55,7 +55,7 @@ export class LicenseCategoryMapper {
       name: domain.name,
       description: domain.description,
       minAge: domain.minAge,
-      orderIndex: domain.orderIndex,
+      orderIndex: domain.orderIndex ?? 0,
       updatedAt: new Date(), // Tự động cập nhật dấu thời gian
     };
   }
@@ -63,35 +63,35 @@ export class LicenseCategoryMapper {
   /**
    * @description Chuyển đổi từ Domain Entity sang Response DTO cho Client.
    * @param {LicenseCategory} entity - Thực thể hạng bằng lái.
-   * @returns {LicenseCategoryResponse}
+   * @returns {LicenseCategoryResponseDTO}
    */
-  public static toResponse(entity: LicenseCategory): LicenseCategoryResponse {
-    return {
+  public static toResponse(entity: LicenseCategory): LicenseCategoryResponseDTO {
+    return new LicenseCategoryResponseDTO({
       id: entity.id || '',
       name: entity.name,
       minAge: entity.minAge,
       description: entity.description,
       createdAt: entity.createdAt ? entity.createdAt.toISOString() : new Date().toISOString(),
       status: entity.isDeleted() ? 'deleted' : 'active'
-    };
+    });
   }
 
   /**
    * @description Chuyển đổi danh sách thực thể sang danh sách DTO.
    * @param {LicenseCategory[]} entities - Danh sách thực thể.
-   * @returns {LicenseCategoryResponse[]}
+   * @returns {ILicenseCategoryResponseDTO[]}
    */
-  public static toResponseList(entities: LicenseCategory[]): LicenseCategoryResponse[] {
+  public static toResponseList(entities: LicenseCategory[]): ILicenseCategoryResponseDTO[] {
     return entities.map((entity) => this.toResponse(entity));
   }
 
   /**
    * @description Chuyển đổi sang định dạng Selection dùng License Code làm Label (A1, B2...)
    * @param {ICachedCategory} entity 
-   * @returns {SelectionResponseDto}
+   * @returns {ISelectionResponseDTO}
    */
-  public static toSelectionResponse(entity: ICachedCategory): SelectionResponseDto {
-    return new SelectionResponseDto({
+  public static toSelectionResponse(entity: ICachedCategory): ISelectionResponseDTO {
+    return new SelectionResponseDTO({
       value: entity.id!,
       label: entity.name,
       orderIndex: entity.orderIndex,
@@ -102,9 +102,9 @@ export class LicenseCategoryMapper {
    * @description Chuyển đổi danh sách thực thể hạng bằng lái sang DTO dùng cho lựa chọn.
    * Dữ liệu được sắp xếp theo chỉ số thứ tự (orderIndex) để đảm bảo trình tự A1 -> A -> B1...
    * @param {LicenseCategory[]} entities - Mảng các thực thể LicenseCategory Domain.
-   * @returns {SelectionResponseDto[]} Danh sách DTO đã sắp xếp để hiển thị trong Dropdown.
+   * @returns {ISelectionResponseDTO[]} Danh sách DTO đã sắp xếp để hiển thị trong Dropdown.
    */
-  public static toSelectionList(entities: ICachedCategory[]): SelectionResponseDto[] {
+  public static toSelectionList(entities: ICachedCategory[]): ISelectionResponseDTO[] {
     // 1. Sử dụng Spread Operator để tạo bản sao, tránh gây ra Side Effect cho mảng gốc
     // 2. Sắp xếp tăng dần theo orderIndex (ưu tiên thứ tự nghiệp vụ)
     return [...entities]

@@ -59,7 +59,6 @@ export const examMatrixService = {
          * (Nhận tham số -> Truy vấn qua API -> Trả kết quả về UI.)
          */
         const response = await examMatrixApi.getAll(params);
-        console.log(response)
         return response;
     },
 
