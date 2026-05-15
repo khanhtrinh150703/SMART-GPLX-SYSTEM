@@ -1,4 +1,4 @@
-import { UserStatus } from "@/domain/entities/user/user.status";
+import { Status } from "@/shared/config/status.config";
 import { IRoleResponseDTO, RoleResponseDTO } from "../role/role.respone.dto";
 
 /**
@@ -26,7 +26,7 @@ export interface IUserResponseDTO {
   readonly phoneNumber: string;
 
   /** @description Trạng thái hiện tại của tài khoản. (Current account status.) */
-  readonly status: UserStatus;
+  readonly status: Status;
 
   /** @description Thời điểm tài khoản được khởi tạo (ISO 8601). (Account creation timestamp.) */
   readonly createdAt: Date;
@@ -52,7 +52,7 @@ export class UserResponseDTO implements IUserResponseDTO {
   public readonly fullName: string;
   public readonly urlPicture: string;
   public readonly phoneNumber: string;
-  public readonly status: UserStatus;
+  public readonly status: Status;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
   public readonly roles: IRoleResponseDTO[];

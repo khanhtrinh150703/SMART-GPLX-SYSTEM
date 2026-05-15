@@ -45,7 +45,6 @@ export const examService = {
      */
     update: async (id: string, data: Partial<ICreateManualExamDTO>): Promise<IExamResponse> => {
         const response = await examApi.edit(id, data);
-        console.log(data)
         if (!response.data) {
             throw new Error("Cập nhật đề thi thất bại (Exam update failed)");
         }

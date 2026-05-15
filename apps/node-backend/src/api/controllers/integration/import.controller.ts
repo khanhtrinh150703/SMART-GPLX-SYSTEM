@@ -42,10 +42,9 @@ export class ImportController {
      * @returns {Promise<void>}
      */
     public init = catchAsync(async (req: Request, res: Response) => {
-        // Lưu ý: Bạn nên gửi thêm fileName và totalChunks từ FE
         // 1. Khởi tạo DTO từ dữ liệu multipart (Dịch: Initialize DTO from multipart data)
         const dto = new InitImportRequestDTO(req.body);
-
+        
         // 2. Truyền dto vào service - Không còn lỗi "any" nữa
         const job = await this._importService.initSession(dto);
         Result.ok(
@@ -125,5 +124,4 @@ export class ImportController {
 
         Result.ok(res, status, Message.IMPORT.STATUS_SUCCESS, "STATUS_SUCCESS");
     });
-
 }

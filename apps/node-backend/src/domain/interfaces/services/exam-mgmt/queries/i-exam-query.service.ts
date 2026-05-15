@@ -17,6 +17,14 @@ export interface IExamQueryService {
     getExamById(id: string): Promise<ExamEntity>;
 
     /**
+     * @description Lấy thông tin chi tiết một bài thi theo tên (Name).
+     * @param name - Tên bài thi cần tìm.
+     * @returns {Promise<ExamEntity>}
+     * @throws {AppError} Nếu không tìm thấy bài thi hoặc tên trống.
+     */
+    getExamByName(name: string): Promise<ExamEntity>;
+    
+    /**
      * @description Lấy danh sách đề thi có phân trang, hỗ trợ lọc theo trạng thái, người dùng và hạng bằng lái.
      * @param {ExamQueryDTO} query - Tham số truy vấn bao gồm phân trang và bộ lọc đặc thù của Exam.
      * @returns {Promise<PaginatedResult<IExamResponseDTO>>} Kết quả phân trang chứa danh sách dữ liệu đề thi.

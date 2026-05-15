@@ -1,4 +1,4 @@
-import { MatrixSeed } from "../interface.seed";
+import { MatrixSeed } from "./interface.seed";
 
 export const examMatrices: MatrixSeed[] = [
   // 1. Hạng A1 (Dưới 125 cm3)
@@ -11,9 +11,9 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 40 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 40 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 2. Hạng A (Trên 125 cm3)
@@ -26,9 +26,9 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 40 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 40 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 3. Hạng B1 (Xe mô tô 3 bánh)
@@ -41,9 +41,9 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 40 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 40 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 4. Hạng B (Ô tô đến 8 chỗ, tải đến 3.500kg)
@@ -56,11 +56,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 30 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 25 },
-      { chapterCode: '6', percentage: 25 },
+      { chapterCode: 'CH01', percentage: 30 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 25 },
+      { chapterCode: 'CH06', percentage: 25 },
     ]
   },
   // 5. Hạng C1 (Tải 3.500kg - 7.500kg)
@@ -73,12 +73,12 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 25 },
-      { chapterCode: '2', percentage: 10 },
-      { chapterCode: '3', percentage: 5 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 25 },
-      { chapterCode: '6', percentage: 25 },
+      { chapterCode: 'CH01', percentage: 25 },
+      { chapterCode: 'CH02', percentage: 10 },
+      { chapterCode: 'CH03', percentage: 5 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 25 },
+      { chapterCode: 'CH06', percentage: 25 },
     ]
   },
   // 6. Hạng C (Tải trên 7.500kg)
@@ -91,12 +91,12 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 25 },
-      { chapterCode: '2', percentage: 10 },
-      { chapterCode: '3', percentage: 5 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 25 },
-      { chapterCode: '6', percentage: 25 },
+      { chapterCode: 'CH01', percentage: 25 },
+      { chapterCode: 'CH02', percentage: 10 },
+      { chapterCode: 'CH03', percentage: 5 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 25 },
+      { chapterCode: 'CH06', percentage: 25 },
     ]
   },
   // 7. Hạng D1 (Ô tô 8 - 16 chỗ)
@@ -109,12 +109,12 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '2', percentage: 10 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 25 },
-      { chapterCode: '6', percentage: 25 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH02', percentage: 10 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 25 },
+      { chapterCode: 'CH06', percentage: 25 },
     ]
   },
   // 8. Hạng D2 (Ô tô buýt, 16 - 29 chỗ)
@@ -127,12 +127,12 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '2', percentage: 10 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 25 },
-      { chapterCode: '6', percentage: 25 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH02', percentage: 10 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 25 },
+      { chapterCode: 'CH06', percentage: 25 },
     ]
   },
   // 9. Hạng D (Ô tô trên 29 chỗ, giường nằm)
@@ -145,12 +145,12 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '2', percentage: 10 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 25 },
-      { chapterCode: '6', percentage: 25 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH02', percentage: 10 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 25 },
+      { chapterCode: 'CH06', percentage: 25 },
     ]
   },
   // 10. Hạng BE (Hạng B kéo rơ moóc > 750kg)
@@ -163,11 +163,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 11. Hạng C1E (Hạng C1 kéo rơ moóc > 750kg)
@@ -180,11 +180,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 12. Hạng CE (Hạng C kéo rơ moóc, đầu kéo)
@@ -197,11 +197,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 13. Hạng D1E (Hạng D1 kéo rơ moóc > 750kg)
@@ -214,11 +214,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 14. Hạng D2E (Hạng D2 kéo rơ moóc > 750kg)
@@ -231,11 +231,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   },
   // 15. Hạng DE (Hạng D kéo rơ moóc, khách nối toa)
@@ -248,11 +248,11 @@ export const examMatrices: MatrixSeed[] = [
     minCriticalQuestions: 1,
     isDefault: true,
     details: [
-      { chapterCode: '1', percentage: 20 },
-      { chapterCode: '3', percentage: 10 },
-      { chapterCode: '4', percentage: 10 },
-      { chapterCode: '5', percentage: 30 },
-      { chapterCode: '6', percentage: 30 },
+      { chapterCode: 'CH01', percentage: 20 },
+      { chapterCode: 'CH03', percentage: 10 },
+      { chapterCode: 'CH04', percentage: 10 },
+      { chapterCode: 'CH05', percentage: 30 },
+      { chapterCode: 'CH06', percentage: 30 },
     ]
   }
 ];

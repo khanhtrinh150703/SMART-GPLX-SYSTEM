@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
-import { Result } from '@/application/dtos/response/shared/api.response.dto';
+import { Result } from "@/application/dtos/response/shared/api.response.dto";
 import { catchAsync } from "@/shared/utils/catch-async.utils";
 import { Message } from "@/shared/errors/messages/success-messages-vn";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { UpdateQuestionRequestDTO } from "@/application/dtos/request/question/update-question.request.dto";
-import { CreateQuestionRequestDTO, ICreateQuestionInputDTO } from "@/application/dtos/request/question/create-question.request.dto";
+import {
+  CreateQuestionRequestDTO,
+  ICreateQuestionInputDTO,
+} from "@/application/dtos/request/question/create-question.request.dto";
 import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
 import { IQuestionService } from "@/domain/interfaces/services/exam-mgmt";
 import { IQuestionQueryService } from "@/domain/interfaces/services/exam-mgmt/queries";
@@ -40,7 +43,10 @@ export class QuestionController {
    * @description Khởi tạo QuestionController thông qua cơ chế tiêm phụ thuộc (Dependency Injection).
    * @param {IQuestionControllerCradle} cradle - Chứa các dịch vụ chuyên biệt cần thiết để vận hành module Câu hỏi.
    */
-  constructor({ questionService, questionQueryService }: IQuestionControllerCradle) {
+  constructor({
+    questionService,
+    questionQueryService,
+  }: IQuestionControllerCradle) {
     this._questionService = questionService;
     this._questionQueryService = questionQueryService;
   }
@@ -52,12 +58,14 @@ export class QuestionController {
    * @private
    */
   private _getMultipartData(req: Request): ICreateQuestionInputDTO {
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const files = req.files as
+      | { [fieldname: string]: Express.Multer.File[] }
+      | undefined;
 
     return {
       ...req.body, // Spread toàn bộ body (chapterId, content, answers...)
-      imageFile: files?.['imageFile']?.[0],
-      answerFiles: files?.['answerImages'],
+      imageFile: files?.["imageFile"]?.[0],
+      answerFiles: files?.["answerImages"],
     };
   }
 
@@ -69,32 +77,44 @@ export class QuestionController {
    * @param {Response} res - Trả về đối tượng Question vừa được tạo.
    * @note Sử dụng 'catchAsync' để chuyển tiếp lỗi về Global Error Middleware, triệt tiêu hoàn toàn try-catch cục bộ.
    */
-  public create = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    // 1. Lấy data nhanh gọn qua helper
-    const dto = new CreateQuestionRequestDTO(this._getMultipartData(req));
+  public create = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      // 1. Lấy data nhanh gọn qua helper
+      const dto = new CreateQuestionRequestDTO(this._getMultipartData(req));
+      const data = await this._questionService.createQuestion(dto);
 
-    const data = await this._questionService.createQuestion(dto);
-
-    Result.ok(res, data, Message.QUESTION.CREATE_SUCCESS, 'QUESTION_CREATE_SUCCESS');
-  });
+      Result.ok(
+        res,
+        data,
+        Message.QUESTION.CREATE_SUCCESS,
+        "QUESTION_CREATE_SUCCESS",
+      );
+    },
+  );
 
   /**
-  * @description [PUT] Cập nhật thông tin chi tiết của một câu hỏi.
-  * @route /api/v1/questions/:id
-  * @param {Request} req - Chứa params.id và body là UpdateQuestionDTO.
-  * @param {Response} res - Đối tượng Response.
-  */
-  public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id as string;
+   * @description [PUT] Cập nhật thông tin chi tiết của một câu hỏi.
+   * @route /api/v1/questions/:id
+   * @param {Request} req - Chứa params.id và body là UpdateQuestionDTO.
+   * @param {Response} res - Đối tượng Response.
+   */
+  public update = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      const id = req.params.id as string;
 
-    const rawInput = { ...this._getMultipartData(req), id };
+      const rawInput = { ...this._getMultipartData(req), id };
+      const dto = new UpdateQuestionRequestDTO(rawInput);
 
-    const dto = new UpdateQuestionRequestDTO(rawInput);
+      const data = await this._questionService.updateQuestion(id, dto);
 
-    const data = await this._questionService.updateQuestion(id, dto);
-
-    Result.ok(res, data, Message.QUESTION.UPDATE_SUCCESS, 'QUESTION_UPDATE_SUCCESS');
-  });
+      Result.ok(
+        res,
+        data,
+        Message.QUESTION.UPDATE_SUCCESS,
+        "QUESTION_UPDATE_SUCCESS",
+      );
+    },
+  );
 
   /**
    * @description [GET] Lấy danh sách câu hỏi theo ID chương.
@@ -102,83 +122,90 @@ export class QuestionController {
    * @param {Request} req - Chứa params.chapterId.
    * @returns {Promise<void>}
    */
-  public getByChapter = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    // Lưu ý: Tên param phải khớp với cấu hình Route của cậu (ví dụ :chapterId)
-    const chapterId = req.params.id as string;
+  public getByChapter = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      // Lưu ý: Tên param phải khớp với cấu hình Route của cậu (ví dụ :chapterId)
+      const chapterId = req.params.id as string;
 
-    const data = await this._questionQueryService.getQuestionsByChapter(chapterId);
+      const data =
+        await this._questionQueryService.getQuestionsByChapter(chapterId);
 
-    Result.ok(
-      res,
-      data,
-      Message.QUESTION.FETCH_SUCCESS,
-      'QUESTION_FETCH_BY_CHAPTER_SUCCESS'
-    );
-  });
+      Result.ok(
+        res,
+        data,
+        Message.QUESTION.FETCH_SUCCESS,
+        "QUESTION_FETCH_BY_CHAPTER_SUCCESS",
+      );
+    },
+  );
 
   /**
    * @description [GET] Lấy chi tiết một ma trận đề thi bằng ID.
    * @route /api/v1/exam-matrices/:id
    * @param {Request} req - Chứa params.id.
    */
-  public getById = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id as string;
+  public getById = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      const id = req.params.id as string;
 
-    const data = await this._questionQueryService.getQuestionById(id);
+      const data = await this._questionQueryService.getQuestionById(id);
 
-    // Lưu ý: Nếu Service của cậu đã throw AppError khi không tìm thấy, 
-    // thì ở đây không cần check data nữa. Nhưng check lại cho chắc cũng không sao.
-    if (!data) {
-      throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
-    }
+      // Lưu ý: Nếu Service của cậu đã throw AppError khi không tìm thấy,
+      // thì ở đây không cần check data nữa. Nhưng check lại cho chắc cũng không sao.
+      if (!data) {
+        throw new AppError(ErrorCode.QUESTION.NOT_FOUND);
+      }
 
-    Result.ok(
-      res,
-      data,
-      Message.QUESTION.FETCH_SUCCESS,
-      'QUESTION_FETCH_BY_ID_SUCCESS'
-    );
-  });
-
-
-  /**
-   * @description [GET] Truy vấn thông tin chi tiết của một Ma trận đề thi (Exam Matrix) theo ID. (Retrieve detailed exam matrix configuration by ID).
-   * @route /api/v1/exam-matrices/:id
-   * @param {Request} req - Đối tượng Request (chứa params.id là UUID của ma trận).
-   * @param {Response} res - Đối tượng Response trả về dữ liệu ma trận.
-   * @note Theo cơ chế Error Handling tập trung, nếu Service không tìm thấy dữ liệu sẽ tự động throw AppError. Việc check null tại Controller chỉ đóng vai trò chốt chặn cuối cùng (Double-check).
-   */
-  public delete = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id as string;
-    const result = await this._questionService.deleteQuestion(id);
-
-    Result.ok(
-      res,
-      result,
-      Message.QUESTION.DELETE_SUCCESS,
-      'QUESTION_DELETE_SUCCESS'
-    );
-  });
+      Result.ok(
+        res,
+        data,
+        Message.QUESTION.FETCH_SUCCESS,
+        "QUESTION_FETCH_BY_ID_SUCCESS",
+      );
+    },
+  );
 
   /**
-   * @description [PATCH] Khôi phục một hạng bằng lái đã bị xóa mềm (Soft Deleted). (Restore a soft-deleted license category).
-   * @route /api/v1/license-categories/:id/restore
-   * @param {Request} req - Đối tượng Request (chứa params.id là định danh của hạng bằng).
-   * @param {Response} res - Trả về dữ liệu hạng bằng đã được khôi phục.
-   * @note Hàm này sẽ đảo ngược trạng thái của 'deletedAt' về null, cho phép hạng bằng xuất hiện lại trong các truy vấn thông thường. (Reverts 'deletedAt' to null, making the category visible again).
+   * @description [DELETE] Xóa câu hỏi theo ID.
+   * @route DELETE /api/v1/questions/:id
+   * @param {Request} req - Chứa params.id (UUID) của câu hỏi cần xóa.
+   * @param {Response} res - Trả về thông báo xóa thành công.
+   * @note Error Handling tập trung tại Service (tự throw AppError); Controller chốt chặn cuối.
    */
-  public restore = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id as string;
+  public delete = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      const id = req.params.id as string;
+      const result = await this._questionService.deleteQuestion(id);
+      Result.ok(
+        res,
+        result,
+        Message.QUESTION.DELETE_SUCCESS,
+        "QUESTION_DELETE_SUCCESS",
+      );
+    },
+  );
 
-    const result = await this._questionService.restoreQuestion(id);
+  /**
+   * @description [PATCH] Khôi phục câu hỏi đã xóa mềm. (Restore soft-deleted question).
+   * @route PATCH /api/v1/questions/:id/restore
+   * @param {Request} req - Chứa params.id (UUID) của câu hỏi.
+   * @param {Response} res - Trả về dữ liệu câu hỏi đã khôi phục.
+   * @note Đưa 'deletedAt' về null để câu hỏi xuất hiện lại trong các truy vấn.
+   */
+  public restore = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      const id = req.params.id as string;
 
-    Result.ok(
-      res,
-      result,
-      Message.QUESTION.RESTORE_SUCCESS,
-      'QUESTION_RESTORE_SUCCESS'
-    );
-  });
+      const result = await this._questionService.restoreQuestion(id);
+
+      Result.ok(
+        res,
+        result,
+        Message.QUESTION.RESTORE_SUCCESS,
+        "QUESTION_RESTORE_SUCCESS",
+      );
+    },
+  );
 
   /**
    * @description API Lấy danh sách câu hỏi dành cho Admin (Hỗ trợ phân trang, tìm kiếm và bộ lọc kết hợp).
@@ -187,18 +214,23 @@ export class QuestionController {
    * @param {Response} res - Đối tượng Response trả về kết quả chuẩn hóa.
    * @returns {Promise<void>} Trả về PaginatedResult chứa danh sách QuestionResponseDTO.
    */
-  public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const query = new QuestionsAdminQueryDto(req.query as Record<string, unknown>);
+  public list = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      const query = new QuestionsAdminQueryDto(
+        req.query as Record<string, unknown>,
+      );
 
-    const categories = await this._questionQueryService.getPaginatedQuestions(query);
+      const categories =
+        await this._questionQueryService.getPaginatedQuestions(query);
 
-    Result.ok(
-      res,
-      categories,
-      Message.QUESTION.FETCH_SUCCESS,
-      'QUESTION_FETCH_SUCCESS'
-    );
-  });
+      Result.ok(
+        res,
+        categories,
+        Message.QUESTION.FETCH_SUCCESS,
+        "QUESTION_FETCH_SUCCESS",
+      );
+    },
+  );
 
   /**
    * @description API truy xuất danh sách tóm tắt câu hỏi phục vụ việc chọn lọc vào Ma trận hoặc Đề thi (Selection Pool).
@@ -207,17 +239,22 @@ export class QuestionController {
    * @param {Response} res - Đối tượng Response trả về kết quả chuẩn hóa.
    * @returns {Promise<void>} Trả về mảng IExamQuestionSummary[].
    */
-  public getSelectionPool = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    // 1. Khởi tạo DTO từ query params và thực thi constructor để gán giá trị mặc định
-    const query = new GetSelectionPoolDto(req.query as Record<string, unknown>);
-    // 2. Gọi Service để lấy dữ liệu đã qua xử lý Cache & Mapper
-    const summaries = await this._questionQueryService.getQuestionsSummary(query);
-    // 3. Trả về kết quả thành công theo chuẩn của hệ thống
-    Result.ok(
-      res,
-      summaries,
-      Message.QUESTION.FETCH_SUMMARY_SUCCESS,
-      'QUESTION_SUMMARY_FETCH_SUCCESS'
-    );
-  });
+  public getSelectionPool = catchAsync(
+    async (req: Request, res: Response): Promise<void> => {
+      // 1. Khởi tạo DTO từ query params và thực thi constructor để gán giá trị mặc định
+      const query = new GetSelectionPoolDto(
+        req.query as Record<string, unknown>,
+      );
+      // 2. Gọi Service để lấy dữ liệu đã qua xử lý Cache & Mapper
+      const summaries =
+        await this._questionQueryService.getQuestionsSummary(query);
+      // 3. Trả về kết quả thành công theo chuẩn của hệ thống
+      Result.ok(
+        res,
+        summaries,
+        Message.QUESTION.FETCH_SUMMARY_SUCCESS,
+        "QUESTION_SUMMARY_FETCH_SUCCESS",
+      );
+    },
+  );
 }

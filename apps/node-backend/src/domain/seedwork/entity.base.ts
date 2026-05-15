@@ -15,10 +15,10 @@ export interface IBaseProps {
  */
 export abstract class BaseEntity<T extends IBaseProps> {
   /**
-   * @description Dữ liệu nội tại của thực thể. 
+   * @description Dữ liệu nội tại của thực thể.
    * Dùng 'readonly' để đảm bảo tính bất biến (Immutability).
    */
-  protected  _props: T;
+  protected _props: T;
 
   /**
    * @description Protected constructor để các lớp con có thể gọi super().
@@ -28,7 +28,7 @@ export abstract class BaseEntity<T extends IBaseProps> {
   }
 
   /**
-   * @description Truy xuất ID một cách an toàn. 
+   * @description Truy xuất ID một cách an toàn.
    * Nhờ Generic Constraint 'extends IBaseProps', TS biết chắc chắn T có trường id.
    */
   public get id(): string | undefined {
@@ -42,4 +42,9 @@ export abstract class BaseEntity<T extends IBaseProps> {
   public get props(): Readonly<T> {
     return Object.freeze({ ...this._props });
   }
+
+  // /** @description Cập nhật dấu thời gian thay đổi cuối cùng. */
+  // public touch(): void {
+  //   this._props.updatedAt = new Date();
+  // }
 }

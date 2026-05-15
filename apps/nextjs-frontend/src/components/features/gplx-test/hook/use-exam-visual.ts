@@ -13,13 +13,12 @@ export const useExamsVisual = (params: QueryParams) => {
     const query = useQuery({
         queryKey: [...QUERY_KEY, params],
         queryFn: () => examUserService.listVisual(params),
-        placeholderData: (previousData) => previousData,
         staleTime: 2 * 60 * 1000, // Dữ liệu visual có thể cache lâu hơn một chút
     });
 
     return {
         // Data flattening logic
-        exams: query.data?.data?.data || [], // Trinh lưu ý: Kiểm tra lại cấu trúc trả về là .data.items hay .data.data nhé
+        exams: query.data?.data?.data || [], 
         pagination: query.data?.data?.meta,
 
         // Loading states

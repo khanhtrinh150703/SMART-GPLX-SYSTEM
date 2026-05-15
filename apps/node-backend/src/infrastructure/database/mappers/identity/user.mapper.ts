@@ -1,12 +1,12 @@
 import { User } from '@/domain/entities/user/user.entity';
-import { UserStatus } from "@/domain/entities/user/user.status";
 import { ILoginResponseDTO, LoginResponseDTO } from '@/application/dtos/response/auth/auth.respone.dto';
 import { IUserResponseDTO, UserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
 import { Role } from '@/domain/entities/role/role.entity';
-import { Prisma } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 import { IUserRecord } from '@/infrastructure/persistence/identity/user.record';
 import { IUserProps } from '@/domain/entities/user/user.props';
 import { ITokenResponseDTO } from '@/application/dtos/response/auth/token/token.respone.dto';
+import { formatImageUrl } from '@/shared/utils/url.util';
 export class UserMapper {
 
   /**
@@ -24,7 +24,7 @@ export class UserMapper {
       passwordHash: raw.passwordHash,
       phoneNumber: raw.phoneNumber ?? "",
       urlPicture: raw.urlPicture || "",
-      status: raw.status as UserStatus,
+      status: raw.status as Status,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt || undefined,
@@ -61,7 +61,6 @@ export class UserMapper {
    * @returns {IUserResponseDTO} DTO chứa dữ liệu người dùng được chuẩn hóa cho Client.
    */
   public static toResponse(user: User): IUserResponseDTO {
-    const baseUrl = process.env.APP_URL || '';
 
     return new UserResponseDTO({
       id: user.id as string,
@@ -69,7 +68,7 @@ export class UserMapper {
       username: user.username,
       fullName: user.fullName ?? "",
       phoneNumber: user.phoneNumber ?? "",
-      urlPicture: user.getFullPictureUrl(baseUrl),
+      urlPicture:  formatImageUrl(user.urlPicture) ?? "",
       status: user.status,
       createdAt: user.createdAt as Date,
       updatedAt: user.updatedAt as Date,

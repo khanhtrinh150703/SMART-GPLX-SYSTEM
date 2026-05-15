@@ -47,13 +47,6 @@ export const useUsers = (params: UserQueryDTO) => {
   });
 
 
-  const rolesQuery = useQuery({
-    queryKey: ["roles-selection"],
-    queryFn: () => masterService.getRoleSelection(),
-    staleTime: 5 * 60 * 1000, // Cache 5 phút vì dữ liệu ít thay đổi
-  });
-
-
   // Trả về một đối tượng duy nhất chứa tất cả trạng thái và hàm xử lý.
   return {
     // Trả về data đúng cấu trúc (data.data chứa list, data.meta chứa phân trang)
@@ -61,7 +54,6 @@ export const useUsers = (params: UserQueryDTO) => {
     isLoading: usersQuery.isLoading,
     isPlaceholderData: usersQuery.isPlaceholderData,
 
-    roleOptions: rolesQuery.data || [],
     // Các trạng thái mutation để hiển thị loading trên nút bấm
     isDeleting: deleteMutation.isPending,
     isUpdating: updateMutation.isPending,

@@ -11,6 +11,7 @@ import request from 'supertest';
 import app from '@/app';
 import { examMatrixSteps } from './steps/exam-matrix.test';
 import { Chapter, ExamMatrix, LicenseCategory } from '@prisma/client';
+import { examSteps } from './steps/exam.test';
 
 describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
     // Shared Context: Dữ liệu dùng chung xuyên suốt các file
@@ -76,10 +77,10 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         const getexamMatrix = (name: string) => examMatrix.find((ex: ExamMatrix) => ex.name === name)?.id;
 
         // 4. Tìm kiếm ID chính xác theo nghiệp vụ (c giờ đây là Chapter, l là License)
-        chapterId = getChapter('1');
-        chapterIdSecond = getChapter('5');
-        chapterIdThird = getChapter('6');
-        chapterIdFour = getChapter('7');
+        chapterId = getChapter('CH01');
+        chapterIdSecond = getChapter('CH05');
+        chapterIdThird = getChapter('CH06');
+        chapterIdFour = getChapter('CH07');
 
         licenseId = getLicense('CE');
         licenseSecond = getLicense('I');
@@ -143,10 +144,18 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         );
     });
 
+    describe('Phase 8: Exam Operations', () => {
+        examSteps(
+            () => adminToken,
+            () => regularToken,
+            () => licenseId as string,
+            () => examMatrixId as string
+        );
+    });
     // =========================================================================
     // GIAI ĐOẠN CUỐI: ĐĂNG XUẤT (TEARDOWN & LOGOUT)
     // =========================================================================
-    describe('Phase 8: Logout & Cleanup Session', () => {
+    describe('Phase 9: Logout & Cleanup Session', () => {
         it('✅ Nên đăng xuất thành công và vô hiệu hóa session của Admin', async () => {
             const res = await request(app)
                 .post(AUTH_ENDPOINTS.LOGOUT)

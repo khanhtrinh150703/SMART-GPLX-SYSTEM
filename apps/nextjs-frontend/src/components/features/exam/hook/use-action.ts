@@ -1,26 +1,37 @@
-// src/features/exam-mgmt/hooks/use-exam-actions.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { examService } from "../service/exam.service";
 import { examGenService } from "../service/exam-generation.service";
 import { ICreateManualExamDTO } from "../types/exam.types";
 import { IGenerateExamDTO } from "../types/exam-generation";
 
-/**
- * @description Hook chuyên trách các thao tác thay đổi Đề thi (Mutation-only hook)
- */
 export const useExamActions = () => {
   const queryClient = useQueryClient();
-  const QUERY_KEY = ["exams"];
+  // QUERY_KEY gốc để quản lý toàn bộ cache liên quan
 
+  // src/features/exam-mgmt/hooks/use-exam-actions.ts
   const handleSuccess = async () => {
-    // Ép buộc xóa cache và fetch lại toàn bộ danh sách đề thi
-    await queryClient.invalidateQueries({
-      queryKey: QUERY_KEY,
-      exact: false, // Bắt mọi thứ liên quan đến exams
-      refetchType: "all", // Ép fetch lại dù component đang ẩn hay hiện
+    console.log("🛠 [DEBUG] Bắt đầu lệnh càn quét cache...");
+
+    // 1. Soi xem trong bộ nhớ có cái query nào tên là "exams" không
+
+    // 2. Lệnh cưỡng chế: Xóa sạch sành sanh và ép gọi lại bất kể active hay inactive
+    await queryClient.resetQueries({
+      queryKey: ["exams"],
+      exact: false,
     });
+
+    // 3. Nếu vẫn im ru, dùng lệnh "tàn sát" cuối cùng:
+    await queryClient.refetchQueries({
+      queryKey: ["exams"],
+      type: "all", // Ép cả những thằng đang ẩn cũng phải fetch lại
+      exact: false,
+    });
+
+    console.log(
+      "📡 [DEBUG] Đã phát lệnh. Nếu Network vẫn im thì là do Client ID lệch!",
+    );
   };
-  
+
   // 1. Sinh đề tự động (Auto Generation)
   const generateAuto = useMutation({
     mutationFn: (data: IGenerateExamDTO) => examGenService.generateAuto(data),
@@ -33,30 +44,34 @@ export const useExamActions = () => {
     onSuccess: handleSuccess,
   });
 
-  // 3. Cập nhật đề thi (Update)
+  // 3. Cập nhật đề thi (Update Exam)
   const updateExam = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ICreateManualExamDTO> }) =>
-      examService.update(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEY, variables.id] });
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<ICreateManualExamDTO>;
+    }) => examService.update(id, data),
+    onSuccess: async () => {
+      // Đảm bảo các query chi tiết cũng bị xóa
+      await handleSuccess();
     },
   });
 
-  // 4. Xóa đề thi (Delete)
+  // 4. Xóa đề thi (Delete Exam)
   const deleteExam = useMutation({
     mutationFn: (id: string) => examService.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: handleSuccess,
   });
 
-  // 5. Khôi phục đề thi (Restore)
+  // 5. Khôi phục đề thi (Restore Exam)
   const restoreExam = useMutation({
     mutationFn: (id: string) => examService.restore(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: handleSuccess,
   });
 
   return {
-    // Mutation functions (async)
     actions: {
       generateAuto: generateAuto.mutateAsync,
       createManual: createManual.mutateAsync,
@@ -64,8 +79,6 @@ export const useExamActions = () => {
       delete: deleteExam.mutateAsync,
       restore: restoreExam.mutateAsync,
     },
-
-    // Global loading states for UI
     isGenerating: generateAuto.isPending,
     isMutating:
       createManual.isPending ||

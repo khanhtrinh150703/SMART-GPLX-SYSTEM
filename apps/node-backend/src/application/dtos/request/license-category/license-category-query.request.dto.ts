@@ -1,22 +1,39 @@
 import { BaseQueryDTO } from "@/shared/types/common-query.dto.types";
 
-// features/license/dto/license-query.dto.ts
+/**
+ * @description DTO xử lý truy vấn danh mục bằng lái.
+ * @description English: Data Transfer Object for License Category queries.
+ * @description Dịch: Đối tượng chuyển đổi dữ liệu cho các truy vấn hạng bằng lái.
+ */
 export class LicenseCategoryQueryDTO extends BaseQueryDTO {
-  // Thêm các field lọc đặc thù vào đây
   public minAge?: number;
   public description?: string;
+  public name?: string;
 
+  /**
+   * @param {Partial<LicenseCategoryQueryDTO>} data
+   */
   constructor(data: Partial<LicenseCategoryQueryDTO>) {
-    super(); // Gọi constructor của BaseQueryDTO
+    super();
 
-    // Gán dữ liệu thô vào class
-    Object.assign(this, data);
+    // 1. Mapping & Sanitization chuỗi (Chỉ gán nếu là string thực thụ)
+    this.name =
+      typeof data.name === "string"
+        ? data.name.trim().toUpperCase()
+        : undefined;
+    this.description =
+      typeof data.description === "string"
+        ? data.description.trim()
+        : undefined;
 
-    // Bắt đầu ép kiểu thủ công tại đây:
-    if (this.minAge) this.minAge = Number(this.minAge);
+    // 2. Ép kiểu số an toàn (Dùng undefined để không filter nhầm nếu trống)
+    this.minAge =
+      data.minAge !== undefined && data.minAge !== null
+        ? Number(data.minAge)
+        : undefined;
 
-    // Đừng quên ép kiểu cho các thuộc tính kế thừa từ BaseQueryDTO nếu cần
-    if (this.limit) this.limit = Number(this.limit);
-    if (this.page) this.page = Number(this.page);
+    // 3. Mapping các trường từ BaseQueryDTO (limit, page)
+    if (this.limit !== undefined) this.limit = Number(this.limit);
+    if (this.page !== undefined) this.page = Number(this.page);
   }
 }

@@ -67,7 +67,6 @@ export const ResetStep = ({ email }: ResetStepProps) => {
       expiryTimer.reset(EXPIRY_TIME);
     } catch (error) {
       setServerError("Không thể gửi lại mã, vui lòng thử lại sau." );
-      console.log(error)
     } finally {
       setIsLoading(false);
     }

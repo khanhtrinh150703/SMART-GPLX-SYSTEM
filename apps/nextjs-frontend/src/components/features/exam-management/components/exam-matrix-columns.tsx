@@ -11,6 +11,7 @@ import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { TableColumnFactory } from "@/components/common/Generic-Table/table-column.factory";
 import { cn } from "@/lib/utils/utils";
 import { IExamMatrixResponse } from "../types/exam-management";
+import { format } from "date-fns";
 
 /**
  * getExamMatrixColumns: Định nghĩa các cột cho bảng quản lý Ma trận.
@@ -31,29 +32,72 @@ export const getExamMatrixColumns = (
     header: "Cấu hình Ma trận",
     sortable: true,
     sortKey: "name",
-    accessor: (item) => (
-      <div className="flex flex-col gap-1 max-w-[300px]">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-emerald-50 shrink-0">
-            <Layers size={14} className="text-emerald-600" />
-          </div>
-          <span className="font-bold text-slate-900 text-sm leading-tight line-clamp-1">
-            {item.name}
-          </span>
+    accessor: (item: IExamMatrixResponse) => (
+      <div className="flex items-start gap-3 py-1 group">
+        <div className="mt-0.5 p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0 transition-colors group-hover:bg-emerald-100">
+          <Layers size={14} strokeWidth={2.5} />
         </div>
-        <span className="text-[10px] text-slate-400 font-medium ml-8 uppercase tracking-wider">
-          ID: {item.id.slice(0, 8)}...
-        </span>
+
+        <div className="flex flex-col min-w-0 leading-none">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "text-sm font-bold truncate transition-colors",
+                item.isDefault
+                  ? "text-emerald-700"
+                  : "text-slate-900 group-hover:text-emerald-600",
+              )}
+            >
+              {item.name}
+            </span>
+            {item.isDefault && (
+              <div
+                className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)] shrink-0"
+                title="Mặc định"
+              />
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Ngày tạo:
+            </span>
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-tight">
+              {item.createdAt
+                ? format(new Date(item.createdAt), "dd/MM/yyyy")
+                : "N/A"}
+            </span>
+          </div>
+        </div>
       </div>
     ),
   },
 
-  // 3. Cột Quy chuẩn đề (Core Metrics) - Đã cập nhật số câu điểm liệt
+  // 3. CỘT MỚI: Hạng bằng (License Category Column)
+  {
+    header: "Hạng bằng",
+    sortable: true,
+    sortKey: "licenseCategoryName",
+    accessor: (item: IExamMatrixResponse) => (
+      <div className="flex justify-center">
+        <div className="px-4 py-1.5 rounded-2xl bg-white shadow-soft border-none transition-all hover:shadow-md active:scale-95">
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">
+              {item.licenseCategoryName}
+            </span>
+          </div>
+        </div>
+      </div>
+    ),
+    className: "w-40",
+  },
+
+  // 4. Cột Quy chuẩn đề (Core Metrics)
   {
     header: "Quy chuẩn đề",
     accessor: (item) => (
       <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-        {/* Tổng số câu (Total Questions) */}
         <div className="flex items-center gap-1.5" title="Tổng số câu hỏi">
           <ClipboardList size={12} className="text-slate-400" />
           <span className="text-xs font-bold text-slate-700">
@@ -61,7 +105,6 @@ export const getExamMatrixColumns = (
           </span>
         </div>
 
-        {/* Thời gian (Duration) */}
         <div className="flex items-center gap-1.5" title="Thời gian làm bài">
           <Timer size={12} className="text-slate-400" />
           <span className="text-xs font-bold text-slate-700">
@@ -69,7 +112,6 @@ export const getExamMatrixColumns = (
           </span>
         </div>
 
-        {/* Điểm đạt (Passing Score) */}
         <div className="flex items-center gap-1.5" title="Yêu cầu điểm đạt">
           <Target size={12} className="text-amber-500" />
           <span className="text-xs font-black text-amber-600">
@@ -77,7 +119,6 @@ export const getExamMatrixColumns = (
           </span>
         </div>
 
-        {/* CẬP NHẬT: Câu điểm liệt (Critical requirement) */}
         <div
           className="flex items-center gap-1.5"
           title="Số lượng câu điểm liệt"
@@ -89,10 +130,10 @@ export const getExamMatrixColumns = (
         </div>
       </div>
     ),
-    className: "w-60", // Tăng nhẹ độ rộng để hiển thị đủ chữ
+    className: "w-60",
   },
 
-  // 4. Cột Phân bổ chương (Chapter Distribution Summary)
+  // 5. Cột Phân bổ chương (Chapter Distribution Summary)
   {
     header: "Cấu trúc",
     sortable: true,
@@ -122,9 +163,9 @@ export const getExamMatrixColumns = (
     className: "w-40",
   },
 
-  // 5. Cột Trạng thái
+  // 6. Cột Trạng thái
   TableColumnFactory.status<IExamMatrixResponse>(),
 
-  // 6. Cột Thao tác
+  // 7. Cột Thao tác
   TableColumnFactory.actions<IExamMatrixResponse>(onEdit, onDelete, onRestore),
 ];

@@ -1,6 +1,2 @@
-export * from './i-auth.service'
-export * from './i-otp.service'
-export * from './i-registration.service'
-export * from './queries/i-role-query.service'
-export * from './i-user.service'
+export * from './commands'
 export * from './queries'

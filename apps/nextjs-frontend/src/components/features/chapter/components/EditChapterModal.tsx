@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Hash, FileText, Info } from "lucide-react";
+import { BookOpen, Hash, FileText, Info, Fingerprint } from "lucide-react";
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import Button from "@/components/ui/Button/Button";
 import {
@@ -14,6 +14,7 @@ import {
 import { Chapter } from "@/components/features/chapter/types/chapter.types";
 import { Alert } from "@/components/ui/Alert";
 import { FormField } from "@/components/common/Form/FormField";
+import axios from "axios";
 
 // Định nghĩa Schema cho Chapter (English: Validation Schema)
 
@@ -42,10 +43,9 @@ export default function EditChapterModal({
   });
 
   const [message, setMessage] = useState<{
-    type: "success" | "error";
+    type: "success" | "error" | "warning";
     text: string;
   } | null>(null);
-  // Reset form khi dữ liệu chapter thay đổi (English: Hydration / Reactive updates)
   useEffect(() => {
     if (chapter) {
       reset({
@@ -53,17 +53,30 @@ export default function EditChapterModal({
         description: chapter.description,
         orderIndex: chapter.orderIndex,
         status: chapter.status,
+        code: chapter.code,
       });
     }
   }, [chapter, reset]);
 
   const onSubmit = async (data: ChapterFormEditValues) => {
     try {
-      await onSave(data); // Đợi API chạy xong
-      onClose(); // Nếu thành công thì đóng Modal
+      setMessage(null); // Xóa lỗi cũ trước khi thử lại
+
+      // Đợi trang cha thực hiện lưu dữ liệu
+      await onSave(data);
+
+      // Nếu không có lỗi: Đóng modal (Thành công xử lý ở trang cha qua Toast)
+      onClose();
+      reset();
     } catch (error) {
-      // (Tùy chọn) Xử lý lỗi nếu onSave thất bại, Modal sẽ không bị đóng
-      console.error("Lỗi khi lưu:", error);
+      // Nếu trang cha ném lỗi (mutateAsync fail), Modal sẽ bắt ở đây
+      let errorText = "Không thể tạo hạng bằng lái. Vui lòng thử lại!";
+
+      if (axios.isAxiosError(error)) {
+        errorText = error.response?.data?.message || errorText;
+      }
+
+      setMessage({ type: "error", text: errorText });
     }
   };
   return (
@@ -96,14 +109,14 @@ export default function EditChapterModal({
           disabled={isLoading}
         />
 
-        {/* <FormField
-          label="Mã dịnh danh (code)"
-          icon={FileText}
-          placeholder="1,2,3."
+        <FormField
+          label="Mã số (Code)"
+          icon={Fingerprint}
+          placeholder="VD: CH01"
           {...register("code")}
           error={errors.code?.message}
           disabled={isLoading}
-        /> */}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           {/* Thứ tự hiển thị */}
@@ -118,22 +131,6 @@ export default function EditChapterModal({
               disabled={isLoading}
             />
           </div>
-
-          {/* Trạng thái
-          <div>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5 ml-1">
-              <Activity size={14} className="text-slate-400" />
-              Trạng thái
-            </label>
-            <select
-              {...register("status")}
-              className="w-full h-[52px] px-4 rounded-2xl border border-slate-200 bg-white text-slate-700 focus:border-emerald-500 outline-none transition-all"
-            >
-              <option value="draft">Bản nháp (Draft)</option>
-              <option value="active">Hoạt động (Active)</option>
-              <option value="deleted">Đã xóa (Deleted)</option>
-            </select>
-          </div> */}
         </div>
 
         {/* Mô tả chi tiết */}

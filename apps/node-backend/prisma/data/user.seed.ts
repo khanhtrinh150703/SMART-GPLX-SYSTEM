@@ -1,4 +1,4 @@
-import { UserSeed } from "../interface.seed";
+import { UserSeed } from "./interface.seed";
 
 export const users: UserSeed[] = [
   {
@@ -31,6 +31,6 @@ export const users: UserSeed[] = [
     password: 'TempPassword123@',
     fullName: 'Học viên dự phòng (Multi-role)',
     phoneNumber: '0966666666',
-    roleNames: ['STUDENT', 'INSTRUCTOR'], // User này có 2 quyền
+    roleNames: ['STUDENT', 'INSTRUCTOR'],
   },
 ];

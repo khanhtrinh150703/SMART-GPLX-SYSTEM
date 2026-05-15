@@ -92,10 +92,11 @@ export const QuestionItem = memo(
             <span
               className={cn(
                 "text-[10px] font-medium px-2 py-0.5 rounded-full",
-                question.difficultyLabel === "Dễ" && "bg-blue-50 text-blue-600",
-                question.difficultyLabel === "Trung bình" &&
+                question.difficultyLabel === "EASY" &&
+                  "bg-blue-50 text-blue-600",
+                question.difficultyLabel === "MEDIUM" &&
                   "bg-orange-50 text-orange-600",
-                question.difficultyLabel === "Khó" &&
+                question.difficultyLabel === "HARD" &&
                   "bg-purple-50 text-purple-600",
               )}
             >
@@ -105,15 +106,17 @@ export const QuestionItem = memo(
 
           {/* 6. Trạng thái (isCritical) */}
           <td className="p-3 text-center w-20">
-            {question.isCritical ? (
-              <span className="px-2 py-0.5 bg-rose-500 text-white rounded text-[9px] font-black uppercase tracking-tighter">
-                Điểm liệt
-              </span>
-            ) : (
-              <span className="text-[9px] text-slate-300 font-bold uppercase">
-                Cơ bản
-              </span>
-            )}
+            <div className="flex justify-center items-center">
+              {question.isCritical ? (
+                <span className="whitespace-nowrap px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-md text-[9px] font-black uppercase tracking-wider">
+                  ● Điểm liệt
+                </span>
+              ) : (
+                <span className="whitespace-nowrap text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                  Cơ bản
+                </span>
+              )}
+            </div>
           </td>
         </tr>
       );
@@ -123,7 +126,7 @@ export const QuestionItem = memo(
       <motion.div
         ref={setNodeRef}
         style={style}
-        layout // Giữ hiệu ứng sắp xếp danh sách mượt mà
+        layout
         variants={questionItemVariants}
         initial="initial"
         animate="animate"
@@ -141,9 +144,23 @@ export const QuestionItem = memo(
           <GripVertical size={18} className="text-slate-300" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-slate-800 truncate">
+          <p
+            className={cn(
+              "text-xs font-bold truncate transition-colors duration-200",
+              question.isCritical ? "text-rose-600" : "text-slate-800",
+            )}
+          >
+            {question.isCritical && (
+              <span className="inline-block mr-1.5 animate-pulse">●</span>
+            )}
             {question.content}
           </p>
+
+          {question.isCritical && (
+            <span className="text-[8px] font-black uppercase tracking-widest text-rose-400 mt-0.5 block">
+              Câu hỏi điểm liệt
+            </span>
+          )}
         </div>
         <button
           type="button"

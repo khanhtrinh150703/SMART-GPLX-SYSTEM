@@ -43,6 +43,7 @@ export interface IExamUserResultResponseDTO {
   // 3. Metadata thời gian (Time Analytics)
   readonly timeSpent: number;         // Thời gian làm bài (giây)
   readonly timeRemaining: number;     // Thời gian còn lại (giây)
+  readonly timeExam: number;     // Thời gian còn lại (giây)
   readonly isAutoSubmit: boolean;     // Tự động nộp bài
   readonly clientFinishedAt: string;  // Thời điểm kết thúc (ISO)
 

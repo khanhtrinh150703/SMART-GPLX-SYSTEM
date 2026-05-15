@@ -4,7 +4,7 @@ import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
 import { IAuthRequest } from '@/shared/types/authRequest.types';
 import { UserQueryDTO } from '@/application/dtos/request/user/user-query.request.dto';
-import { IUserService } from '@/domain/interfaces/services/identity/i-user.service';
+import { IUserService } from '@/domain/interfaces/services/identity/commands/i-user.service';
 import { UpdateProfileRequestDTO } from '@/application/dtos/request/user/update-profile.request.dto';
 import { ChangePasswordRequestDTO } from '@/application/dtos/request/user/update-password.request.dto';
 import { ChangeStatusRequestDTO } from '@/application/dtos/request/user/update-status.request.dto';

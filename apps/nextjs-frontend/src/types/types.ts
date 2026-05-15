@@ -16,6 +16,7 @@ export interface StatusOption<T> {
   id: T;           // ID của tab (ví dụ: "all", "active")
   label: string;   // Nhãn hiển thị tiếng Việt
   color?: string;  // Màu sắc (không bắt buộc)
+  activeBgClass?: string;  // Màu sắc (không bắt buộc)
 }
 
 // 3. Kiểu dữ liệu cho cấu hình cột của bảng (Table Column)

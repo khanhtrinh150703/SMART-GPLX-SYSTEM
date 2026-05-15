@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CreateChapterRequest,
-  UpdateChapterRequest
+  UpdateChapterRequest,
 } from "@/components/features/chapter/types/chapter.types";
 import { QueryParams } from "@/types/paginaton.type";
 import { chapterService } from "@/components/features/chapter/service/chapter.service";
@@ -30,7 +30,7 @@ export const useChapters = (params: QueryParams) => {
     onSuccess: () => {
       // Làm mới cache để cập nhật danh sách ngay lập tức.
       // (Invalidate cache to update list immediately)
-      queryClient.invalidateQueries({ queryKey: ["chapters"] });
+      queryClient.invalidateQueries({ queryKey: ["master", "chapters"] });
     },
   });
 
@@ -39,7 +39,7 @@ export const useChapters = (params: QueryParams) => {
     mutationFn: ({ id, data }: { id: string; data: UpdateChapterRequest }) =>
       chapterService.updateChapter(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chapters"] });
+      queryClient.invalidateQueries({ queryKey: ["master", "chapters"] });
     },
   });
 
@@ -47,7 +47,7 @@ export const useChapters = (params: QueryParams) => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => chapterService.deleteChapter(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chapters"] });
+      queryClient.invalidateQueries({ queryKey: ["master", "chapters"] });
     },
   });
 
@@ -55,14 +55,14 @@ export const useChapters = (params: QueryParams) => {
   const restoreMutation = useMutation({
     mutationFn: (id: string) => chapterService.restoreChapter(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chapters"] });
+      queryClient.invalidateQueries({ queryKey: ["master", "chapters"] });
     },
   });
 
   // Trả về một đối tượng duy nhất chứa tất cả trạng thái và hàm xử lý.
   // (Return a single object containing all states and handlers)
   return {
-    // Trả về data đúng cấu trúc PaginatedResult 
+    // Trả về data đúng cấu trúc PaginatedResult
     result: chaptersQuery.data?.data,
     isLoading: chaptersQuery.isLoading,
     isPlaceholderData: chaptersQuery.isPlaceholderData,
