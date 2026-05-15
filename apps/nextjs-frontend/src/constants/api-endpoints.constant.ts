@@ -1,17 +1,18 @@
 /**
- * 💡 TIP: Thường thì chúng ta chỉ để PATH ở đây. 
+ * 💡 TIP: Thường thì chúng ta chỉ để PATH ở đây.
  * Base URL sẽ được cấu hình tập trung ở file axios-client để code linh hoạt hơn.
  */
 
 export const ENDPOINTS = {
   AUTH: {
     LOGIN: `/auth/login`,
+    LOGOUT: `/auth/logout`,
     REGISTER: `/auth/register/init`,
     VERIFY_OTP: `/auth/register/verify`,
     RESEND_OTP: `/auth/resend-otp`,
     FORGOT_PASSWORD: `/auth/forgot-password`,
     RESET_PASSWORD: `/auth/reset-password`,
-    REFRESH_TOKEN: '/auth/refresh-token'
+    REFRESH_TOKEN: "/auth/refresh-token",
   },
 
   USER: {
@@ -57,22 +58,22 @@ export const ENDPOINTS = {
   },
 
   EXAM_MATRICES: {
-    BASE: '/exam-matrices',
+    BASE: "/exam-matrices",
     DETAILS: (id: string) => `/exam-matrices/${id}`,
     RESTORE: (id: string) => `/exam-matrices/${id}/restore`,
     SELECTION: "/exam-matrices/selection",
   },
 
   EXAM: {
-    AUTO: '/exams/generate-auto',
-    MANUAL: '/exams/manual',
-    BASE: '/exams',
+    AUTO: "/exams/generate-auto",
+    MANUAL: "/exams/manual",
+    BASE: "/exams",
     DETAILS: (id: string) => `/exams/${id}`,
     USER_DETAILS: (id: string) => `/exams/detail/${id}`,
     RESTORE: (id: string) => `/exams/${id}/restore`,
     GENERATION: "/exams/generate-auto",
-    LIST: '/exams/list',
-    SUBMIT : '/exam-attempts/complete',
+    LIST: "/exams/list",
+    SUBMIT: "/exam-attempts/complete",
     GUEST_SUBMIT: "/exam-attempts/guest/complete",
   },
 
@@ -82,13 +83,20 @@ export const ENDPOINTS = {
    */
   ACTIVE_SESSION: {
     // 1. GUEST ROUTES (PUBLIC)
-    GUEST_START: '/active-sessions/guest/start',
+    GUEST_START: "/active-sessions/guest/start",
 
     // 2. PROTECTED ROUTES (PRIVATE)
-    CURRENT: '/active-sessions/current',
-    START: '/active-sessions/start',
-    SYNC: '/active-sessions/sync',
-    // Nếu tương lai ông cần lấy chi tiết một session cũ theo ID
-    // DETAILS: (id: string) => `/active-sessions/${id}`, 
-  }
+    CURRENT: "/active-sessions/current",
+    START: "/active-sessions/start",
+    SYNC: "/active-sessions/sync",
+  },
+
+  HISTORY: {
+    BASE: "/exam-histories",
+    SUMMARY: "/exam-histories/summary",
+    DETAILS: (id: string) => `/exam-histories/summary/${id}`,
+  },
+  STATS: {
+    BASE: "/statistics/me",
+  },
 };

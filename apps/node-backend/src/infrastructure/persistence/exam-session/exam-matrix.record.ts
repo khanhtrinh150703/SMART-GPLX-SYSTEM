@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 export interface IExamMatrixDetailRecord {
   id: string;
   examMatrixId: string; // Prisma tự map từ exam_matrix_id
-  chapterId: string;    // Prisma tự map từ chapter_id
+  chapterId: string; // Prisma tự map từ chapter_id
   percentage: number;
 }
 
@@ -19,13 +19,21 @@ export interface IExamMatrixRecord {
   durationMinutes: number;
   minCriticalQuestions: number;
   isDefault: boolean;
+  isChapter: boolean;
   details: IExamMatrixDetailRecord[];
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
 }
 
+export const EXAM_MATRIX_INCLUDE = {
+  details: true,
+  licenseCategory: {
+    select: { name: true },
+  },
+} satisfies Prisma.ExamMatrixInclude;
+
 // Định nghĩa kiểu dữ liệu bao gồm cả quan hệ (include details)
 export type ExamMatrixWithDetails = Prisma.ExamMatrixGetPayload<{
-  include: { details: true }
+  include: typeof EXAM_MATRIX_INCLUDE;
 }>;

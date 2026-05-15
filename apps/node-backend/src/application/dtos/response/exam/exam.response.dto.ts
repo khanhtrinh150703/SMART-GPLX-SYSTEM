@@ -1,4 +1,4 @@
-import { ExamStatus } from "@prisma/client";
+import { Status } from "@/shared/config/status.config";
 
 /**
  * @description Giao diện dữ liệu trả về cho từng câu hỏi trong đề thi.
@@ -47,10 +47,14 @@ export interface IExamResponseDTO {
   readonly minCriticalQuestions: number;
   readonly startedAt: Date;
   readonly createdAt: Date;
-  readonly userName?: string;
+  readonly fullName?: string;
   readonly licenseCategoryName?: string;
-  readonly status: ExamStatus;
+  readonly status: Status;
   readonly questions: IExamQuestionResponseDTO[];
+  readonly examMatrixId?: string;
+  readonly isEdited?: boolean;
+  /** @description Xác định đề thi này được phân bổ cấu trúc theo chương học hay không. */
+  readonly isChapter?: boolean;
 }
 
 /**
@@ -68,9 +72,12 @@ export class ExamResponseDTO implements IExamResponseDTO {
   public readonly minCriticalQuestions: number;
   public readonly startedAt: Date;
   public readonly createdAt: Date;
-  public readonly userName?: string;
+  public readonly fullName?: string;
+  public readonly examMatrixId?: string;
+  public readonly isEdited?: boolean;
+  public readonly isChapter?: boolean;
   public readonly licenseCategoryName?: string;
-  public readonly status: ExamStatus;
+  public readonly status: Status;
   public readonly questions: IExamQuestionResponseDTO[];
 
   constructor(data: IExamResponseDTO) {
@@ -84,9 +91,12 @@ export class ExamResponseDTO implements IExamResponseDTO {
     this.minCriticalQuestions = data.minCriticalQuestions;
     this.startedAt = data.startedAt;
     this.createdAt = data.createdAt;
-    this.userName = data.userName;
+    this.fullName = data.fullName;
+    this.examMatrixId = data.examMatrixId;
+    this.isEdited = data.isEdited;
+    this.isChapter = data.isChapter;
     this.licenseCategoryName = data.licenseCategoryName;
     this.status = data.status;
-    this.questions = data.questions.map(q => new ExamQuestionResponseDTO(q));
+    this.questions = data.questions.map((q) => new ExamQuestionResponseDTO(q));
   }
 }

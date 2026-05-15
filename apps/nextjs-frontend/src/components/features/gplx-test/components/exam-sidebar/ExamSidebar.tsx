@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, LogOut, ArrowLeft, Send, Menu, X } from "lucide-react";
+import { Clock, LogOut, ArrowLeft, Send, Menu, X, Timer } from "lucide-react";
 import ActionMotion from "@/components/ui/ActionMotion/ActionMotion";
 import { SidebarQuestion } from "../../types/sidebar.types";
 import { asideVariants, timerVariants } from "./exam-sidebar.variants";
@@ -16,6 +16,9 @@ interface ExamSidebarProps {
   isReviewMode: boolean;
   isAutoNext: boolean;
   isLoading?: boolean;
+  // Thêm 2 thuộc tính mới (Add 2 new properties)
+  timeSpent?: number;
+  totalTime?: number;
   onNavigate: (index: number) => void;
   onToggleAutoNext: () => void;
   onExit: () => void;
@@ -30,6 +33,8 @@ export const ExamSidebar = ({
   isReviewMode,
   isAutoNext,
   isLoading = false,
+  timeSpent = 0,
+  totalTime = 0, // Giá trị mặc định (Default value)
   onNavigate,
   onToggleAutoNext,
   onExit,
@@ -48,10 +53,7 @@ export const ExamSidebar = ({
 
   return (
     <>
-      {/* 
-         Nút điều khiển Mobile (Floating Mobile Trigger)
-         - Di chuyển từ bottom-6 lên bottom-24 để tránh đè lên ExamNavigation (h-20).
-      */}
+      {/* Nút điều khiển Mobile */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
         className="lg:hidden fixed bottom-24 right-6 z-[60] w-14 h-14 bg-emerald-600 text-white rounded-2xl shadow-2xl flex items-center justify-center active:scale-95 transition-all border-2 border-white/20 backdrop-blur-sm"
@@ -85,40 +87,63 @@ export const ExamSidebar = ({
 
         {/* Timer Section */}
         <div className="px-8 pb-6 flex flex-col items-center bg-slate-50/30 border-b border-slate-50">
-          <div className={cn(timerVariants({ status: timerStatus }))}>
-            {isReviewMode ? "--:--" : formatTime(timeRemaining)}
-          </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3 flex items-center gap-1.5">
-            <Clock size={12} />
-            {isReviewMode ? "Thời gian đã dừng" : "Thời gian còn lại"}
-          </span>
-
-          {!isReviewMode && (
-            <div
-              onClick={onToggleAutoNext}
-              className="mt-5 flex items-center gap-3 cursor-pointer group bg-white px-4 py-2 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all shadow-sm"
-            >
-              <span
-                className={cn(
-                  "text-[10px] font-black uppercase tracking-widest transition-colors",
-                  isAutoNext ? "text-emerald-600" : "text-slate-400"
-                )}
-              >
-                {isAutoNext ? "Auto Next: ON" : "Auto Next: OFF"}
+          {isReviewMode ? (
+            // Giao diện khi ở chế độ Review (Review Mode UI)
+            <div className="flex flex-col w-full items-center">
+              <div className="text-3xl font-black text-slate-800 tracking-tight">
+                {formatTime(timeSpent)}
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1 mb-4 flex items-center gap-1.5">
+                <Clock size={12} />
+                Thời gian làm bài
               </span>
-              <div
-                className={cn(
-                  "w-10 h-5 rounded-full relative transition-colors duration-300",
-                  isAutoNext ? "bg-emerald-500" : "bg-slate-200"
-                )}
-              >
-                <motion.div
-                  animate={{ x: isAutoNext ? 22 : 2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md"
-                />
+              
+              <div className="w-full bg-white border border-slate-100 shadow-sm rounded-xl px-4 py-3 flex justify-between items-center">
+                <span className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1.5">
+                  <Timer size={14} /> T.Gian Bài Thi
+                </span>
+                <span className="text-sm font-black text-slate-700">
+                  {formatTime(totalTime)}
+                </span>
               </div>
             </div>
+          ) : (
+            // Giao diện khi đang làm bài (Normal Mode UI)
+            <>
+              <div className={cn(timerVariants({ status: timerStatus }))}>
+                {formatTime(timeRemaining)}
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3 flex items-center gap-1.5">
+                <Clock size={12} />
+                Thời gian còn lại
+              </span>
+
+              <div
+                onClick={onToggleAutoNext}
+                className="mt-5 flex items-center gap-3 cursor-pointer group bg-white px-4 py-2 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all shadow-sm"
+              >
+                <span
+                  className={cn(
+                    "text-[10px] font-black uppercase tracking-widest transition-colors",
+                    isAutoNext ? "text-emerald-600" : "text-slate-400"
+                  )}
+                >
+                  {isAutoNext ? "Auto Next: ON" : "Auto Next: OFF"}
+                </span>
+                <div
+                  className={cn(
+                    "w-10 h-5 rounded-full relative transition-colors duration-300",
+                    isAutoNext ? "bg-emerald-500" : "bg-slate-200"
+                  )}
+                >
+                  <motion.div
+                    animate={{ x: isAutoNext ? 22 : 2 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md"
+                  />
+                </div>
+              </div>
+            </>
           )}
         </div>
 

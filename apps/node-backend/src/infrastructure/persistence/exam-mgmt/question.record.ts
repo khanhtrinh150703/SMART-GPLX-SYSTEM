@@ -1,4 +1,4 @@
-import { QuestionStatus } from "@/domain/entities/question/question.status";
+import { Status } from "@/shared/config/status.config";
 import { Prisma } from "@prisma/client";
 
 // 1. Interface cho Answer (Dịch: Answer record interface)
@@ -41,7 +41,7 @@ export interface IQuestionRecord {
   chapter?: {
     name: string;
   };
-  status: QuestionStatus;
+  status: Status;
 
   // Các trường "ảo" dùng để map sang Entity dễ hơn
   chapterName?: string;

@@ -72,7 +72,6 @@ export class ExamMatrixController {
     public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
         const dto = new UpdateExamMatrixRequestDTO({ id, ...req.body });
-
         const data = await this._examMatrixService.update(id, dto);
 
         Result.ok(
@@ -147,11 +146,10 @@ export class ExamMatrixController {
     public getById = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
 
-        const data = await this._examMatrixQueryService.getById(id);
-        const result = await this._examMatrixService.toResponse(data)
+        const data = await this._examMatrixQueryService.getDetail(id);
         Result.ok(
             res,
-            result,
+            data,
             Message.MATRIX.FETCH_SUCCESS,
             'MATRIX_FETCH_SUCCESS'
         );

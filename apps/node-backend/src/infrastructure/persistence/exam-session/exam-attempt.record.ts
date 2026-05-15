@@ -26,6 +26,7 @@ export interface IExamAttemptPersistence {
   readonly durationSeconds: number; // Tổng thời gian làm bài (giây)
   readonly isAutoSubmit: boolean; // Hệ thống tự nộp hay user bấm nộp
   readonly submittedAt: Date; // Thời điểm nộp bài chính xác
+  readonly totalTimeExam: number; // Tổng thời gian bài thi (phút)
 
   // Dữ liệu nội dung (Snapshot)
   readonly snapshot: IExamSnapshot; // Lưu toàn bộ nội dung câu hỏi/đáp án lúc thi

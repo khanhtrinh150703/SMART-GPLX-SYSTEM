@@ -3,9 +3,13 @@ import { ExamQueryDTO } from "@/application/dtos/request/exam/exam-query.request
 import { ExamEntity } from "@/domain/entities/exam/exam.entity";
 import { IExamRepository } from "@/domain/interfaces/repositories/exam-mgmt/i-exam.repository";
 import { ExamMapper } from "@/infrastructure/database/mappers/exam-mgmt/exam.mapper";
-import { examInclude } from "@/infrastructure/persistence/exam-mgmt";
+import {
+  examInclude,
+  PrismaExamWithRelations,
+} from "@/infrastructure/persistence/exam-mgmt";
+import { STATUS } from "@/shared/config/status.config";
 import { ExamRelatedCount } from "@/shared/types/count.types";
-import { ExamStatus, Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 export interface ICradle {
   prisma: PrismaClient;
@@ -32,7 +36,7 @@ export class MySQLExamRepository implements IExamRepository {
         id,
         deletedAt: null,
       },
-      include: examInclude
+      include: examInclude,
     });
 
     if (!record) return null;
@@ -52,7 +56,7 @@ export class MySQLExamRepository implements IExamRepository {
     // 2. Lưu xuống DB (Prisma tự quản lý Transaction cho các bản ghi lồng nhau)
     const savedRecord = await this._prisma.exam.create({
       data,
-      include: examInclude
+      include: examInclude,
     });
 
     // 3. Chuyển đổi ngược lại từ Record sang Domain Entity để trả về
@@ -67,7 +71,7 @@ export class MySQLExamRepository implements IExamRepository {
     const savedRecord = await this._prisma.exam.update({
       where: { id: exam.id },
       data,
-      include: examInclude
+      include: examInclude,
     });
 
     // 3. Chuyển đổi ngược lại từ Record sang Domain Entity để trả về
@@ -85,7 +89,24 @@ export class MySQLExamRepository implements IExamRepository {
         id,
         deletedAt: null,
       },
-      include: examInclude
+      include: examInclude,
+    });
+
+    if (!record) return null;
+    return ExamMapper.toDomain(record);
+  }
+
+  /**
+   * @description Tìm kiếm thông tin bài thi theo tên (Name).
+   * @param name - Tên của bài thi cần tìm.
+   * @returns {Promise<ExamEntity | null>} Trả về Domain Entity hoặc null.
+   */
+  public async findByNameSystem(name: string): Promise<ExamEntity | null> {
+    const record = await this._prisma.exam.findFirst({
+      where: {
+        name,
+      },
+      include: examInclude,
     });
 
     if (!record) return null;
@@ -102,90 +123,97 @@ export class MySQLExamRepository implements IExamRepository {
   public async findAndCount(
     dto: ExamQueryDTO,
     skip: number,
-    limit: number
+    limit: number,
   ): Promise<[ExamEntity[], number]> {
     const where: Prisma.ExamWhereInput = {};
-
-    // --- 1. GÁN ĐIỀU KIỆN CƠ BẢN (Dịch: Basic Filtering) ---
-    if (dto.userId) where.userId = dto.userId;
-    if (dto.licenseCategoryId) where.licenseCategoryId = dto.licenseCategoryId;
+    // --- 1. LỌC THEO TRƯỜNG CỤ THỂ (Explicit Filters) ---
+    if (dto.fullName) {
+      where.user = {
+        fullName: { contains: dto.fullName },
+      };
+    }
     if (dto.examMatrixId) where.examMatrixId = dto.examMatrixId;
     if (dto.isPassed !== undefined) where.isPassed = dto.isPassed;
+    if (dto.name) where.name = { contains: dto.name };
+    if (dto.totalQuestions !== undefined)
+      where.totalQuestions = dto.totalQuestions;
+    if (dto.passingScore !== undefined) where.passingScore = dto.passingScore;
+    if (dto.durationMinutes !== undefined)
+      where.durationMinutes = dto.durationMinutes;
+    if (dto.minCriticalQuestions !== undefined)
+      where.minCriticalQuestions = dto.minCriticalQuestions;
+    if (dto.licenseCategoryName) {
+      where.licenseCategory = {
+        name: { contains: dto.licenseCategoryName },
+      };
+    }
 
-    // --- 2. LOGIC TRẠNG THÁI TỔNG HỢP (Dịch: Integrated Status Logic) ---
-    // Xử lý status dựa trên Tab UI hoặc giá trị Enum thực tế
+    // --- 2. LOGIC TRẠNG THÁI (Status Logic) ---
     const statusInput = dto.status?.toString().toLowerCase();
-
-    if (statusInput === 'all') {
-      // Không thêm điều kiện status -> Lấy cả đã xóa (nếu cần) hoặc mọi trạng thái
-    }
-    else if (statusInput === 'deleted') {
-      where.deletedAt = { not: null };
-    }
-    else {
-      // Mặc định chỉ lấy bản ghi chưa xóa khi truy vấn danh sách thông thường
+    if (statusInput === "active") {
       where.deletedAt = null;
-      if (dto.status) {
-        where.status = dto.status as ExamStatus;
-      }
+      where.status = STATUS.ACTIVE;
+    } else if (statusInput === "deleted") {
+      where.deletedAt = { not: null };
+    } else if (statusInput === "draft") {
+      where.status = STATUS.DRAFT;
+    } else if (statusInput !== "all") {
+      where.deletedAt = null;
     }
 
-    // --- 3. LOGIC SEARCH (Dịch: Search Logic) ---
+    // --- 3. SEARCH TỔNG QUÁT (Global Search) ---
     if (dto.search) {
+      const searchTag: Prisma.StringFilter = { contains: dto.search };
       where.OR = [
-        { name: { contains: dto.search } },
-        { user: { fullName: { contains: dto.search } } } // Tìm theo tên thí sinh
+        { name: searchTag },
+        { user: { fullName: searchTag } },
+        { licenseCategory: { name: searchTag } },
       ];
     }
 
-    // --- 4. XỬ LÝ SẮP XẾP PHỨC TẠP (Dịch: Complex Sorting Logic) ---
-    const sortBy = dto.sortBy;
-    const sortOrder = (dto.sortOrder?.toLowerCase() as 'asc' | 'desc') || 'desc';
-    const sortCriteria: Prisma.ExamOrderByWithRelationInput[] = [];
+    // --- 4. XỬ LÝ SẮP XẾP KHÔNG DÙNG ANY (Strict Sorting) ---
+    const sortOrder = dto.sortOrder || "desc";
 
-    /**
-     * LOGIC MẶC ĐỊNH: Ưu tiên đề thi mới nhất hoặc đề thi đang diễn ra
-     */
-    if (!sortBy || sortBy === 'createdAt' || sortBy === 'all') {
-      sortCriteria.push({ startedAt: 'desc' });
-      sortCriteria.push({ status: 'asc' });
-    }
-    else {
-      // TRƯỜNG HỢP ADMIN/USER CLICK CHỌN CỘT
-      switch (sortBy) {
-        case 'score':
-          sortCriteria.push({ score: sortOrder });
-          break;
-        case 'licenseCategory':
-          sortCriteria.push({ licenseCategory: { name: sortOrder } });
-          break;
-        case 'duration':
-          sortCriteria.push({ durationMinutes: sortOrder });
-          break;
-        case 'status':
-          sortCriteria.push({ status: sortOrder });
-          break;
-        default:
-          // Ép kiểu an toàn cho các trường hợp động
-          sortCriteria.push({ [sortBy]: sortOrder } as Prisma.ExamOrderByWithRelationInput);
-      }
-    }
+    // Xây dựng mảng orderBy với kiểu dữ liệu chuẩn của Prisma
+    const orderBy: Prisma.ExamOrderByWithRelationInput[] = [];
 
-    // --- 5. THỰC THI TRANSACTION (Dịch: Database Execution) ---
+    // Ưu tiên 1: Gom nhóm theo trạng thái xóa
+    orderBy.push({ deletedAt: sortOrder });
+
+    orderBy.push({ status: "asc" });
+    // Ưu tiên 2: Ánh xạ sort từ DTO sang Prisma Order Object mà không dùng any
+    const sortMap: Record<string, Prisma.ExamOrderByWithRelationInput> = {
+      name: { name: sortOrder },
+      score: { score: sortOrder },
+      startedAt: { startedAt: sortOrder },
+      duration: { durationMinutes: sortOrder },
+      status: { status: sortOrder },
+      user: { user: { fullName: sortOrder } },
+      licenseCategoryName: { licenseCategory: { name: sortOrder } },
+    };
+
+    const userCriteria = sortMap[dto.sortBy || "startedAt"] || {
+      startedAt: "desc",
+    };
+    orderBy.push(userCriteria);
+
+    // --- 5. THỰC THI TRUY VẤN (Database Execution) ---
     const [rawRecords, total] = await this._prisma.$transaction([
       this._prisma.exam.findMany({
         where,
         skip,
         take: limit,
-        orderBy: sortCriteria,
-        include: examInclude
+        orderBy,
+        include: examInclude,
       }),
-      this._prisma.exam.count({ where })
+      this._prisma.exam.count({ where }),
     ]);
 
-    // --- 6. MAPPING (Dịch: Domain Mapping) ---
-    // Tuyệt đối không trả về rawRecords, phải qua Mapper để bảo vệ Domain
-    const entities = rawRecords.map((record) => ExamMapper.toDomain(record));
+    // --- 6. MAPPING SANG DOMAIN (Domain Mapping) ---
+    // rawRecords giờ đây đã mang kiểu ExamWithRelations[] một cách tự động
+    const entities = rawRecords.map((record: PrismaExamWithRelations) =>
+      ExamMapper.toDomain(record),
+    );
 
     return [entities, total];
   }
@@ -193,7 +221,7 @@ export class MySQLExamRepository implements IExamRepository {
   public async softDelete(id: string): Promise<void> {
     await this._prisma.exam.update({
       where: { id },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date(), status: "DELETED" },
     });
   }
 
@@ -206,15 +234,15 @@ export class MySQLExamRepository implements IExamRepository {
   public async restore(id: string): Promise<void> {
     await this._prisma.exam.update({
       where: { id },
-      data: { deletedAt: null }
+      data: { deletedAt: null, status: "ACTIVE" },
     });
   }
 
   /**
    * @description Thống kê các thành phần phụ thuộc của Đề thi.
    * @param {string} id - Định danh duy nhất (UUID) của đề thi.
-   * @returns {Promise<ExamRelatedCount>} Đối tượng chứa số lượng chi tiết các thực thể liên quan 
-   * @note Do cơ chế 'onDelete: Cascade' trong DB, việc xóa Exam sẽ xóa sạch các bản ghi phụ thuộc. 
+   * @returns {Promise<ExamRelatedCount>} Đối tượng chứa số lượng chi tiết các thực thể liên quan
+   * @note Do cơ chế 'onDelete: Cascade' trong DB, việc xóa Exam sẽ xóa sạch các bản ghi phụ thuộc.
    */
   public async countRelatedData(id: string): Promise<ExamRelatedCount> {
     const questionsCount = await this._prisma.examQuestion.count({
@@ -236,7 +264,7 @@ export class MySQLExamRepository implements IExamRepository {
       where: {
         id,
       },
-      include: examInclude
+      include: examInclude,
     });
 
     if (!record) return null;
@@ -252,10 +280,10 @@ export class MySQLExamRepository implements IExamRepository {
     const record = await this._prisma.exam.findUnique({
       where: {
         id,
-        status: 'PUBLISHED',
+        status: "ACTIVE",
         deletedAt: null,
       },
-      include: examInclude
+      include: examInclude,
     });
 
     if (!record) return null;
@@ -263,34 +291,35 @@ export class MySQLExamRepository implements IExamRepository {
   }
 
   /**
-    * @description Truy vấn danh sách bộ đề thi dành cho người dùng cuối .
-    * @param options - Tiêu chí lọc động (tìm kiếm theo tên, mã hạng bằng lái).
-    * @param skip - Số lượng bản ghi cần bỏ qua (Offset).
-    * @param take - Số lượng bản ghi tối đa cần lấy (Limit).
-    * @returns {Promise<[ExamEntity[], number]>} Tuple chứa danh sách Entity và tổng số bản ghi khớp điều kiện.
-    */
+   * @description Truy vấn danh sách bộ đề thi dành cho người dùng cuối .
+   * @param options - Tiêu chí lọc động (tìm kiếm theo tên, mã hạng bằng lái).
+   * @param skip - Số lượng bản ghi cần bỏ qua (Offset).
+   * @param take - Số lượng bản ghi tối đa cần lấy (Limit).
+   * @returns {Promise<[ExamEntity[], number]>} Tuple chứa danh sách Entity và tổng số bản ghi khớp điều kiện.
+   */
   public async findAllUser(
     options: IExamUserFilterOptions,
     skip: number,
-    take: number
+    take: number,
   ): Promise<[ExamEntity[], number]> {
     // 1. Định nghĩa điều kiện lọc dùng chung cho cả query data và query count
     const where: Prisma.ExamWhereInput = {
-      status: 'PUBLISHED',
+      status: "ACTIVE",
       deletedAt: null,
       name: options.search ? { contains: options.search } : undefined,
-      licenseCategory: options.licenseCode ? { name: options.licenseCode } : undefined,
+      licenseCategory: options.licenseCode
+        ? { name: options.licenseCode }
+        : undefined,
     };
 
     // 2. Chạy song song truy vấn dữ liệu và đếm tổng số (Tuple Pattern)
-    // English: Execute data fetching and total counting in parallel.
     const [records, total] = await Promise.all([
       this._prisma.exam.findMany({
         where,
         skip,
         take,
         include: examInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this._prisma.exam.count({ where }),
     ]);

@@ -7,6 +7,7 @@ import {
     UpdateLicenseCategoryRequest
 } from "@/components/features/license/types/license-category.types";
 import { PaginatedResult, QueryParams } from "@/types/paginaton.type";
+import { DeleteResponse } from "@/types/respone/delete.common";
 
 /**
  * License Category API: Quản lý các hạng bằng lái.
@@ -58,8 +59,8 @@ export const licenseCategoryApi = {
      * Xóa một hạng bằng lái (Soft delete).
      * (Delete a license category - Soft delete)
      */
-    delete: async (id: string): Promise<StandardResponse<void>> => {
-        const response = await axiosClient.delete<StandardResponse<void>>(
+    delete: async (id: string): Promise<StandardResponse<DeleteResponse>> => {
+        const response = await axiosClient.delete<StandardResponse<DeleteResponse>>(
             ENDPOINTS.LICENSE.DETAIL(id)
         );
         return response.data;

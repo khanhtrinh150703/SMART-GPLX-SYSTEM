@@ -1,11 +1,11 @@
-import { UserStatus } from "@/domain/entities/user/user.status";
+import { STATUS, Status } from "@/shared/config/status.config";
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu thay đổi trạng thái người dùng.
  */
 export interface IChangeStatusInputDTO {
-  readonly status: UserStatus;
+  readonly status: Status;
 }
 
 /**
@@ -13,7 +13,7 @@ export interface IChangeStatusInputDTO {
  * Đảm bảo trạng thái mới thuộc danh sách cho phép (ACTIVE, BANNED, PENDING).
  */
 export class ChangeStatusRequestDTO implements IChangeStatusInputDTO {
-  public readonly status: UserStatus;
+  public readonly status: Status;
 
   constructor(data: IChangeStatusInputDTO) {
     // 1. Chặn đứng dữ liệu lỗi/undefined ngay từ constructor
@@ -41,7 +41,11 @@ export class ChangeStatusRequestDTO implements IChangeStatusInputDTO {
     }
 
     // 2. Kiểm tra xem status có thuộc Enum UserStatus hợp lệ hay không
-    const validStatuses: UserStatus[] = ['active', 'locked', 'suspended'];
+    const validStatuses: Status[] = [
+      STATUS.ACTIVE,
+      STATUS.DELETED,
+      STATUS.DRAFT,
+    ];
 
     if (!validStatuses.includes(data.status)) {
       throw new AppError(USER.STATUS_INVALID);

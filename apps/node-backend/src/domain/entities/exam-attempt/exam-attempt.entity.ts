@@ -1,94 +1,132 @@
-import { BaseEntity } from '@/domain/seedwork/entity.base';
-import { CreateExamAttemptProps, IExamAttemptProps, IQuestionSnapshot } from './exam-attempt.props';
-import { AppError, ErrorCode } from '@/shared/errors';
+import { BaseEntity } from "@/domain/seedwork/entity.base";
+import {
+  CreateExamAttemptProps,
+  IExamAttemptProps,
+  IQuestionSnapshot,
+} from "./exam-attempt.props";
+import { AppError, ErrorCode } from "@/shared/errors";
+import { IQuestionAttemptRequest } from "../statistics/question-statistics.props";
+import { IUserTopicDelta } from "@/application/dtos/request/statistics/update-user-topic-statistics.request.dto";
 
 export class ExamAttemptEntity extends BaseEntity<IExamAttemptProps> {
+  private constructor(props: IExamAttemptProps) {
+    super(props);
+    // Luôn validate ngay khi khởi tạo để đảm bảo tính toàn vẹn
+    this.validate();
+  }
 
-    private constructor(props: IExamAttemptProps) {
-        super(props);
-        // Luôn validate ngay khi khởi tạo để đảm bảo tính toàn vẹn
-        this.validate();
+  /**
+   * @description Factory Method: Khởi tạo kết quả thi mới từ kết quả nộp bài.
+   * Đây là lúc AI hoặc Service đẩy dữ liệu đã tính toán xong vào.
+   */
+  public static create(props: CreateExamAttemptProps): ExamAttemptEntity {
+    const now = new Date();
+    const finalizedProps: IExamAttemptProps = {
+      ...props,
+      id: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    };
+
+    return new ExamAttemptEntity(finalizedProps);
+  }
+
+  /**
+   * @description Resurrection: Tái tạo thực thể từ NoSQL (MongoDB/DocumentDB).
+   * Dùng khi cần hiển thị Dashboard hoặc cho AI phân tích lại lịch sử.
+   */
+  public static reconstitute(props: IExamAttemptProps): ExamAttemptEntity {
+    return new ExamAttemptEntity(props);
+  }
+
+  /**
+   * @description Invariants (Quy tắc bất biến): Kiểm tra logic nghiệp vụ GPLX.
+   * Thực hiện cơ chế "Nghĩ xong mới làm" tại tầng lõi Domain.
+   */
+  public validate(): void {
+    const { score, isPassed, snapshot } = this.props;
+
+    // 1. Kiểm tra giới hạn điểm (0 - 100 hoặc tổng số câu)
+    if (score < 0 || score > snapshot.totalQuestions) {
+      throw new AppError(ErrorCode.EXAM_ATTEMPT.SCORE_INVALID);
     }
 
-    /**
-     * @description Factory Method: Khởi tạo kết quả thi mới từ kết quả nộp bài.
-     * Đây là lúc AI hoặc Service đẩy dữ liệu đã tính toán xong vào.
-     */
-    public static create(props: CreateExamAttemptProps): ExamAttemptEntity {
-        const now = new Date();
-        const finalizedProps: IExamAttemptProps = {
-            ...props,
-            id: crypto.randomUUID(),
-            createdAt: now,
-            updatedAt: now,
-            deletedAt: null,
-        };
+    // 2. Logic "Câu điểm liệt": Kiểm tra xem có câu liệt nào bị làm sai không
+    const hasFailedCritical = snapshot.questions.some(
+      (q: IQuestionSnapshot) => q.isCritical && !q.isCorrect,
+    );
 
-        return new ExamAttemptEntity(finalizedProps);
+    // 3. Kiểm tra tính nhất quán giữa điểm số và trạng thái Đạt/Trượt
+    const isActuallyPassed =
+      score >= snapshot.passingScore && !hasFailedCritical;
+
+    if (isPassed !== isActuallyPassed) {
+      throw new AppError(ErrorCode.EXAM_ATTEMPT.RESULT_CONSISTENCY_ERROR);
     }
+  }
 
-    /**
-     * @description Resurrection: Tái tạo thực thể từ NoSQL (MongoDB/DocumentDB).
-     * Dùng khi cần hiển thị Dashboard hoặc cho AI phân tích lại lịch sử.
-     */
-    public static reconstitute(props: IExamAttemptProps): ExamAttemptEntity {
-        return new ExamAttemptEntity(props);
-    }
+  /**
+   * @description Tính toán tỷ lệ hoàn thành theo từng chương.
+   * Phục vụ việc cập nhật User Matrix (Async).
+   */
+  public getPerformanceByChapter(): Map<
+    string,
+    { correct: number; total: number }
+  > {
+    const stats = new Map<string, { correct: number; total: number }>();
 
-    /**
-     * @description Invariants (Quy tắc bất biến): Kiểm tra logic nghiệp vụ GPLX.
-     * Thực hiện cơ chế "Nghĩ xong mới làm" tại tầng lõi Domain.
-     */
-    public validate(): void {
-        const { score, isPassed, snapshot } = this.props;
+    this.props.snapshot.questions.forEach((q) => {
+      const current = stats.get(q.chapterId) || { correct: 0, total: 0 };
+      stats.set(q.chapterId, {
+        correct: current.correct + (q.isCorrect ? 1 : 0),
+        total: current.total + 1,
+      });
+    });
 
-        // 1. Kiểm tra giới hạn điểm (0 - 100 hoặc tổng số câu)
-        if (score < 0 || score > snapshot.totalQuestions) {
-            throw new AppError(ErrorCode.EXAM_ATTEMPT.SCORE_INVALID)
-        }
+    return stats;
+  }
 
-        // 2. Logic "Câu điểm liệt": Kiểm tra xem có câu liệt nào bị làm sai không
-        const hasFailedCritical = snapshot.questions.some(
-            (q: IQuestionSnapshot) => q.isCritical && !q.isCorrect
-        );
+  // Getters để truy cập dữ liệu (Read-only)
+  public get result() {
+    return {
+      score: this.props.score,
+      isPassed: this.props.isPassed,
+      correctCount: this.props.correctCount,
+      duration: this.props.durationSeconds,
+    };
+  }
 
-        // 3. Kiểm tra tính nhất quán giữa điểm số và trạng thái Đạt/Trượt
-        const isActuallyPassed = score >= snapshot.passingScore && !hasFailedCritical;
+  public get snapshot() {
+    return this.props.snapshot;
+  }
 
-        if (isPassed !== isActuallyPassed) {
-            throw new AppError(ErrorCode.EXAM_ATTEMPT.RESULT_CONSISTENCY_ERROR)
-        }
-    }
+  /**
+   * @description Trích xuất kết quả từng câu hỏi cho QuestionStatisticsService.
+   * Cung cấp đủ dữ liệu để tính toán tốc độ phản hồi và độ khó toàn cục.
+   */
+  public get questionStats(): IQuestionAttemptRequest[] {
+    return this.props.snapshot.questions.map((q) => ({
+      questionId: q.questionId,
+      isCorrect: q.isCorrect,
+      duration: q.timeSpent ?? 0,
+      isUnanswered:
+        q.selectedAnswerIndex === null || q.selectedAnswerIndex === undefined,
+    }));
+  }
 
-    /**
-     * @description Tính toán tỷ lệ hoàn thành theo từng chương.
-     * Phục vụ việc cập nhật User Matrix (Async).
-     */
-    public getPerformanceByChapter(): Map<string, { correct: number; total: number }> {
-        const stats = new Map<string, { correct: number; total: number }>();
-
-        this.props.snapshot.questions.forEach((q) => {
-            const current = stats.get(q.chapterId) || { correct: 0, total: 0 };
-            stats.set(q.chapterId, {
-                correct: current.correct + (q.isCorrect ? 1 : 0),
-                total: current.total + 1,
-            });
-        });
-
-        return stats;
-    }
-
-    // Getters để truy cập dữ liệu (Read-only)
-    public get result() {
-        return {
-            score: this.props.score,
-            isPassed: this.props.isPassed,
-            correctCount: this.props.correctCount,
-            duration: this.props.durationSeconds
-        };
-    }
-
-    public get snapshot() {
-        return this.props.snapshot;
-    }
+  /**
+   * @description Trích xuất kết quả theo chủ đề cho UserTopicStatisticsService.
+   * Gom dữ liệu thô để Service thực hiện Aggregation (Gom nhóm) theo Topic.
+   */
+  public get topicStats(): IUserTopicDelta[] {
+    return this.props.snapshot.questions.map((q) => ({
+      topicId: q.chapterId, 
+      topicName: q.chapterName,
+      isCorrect: q.isCorrect,
+      duration: q.timeSpent ?? 0,
+      isUnanswered:
+        q.selectedAnswerIndex === null || q.selectedAnswerIndex === undefined,
+    }));
+  }
 }

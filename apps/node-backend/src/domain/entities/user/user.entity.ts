@@ -1,10 +1,10 @@
-import { UserStatus } from "./user.status";
 import { IUserProps } from "./user.props";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { Role } from "@/domain/entities/role/role.entity";
 import { BaseEntity } from "@/domain/seedwork/entity.base";
 import bcrypt from 'bcrypt';
 import { AUTH_CONFIG } from "@/shared/config/auth.config";
+import { Status } from "@/shared/config/status.config";
 
 /**
  * @description Định nghĩa nội bộ cho User Props bao gồm các quan hệ và dữ liệu nhạy cảm.
@@ -58,7 +58,7 @@ export class User extends BaseEntity<IUserDomainProps> {
       phoneNumber: data.phoneNumber?.trim() || '',
       urlPicture: '',
 
-      status: 'active',
+      status: 'ACTIVE',
       roles: [], // Mặc định chưa có role khi mới tạo (hoặc gán role mặc định ở Service)
 
       createdAt: now,
@@ -88,7 +88,7 @@ export class User extends BaseEntity<IUserDomainProps> {
   public get email(): string { return this._props.email; }
   public get fullName(): string { return this._props.fullName; }
   public get phoneNumber(): string { return this._props.phoneNumber; }
-  public get status(): UserStatus { return this._props.status; }
+  public get status(): Status { return this._props.status; }
   public get urlPicture(): string { return this._props.urlPicture; }
   public get createdAt(): Date { return this._props.createdAt; }
   public get updatedAt(): Date { return this._props.updatedAt; }
@@ -102,27 +102,8 @@ export class User extends BaseEntity<IUserDomainProps> {
 
   // --- BUSINESS LOGIC (Nghiệp vụ) ---
 
-  /**
-   * @description Trả về URL ảnh đại diện đầy đủ sau khi đã chuẩn hóa đường dẫn.
-   * @param {string} baseUrl - URL cơ sở của hệ thống (ví dụ: http://localhost:3000).
-   * @returns {string} URL hoàn chỉnh hoặc chuỗi rỗng nếu không có ảnh.
-   */
-  public getFullPictureUrl(baseUrl: string): string {
-    const picturePath = this.props.urlPicture;
-    if (!picturePath) return "";
-
-    // Chuẩn hóa: thay thế backslash (\) bằng forward slash (/)
-    const normalizedPath = picturePath.replace(/\\/g, '/');
-
-    // Xử lý để tránh bị double slash (//) khi nối chuỗi
-    const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
-    const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
-
-    return `${cleanBaseUrl}${cleanPath}`;
-  }
-  
   public isActive(): boolean {
-    return this._props.status === 'active' && !this.isDeleted();
+    return this._props.status === 'ACTIVE' && !this.isDeleted();
   }
 
   public isDeleted(): boolean {
@@ -195,19 +176,15 @@ export class User extends BaseEntity<IUserDomainProps> {
     if (urlPicture !== undefined) this.updateAvatar(urlPicture);
   }
 
-  public updateStatus(newStatus: UserStatus): void {
+  public updateStatus(newStatus: Status): void {
     if (this._props.status === newStatus) return;
     this._props.status = newStatus;
     this.touch();
   }
 
-  public suspend(): void {
-    this.updateStatus('suspended');
-  }
-
   /** @description Xóa mềm: Chuyển trạng thái sang locked và gán mốc thời gian xóa. */
   public softDelete(): void {
-    this._props.status = 'locked';
+    this._props.status = 'DELETED';
     this._props.deletedAt = new Date();
     this.touch();
   }
@@ -215,7 +192,7 @@ export class User extends BaseEntity<IUserDomainProps> {
   public restore(): void {
     if (!this.isDeleted()) return;
     this._props.deletedAt = undefined;
-    this._props.status = 'active';
+    this._props.status = 'ACTIVE';
     this.touch();
   }
 

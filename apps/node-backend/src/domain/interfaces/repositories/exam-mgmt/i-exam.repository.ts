@@ -44,6 +44,13 @@ export interface IExamRepository {
   findDetailById(id: string): Promise<ExamEntity | null>;
 
   /**
+   * @description Lấy chi tiết bộ đề theo tên.
+   * @param name - Tên bộ đề.
+   * @returns Thông tin bộ đề hoặc null.
+   */
+  findByNameSystem(name: string): Promise<ExamEntity | null>;
+
+  /**
    * @description Tìm kiếm bài thi theo ID kết hợp với các điều kiện lọc bổ sung.
    * @param options - (Tùy chọn) Các tiêu chí lọc/tìm kiếm bổ sung.
    * @param skip - Số lượng bản ghi cần bỏ qua (Offset).

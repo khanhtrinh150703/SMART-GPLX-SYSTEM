@@ -1,9 +1,9 @@
-import { Prisma, PrismaClient, Chapter as PrismaChapter } from '@prisma/client';
-import { IChapterRepository } from '@/domain/interfaces/repositories/exam-mgmt/i-chapter.repository';
-import { Chapter } from '@/domain/entities/chapter/chapter.entity';
-import { ChapterMapper } from '@/infrastructure/database/mappers/exam-mgmt/chapter.mapper';
-import { ChapterQueryDTO } from '@/application/dtos/request/chapter/chapter-query.request.dto';
-import { ChapterRelatedCount } from '@/shared/types/count.types';
+import { Prisma, PrismaClient, Chapter as PrismaChapter } from "@prisma/client";
+import { IChapterRepository } from "@/domain/interfaces/repositories/exam-mgmt/i-chapter.repository";
+import { Chapter } from "@/domain/entities/chapter/chapter.entity";
+import { ChapterMapper } from "@/infrastructure/database/mappers/exam-mgmt/chapter.mapper";
+import { ChapterQueryDTO } from "@/application/dtos/request/chapter/chapter-query.request.dto";
+import { ChapterRelatedCount } from "@/shared/types/count.types";
 
 export interface IMySQLChapterRepositoryCradle {
   prisma: PrismaClient;
@@ -28,18 +28,18 @@ export class MySQLChapterRepository implements IChapterRepository {
   public async findAll(): Promise<Chapter[]> {
     const records = await this._prisma.chapter.findMany({
       where: { deletedAt: null },
-      orderBy: { orderIndex: 'asc' }
+      orderBy: { orderIndex: "asc" },
     });
 
     // Sử dụng Type Guard để đảm bảo mảng trả về là Chapter[] không chứa null
     return records
-      .map(rec => this._mapToDomain(rec))
+      .map((rec) => this._mapToDomain(rec))
       .filter((item): item is Chapter => item !== null);
   }
 
   public async findById(id: string): Promise<Chapter | null> {
     const record = await this._prisma.chapter.findFirst({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
     return this._mapToDomain(record);
   }
@@ -47,14 +47,14 @@ export class MySQLChapterRepository implements IChapterRepository {
   public async findByIdIncludingDeleted(id: string): Promise<Chapter | null> {
     // findUnique tối ưu hơn findFirst khi tìm theo Primary Key (ID)
     const record = await this._prisma.chapter.findUnique({
-      where: { id }
+      where: { id },
     });
     return this._mapToDomain(record);
   }
 
   public async findByName(name: string): Promise<Chapter | null> {
     const record = await this._prisma.chapter.findFirst({
-      where: { name }
+      where: { name },
     });
     // Đã fix: Sử dụng helper để check null trước khi gọi Mapper
     return this._mapToDomain(record);
@@ -71,7 +71,6 @@ export class MySQLChapterRepository implements IChapterRepository {
     if (!chapter.id) return;
 
     const persistence = ChapterMapper.toUpdatePersistence(chapter);
-
     await this._prisma.chapter.update({
       where: { id: chapter.id },
       data: persistence,
@@ -80,7 +79,7 @@ export class MySQLChapterRepository implements IChapterRepository {
 
   public async exists(id: string): Promise<boolean> {
     const count = await this._prisma.chapter.count({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
     return count > 0;
   }
@@ -88,14 +87,14 @@ export class MySQLChapterRepository implements IChapterRepository {
   public async findAndCount(
     query: ChapterQueryDTO,
     skip: number,
-    limit: number
+    limit: number,
   ): Promise<[Chapter[], number]> {
     const where: Prisma.ChapterWhereInput = {};
 
     // Logic lọc trạng thái (Active/Deleted/All)
-    if (query.status === 'active') {
+    if (query.status === "active") {
       where.deletedAt = null;
-    } else if (query.status === 'deleted') {
+    } else if (query.status === "deleted") {
       where.deletedAt = { not: null };
     }
 
@@ -103,32 +102,46 @@ export class MySQLChapterRepository implements IChapterRepository {
       where.orderIndex = Number(query.orderIndex);
     }
 
-    if (query.search) {
-      where.OR = [
-        { name: { contains: query.search } },
-        { description: { contains: query.search } },
-        { code: { contains: query.search } },
-      ];
+    if (query.description !== undefined) {
+      where.description = { contains: query.description };
     }
 
-    const sortField = query.sortBy === 'status' ? 'deletedAt' : (query.sortBy || 'orderIndex');
-    const sortOrder = query.sortOrder || 'asc';
+    if (query.name !== undefined) {
+      where.name = { contains: query.name };
+    }
+
+    if (query.code !== undefined) {
+      where.code = { contains: query.code };
+    }
+
+    const sortField =
+      query.sortBy === "status" ? "deletedAt" : query.sortBy || "orderIndex";
+    const sortOrder = query.sortOrder || "asc";
+
+    const orderBy: Prisma.ChapterOrderByWithRelationInput[] = [];
+
+    orderBy.push({ deletedAt: sortOrder });
+
+    if (sortField !== "deletedAt") {
+      orderBy.push({ [sortField]: sortOrder });
+    }
+
+    if (sortField !== "name") {
+      orderBy.push({ name: "asc" });
+    }
 
     const [rawRecords, total] = await this._prisma.$transaction([
       this._prisma.chapter.findMany({
         where,
         skip,
         take: limit,
-        orderBy: [
-          { [sortField]: sortOrder },
-          { name: 'asc' },
-        ],
+        orderBy: orderBy, 
       }),
       this._prisma.chapter.count({ where }),
     ]);
 
     const domainEntities = rawRecords
-      .map(rec => this._mapToDomain(rec))
+      .map((rec) => this._mapToDomain(rec))
       .filter((item): item is Chapter => item !== null);
 
     return [domainEntities, total];
@@ -136,35 +149,28 @@ export class MySQLChapterRepository implements IChapterRepository {
 
   public async findByCode(code: string): Promise<Chapter | null> {
     const record = await this._prisma.chapter.findUnique({
-      where: { code: code.trim() }
+      where: { code: code.trim() },
     });
     return this._mapToDomain(record);
   }
 
   /**
    * @description Thống kê chi tiết các dữ liệu đang phụ thuộc vào Chương.
-   * Giúp hệ thống quyết định có cho phép xóa (Soft Delete) chương này hay không.
    * @param {string} id - UUID của chương cần kiểm tra.
    * @returns {Promise<ChapterRelatedCount>} Đối tượng chứa số lượng ở các bảng con.
    */
   public async countRelatedData(id: string): Promise<ChapterRelatedCount> {
-    const [questions, matrixDetails, userWeaknesses] = await Promise.all([
+    const [questions, matrixDetails] = await Promise.all([
       // 1. Đếm số lượng câu hỏi thuộc chương này (chỉ đếm câu chưa bị xóa mềm)
       this._prisma.question.count({
         where: {
           chapterId: id,
-          deletedAt: null
+          deletedAt: null,
         },
       }),
 
       // 2. Đếm số lượng cấu hình ma trận đề thi đang sử dụng chương này
-      // (Bảng này thường không có xóa mềm vì nó đi theo ExamMatrix)
       this._prisma.examMatrixDetail.count({
-        where: { chapterId: id },
-      }),
-
-      // 3. Đếm số lượng bản ghi phân tích điểm yếu của người dùng gắn với chương này
-      this._prisma.userWeakness.count({
         where: { chapterId: id },
       }),
     ]);
@@ -172,14 +178,13 @@ export class MySQLChapterRepository implements IChapterRepository {
     return {
       questions,
       matrixDetails,
-      userWeaknesses,
     };
   }
 
   public async softDelete(id: string): Promise<void> {
     await this._prisma.chapter.update({
       where: { id },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -192,7 +197,7 @@ export class MySQLChapterRepository implements IChapterRepository {
   public async restore(id: string): Promise<void> {
     await this._prisma.chapter.update({
       where: { id },
-      data: { deletedAt: null }
+      data: { deletedAt: null },
     });
   }
 }

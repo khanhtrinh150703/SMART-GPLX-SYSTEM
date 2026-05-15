@@ -4,7 +4,8 @@
  * Lựa chọn đáp án
  */
 export interface IExamOption {
-  readonly position: number;
+  readonly position: number; // Vị trí hiển thị (A, B, C...)
+  readonly index: number;    // Chỉ số gốc dùng để mapping/chấm điểm
   readonly content: string;
   readonly imageUrl?: string | null;
 }
@@ -14,13 +15,13 @@ export interface IExamOption {
  */
 export interface IExamQuestion {
   readonly questionId: string;
-  readonly indexNumber: number;       // Thứ tự hiển thị 1, 2, 3...
-  readonly content: string;     // Nội dung câu hỏi
+  readonly indexNumber: number;        // Thứ tự hiển thị 1, 2, 3...
+  readonly content: string;      // Nội dung câu hỏi
   readonly imageUrl?: string | null;
-  readonly isCritical: boolean; // Câu hỏi điểm liệt
+  readonly isCritical: boolean;  // Câu hỏi điểm liệt
   readonly answers: IExamOption[];
   readonly chapterName: string;
-  // Lưu ý: Field này chỉ nên ó khi ở chế độ "Luyện tập" hoặc "Xem lại bài"
+  // Lưu ý: Field này chỉ nên có khi ở chế độ "Luyện tập" hoặc "Xem lại bài"
   readonly correctOptionId?: number;
 }
 

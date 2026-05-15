@@ -7,11 +7,12 @@ import {
   PrismaUserWithRoles,
 } from "@/infrastructure/persistence/identity/user.record";
 import { UserMapper } from "@/infrastructure/database/mappers/identity/user.mapper";
-import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
+import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service";
 import { Permission } from "@/domain/entities/permission/permission.entity";
 import { Role } from "@/domain/entities/role/role.entity";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { UserRelatedCount } from "@/shared/types/count.types";
+import { STATUS } from "@/shared/config/status.config";
 
 /**
  * @interface IMySQLUserRepositoryCradle
@@ -185,6 +186,13 @@ export class MySQLUserRepository implements IUserRepository {
     return this._toDomain(raw) as User;
   }
 
+  public async restore(id: string): Promise<void> {
+    await this._prisma.user.update({
+      where: { id },
+      data: { deletedAt: null, status: STATUS.ACTIVE },
+    });
+  }
+
   /**
    * @description Cập nhật thông tin User.
    * Hỗ trợ nhận vào Transaction client để đảm bảo tính nguyên tử.
@@ -215,49 +223,47 @@ export class MySQLUserRepository implements IUserRepository {
     return this._toDomain(raw) as User;
   }
 
-  async findAndCount(
+  /**
+   * @description Truy vấn danh sách người dùng có phân trang, lọc và sắp xếp.
+   * @param filter DTO chứa các tham số lọc từ client.
+   * @param skip Số bản ghi bỏ qua.
+   * @param take Số bản ghi lấy ra.
+   */
+  public async findAndCount(
     filter: UserQueryDTO,
     skip: number,
     take: number,
   ): Promise<[User[], number]> {
     const where: Prisma.UserWhereInput = {};
 
-    // --- 1. MAPPING: Định nghĩa "bản đồ" ánh xạ từ FE sang BE ---
-    // Việc này giúp ép kiểu chính xác mà không cần dùng any
-    const fieldMapping: Record<string, keyof Prisma.UserWhereInput> = {
-      name: "fullName",
-      fullName: "fullName",
-      email: "email",
-      username: "username",
-    };
+    // --- 1. LỌC THEO TRƯỜNG CỤ THỂ ---
+    if (filter.name) where.fullName = { contains: filter.name };
+    if (filter.email) where.email = { contains: filter.email };
 
-    // Xác định field thực tế trong DB dựa trên sortBy từ FE
-    // Nếu FE gửi 'name', dbField sẽ là 'fullName'. Nếu không khớp thì mặc định 'fullName'
-    const dbField = fieldMapping[filter.sortBy as string] || "fullName";
-    const searchValue = filter.name;
-
-    // --- 2. DYNAMIC SEARCH: Sort đâu - Search đó ---
-    if (searchValue) {
-      // Chỉ search nếu dbField là những cột có kiểu chuỗi (String)
-      if (
-        dbField === "fullName" ||
-        dbField === "email" ||
-        dbField === "username"
-      ) {
-        where[dbField] = { contains: searchValue };
-      }
+    // --- 2. SEARCH TỔNG QUÁT ---
+    if (filter.search) {
+      const searchCondition = { contains: filter.search };
+      where.OR = [
+        { fullName: searchCondition },
+        { email: searchCondition },
+        { username: searchCondition },
+      ];
     }
 
-    // --- 3. LOGIC TRẠNG THÁI (Status Tabs) ---
-    if (filter.status === "active") {
-      where.deletedAt = null;
-      where.status = "active";
-    } else if (filter.status === "deleted") {
-      where.deletedAt = { not: null };
-    } else if (filter.status === "all") {
-      // Admin xem hết
-    } else {
-      where.deletedAt = null;
+    // --- 3. LOGIC TRẠNG THÁI ---
+    switch (filter.status) {
+      case "active":
+        where.deletedAt = null;
+        where.status = STATUS.ACTIVE;
+        break;
+      case "deleted":
+        where.deletedAt = { not: null };
+        break;
+      case "all":
+        break;
+      default:
+        where.deletedAt = null;
+        break;
     }
 
     // --- 4. LỌC THEO ROLE ---
@@ -269,41 +275,62 @@ export class MySQLUserRepository implements IUserRepository {
       };
     }
 
-    // --- 5. SEARCH TỔNG QUÁT (Ô tìm kiếm chung) ---
-    if (filter.search) {
-      where.OR = [
-        { fullName: { contains: filter.search } },
-        { email: { contains: filter.search } },
-        { username: { contains: filter.search } },
-      ];
+    // --- 5. XỬ LÝ SẮP XẾP (GOM NHÓM & TIÊN QUYẾT) ---
+    const fieldMapping: Record<string, string> = {
+      name: "fullName",
+      email: "email",
+      username: "username",
+      status: "status",
+      createdAt: "createdAt",
+    };
+
+    const sortBy = filter.sortBy || "createdAt";
+    const sortOrder = filter.sortOrder || "desc";
+    const mappedField = fieldMapping[sortBy] || "createdAt";
+
+    // Khởi tạo mảng orderBy để gom nhóm
+    const orderBy: Prisma.UserOrderByWithRelationInput[] = [];
+
+    // Ưu tiên 1: Gom nhóm theo ngày xóa (deletedAt)
+    // Giúp tách biệt "Thùng rác" và "Hiện hành"
+    orderBy.push({ deletedAt: sortOrder });
+
+    // Ưu tiên 2: Gom nhóm theo trạng thái chuỗi (status)
+    // Giúp nhóm các account 'active', 'inactive', 'locked' lại với nhau
+    if (mappedField !== "status") {
+      orderBy.push({ status: sortOrder });
     }
 
-    // --- 6. XỬ LÝ SORT FIELD (Cho orderBy) ---
-    // Tái sử dụng dbField ở trên, nhưng xử lý riêng trường hợp status
-    const finalSortField =
-      filter.sortBy === "status" ? "deletedAt" : (dbField as string);
-    const sortOrder = filter.sortOrder || "desc";
+    // Ưu tiên 3: Tiêu chí người dùng chọn từ UI (sortBy)
+    if (mappedField !== "deletedAt" && mappedField !== "status") {
+      orderBy.push({
+        [mappedField]: sortOrder,
+      } as Prisma.UserOrderByWithRelationInput);
+    }
 
-    // --- 7. THỰC THI TRUY VẤN ---
+    // Ưu tiên 4: Tie-breaker (Phân xử bằng Tên hoặc ID)
+    if (mappedField !== "fullName") {
+      orderBy.push({ fullName: "asc" });
+    }
+
+    // --- 6. THỰC THI TRUY VẤN ---
     const [rawUsers, total] = await this._prisma.$transaction([
       this._prisma.user.findMany({
         where,
         include: this._userInclude,
         skip,
         take,
-        orderBy: [
-          {
-            [finalSortField]: sortOrder,
-          },
-          {
-            id: "desc",
-          },
-        ],
+        orderBy, // Sử dụng mảng gom nhóm vừa build
       }),
       this._prisma.user.count({ where }),
     ]);
 
-    return [rawUsers.map((raw) => this._toDomain(raw) as User), total];
+    // --- 7. MAPPING ---
+    const users = rawUsers
+      .map((raw) => this._toDomain(raw))
+      .filter((user): user is User => user !== null);
+
+    return [users, total];
   }
 
   /**
@@ -317,7 +344,7 @@ export class MySQLUserRepository implements IUserRepository {
       where: { id },
       data: {
         deletedAt: new Date(),
-        status: "DELETED",
+        status: STATUS.DELETED,
       },
     });
   }
@@ -335,18 +362,27 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * @description Thống kê các thành phần phụ thuộc của tài khoản người dùng (User) để đánh giá mức độ ảnh hưởng trước khi thực hiện thao tác xóa.
-   * @param {string} id - Định danh duy nhất (UUID) của người dùng. (Unique identifier of the user).
-   * @returns {Promise<UserRelatedCount>} Đối tượng chứa số lượng các vai trò (roles) đang được gán cho người dùng này. (Object containing counts of assigned user roles).
-   * @note Do cơ chế 'onDelete: Cascade' trong DB, việc xóa User sẽ xóa sạch các bản ghi gán vai trò (UserRole). Hàm này giúp Service đưa ra quyết định: Nếu người dùng đã được gán roles, ưu tiên Soft Delete để giữ lại lịch sử phân quyền và tra soát (Audit). (Due to Cascade Delete, this helper ensures the Service chooses Soft Delete over Hard Delete for data safety and auditing).
+   * @description Thống kê các thành phần phụ thuộc của tài khoản người dùng (User) trước khi xóa.
+   * @param {string} id - Định danh UUID của người dùng.
+   * @returns {Promise<UserRelatedCount>} Thống kê số lượng bản ghi liên quan ở các phân hệ.
    */
   public async countRelatedData(id: string): Promise<UserRelatedCount> {
-    const rolesCount = await this._prisma.userRole.count({
-      where: { userId: id },
-    });
+    // Sử dụng Promise.all để chạy song song các truy vấn đếm, tối ưu hiệu năng DB
+    const [rolesCount, topicStatsCount, progressCount, rankCount, examCount] =
+      await Promise.all([
+        this._prisma.userRole.count({ where: { userId: id } }),
+        this._prisma.userTopicStatistics.count({ where: { userId: id } }),
+        this._prisma.userQuestionProgress.count({ where: { userId: id } }),
+        this._prisma.userExamRank.count({ where: { userId: id } }),
+        this._prisma.exam.count({ where: { userId: id } }),
+      ]);
 
     return {
       userRoles: rolesCount,
+      userTopicStats: topicStatsCount,
+      userQuestionProgress: progressCount,
+      userExamRank: rankCount,
+      userExam: examCount,
     };
   }
 }

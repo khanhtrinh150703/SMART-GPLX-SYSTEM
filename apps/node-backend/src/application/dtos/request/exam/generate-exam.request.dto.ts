@@ -1,3 +1,4 @@
+import { Status } from "@/shared/config/status.config";
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
@@ -7,6 +8,7 @@ export interface IGenerateExamInputDto {
   readonly matrixId: string;
   readonly userId: string;
   readonly name: string;
+  readonly status: Status;
 }
 
 /**
@@ -17,6 +19,7 @@ export class GenerateExamDTO implements IGenerateExamInputDto {
   public readonly matrixId: string;
   public readonly userId: string;
   public readonly name: string;
+  public readonly status: Status;
 
   constructor(data: IGenerateExamInputDto) {
     // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
@@ -24,6 +27,7 @@ export class GenerateExamDTO implements IGenerateExamInputDto {
 
     // 2. Gán giá trị và chuẩn hóa dữ liệu
     this.matrixId = data.matrixId;
+    this.status = data.status;
     this.userId = data.userId;
     this.name = data.name.trim();
   }

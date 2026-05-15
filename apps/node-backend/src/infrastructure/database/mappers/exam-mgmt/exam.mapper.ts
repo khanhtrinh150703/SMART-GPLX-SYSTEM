@@ -25,7 +25,7 @@ import {
 } from "@/domain/entities/exam/exam.props";
 import { PrismaExamWithRelations } from "@/infrastructure/persistence/exam-mgmt";
 import { formatImageUrl } from "@/shared/utils/url.util";
-import { ExamStatus, Prisma } from "@prisma/client";
+import { Prisma, Status } from "@prisma/client";
 
 /**
  * @description Mapper chuẩn hóa chuyển đổi dữ liệu của Exam.
@@ -69,13 +69,15 @@ export class ExamMapper {
       passingScore: raw.passingScore,
       durationMinutes: raw.durationMinutes,
       minCriticalQuestions: raw.minCriticalQuestions,
-      status: raw.status as ExamStatus,
+      isChapter: raw.isChapter,
+      isEdited: raw.isEdited,
+      status: raw.status as Status,
       score: raw.score,
       isPassed: raw.isPassed,
       startedAt: raw.startedAt,
       endedAt: raw.endedAt ?? null,
       questions,
-      userName: raw.user?.fullName ?? "",
+      fullName: raw.user?.fullName ?? "",
       licenseCategoryName: raw.licenseCategory?.name,
     };
 
@@ -103,6 +105,7 @@ export class ExamMapper {
       endedAt: props.endedAt,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
+      isChapter: props.isChapter,
 
       // Quan hệ bắt buộc: Connect
       user: { connect: { id: props.userId } },
@@ -148,15 +151,11 @@ export class ExamMapper {
       endedAt: props.endedAt,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
+      isEdited: props.isEdited ?? false,
 
       // 2. Xử lý các quan hệ (Connect/Disconnect)
       // Thường userId sẽ không thay đổi, nhưng giữ connect để đảm bảo tính nhất quán
       user: { connect: { id: props.userId } },
-
-      // Xử lý Ma trận đề (Nếu có ID thì kết nối, nếu null thì ngắt kết nối)
-      examMatrix: props.examMatrixId
-        ? { connect: { id: props.examMatrixId } }
-        : { disconnect: true },
 
       // 3. Logic làm mới danh sách câu hỏi (Snapshot Strategy)
       questions: {
@@ -183,7 +182,6 @@ export class ExamMapper {
    */
   public static toResponse(entity: ExamEntity): IExamResponseDTO {
     const { props } = entity;
-
     return new ExamResponseDTO({
       id: props.id ?? "",
       name: props.name,
@@ -195,7 +193,10 @@ export class ExamMapper {
       passingScore: props.passingScore,
       startedAt: props.startedAt,
       createdAt: props.createdAt ?? new Date(),
-      userName: props.userName,
+      fullName: props.fullName,
+      isEdited: props.isEdited ?? false,
+      isChapter: props.isChapter ?? false,
+      examMatrixId: props.examMatrixId ?? "",
       licenseCategoryName: props.licenseCategoryName,
       // endedAt: props.endedAt ?? null,
       status: props.status,
@@ -278,11 +279,12 @@ export class ExamMapper {
       skippedAnswers: props.skippedCount ?? 0,
       passed: props.isPassed,
       hasFailedCritical: props.hasFailedCritical ?? false,
-      passingScore: props.passingScore, 
-      
+      passingScore: props.passingScore,
+
       // 3. Phân tích thời gian (Time Analytics)
       timeSpent: props.resultMetadata?.timeSpent ?? 0,
       timeRemaining: props.resultMetadata?.timeRemaining ?? 0,
+      timeExam: props.durationMinutes * 60,
       isAutoSubmit: props.resultMetadata?.isAutoSubmit ?? false,
       clientFinishedAt:
         props.resultMetadata?.clientFinishedAt?.toISOString() ??

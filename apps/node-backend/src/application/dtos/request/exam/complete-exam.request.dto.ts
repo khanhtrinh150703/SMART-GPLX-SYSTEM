@@ -6,17 +6,20 @@ import { AppError, ErrorCode } from "@/shared/errors";
 export interface IUserAnswerDTO {
   readonly questionId: string;
   readonly answer: number;
+  readonly timeSpent: number;
 }
 
 /**
- * @description Giao diện dữ liệu đầu vào cho yêu cầu nộp bài thi (Bổ sung metadata thời gian).
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu nộp bài thi (Bổ sung metadata thời gian và phiên).
  */
 export interface ICompleteExamInputDTO {
   readonly examId: string;
+  readonly sessionId: string; // ID phiên làm bài (Dùng để đồng bộ và chống gian lận)
   readonly answers: IUserAnswerDTO[];
   readonly timeSpent: number; // Thời gian đã làm bài (giây)
   readonly timeRemaining: number; // Thời gian còn lại (giây)
   readonly isAutoSubmit: boolean; // Nộp tự động do hết giờ hay chủ động nộp
+  readonly shouldShuffle: boolean; // Flag xác định đề thi này có đang bật chế độ tráo câu hỏi/đáp án hay không
   readonly clientFinishedAt: string; // Mốc thời gian kết thúc tại client (ISO String)
 }
 
@@ -26,10 +29,12 @@ export interface ICompleteExamInputDTO {
  */
 export class CompleteExamInputRequestDTO implements ICompleteExamInputDTO {
   public readonly examId: string;
+  public readonly sessionId: string;
   public readonly answers: IUserAnswerDTO[];
   public readonly timeSpent: number;
   public readonly timeRemaining: number;
   public readonly isAutoSubmit: boolean;
+  public readonly shouldShuffle: boolean;
   public readonly clientFinishedAt: string;
 
   constructor(data: ICompleteExamInputDTO) {
@@ -38,10 +43,12 @@ export class CompleteExamInputRequestDTO implements ICompleteExamInputDTO {
 
     // 2. Gán giá trị (Dữ liệu đã qua kiểm duyệt)
     this.examId = data.examId.trim();
+    this.sessionId = data.sessionId.trim();
     this.answers = data.answers;
     this.timeSpent = data.timeSpent;
     this.timeRemaining = data.timeRemaining;
     this.isAutoSubmit = !!data.isAutoSubmit;
+    this.shouldShuffle = !!data.shouldShuffle;
     this.clientFinishedAt = data.clientFinishedAt;
   }
 
@@ -57,7 +64,6 @@ export class CompleteExamInputRequestDTO implements ICompleteExamInputDTO {
     }
 
     // 2. Kiểm tra các trường thông tin thời gian (Must be non-negative numbers)
-    // 2. Kiểm tra thời gian (Chuyển từ VALIDATION sang SESSION cụ thể)
     if (typeof data.timeSpent !== "number" || data.timeSpent < 0) {
       throw new AppError(ErrorCode.SESSION.INVALID_TIME_SPENT);
     }

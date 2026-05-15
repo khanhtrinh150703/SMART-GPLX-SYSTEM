@@ -18,6 +18,9 @@ export interface ILicenseCategoryResponseDTO {
   /** @description Trạng thái hoạt động của hạng bằng (VD: 'active', 'draft', 'deleted'). */
   readonly status: string;
 
+  /** @description Thứ tự hiện thị*/
+  readonly orderIndex: number;
+
   /** @description Thời điểm tạo bản ghi (định dạng ISO 8601). */
   readonly createdAt: string | Date;
 }
@@ -31,6 +34,7 @@ export class LicenseCategoryResponseDTO implements ILicenseCategoryResponseDTO {
   public readonly name: string;
   public readonly description: string;
   public readonly minAge: number;
+  public readonly orderIndex: number;
   public readonly status: string;
   public readonly createdAt: string | Date;
 
@@ -38,6 +42,7 @@ export class LicenseCategoryResponseDTO implements ILicenseCategoryResponseDTO {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
+    this.orderIndex = data.orderIndex;
     this.minAge = data.minAge;
     this.status = data.status;
     this.createdAt = data.createdAt;

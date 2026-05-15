@@ -7,6 +7,7 @@ import {
     UpdateChapterRequest
 } from "@/components/features/chapter/types/chapter.types"; // (Giả định bạn đã đổi tên file types)
 import { PaginatedResult, QueryParams } from "@/types/paginaton.type";
+import { DeleteResponse } from "@/types/respone/delete.common";
 
 /**
  * Chapter API: Quản lý các chương bài học (Lý thuyết GPLX).
@@ -59,8 +60,8 @@ export const chapterApi = {
      * Xóa một chương (Soft delete).
      * (Delete a chapter - Soft delete)
      */
-    delete: async (id: string): Promise<StandardResponse<void>> => {
-        const response = await axiosClient.delete<StandardResponse<void>>(
+    delete: async (id: string): Promise<StandardResponse<DeleteResponse>> => {
+        const response = await axiosClient.delete<StandardResponse<DeleteResponse>>(
             ENDPOINTS.CHAPTER.DETAIL(id)
         );
         return response.data;

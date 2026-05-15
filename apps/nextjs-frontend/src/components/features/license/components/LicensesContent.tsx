@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { CreditCard, RotateCcw } from "lucide-react";
-import axios from "axios";
 
 // Components
 import { LicenseTable } from "@/components/features/license/components/LicenseTable";
@@ -26,40 +25,54 @@ import {
   UpdateLicensePayload,
 } from "@/components/features/license/schema/license.schema";
 import { licenseToolbarVariants as variants } from "./license-toolbar.variants";
+import { useLicenseActions } from "../hooks/use-license-actions";
 
 export function LicensesContent() {
   const {
     searchParams,
     activeField,
     activeValue,
-    updateUrlParam,
-    updateMultipleUrlParams,
+    clearFilters,
     handleSearchByField,
     getApiParams,
+    updateUrlParam,
     FILTER_FIELDS,
+    updateMultipleUrlParams,
   } = useLicenseUrlParams();
 
-  // --- 1. QUẢN LÝ STATE ---
+  // --- 1. STATE & DATA (GIỮ NGUYÊN) ---
   const [isMounted, setIsMounted] = useState(false);
   const [searchValue, setSearchValue] = useState(activeValue);
   const [localActiveField, setLocalActiveField] = useState(activeField);
 
-  // State ghi nhớ để đồng bộ (Fix Cascading Render cho Search/Filter)
   const [prevActiveValue, setPrevActiveValue] = useState(activeValue);
   const [prevActiveField, setPrevActiveField] = useState(activeField);
 
-  const [selectedLicense, setSelectedLicense] = useState<LicenseCategory | null>(null);
+  const [selectedLicense, setSelectedLicense] =
+    useState<LicenseCategory | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
-  // Chuẩn hóa type thành 'intent'
-  const [message, setMessage] = useState<{
-    intent: "success" | "error" | "warning";
-    text: string;
-  } | null>(null);
 
-  // --- 2. ĐỒNG BỘ TRONG RENDER ---
+  const { result, isLoading, ...mutations } =
+    useLicenseCategories(getApiParams());
+
+  const {
+    message,
+    setMessage,
+    onCreate,
+    onUpdate,
+    onDelete,
+    onRestore,
+    pendingStates,
+  } = useLicenseActions({
+    create: mutations.createCategory,
+    update: mutations.updateCategory,
+    remove: mutations.deleteCategory,
+    restore: mutations.restoreCategory,
+  });
+
+  // --- 2. ĐỒNG BỘ TRONG RENDER (GIỮ NGUYÊN) ---
   if (activeValue !== prevActiveValue || activeField !== prevActiveField) {
     setPrevActiveValue(activeValue);
     setPrevActiveField(activeField);
@@ -67,16 +80,15 @@ export function LicensesContent() {
     setLocalActiveField(activeField);
   }
 
-  // --- 3. EFFECTS ---
+  // --- 3. EFFECTS (GIỮ NGUYÊN) ---
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      setIsMounted(true);
-    });
+    const raf = requestAnimationFrame(() => setIsMounted(true));
     return () => cancelAnimationFrame(raf);
   }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
+      // Đã fix lỗi field luôn là 'name' bằng cách truyền localActiveField
       if (searchValue !== activeValue || localActiveField !== activeField) {
         handleSearchByField(localActiveField, searchValue);
       }
@@ -90,78 +102,31 @@ export function LicensesContent() {
     handleSearchByField,
   ]);
 
-  // --- 4. DATA FETCHING ---
-  const {
-    result,
-    isLoading,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    restoreCategory,
-  } = useLicenseCategories(getApiParams());
-
-  // --- 5. HANDLERS ---
-  
-  // Hàm trích xuất lỗi API
-  const getApiError = (error: unknown) => {
-    return axios.isAxiosError(error)
-      ? error.response?.data?.message || "Lỗi kết nối đến máy chủ"
-      : "Đã xảy ra lỗi không xác định.";
-  };
-
+  // --- 4. HANDLERS (SỬ DỤNG ACTION HOOK) ---
   const handleCreate = async (payload: CreateLicensePayload) => {
-    try {
-      setMessage(null);
-      const res = await createCategory.mutateAsync(payload);
-      setIsCreateModalOpen(false);
-      setMessage({ intent: "success", text: "Thêm mới hạng bằng lái thành công!" });
-      return res;
-    } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
-      throw error;
-    }
+    await onCreate(payload);
+    setIsCreateModalOpen(false);
   };
 
   const handleUpdate = async (payload: UpdateLicensePayload) => {
-    if (!selectedLicense) return;
-    try {
-      setMessage(null);
-      const res = await updateCategory.mutateAsync({
-        id: selectedLicense.id,
-        data: payload,
-      });
+    if (selectedLicense) {
+      await onUpdate(selectedLicense.id, payload);
       setIsEditModalOpen(false);
-      setMessage({ intent: "success", text: "Cập nhật thành công!" });
-      return res;
-    } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
-      throw error;
     }
   };
 
   const handleDelete = async () => {
-    if (!selectedLicense) return;
-    try {
-      setMessage(null);
-      await deleteCategory.mutateAsync(selectedLicense.id);
+    if (selectedLicense) {
+      await onDelete(selectedLicense.id);
       setIsDeleteModalOpen(false);
-      setMessage({ intent: "success", text: "Đã xóa hạng bằng lái!" });
-    } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
     }
   };
 
-  const handleRestore = useCallback(
+  const handleRestoreAction = useCallback(
     async (license: LicenseCategory) => {
-      try {
-        setMessage(null);
-        await restoreCategory.mutateAsync(license.id);
-        setMessage({ intent: "success", text: "Khôi phục thành công!" });
-      } catch (error: unknown) {
-        setMessage({ intent: "error", text: getApiError(error) });
-      }
+      await onRestore(license.id);
     },
-    [restoreCategory],
+    [onRestore],
   );
 
   // --- 6. RENDER GIAO DIỆN ---
@@ -200,18 +165,13 @@ export function LicensesContent() {
               onClick={() => {
                 setSearchValue("");
                 setLocalActiveField("name");
-                updateMultipleUrlParams({
-                  search: "",
-                  field: "name",
-                  status: "all",
-                  page: "1",
-                });
+                clearFilters();
               }}
               className={variants.resetButton()}
               title="Đặt lại bộ lọc"
             >
               <RotateCcw
-                size={18}
+                size={22}
                 className="group-hover:-rotate-180 transition-transform duration-500"
               />
             </button>
@@ -221,6 +181,7 @@ export function LicensesContent() {
               value={localActiveField}
               onChange={setLocalActiveField}
               variant="solid"
+              size = "sm"
               className={variants.filterSelect()}
             />
 
@@ -246,7 +207,7 @@ export function LicensesContent() {
       {/* ALERT SECTION */}
       {message && (
         <Alert
-          intent={message.intent} // Đã sửa lại từ type -> intent
+          intent={message.intent}
           message={message.text}
           onClose={() => setMessage(null)}
           duration={5000}
@@ -259,7 +220,7 @@ export function LicensesContent() {
           licenses={result?.data || []}
           page={Number(searchParams.get("page")) || 1}
           limit={10}
-          isLoading={isLoading || deleteCategory.isPending}
+          isLoading={isLoading || pendingStates.isDeleting}
           onEdit={(license) => {
             setSelectedLicense(license);
             setIsEditModalOpen(true);
@@ -268,7 +229,7 @@ export function LicensesContent() {
             setSelectedLicense(license);
             setIsDeleteModalOpen(true);
           }}
-          onRestore={handleRestore}
+          onRestore={handleRestoreAction}
           sortConfig={{
             key:
               (searchParams.get("sortBy") as keyof LicenseCategory) || "name",
@@ -306,7 +267,7 @@ export function LicensesContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreate}
-        isLoading={createCategory.isPending}
+        isLoading={pendingStates.isCreating}
       />
 
       <EditLicenseModal
@@ -315,7 +276,7 @@ export function LicensesContent() {
         license={selectedLicense}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleUpdate}
-        isLoading={updateCategory.isPending}
+        isLoading={pendingStates.isUpdating}
       />
 
       <BaseConfirmModal
@@ -323,7 +284,7 @@ export function LicensesContent() {
         title="Xác nhận xóa"
         variant="danger"
         onConfirm={handleDelete}
-        isLoading={deleteCategory.isPending}
+        isLoading={pendingStates.isDeleting}
         // Thêm phần này để đẩy lỗi vào Modal (Push error into modal)
         apiMessage={message}
         onApiMessageClose={() => setMessage(null)}

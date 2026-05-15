@@ -12,6 +12,7 @@ import {
   createChapterSchema,
 } from "../schema/chapter.schema";
 import { Alert } from "@/components/ui/Alert";
+import axios from "axios";
 
 interface CreateChapterModalProps {
   isOpen: boolean;
@@ -48,9 +49,25 @@ export default function CreateChapterModal({
 
   // Xử lý Submit
   const onSubmit = async (data: CreateChapterPayload) => {
-    await onSave(data);
-    onClose();
-    reset(); // Reset trắng form sau khi thêm thành công để sẵn sàng thêm chương tiếp theo
+    try {
+      setMessage(null); // Xóa lỗi cũ trước khi thử lại
+
+      // Đợi trang cha thực hiện lưu dữ liệu
+      await onSave(data);
+
+      // Nếu không có lỗi: Đóng modal (Thành công xử lý ở trang cha qua Toast)
+      onClose();
+      reset();
+    } catch (error) {
+      // Nếu trang cha ném lỗi (mutateAsync fail), Modal sẽ bắt ở đây
+      let errorText = "Không thể tạo hạng bằng lái. Vui lòng thử lại!";
+
+      if (axios.isAxiosError(error)) {
+        errorText = error.response?.data?.message || errorText;
+      }
+
+      setMessage({ type: "error", text: errorText });
+    }
   };
 
   return (
@@ -60,7 +77,6 @@ export default function CreateChapterModal({
       title="Thêm mới Chương học"
       description="Tạo chương học mới cho hệ thống đào tạo lý thuyết"
       icon={BookOpen}
-      maxWidth="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {message && (

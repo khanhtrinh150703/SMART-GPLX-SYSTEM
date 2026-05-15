@@ -12,12 +12,13 @@ export interface IUpdateExamMatrixInputDto {
   readonly durationMinutes: number;
   readonly minCriticalQuestions: number;
   readonly isDefault: boolean;
+  readonly isChapter: boolean;
   readonly details: IExamMatrixDetailInputDTO[];
 }
 
 /**
- * @description DTO xử lý cập nhật cấu trúc ma trận đề thi.
- * Đảm bảo tổng tỷ lệ phân bổ chương luôn đạt 100% và các ràng buộc về điểm số.
+ * @class UpdateExamMatrixRequestDTO
+ * @description DTO xử lý cập nhật cấu trúc ma trận, thực hiện mapping trước khi validate.
  */
 export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
   public readonly id: string;
@@ -27,99 +28,122 @@ export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
   public readonly durationMinutes: number;
   public readonly minCriticalQuestions: number;
   public readonly isDefault: boolean;
+  public readonly isChapter: boolean;
   public readonly details: IExamMatrixDetailInputDTO[];
 
+  /**
+   * @param {IUpdateExamMatrixInputDto} data
+   * @throws {AppError}
+   */
   constructor(data: IUpdateExamMatrixInputDto) {
-    // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
-    this.validate(data);
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
-    // 2. Gán giá trị và chuẩn hóa
-    this.id = data.id;
-    this.name = data.name.trim();
-    this.totalQuestions = Number(data.totalQuestions);
-    this.passingScore = Number(data.passingScore);
-    this.durationMinutes = Number(data.durationMinutes);
-    this.minCriticalQuestions = Number(data.minCriticalQuestions);
-    this.isDefault = Boolean(data.isDefault);
-    this.details = data.details;
+    // 1. Mapping & Sanitization (Gán sạch vào this trước)
+    this.id = typeof data.id === "string" ? data.id.trim() : "";
+    this.name = typeof data.name === "string" ? data.name.trim() : "";
+    this.totalQuestions =
+      data.totalQuestions !== undefined && data.totalQuestions !== null
+        ? Number(data.totalQuestions)
+        : NaN;
+    this.passingScore =
+      data.passingScore !== undefined && data.passingScore !== null
+        ? Number(data.passingScore)
+        : NaN;
+    this.durationMinutes =
+      data.durationMinutes !== undefined && data.durationMinutes !== null
+        ? Number(data.durationMinutes)
+        : NaN;
+    this.minCriticalQuestions =
+      data.minCriticalQuestions !== undefined &&
+      data.minCriticalQuestions !== null
+        ? Number(data.minCriticalQuestions)
+        : NaN;
+    this.isDefault =
+      typeof data.isDefault === "boolean" ? data.isDefault : false;
+    this.isChapter =
+      typeof data.isChapter === "boolean" ? data.isChapter : false;
+    this.details = Array.isArray(data.details) ? data.details : [];
+
+    // 2. Validation (Kiểm tra toàn bộ logic ràng buộc bằng thuộc tính của instance)
+    this.validate();
   }
 
   /**
-   * @description Hàm gác cổng kiểm tra toàn vẹn dữ liệu và logic nghiệp vụ ma trận.
    * @private
+   * @description Hàm gác cổng kiểm tra toàn vẹn dữ liệu hoàn toàn dựa trên 'this'.
+   * @throws {AppError}
    */
-  private validate(data: IUpdateExamMatrixInputDto): void {
-    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-
-    // 1. Kiểm tra các trường định danh và cơ bản
-    if (!data.id || data.id.trim() === "") {
+  private validate(): void {
+    // 1. Kiểm tra ID và Tên
+    if (!this.id) {
       throw new AppError(ErrorCode.MATRIX.ID_REQUIRED);
     }
 
-    if (!data.name || data.name.trim().length === 0) {
+    if (!this.name) {
       throw new AppError(ErrorCode.MATRIX.NAME_REQUIRED);
     }
 
-    if (data.name.length > 100) {
+    if (this.name.length > 100) {
       throw new AppError(ErrorCode.MATRIX.NAME_TOO_LONG);
     }
 
-    // 2. Kiểm tra các thông số kỹ thuật của đề thi
-    if (data.totalQuestions <= 0) {
+    // 2. Kiểm tra các thông số kỹ thuật (Sử dụng giá trị đã mapping)
+    if (this.totalQuestions <= 0 || isNaN(this.totalQuestions)) {
       throw new AppError(ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS);
     }
 
-    if (data.passingScore <= 0 || data.passingScore > data.totalQuestions) {
+    if (
+      this.passingScore <= 0 ||
+      isNaN(this.passingScore) ||
+      this.passingScore > this.totalQuestions
+    ) {
       throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
     }
 
-    if (data.durationMinutes <= 0) {
+    if (this.durationMinutes <= 0 || isNaN(this.durationMinutes)) {
       throw new AppError(ErrorCode.MATRIX.INVALID_DURATION);
     }
 
-    if (
-      typeof data.minCriticalQuestions !== "number" ||
-      data.minCriticalQuestions < 0
-    ) {
-      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_INVALID);
-    }
-
-    // 3. Kiểm tra danh sách chi tiết phân bổ chương (Details)
-    if (!Array.isArray(data.details) || data.details.length === 0) {
+    // 3. Kiểm tra danh sách chi tiết (Details)
+    if (this.details.length === 0) {
       throw new AppError(ErrorCode.MATRIX.NO_DETAILS);
     }
 
     let totalPercent = 0;
-    for (const detail of data.details) {
+    const processedChapters = new Set<string>();
+
+    for (const detail of this.details) {
       if (!detail.chapterId || typeof detail.percentage !== "number") {
         throw new AppError(ErrorCode.MATRIX.CHAPTER_ID_REQUIRED);
       }
 
+      if (processedChapters.has(detail.chapterId)) {
+        throw new AppError(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
+      }
+      processedChapters.add(detail.chapterId);
+
       if (detail.percentage <= 0 || detail.percentage > 100) {
-        throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
+        throw new AppError(ErrorCode.MATRIX.CHAPTER_PERCENTAGE_OUT_OF_RANGE);
       }
 
       totalPercent += detail.percentage;
     }
 
     if (totalPercent !== 100) {
-      throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
+      throw new AppError(ErrorCode.MATRIX.TOTAL_PERCENTAGE_NOT_100);
     }
 
-    // 4. Kiểm tra kiểu boolean cho isDefault
-    if (typeof data.isDefault !== "boolean") {
-      throw new AppError(ErrorCode.MATRIX.IS_DEFAULT_INVALID);
+    // 4. Check logic câu điểm liệt (Tách mã lỗi chi tiết)
+    if (isNaN(this.minCriticalQuestions)) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_REQUIRED);
     }
 
-    // 5. Check trùng lặp chương (Fix MTX_106)
-    const chapterIds = data.details.map((d) => d.chapterId);
-    if (new Set(chapterIds).size !== chapterIds.length) {
-      throw new AppError(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
+    if (this.minCriticalQuestions < 0) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_NEGATIVE);
     }
 
-    // 6. Check logic câu điểm liệt (Fix MTX_113)
-    if (data.minCriticalQuestions > data.totalQuestions) {
-      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_INVALID);
+    if (this.minCriticalQuestions > this.totalQuestions) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_TOO_HIGH);
     }
   }
 }

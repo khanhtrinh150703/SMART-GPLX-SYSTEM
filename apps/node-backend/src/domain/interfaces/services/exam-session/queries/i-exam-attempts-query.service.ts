@@ -1,4 +1,6 @@
+import { IExamHistoryQueryDTO } from "@/application/dtos/request/exam-history/exam-history-query.request.dto";
 import { IExamAttemptResponseDTO } from "@/application/dtos/response/exam-attempt/exam-attempt.respone.dto";
+import { PaginatedResult } from "@/shared/types/pagination.types";
 
 /**
  * @interface IExamAttemptQueryService
@@ -14,9 +16,11 @@ export interface IExamAttemptQueryService {
   getAttemptDetail(id: string): Promise<IExamAttemptResponseDTO>;
 
   /**
-   * @description Truy xuất danh sách lịch sử thi của một người dùng.
-   * @param {string} userId - ID định danh thí sinh.
-   * @returns {Promise<IExamAttemptResponseDTO[]>} Mảng danh sách các lượt thi đã thực hiện.
+   * @description Truy xuất danh sách lịch sử các lượt thi có phân trang, hỗ trợ lọc theo các tiêu chí và ánh xạ dữ liệu DTO sạch.
+   * @param {IExamHistoryQueryDTO} query - DTO chứa các tham số truy vấn bao gồm tiêu chí lọc và thông số phân trang.
+   * @returns {Promise<PaginatedResult<IExamAttemptResponseDTO>>} Kết quả phân trang chứa danh sách các lượt thi đã thực hiện.
    */
-  getUserAttemptHistory(userId: string): Promise<IExamAttemptResponseDTO[]>;
+  getPaginatedAttempt(
+    query: IExamHistoryQueryDTO,
+  ): Promise<PaginatedResult<IExamAttemptResponseDTO>>;
 }

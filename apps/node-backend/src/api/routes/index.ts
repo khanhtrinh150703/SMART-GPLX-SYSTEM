@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authRoutes, roleRoutes, userRoutes } from "./identity";
 import {
   chapterRoutes,
+  examHistoryRoutes,
   examRoutes,
   licenseCategoryRoutes,
   questionRoutes,
@@ -13,6 +14,7 @@ import {
   examMatrixRoutes,
 } from "./exam-session";
 import { userExamRankRoutes } from "./user-rank";
+import { userStatisticsRoutes } from "./statistics";
 
 /**
  * @description Router tổng (Root Router) của ứng dụng.
@@ -56,5 +58,11 @@ rootRouter.use("/exam-attempts", examAttemptRoutes);
 
 /** @description Phân đoạn API quản lý bảng xếp hạng và kỷ lục cá nhân của người dùng. */
 rootRouter.use("/leaderboards", userExamRankRoutes);
+
+/** @description Đăng ký tập hợp các tuyến đường (Routes) quản lý nghiệp vụ lịch sử thi và kết quả bài thi. */
+rootRouter.use("/exam-histories", examHistoryRoutes);
+
+/** @description Đăng ký tập hợp các tuyến đường (Routes) phụ trách truy xuất dữ liệu thống kê hệ thống và hiệu suất học tập. */
+rootRouter.use("/statistics", userStatisticsRoutes);
 
 export default rootRouter;

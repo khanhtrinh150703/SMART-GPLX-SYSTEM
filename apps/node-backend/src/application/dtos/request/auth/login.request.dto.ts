@@ -10,40 +10,42 @@ export interface ILoginInputDTO {
 }
 
 /**
- * @description DTO xử lý đăng nhập hệ thống.
- * Đảm bảo dữ liệu luôn đúng định dạng và không được để trống trước khi đi vào tầng Auth Service.
+ * @description DTO xử lý đăng nhập hệ thống. Tự động chuẩn hóa tài khoản và kiểm tra mật khẩu.
  */
 export class LoginRequestDTO implements ILoginInputDTO {
-  readonly username: string;
-  readonly password: string;
+  public readonly username: string;
+  public readonly password: string;
 
   constructor(data: ILoginInputDTO) {
-    // 1. Chặn lỗi undefined ngay lập tức
-    this.validate(data);
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
-    // 2. Gán giá trị sau khi đã đảm bảo dữ liệu "sạch"
-    this.username = data.username.trim();
-    this.password = data.password;
+    // --- 1. CHUẨN HÓA DỮ LIỆU (Normalize First) ---
+    this.username =
+      typeof data.username === "string"
+        ? data.username.trim().toLowerCase()
+        : "";
+
+    this.password = typeof data.password === "string" ? data.password : "";
+
+    // --- 2. TỰ XÁC THỰC (Validate Self) ---
+    this.validate();
   }
 
   /**
-   * @description Hàm xác thực logic đầu vào.
-   * @throws {AppError} Nếu dữ liệu không hợp lệ.
+   * @description Hàm gác cổng xác thực tài khoản và mật khẩu không được để trống.
+   * @private
    */
-  private validate(data: ILoginInputDTO): void {
-    if (!data) {
-      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+  private validate(): void {
+    const { AUTH } = ErrorCode;
+
+    // Kiểm tra tài khoản sau khi đã chuẩn hóa
+    if (this.username.length === 0) {
+      throw new AppError(AUTH.USERNAME_REQUIRED);
     }
 
-    // Check Username
-    if (!data.username || typeof data.username !== 'string' || data.username.trim().length === 0) {
-      throw new AppError(ErrorCode.AUTH.USERNAME_REQUIRED);
-    }
-
-    // Check Password
-    if (!data.password || typeof data.password !== 'string' || data.password.length === 0) {
-      throw new AppError(
-        ErrorCode.AUTH.PASSWORD_REQUIRED);
+    // Kiểm tra mật khẩu
+    if (this.password.length === 0) {
+      throw new AppError(AUTH.PASSWORD_REQUIRED);
     }
   }
 }

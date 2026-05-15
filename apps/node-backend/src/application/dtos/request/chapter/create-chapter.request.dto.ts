@@ -1,3 +1,4 @@
+import { REGEX } from "@/domain/constants/regex.constant";
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
@@ -21,47 +22,56 @@ export class CreateChapterRequestDTO implements ICreateChapterInputDTO {
   public readonly orderIndex: number;
 
   constructor(data: ICreateChapterInputDTO) {
-    // 1. Chặn đứng dữ liệu lỗi/undefined
-    this.validate(data);
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
-    // 2. Làm sạch và gán giá trị
-    this.name = data.name.trim();
-    this.code = data.code.trim();
-    this.description = data.description.trim();
-    this.orderIndex = data.orderIndex ?? 0;
+    // --- BƯỚC 1: MAPPING & CHUẨN HÓA (Dọn rác trước) ---
+    this.name = typeof data.name === "string" ? data.name.trim() : "";
+
+    this.code =
+      typeof data.code === "string" ? data.code.trim().toLowerCase() : "";
+
+    this.description =
+      typeof data.description === "string" ? data.description.trim() : "";
+    this.orderIndex =
+      data.orderIndex !== undefined ? Number(data.orderIndex) : 0;
+
+    // --- BƯỚC 2: TỰ XÁC THỰC (Kiểm tra trên chính mình) ---
+    this.validate();
   }
 
   /**
-   * @description Hàm gác cổng, thực hiện ném AppError dựa trên mã lỗi hệ thống.
+   * @description Hàm gác cổng kiểm tra dữ liệu đã được làm sạch (this.xxx)
    * @private
    */
-  private validate(data: ICreateChapterInputDTO): void {
-    // Chặn lỗi truy cập thuộc tính của undefined
-    if (!data) {
-      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+  private validate(): void {
+    const { CHAPTER } = ErrorCode;
+
+    // Kiểm tra tên (this.name đã được trim)
+    if (this.name.length === 0) {
+      throw new AppError(CHAPTER.NAME_REQUIRED);
     }
 
-    // Kiểm tra tên và mã chương
-    if (!data.name || data.name.trim().length === 0) {
-      throw new AppError(ErrorCode.CHAPTER.NAME_REQUIRED);
+    // Kiểm tra mã chương (this.code đã được trim và lowercase)
+    if (this.code.length === 0) {
+      throw new AppError(CHAPTER.CODE_REQUIRED);
     }
 
-    if (!data.code || data.code.trim().length === 0) {
-      throw new AppError(ErrorCode.CHAPTER.CODE_REQUIRED);
+    if (!REGEX.COMMON.NO_SPACE_SPECIAL_CHAR.test(this.code)) {
+      throw new AppError(CHAPTER.INVALID_CODE);
     }
 
-    // Kiểm tra mô tả và độ dài
-    if (!data.description || data.description.trim().length === 0) {
-      throw new AppError(ErrorCode.CHAPTER.DESCRIPTION_REQUIRED);
+    // Kiểm tra mô tả
+    if (this.description.length === 0) {
+      throw new AppError(CHAPTER.DESCRIPTION_REQUIRED);
     }
 
-    if (data.description.length > 500) {
-      throw new AppError(ErrorCode.CHAPTER.DESCRIPTION_TOO_LONG);
+    if (this.description.length > 500) {
+      throw new AppError(CHAPTER.DESCRIPTION_TOO_LONG);
     }
 
-    // Kiểm tra tính hợp lệ của thứ tự sắp xếp
-    if (typeof data.orderIndex !== 'number' || data.orderIndex < 0) {
-      throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER);
+    // Kiểm tra thứ tự sắp xếp (this.orderIndex đã được ép kiểu Number)
+    if (isNaN(this.orderIndex) || this.orderIndex < 0) {
+      throw new AppError(CHAPTER.INVALID_ORDER);
     }
   }
 }

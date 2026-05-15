@@ -3,7 +3,8 @@ import { ImportApi } from "../api/import.api";
 import {
   AssetInfo,
   IImportJobStatusDTO,
-  ImportFinalResponse
+  IInitImportInputDTO,
+  ImportFinalResponse,
 } from "../types/import.types";
 import { StandardResponse } from "@/types/common.type";
 
@@ -13,9 +14,9 @@ import { StandardResponse } from "@/types/common.type";
  */
 const MAX_CONCURRENT = 3; // Max parallel requests (Giới hạn yêu cầu song song)
 const POLLING_INTERVAL = 2000; // 2 seconds (Khoảng thời gian truy vấn lại)
+export const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024;
 
 export const ImportService = {
-
   /**
    * @description Xử lý đóng gói ZIP và tải lên theo cơ chế Chunking Bất đồng bộ
    * @param {File} excelFile - File câu hỏi Excel
@@ -26,9 +27,8 @@ export const ImportService = {
   processAndUploadZip: async (
     excelFile: File,
     assetMap: Map<string, AssetInfo>,
-    onProgress: (percent: number) => void
+    onProgress: (percent: number) => void,
   ): Promise<StandardResponse<ImportFinalResponse>> => {
-
     // 1. Packaging Data (Đóng gói ZIP)
     const zip = new JSZip();
     zip.file("questions.xlsx", excelFile);
@@ -41,12 +41,23 @@ export const ImportService = {
     const zipBlob = await zip.generateAsync({
       type: "blob",
       compression: "DEFLATE",
-      compressionOptions: { level: 6 }
+      compressionOptions: { level: 6 },
     });
 
-    // 2. Initialize Session (Khởi tạo phiên làm việc với BE)
-    // SỬA LỖI: Truyền đúng 1 tham số kiểu number (zipBlob.size) theo ImportApi
-    const resInit = await ImportApi.init(zipBlob.size);
+    // 2. Extract Filename & Calculate Chunks (Trích xuất tên file & Tính toán phân đoạn)
+    // Lấy tên file excel bỏ đuôi .xlsx và thêm .zip (Dịch: Remove .xlsx extension and add .zip)
+    const zipFileName = excelFile.name.replace(/\.[^/.]+$/, "");
+
+    const totalChunksFe = Math.ceil(zipBlob.size / DEFAULT_CHUNK_SIZE);
+
+    const initPayload: IInitImportInputDTO = {
+      fileName: `import_${zipFileName}_${Date.now()}.zip`,
+      totalSize: zipBlob.size,
+      totalChunks: totalChunksFe,
+    };
+
+    // Initialize Session (Khởi tạo phiên làm việc)
+    const resInit = await ImportApi.init(initPayload);
 
     if (!resInit.success || !resInit.data) {
       throw new Error(resInit.message || "Không thể khởi tạo phiên làm việc.");
@@ -80,7 +91,9 @@ export const ImportService = {
       await Promise.all(pPool);
 
       // Cập nhật tiến độ tải lên (Dịch: Update upload progress)
-      const currentPercent = Math.round(((i + pPool.length) / totalChunks) * 100);
+      const currentPercent = Math.round(
+        ((i + pPool.length) / totalChunks) * 100,
+      );
       onProgress(currentPercent);
     }
 
@@ -95,16 +108,20 @@ export const ImportService = {
    */
   pollImportStatus: async (
     jobId: string,
-    onStatusUpdate: (status: IImportJobStatusDTO) => void
+    onStatusUpdate: (status: IImportJobStatusDTO) => void,
   ): Promise<IImportJobStatusDTO> => {
     return new Promise((resolve, reject) => {
       const checkStatus = async () => {
         try {
           // Lấy StandardResponse trực tiếp từ ImportApi
           const response = await ImportApi.getStatus(jobId);
-          
+
           if (!response.success || !response.data) {
-            reject(new Error(response.message || "Lỗi khi truy vấn trạng thái xử lý."));
+            reject(
+              new Error(
+                response.message || "Lỗi khi truy vấn trạng thái xử lý.",
+              ),
+            );
             return;
           }
 
@@ -120,13 +137,13 @@ export const ImportService = {
             setTimeout(checkStatus, POLLING_INTERVAL);
           }
         } catch (error) {
-           // Bắt lỗi Network hoặc Server (5xx, 4xx) để tránh kẹt Promise
-           reject(error);
+          // Bắt lỗi Network hoặc Server (5xx, 4xx) để tránh kẹt Promise
+          reject(error);
         }
       };
 
       // Bắt đầu vòng lặp polling
       checkStatus();
     });
-  }
+  },
 };

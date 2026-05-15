@@ -25,3 +25,10 @@ export type CreateChapterProps = Omit<IChapterProps,
   description?: string | null;
   orderIndex?: number;
 };
+
+export interface IChapterUpdateProps {
+  name: string;
+  description: string | null;
+  orderIndex: number;
+  code: string;
+}

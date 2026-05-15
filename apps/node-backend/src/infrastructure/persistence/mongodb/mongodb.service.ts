@@ -1,7 +1,7 @@
 // @/infrastructure/persistence/mongodb/mongodb.service.ts
 import { MongoClient, Db } from 'mongodb';
 import { IMongoConfig } from '@/shared/config/mongodb.config';
-import { IMongoDBService } from '@/domain/interfaces/services/external/i-mongodb.service';
+import { IMongoDBService } from '@/domain/interfaces/services/external/commands/i-mongodb.service';
 import { AppError, ErrorCode } from '@/shared/errors';
 import mongoose from 'mongoose';
 

@@ -20,13 +20,14 @@ import { FilterSelect } from "@/components/ui/Select/FilterSelect";
 import { USER_STATUS_OPTIONS } from "@/components/features/admin-users/components/users.config";
 import { useUsers } from "@/components/features/admin-users/hooks/use-users";
 import { useUserUrlParams } from "@/components/features/admin-users/hooks/use-user-url-params";
-import { UserResponseDTO } from "@/types/user-respone";
+import { UserResponseDTO } from "@/components/features/admin-users/types/user-respone";
 import {
   AdminUpdatePayload,
   CreateUserPayload,
 } from "@/components/features/admin-users/schema/user.schema";
 import { UserQueryDTO } from "@/types/query-user";
 import { userToolbarVariants as variants } from "./user-toolbar.variants";
+import { useRoleOptions } from "@/hooks/use-master-data";
 
 export default function AdminUserManagementPage() {
   // --- 1. QUẢN LÝ URL & PARAMS ---
@@ -102,8 +103,9 @@ export default function AdminUserManagementPage() {
     handleUnlock,
     handleRestore,
     handleUpdate,
-    roleOptions = [],
   } = useUsers(getApiParams() as UserQueryDTO);
+
+  const { data: roles = [] } = useRoleOptions();
 
   // --- 6. HANDLERS ---
 
@@ -338,7 +340,7 @@ export default function AdminUserManagementPage() {
         }}
         onSave={handleUpdateUser}
         isLoading={isUpdating}
-        roleOptions={roleOptions}
+        roleOptions={roles}
       />
 
       <BaseConfirmModal

@@ -76,10 +76,10 @@ describe('🏁 FULL SYSTEM INTEGRATION TEST FLOW', () => {
         const getexamMatrix = (name: string) => examMatrix.find((ex: ExamMatrix) => ex.name === name)?.id;
 
         // 4. Tìm kiếm ID chính xác theo nghiệp vụ (c giờ đây là Chapter, l là License)
-        chapterId = getChapter('1');
-        chapterIdSecond = getChapter('5');
-        chapterIdThird = getChapter('6');
-        chapterIdFour = getChapter('7');
+        chapterId = getChapter('CH01');
+        chapterIdSecond = getChapter('CH05');
+        chapterIdThird = getChapter('CH06');
+        chapterIdFour = getChapter('CH07');
 
         licenseId = getLicense('CE');
         licenseSecond = getLicense('I');

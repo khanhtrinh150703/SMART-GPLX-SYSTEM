@@ -120,7 +120,6 @@ export class AuthController {
    * @param {NextFunction} next - Hàm chuyển tiếp lỗi của Express.
    */
   public logout = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
-    // 1. Không dùng '!', dùng trực tiếp từ IAuthRequest (đã được middleware đảm bảo)
     const payload = req.user;
 
     // 2. Gọi Service xử lý (catchAsync sẽ lo việc bắt lỗi nếu có)

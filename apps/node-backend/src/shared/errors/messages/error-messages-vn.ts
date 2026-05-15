@@ -88,7 +88,8 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.EXAM.MIN_CRITICAL_INVALID]: 'Số lượng câu hỏi điểm liệt không hợp lệ.',
     [ErrorCode.EXAM.INVALID_TIME_RANGE]: 'Thời gian kết thúc phải sau thời gian bắt đầu.',
     [ErrorCode.EXAM.TOTAL_QUESTIONS_INVALID]: 'Tổng số câu hỏi phải lớn hơn 0.',
-
+    [ErrorCode.EXAM.NAME_ALREADY_EXISTS]: 'Tên đề thi này đã tồn tại, vui lòng nhập tên khác.',
+    
     // --- Nhóm 2xx: Business/Pool (Lỗi kho dữ liệu & Nghiệp vụ) ---
     [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 'Tổng kho câu hỏi không đủ số lượng để đáp ứng cấu trúc đề thi.',
     [ErrorCode.EXAM.INSUFFICIENT_CHAPTER_QUESTIONS]: 'Số lượng câu hỏi trong chương không đủ để tạo đề theo yêu cầu.',
@@ -174,6 +175,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.CHAPTER.UPDATE_FAILED]: 'Cập nhật thông tin chương lý thuyết thất bại.',
     [ErrorCode.CHAPTER.INVALID_ORDER]: 'Thứ tự hiển thị của chương không hợp lệ.',
     [ErrorCode.CHAPTER.INVALID_DESCRIPTION]: 'Mô tả chương không được để trống hoặc chỉ chứa khoảng trắng.',
+    [ErrorCode.CHAPTER.INVALID_CODE]: "Mã chương không hợp lệ. Chỉ chấp nhận chữ cái và chữ số, không bao gồm khoảng trắng hoặc ký tự đặc biệt.",
     [ErrorCode.CHAPTER.ID_REQUIRED]: 'Mã định danh (ID) chương là bắt buộc để cập nhật.',
     [ErrorCode.CHAPTER.NAME_REQUIRED]: 'Tên chương không được để trống.',
     [ErrorCode.CHAPTER.CODE_REQUIRED]: 'Mã chương không được để trống.',
@@ -181,26 +183,35 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.CHAPTER.DESCRIPTION_TOO_LONG]: 'Mô tả chương không được vượt quá 500 ký tự.',
 
     // --- QUESTION ---
-    [ErrorCode.QUESTION.NOT_FOUND]: 'Câu hỏi không tồn tại trong hệ thống.',
-    [ErrorCode.QUESTION.CHAPTER_REQUIRED]: 'ID chương lý thuyết không được để trống.',
-    [ErrorCode.QUESTION.CONTENT_INVALID]: 'Nội dung câu hỏi phải có ít nhất 10 ký tự.',
-    [ErrorCode.QUESTION.LICENSE_REQUIRED]: 'Vui lòng chọn ít nhất một hạng bằng lái.',
-    [ErrorCode.QUESTION.ANSWERS_INSUFFICIENT]: 'Mỗi câu hỏi phải cung cấp tối thiểu 2 đáp án.',
-    [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 'Câu hỏi bắt buộc phải có ít nhất một đáp án đúng.',
+    // --- 0xx: Validation ---
+    [ErrorCode.QUESTION.CHAPTER_REQUIRED]: 'Mã chương học là bắt buộc.',
+    [ErrorCode.QUESTION.CONTENT_INVALID]: 'Nội dung câu hỏi không hợp lệ hoặc quá ngắn.',
+    [ErrorCode.QUESTION.LICENSE_REQUIRED]: 'Hạng bằng lái cho câu hỏi này là bắt buộc.',
+    [ErrorCode.QUESTION.ANSWERS_INSUFFICIENT]: 'Mỗi câu hỏi phải có ít nhất 2 đáp án.',
+    [ErrorCode.QUESTION.CORRECT_ANSWER_MISSING]: 'Câu hỏi phải có ít nhất một đáp án đúng.',
     [ErrorCode.QUESTION.IMAGE_URL_INVALID]: 'Đường dẫn hình ảnh minh họa không hợp lệ.',
-    [ErrorCode.QUESTION.ALREADY_EXISTS]: 'Nội dung câu hỏi này đã tồn tại trong hệ thống.',
-    [ErrorCode.QUESTION.DELETE_CRITICAL_RESTRICTED]: 'Không được phép xóa câu hỏi điểm liệt hệ thống.',
-    [ErrorCode.QUESTION.ANSWERS_SYNC_FAILED]: 'Dữ liệu đáp án không đồng bộ. Vui lòng giữ lại truyền 2 đáp án hợp lệ.',
-    [ErrorCode.QUESTION.INVALID_FORMAT]: 'Định dạng dữ liệu câu hỏi không hợp lệ.',
-    [ErrorCode.QUESTION.MULTIPLE_CORRECT_ANSWERS]: 'Chỉ được phép có duy nhất một đáp án đúng cho mỗi câu hỏi.',
+
+    // --- 1xx: Format & Logic ---
+    [ErrorCode.QUESTION.ID_REQUIRED]: 'Yêu cầu mã định danh câu hỏi.',
+    [ErrorCode.QUESTION.INVALID_FORMAT]: 'Dữ liệu câu hỏi không đúng định dạng quy định.',
+    [ErrorCode.QUESTION.MULTIPLE_CORRECT_ANSWERS]: 'Câu hỏi này chỉ được phép có tối đa một đáp án đúng.',
     [ErrorCode.QUESTION.ANSWER_CONTENT_REQUIRED]: 'Nội dung của các đáp án không được để trống.',
-    [ErrorCode.QUESTION.EXPLANATION_TOO_LONG]: 'Phần giải thích không được vượt quá 1000 ký tự.',
-    [ErrorCode.QUESTION.LICENSE_ID_INVALID]: 'Danh sách mã hạng bằng lái chứa giá trị không hợp lệ.',
-    [ErrorCode.QUESTION.DIFFICULTY_INVALID]: 'Mức độ khó phải là một con số hợp lệ.',
-    [ErrorCode.QUESTION.INDEX_INVALID]: 'Thứ tự câu hỏi (Index) không hợp lệ.',
-    [ErrorCode.QUESTION.ID_REQUIRED]: 'Mã định danh (ID) câu hỏi là bắt buộc để cập nhật.',
-    [ErrorCode.QUESTION.STATUS_INVALID]: 'Trạng thái câu hỏi không hợp lệ.',
-    [ErrorCode.QUESTION.IS_CRITICAL_INVALID]: 'Giá trị câu hỏi điểm liệt phải là boolean',
+    [ErrorCode.QUESTION.EXPLANATION_TOO_LONG]: 'Phần giải thích đáp án vượt quá độ dài cho phép.',
+    [ErrorCode.QUESTION.LICENSE_ID_INVALID]: 'Mã hạng bằng lái không tồn tại trong hệ thống.',
+    [ErrorCode.QUESTION.DIFFICULTY_INVALID]: 'Mức độ khó của câu hỏi không hợp lệ.',
+    [ErrorCode.QUESTION.INDEX_INVALID]: 'Số thứ tự hiển thị của câu hỏi không hợp lệ.',
+    [ErrorCode.QUESTION.STATUS_INVALID]: 'Trạng thái hoạt động của câu hỏi không hợp lệ.',
+    [ErrorCode.QUESTION.IS_CRITICAL_INVALID]: 'Giá trị đánh dấu câu hỏi điểm liệt phải là kiểu đúng/sai.',
+
+    // --- 4xx: Data Lifecycle ---
+    [ErrorCode.QUESTION.NOT_FOUND]: 'Không tìm thấy câu hỏi yêu cầu.',
+    [ErrorCode.QUESTION.EMPTY_BANK]: 'Ngân hàng câu hỏi cho hạng bằng này hiện đang trống.',
+    [ErrorCode.QUESTION.INCOMPLETE_DATA_SET]: 'Số lượng câu hỏi không đủ để khởi tạo bộ đề theo cấu trúc ma trận.',
+    [ErrorCode.QUESTION.ALREADY_EXISTS]: 'Nội dung câu hỏi này đã tồn tại trong hệ thống.',
+    [ErrorCode.QUESTION.DELETE_CRITICAL_RESTRICTED]: 'Không thể xóa câu hỏi này do ràng buộc quy định nghiệp vụ.',
+
+    // --- 5xx: System ---
+    [ErrorCode.QUESTION.ANSWERS_SYNC_FAILED]: 'Lỗi đồng bộ dữ liệu đáp án, vui lòng kiểm tra lại hệ thống.',
 
     // IMPORT
     [ErrorCode.IMPORT.JOB_NOT_FOUND]: 'Không tìm thấy phiên làm việc (Import Job). Có thể phiên đã hết hạn.',
@@ -220,6 +231,7 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.MATRIX.NAME_TOO_LONG]: 'Tên ma trận đề thi không được vượt quá 100 ký tự.',
     [ErrorCode.MATRIX.NO_DETAILS]: 'Cấu trúc ma trận phải có ít nhất một thông số chi tiết.',
     [ErrorCode.MATRIX.INVALID_PERCENTAGE]: 'Tổng tỉ lệ câu hỏi trong ma trận phải bằng 100%.',
+    [ErrorCode.MATRIX.CHAPTER_PERCENTAGE_OUT_OF_RANGE]: 'Tỉ lệ phần trăm của mỗi chương phải lớn hơn 0% và không vượt quá 100%.',
     [ErrorCode.MATRIX.INVALID_PASSING_SCORE]: 'Điểm đạt yêu cầu không được lớn hơn tổng số câu hỏi.',
     [ErrorCode.MATRIX.DUPLICATE_CHAPTER]: 'Một chương không được xuất hiện hai lần trong cùng một ma trận.',
     [ErrorCode.MATRIX.NOT_FOUND]: 'Không tìm thấy thông tin ma trận đề thi này.',
@@ -233,6 +245,12 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.MATRIX.ID_REQUIRED]: 'Mã định danh (ID) ma trận là bắt buộc để cập nhật.',
     [ErrorCode.MATRIX.MIN_CRITICAL_INVALID]: 'Số lượng câu hỏi điểm liệt tối thiểu không hợp lệ.',
     [ErrorCode.MATRIX.IS_DEFAULT_INVALID]: 'Trạng thái mặc định (isDefault) phải là kiểu đúng/sai (boolean).',
+    [ErrorCode.MATRIX.TOTAL_PERCENTAGE_NOT_100]: 'Tổng tỉ lệ phần trăm không bằng 100%',
+    [ErrorCode.MATRIX.TOO_MANY_CHAPTERS_FOR_TOTAL]: 'Số lượng chương đã chọn vượt quá tổng số câu hỏi của đề thi. Vui lòng giảm bớt số chương hoặc tăng tổng số câu hỏi.',
+    [ErrorCode.MATRIX.MIN_CRITICAL_REQUIRED]: 'Vui lòng nhập số lượng câu hỏi điểm liệt tối thiểu.',
+    [ErrorCode.MATRIX.MIN_CRITICAL_NEGATIVE]: 'Số câu điểm liệt không thể là số âm.',
+    [ErrorCode.MATRIX.MIN_CRITICAL_TOO_HIGH]: 'Số câu điểm liệt không được vượt quá tổng số câu hỏi của đề thi.',
+    [ErrorCode.MATRIX.NAME_ALREADY_EXISTS]: 'Tên ma trận đã tồn tại trong hệ thống, vui lòng nhập tên khác.',
 
     // Nhóm EXCEL
     [ErrorCode.EXCEL.WORKSHEET_NOT_FOUND]: 'Không tìm thấy Worksheet yêu cầu trong file Excel.',
@@ -294,4 +312,40 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.SESSION.NOT_FOUND]: 'Không tìm thấy thông tin phiên thi hiện tại.',
     [ErrorCode.SESSION.ALREADY_SUBMITTED]: 'Bài thi này đã được nộp trước đó, không thể thay đổi đáp án.',
     [ErrorCode.SESSION.EXPIRED]: 'Thời gian làm bài đã kết thúc.',
+
+    // === EXAM HISTORY (EH) ===
+    [ErrorCode.EXAM_HISTORY.INVALID_DURATION]: 'Thời gian làm bài không hợp lệ.',
+    [ErrorCode.EXAM_HISTORY.INVALID_SCORE]: 'Điểm số bài thi không hợp lệ.',
+    [ErrorCode.EXAM_HISTORY.USER_ID_REQUIRED]: 'Thông tin người dùng là bắt buộc.',
+    [ErrorCode.EXAM_HISTORY.SNAPSHOT_ID_REQUIRED]: 'Thông tin bài làm (Snapshot) không được để trống.',
+    [ErrorCode.EXAM_HISTORY.CATEGORY_INFO_REQUIRED]: 'Thông tin hạng bằng lái là bắt buộc.',
+    [ErrorCode.EXAM_HISTORY.SCORE_CANNOT_BE_NEGATIVE]: 'Điểm số không được là số âm.',
+    [ErrorCode.EXAM_HISTORY.RESULT_STATUS_REQUIRED]: 'Kết quả bài thi (Đạt/Trượt) phải được xác định.',
+    [ErrorCode.EXAM_HISTORY.TOTAL_QUESTIONS_INVALID]: 'Tổng số câu hỏi của bài thi phải lớn hơn 0.',
+    [ErrorCode.EXAM_HISTORY.SCORE_EXCEEDS_TOTAL]: 'Điểm số không thể lớn hơn tổng số câu hỏi.',
+    [ErrorCode.EXAM_HISTORY.HISTORY_NOT_FOUND]: 'Không tìm thấy thông tin lịch sử bài thi yêu cầu.',
+
+    // STATISTICS
+    [ErrorCode.STATISTICS.NOT_FOUND]: 'Không tìm thấy dữ liệu thống kê yêu cầu.',
+    [ErrorCode.STATISTICS.INVALID_TIME_RANGE]: 'Khoảng thời gian lọc thống kê không hợp lệ.',
+    [ErrorCode.STATISTICS.DATA_EMPTY]: 'Hiện tại chưa có dữ liệu để thực hiện thống kê.',
+    [ErrorCode.STATISTICS.CALCULATION_ERROR]: 'Có lỗi xảy ra trong quá trình tính toán dữ liệu thống kê.',
+
+    // === USER STATISTICS (US) ===
+    [ErrorCode.USER_STATS.INVALID_TOTAL_EXAMS]: 'Tổng số bài thi của người dùng không hợp lệ hoặc bị sai lệch.',
+    [ErrorCode.USER_STATS.USER_NOT_FOUND]: 'Không tìm thấy thông tin người dùng để thực hiện thống kê.',
+    [ErrorCode.USER_STATS.SYNC_FAILED]: 'Đồng bộ hóa dữ liệu thống kê người dùng thất bại.',
+
+    // === QUESTION STATISTICS (QS) ===
+    [ErrorCode.QUESTION_STATS.QUESTION_ID_REQUIRED]: 'Mã định danh câu hỏi (Question ID) là bắt buộc.',
+
+    [ErrorCode.USER_TOPIC_STATS.TOPIC_ID_REQUIRED]: 'Mã chủ đề (Topic ID) là bắt buộc để truy vấn thống kê.',
+    [ErrorCode.USER_TOPIC_STATS.INVALID_COMPLETION_RATE]: 'Tỉ lệ hoàn thành chủ đề phải nằm trong khoảng từ 0 đến 100.',
+    [ErrorCode.USER_TOPIC_STATS.TOPIC_NOT_FOUND]: 'Không tìm thấy dữ liệu thống kê cho chủ đề yêu cầu.',
+    [ErrorCode.USER_TOPIC_STATS.TOTAL_QUESTIONS_NEGATIVE]: 'Tổng số câu hỏi trong thống kê chủ đề không thể là số âm.',
+    [ErrorCode.USER_TOPIC_STATS.WRONG_ANSWERS_EXCEEDS_TOTAL]: 'Số câu trả lời sai không được lớn hơn tổng số câu hỏi của chủ đề này.',
+    [ErrorCode.USER_TOPIC_STATS.USER_ID_REQUIRED]: 'Định danh người dùng (User ID) là bắt buộc.',
+    [ErrorCode.USER_TOPIC_STATS.RESULTS_REQUIRED]: 'Danh sách kết quả trả lời không được để trống.',
+    [ErrorCode.USER_TOPIC_STATS.TOPIC_NAME_REQUIRED]: 'Tên chủ đề là bắt buộc trong dữ liệu thống kê.',
+    [ErrorCode.USER_TOPIC_STATS.CORRECT_STATUS_REQUIRED]: 'Trạng thái câu trả lời (Đúng/Sai) không hợp lệ.',
 };

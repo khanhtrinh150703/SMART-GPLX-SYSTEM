@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, AlertCircle, ArrowLeft } from "lucide-react";
+// Thêm icon Shuffle (Trộn)
+import { SearchIcon, AlertCircle, ArrowLeft, Shuffle } from "lucide-react";
 
 // Components
 import { ExamSkeleton } from "./ExamSkeleton";
@@ -27,16 +28,21 @@ export default function GplxTestPage() {
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
-  // 1. Debounce searchTerm (Trì hoãn tìm kiếm để tối ưu hiệu năng)
+
+  // --- NEW STATE: TRẠNG THÁI TRỘN ĐỀ (Shuffle State) ---
+  const [isShuffleActive, setIsShuffleActive] = useState<boolean>(false);
+
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Lắng nghe Socket Realtime (Đồng bộ hóa thời gian thực)
   useExamRealtime();
-
-  /**
-   * 2. HOOK TRUY VẤN DANH SÁCH (Infinite Scroll)
-   * Alias: isLoadingList, isErrorList để tránh trùng tên
-   */
+  const queryParams = useMemo(
+    () => ({
+      limit: 10,
+      search: debouncedSearch,
+      licenseCode: CATEGORY_MAP[selectedCategory],
+    }),
+    [debouncedSearch, selectedCategory],
+  );
   const {
     data,
     fetchNextPage,
@@ -44,36 +50,22 @@ export default function GplxTestPage() {
     isFetchingNextPage,
     isLoading: isLoadingList,
     isError: isErrorList,
-  } = useInfiniteExamsVisual({
-    limit: 10,
-    search: debouncedSearch,
-    licenseCode: CATEGORY_MAP[selectedCategory],
-  });
+  } = useInfiniteExamsVisual(queryParams);
 
-  /**
-   * 3. HOOK TRUY VẤN CHI TIẾT ĐỀ THI (Detail Fetching)
-   * Chỉ chạy khi có activeExamId (Enabled only when activeExamId exists)
-   */
   const {
     exam,
     isLoading: isLoadingDetail,
     isError: isErrorDetail,
   } = useExamDetail(activeExamId ?? undefined);
 
-  // Xử lý làm phẳng dữ liệu và lọc trùng (Data flattening & deduplication)
-  const allExams = data?.pages.flatMap((page) => page.data) || [];
-  const uniqueExams = Array.from(
-    new Map(allExams.map((e) => [e.id, e])).values(),
-  );
+  const uniqueExams = useMemo(() => {
+    if (!data) return [];
+    const flatData = data.pages.flatMap((page) => page.data);
+    return Array.from(
+      new Map(flatData.map((item) => [item.id, item])).values(),
+    );
+  }, [data]);
 
-  /**
-   * 4. INFINITE SCROLL LOGIC (Xử lý cuộn vô hạn)
-   */
-  const isFetchingRef = useRef(isFetchingNextPage);
-  useEffect(() => {
-    isFetchingRef.current = isFetchingNextPage;
-  }, [isFetchingNextPage]);
-  
   const observerTarget = useCallback(
     (node: HTMLDivElement | null) => {
       if (isLoadingList || isFetchingNextPage || !hasNextPage || !node) return;
@@ -93,11 +85,14 @@ export default function GplxTestPage() {
     [hasNextPage, fetchNextPage, isLoadingList, isFetchingNextPage],
   );
 
-  // Điều phối sự kiện (Event Handlers)
   const { handleJoinExamRoom, handleExitExamRoom } =
     useExamSessionManager(setActiveExamId);
 
-  // Màn hình lỗi tổng thể (Global Error Boundary)
+  // --- WRAPPER HANDLER: XỬ LÝ VÀO PHÒNG CÓ TRỘN ĐỀ ---
+  const onJoinExam = (examId: string) => {
+    handleJoinExamRoom(examId);
+  };
+
   if (isErrorList) return <SplashScreen variant="take-exam" />;
 
   return (
@@ -109,7 +104,6 @@ export default function GplxTestPage() {
     >
       <AnimatePresence mode="wait">
         {!activeExamId ? (
-          /* CHẾ ĐỘ 1: DANH SÁCH ĐỀ THI (LIST VIEW) */
           <motion.div
             key="list-view"
             initial={{ opacity: 0, y: 20 }}
@@ -119,28 +113,46 @@ export default function GplxTestPage() {
             className="p-4 md:p-8 max-w-7xl mx-auto"
           >
             <header className="mb-10 w-full space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <h1
-                  className={cn(
-                    "text-3xl md:text-4xl font-black italic uppercase leading-tight tracking-tight",
-                    "bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent",
-                    "py-1 px-1 -ml-1",
-                  )}
-                >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <h1 className="text-3xl md:text-4xl font-black italic uppercase leading-tight tracking-tight bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent py-1 px-1 -ml-1">
                   SÁT HẠCH LÝ THUYẾT
                 </h1>
 
-                <div className="relative w-full md:w-80 group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
-                    <SearchIcon size={18} />
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                  {/* BUTTON: THAY ĐỔI VỊ TRÍ CÂU HỎI & ĐÁP ÁN (Shuffle Toggle Button) */}
+                  <button
+                    onClick={() => setIsShuffleActive(!isShuffleActive)}
+                    className={cn(
+                      "flex items-center gap-3 px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all border-2",
+                      isShuffleActive
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20" // Emerald theme
+                        : "bg-white border-slate-100 text-slate-400 hover:border-emerald-200 hover:text-emerald-600",
+                    )}
+                  >
+                    <Shuffle
+                      size={16}
+                      strokeWidth={isShuffleActive ? 3 : 2}
+                      className={cn(isShuffleActive && "animate-spin-slow")}
+                    />
+                    <span>
+                      {isShuffleActive
+                        ? "Đã tráo thứ tự"
+                        : "Tráo thứ tự câu hỏi & đáp án"}
+                    </span>
+                  </button>
+
+                  <div className="relative w-full sm:w-80 group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
+                      <SearchIcon size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm đề thi..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 shadow-sm transition-all"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Tìm kiếm đề thi..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 shadow-sm transition-all"
-                  />
                 </div>
               </div>
 
@@ -163,26 +175,46 @@ export default function GplxTestPage() {
             </header>
 
             <ExamGrid>
+              {/* 1. Trạng thái tải dữ liệu lần đầu (Initial Loading State) */}
               {isLoadingList && uniqueExams.length === 0 ? (
                 Array.from({ length: 8 }).map((_, i) => (
-                  <ExamSkeleton key={i} />
+                  <ExamSkeleton key={`initial-skeleton-${i}`} />
                 ))
-              ) : (
+              ) : uniqueExams.length > 0 ? (
+                /* 2. Trạng thái hiển thị danh sách (Success State) */
                 <>
                   {uniqueExams.map((examItem, index) => (
                     <ExamCard
                       key={examItem.id}
                       exam={examItem}
                       index={index}
-                      onSelect={handleJoinExamRoom}
+                      onSelect={onJoinExam}
                       size="sm"
                     />
                   ))}
+
+                  {/* Tải thêm trang tiếp theo (Infinite Scroll Loading) */}
                   {isFetchingNextPage &&
                     Array.from({ length: 4 }).map((_, i) => (
-                      <ExamSkeleton key={i} />
+                      <ExamSkeleton key={`next-page-skeleton-${i}`} />
                     ))}
                 </>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50"
+                >
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                    <SearchIcon size={32} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Không tìm thấy đề thi
+                  </h3>
+                  <p className="text-slate-500 text-sm max-w-xs mt-1">
+                    Thử thay đổi từ khóa tìm kiếm hoặc chọn hạng bằng lái khác
+                  </p>
+                </motion.div>
               )}
             </ExamGrid>
 
@@ -210,7 +242,6 @@ export default function GplxTestPage() {
             </div>
           </motion.div>
         ) : (
-          /* CHẾ ĐỘ 2: CONTAINER LÀM BÀI (EXAM MODE) */
           <motion.div
             key="exam-container"
             className="fixed inset-0 z-50 bg-white"
@@ -219,7 +250,6 @@ export default function GplxTestPage() {
             exit={{ opacity: 0, x: -100 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
-            {/* 5. XỬ LÝ TRẠNG THÁI TẢI CHI TIẾT (Detail Loading Handling) */}
             {isLoadingDetail ? (
               <SplashScreen variant="take-exam" />
             ) : isErrorDetail || !exam ? (
@@ -231,7 +261,12 @@ export default function GplxTestPage() {
                 </Button>
               </div>
             ) : (
-              <GplxTestContainer exam={exam} onExit={handleExitExamRoom} />
+              // Truyền flag shuffle xuống container làm bài (Pass shuffle flag to test container)
+              <GplxTestContainer
+                exam={exam}
+                onExit={handleExitExamRoom}
+                shouldShuffle={isShuffleActive}
+              />
             )}
           </motion.div>
         )}

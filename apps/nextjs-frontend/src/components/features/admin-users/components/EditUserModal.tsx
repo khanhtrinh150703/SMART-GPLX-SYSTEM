@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User, ShieldCheck, Check } from "lucide-react";
-import axios from "axios";
 
 import { BaseModal } from "@/components/common/Modals/BaseModal";
 import { FormField } from "@/components/common/Form/FormField";
@@ -12,11 +11,12 @@ import { Alert } from "@/components/ui/Alert/Alert";
 import Button from "@/components/ui/Button/Button";
 import { cn } from "@/lib/utils/utils";
 
-import { UserResponseDTO } from "@/types/user-respone";
+import { UserResponseDTO } from "@/components/features/admin-users/types/user-respone";
 import {
   AdminUpdatePayload,
   updateAdminRequestSchema,
 } from "../schema/user.schema";
+import axios from "axios";
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -37,42 +37,63 @@ export default function EditUserModal({
 }: EditUserModalProps) {
   // 1. Quản lý thông báo dựa trên intent (Chuẩn hóa)
   const [message, setMessage] = useState<{
-    intent: "success" | "error" | "warning";
+    type: "success" | "error" | "warning";
     text: string;
   } | null>(null);
-
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control, // 1. Lấy control ở đây
     formState: { errors },
   } = useForm<AdminUpdatePayload>({
     resolver: zodResolver(updateAdminRequestSchema),
     defaultValues: { roles: [] },
   });
 
-  const selectedRoles = watch("roles") || [];
+  // 2. Thay thế watch("roles") bằng useWatch
+  const selectedRoles = useWatch({
+    control,
+    name: "roles",
+    defaultValue: [], // Giá trị mặc định khi chưa có dữ liệu
+  });
 
   // 2. Đồng bộ hóa dữ liệu khi Modal mở
   useEffect(() => {
     if (user && isOpen) {
-      setMessage(null);
-      reset({
-        fullName: user.fullName,
-        roles: user.roles?.map((r) => r.id) || [],
+      // Đưa vào đây để "lách" việc update đồng bộ
+      requestAnimationFrame(() => {
+        setMessage(null);
+        reset({
+          fullName: user.fullName,
+          roles: user.roles?.map((r) => r.id) || [],
+        });
       });
     }
-  }, [user, isOpen, reset]);
+  }, [user, isOpen, reset, setMessage]);
 
   // 3. Xử lý Submit và bóc tách lỗi từ Axios
   const handleInternalSubmit = async (data: AdminUpdatePayload) => {
-    await handleAction(() => onSave(data), {
-      successMsg: "Cập nhật học viên thành công!",
-      autoClose: onClose, // Tự động đóng sau khi hiện Success
-      delay: 1500,
-    });
+    try {
+      setMessage(null); // Xóa lỗi cũ trước khi thử lại
+
+      // Đợi trang cha thực hiện lưu dữ liệu
+      await onSave(data);
+
+      // Nếu không có lỗi: Đóng modal (Thành công xử lý ở trang cha qua Toast)
+      onClose();
+      reset();
+    } catch (error) {
+      // Nếu trang cha ném lỗi (mutateAsync fail), Modal sẽ bắt ở đây
+      let errorText = "Không thể tạo hạng bằng lái. Vui lòng thử lại!";
+
+      if (axios.isAxiosError(error)) {
+        errorText = error.response?.data?.message || errorText;
+      }
+
+      setMessage({ type: "error", text: errorText });
+    }
   };
   const handleToggleRole = (roleId: string) => {
     if (isLoading) return;
@@ -96,13 +117,13 @@ export default function EditUserModal({
       >
         {/* ALERT BOX */}
         {message && (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-400">
-            <Alert
-              intent={message.intent}
-              message={message.text}
-              onClose={() => setMessage(null)}
-            />
-          </div>
+          <Alert
+            key={message.text}
+            intent={message.type}
+            message={message.text}
+            duration={10000}
+            onClose={() => setMessage(null)}
+          />
         )}
 
         <div className="space-y-6">
@@ -192,10 +213,3 @@ export default function EditUserModal({
     </BaseModal>
   );
 }
-function handleAction(arg0: () => Promise<unknown>, arg1: {
-  successMsg: string; autoClose: () => void; // Tự động đóng sau khi hiện Success
-  delay: number;
-}) {
-  throw new Error("Function not implemented.");
-}
-

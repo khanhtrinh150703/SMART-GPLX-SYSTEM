@@ -1,5 +1,5 @@
+import { Status } from "@/shared/config/status.config";
 import { AppError, ErrorCode } from "@/shared/errors";
-import { ExamStatus } from "@prisma/client";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật đề thi.
@@ -15,7 +15,7 @@ export interface IUpdateExamInputDTO {
   readonly passingScore?: number;
   readonly durationMinutes?: number;
   readonly minCriticalQuestions?: number;
-  readonly status?: ExamStatus;
+  readonly status?: Status;
   readonly score?: number;
   readonly isPassed?: boolean;
   readonly startedAt?: Date | string;
@@ -37,7 +37,7 @@ export class UpdateExamRequestDTO implements IUpdateExamInputDTO {
   public readonly passingScore?: number;
   public readonly durationMinutes?: number;
   public readonly minCriticalQuestions?: number;
-  public readonly status?: ExamStatus;
+  public readonly status?: Status;
   public readonly score?: number;
   public readonly isPassed?: boolean;
   public readonly startedAt?: Date;

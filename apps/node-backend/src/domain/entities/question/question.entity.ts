@@ -2,7 +2,7 @@ import { BaseEntity } from "@/domain/seedwork/entity.base";
 import { CreateQuestionProps, IQuestionProps } from "./question.props";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { Answer } from "./answer.entity";
-import { QuestionStatus } from "./question.status";
+import { STATUS, Status } from "@/shared/config/status.config";
 
 export class Question extends BaseEntity<IQuestionProps> {
   
@@ -71,7 +71,7 @@ export class Question extends BaseEntity<IQuestionProps> {
     isCritical: boolean;
     difficultyLevel: number;
     indexNumber: number;
-    status: QuestionStatus;
+    status: Status;
     answers: Answer[];
     licenseCategoryIds: string[];
   }): void {
@@ -95,7 +95,7 @@ export class Question extends BaseEntity<IQuestionProps> {
     // if (this.isCritical) {
     //   throw new AppError(ErrorCode.QUESTION.CANNOT_DELETE_CRITICAL);
     // }
-    this._props.status = "DELETED";
+    this._props.status = STATUS.DELETED;
     this._props.deletedAt = new Date();
     this.touch();
   }
@@ -106,7 +106,7 @@ export class Question extends BaseEntity<IQuestionProps> {
 
   public restore(): void {
     this._props.deletedAt = undefined;
-    this._props.status = "ACTIVE";
+    this._props.status = STATUS.ACTIVE;
     this.touch();
   }
 

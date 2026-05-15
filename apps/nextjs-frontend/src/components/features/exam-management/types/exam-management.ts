@@ -27,7 +27,8 @@ export interface IExamMatrixRequest {
   name: string;
   durationMinutes: number;
   minCriticalQuestions: number;
-  isDefault?: boolean;
+  isDefault: boolean;
+  isChapter: boolean;
   details: IExamMatrixDetailRequest[];
 }
 /**
@@ -36,7 +37,6 @@ export interface IExamMatrixRequest {
 export interface IExamMatrixDetailResponse {
   chapterId: string;
   percentage: number;
-  /** @description Có thể bổ sung thêm tên chương để hiển thị ở UI mà không cần map lại */
   chapterName?: string;
 }
 
@@ -47,11 +47,11 @@ export interface IExamMatrixDetailResponse {
 export interface IExamMatrixResponse {
   id: string;
   licenseCategoryId: string;
-  licenseCategoryName?: string; // Thêm để hiển thị trực tiếp trên table
+  licenseCategoryName?: string; 
   totalQuestions: number;
   passingScore: number;
   name: string;
-
+  isChapter: boolean;
   durationMinutes: number;
   minCriticalQuestions: number;
   isDefault: boolean;

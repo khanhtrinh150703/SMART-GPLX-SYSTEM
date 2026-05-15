@@ -1,4 +1,4 @@
-import { ExamStatus } from "@prisma/client";
+import { Status } from "@/shared/config/status.config";
 import { Question } from "../question/question.entity";
 
 /**
@@ -17,6 +17,7 @@ export interface IAnswerSnapshotProps {
 export interface IQuestionSnapshotProps {
   readonly content: string;
   readonly imageUrl?: string;
+  readonly timeSpent?: number;
   readonly answers: IAnswerSnapshotProps[];
 }
 
@@ -30,8 +31,10 @@ export interface IExamQuestionProps {
   // Dữ liệu Snapshot (Bảo toàn đề thi khi kho câu hỏi thay đổi)
   readonly isCritical: boolean;
   readonly correctAnswer: number;
+  readonly timeSpent?: number;
   readonly userAnswer?: number;
   readonly isCorrect?: boolean;
+
   // Metadata bổ sung
   readonly chapterId?: string;
   readonly chapterName?: string;
@@ -64,33 +67,35 @@ export interface IExamProps {
   passingScore: number;
   durationMinutes: number;
   minCriticalQuestions: number;
-  status: ExamStatus;
+  status: Status;
   score: number;
   isPassed: boolean;
+  isEdited?: boolean;
+  isChapter: boolean;
 
   startedAt: Date;
   endedAt: Date | null;
-
   questions: IExamQuestionProps[];
 
   resultMetadata?: IExamResultMetadata;
-  userName?: string;
+  fullName?: string;
   hasFailedCritical?: boolean;
   licenseCategoryName?: string;
   wrongCount?: number;
   skippedCount?: number;
 }
 
-export type CreateExamProps = Omit<IExamProps,
-  | 'id'
-  | 'score'
-  | 'isPassed'
-  | 'startedAt'
-  | 'endedAt'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'deletedAt'
-  | 'questions'
+export type CreateExamProps = Omit<
+  IExamProps,
+  | "id"
+  | "score"
+  | "isPassed"
+  | "startedAt"
+  | "endedAt"
+  | "createdAt"
+  | "updatedAt"
+  | "deletedAt"
+  | "questions"
 >;
 export type CreateExamInput = CreateExamProps & {
   rawQuestions: Question[];

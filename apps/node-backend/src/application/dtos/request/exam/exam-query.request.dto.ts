@@ -1,21 +1,27 @@
+import { Status } from "@/shared/config/status.config";
 import { BaseQueryDTO } from "@/shared/types/common-query.dto.types";
-import { ExamStatus } from "@prisma/client";
 
 /**
  * @description DTO dùng để lọc và phân trang danh sách đề thi (Exam).
+ * Đảm bảo đồng bộ hóa tuyệt đối với ExamQueryParams từ Frontend và Schema Database.
+ * (DTO for filtering and paginating the Exam list, synchronized with Frontend and DB Schema.)
  */
 export class ExamQueryDTO extends BaseQueryDTO {
-  // Các trường lọc đặc thù từ Schema Exam
+  // --- 1. CÁC TRƯỜNG LỌC CHUỖI (Strings) ---
   public name?: string;
-  public userId?: string;
-  public licenseCategoryId?: string;
+  public fullName?: string; // Khớp với item.userName ở FE table
+  public licenseCategoryName?: string;
   public examMatrixId?: string;
-  public statusExam?: ExamStatus;
-  public isPassed?: boolean;
+  public startedAt?: string;
 
-  // Các trường số (Integer trong Prisma)
+  // --- 2. CÁC TRƯỜNG SỐ (Integers) ---
   public totalQuestions?: number;
-  public score?: number;
+  public durationMinutes?: number;
+  public passingScore?: number;
+  public minCriticalQuestions?: number;
+
+  // --- 3. CÁC TRƯỜNG LOGIC (Boolean) ---
+  public isPassed?: boolean;
 
   constructor(data: Partial<ExamQueryDTO>) {
     super();
@@ -23,29 +29,28 @@ export class ExamQueryDTO extends BaseQueryDTO {
     // Gán dữ liệu thô vào instance
     Object.assign(this, data);
 
-    /**
-     * THỰC HIỆN ÉP KIỂU THỦ CÔNG (Manual Casting)
-     * Đảm bảo Zero-Any và Type-Safety khi làm việc với Query Params (luôn là string)
-     */
-
-    // 1. Ép kiểu cho các thuộc tính kế thừa từ BaseQueryDTO
+    // --- 1. ÉP KIỂU PHÂN TRANG (Inherited from BaseQueryDTO) ---
     if (this.page) this.page = Number(this.page);
     if (this.limit) this.limit = Number(this.limit);
 
-    // 2. Ép kiểu cho các trường Integer đặc thù của Exam
+    // --- 2. ÉP KIỂU DỮ LIỆU SỐ (Numeric Casting) ---
     if (this.totalQuestions) this.totalQuestions = Number(this.totalQuestions);
-    if (this.score) this.score = Number(this.score);
+    if (this.durationMinutes) this.durationMinutes = Number(this.durationMinutes);
+    if (this.passingScore) this.passingScore = Number(this.passingScore);
+    if (this.minCriticalQuestions) this.minCriticalQuestions = Number(this.minCriticalQuestions);
 
-    // 3. Xử lý ép kiểu Boolean cho isPassed
-    // Vì query param truyền lên thường là chuỗi "true" hoặc "false"
+    // --- 3. XỬ LÝ BOOLEAN (Boolean Casting) ---
     if (this.isPassed !== undefined) {
+      // Chuyển đổi "true"/"false" từ URL string sang boolean thực tế
       this.isPassed = String(this.isPassed).toLowerCase() === 'true';
     }
 
-    // 4. Normalization cho các chuỗi tìm kiếm/ID
-    if (this.name) this.name = this.name.trim();
-    if (this.userId) this.userId = this.userId.trim();
-    if (this.licenseCategoryId) this.licenseCategoryId = this.licenseCategoryId.trim();
-    if (this.examMatrixId) this.examMatrixId = this.examMatrixId.trim();
+    // --- 4. CHUẨN HÓA DỮ LIỆU CHUỖI (Normalization) ---
+    this.name = this.name?.trim();
+    this.fullName = this.fullName?.trim();
+    this.licenseCategoryName = this.licenseCategoryName?.trim();
+    this.examMatrixId = this.examMatrixId?.trim();
+    this.status = this.status?.trim() as Status;
+    this.startedAt = this.startedAt?.trim();
   }
 }

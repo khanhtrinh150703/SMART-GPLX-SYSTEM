@@ -3,7 +3,7 @@ import { AppError, ErrorCode } from "@/shared/errors";
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật Admin.
  */
-export interface IUpdateAdminInputDto {
+export interface IUpdateAdminInputDTO {
   readonly fullName?: string;
   readonly roles?: string[];
 }
@@ -12,11 +12,11 @@ export interface IUpdateAdminInputDto {
  * @description DTO xử lý yêu cầu cập nhật thông tin tài khoản Admin.
  * Đảm bảo dữ liệu đầu vào hợp lệ và ngăn chặn việc gửi yêu cầu rỗng.
  */
-export class UpdateAdminRequestDTO implements IUpdateAdminInputDto {
+export class UpdateAdminRequestDTO implements IUpdateAdminInputDTO {
   public readonly fullName?: string;
   public readonly roles?: string[];
 
-  constructor(data: IUpdateAdminInputDto) {
+  constructor(data: IUpdateAdminInputDTO) {
     // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
     this.validate(data);
 
@@ -34,7 +34,7 @@ export class UpdateAdminRequestDTO implements IUpdateAdminInputDto {
    * @description Hàm gác cổng thực hiện kiểm tra tính hợp lệ đa tầng.
    * @private
    */
-  private validate(data: IUpdateAdminInputDto): void {
+  private validate(data: IUpdateAdminInputDTO): void {
     if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
     const { USER } = ErrorCode;
