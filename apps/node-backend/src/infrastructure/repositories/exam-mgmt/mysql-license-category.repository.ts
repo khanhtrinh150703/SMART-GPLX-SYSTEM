@@ -1,10 +1,10 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { LicenseCategory } from '@/domain/entities/license-category/license-category.entity';
-import { ILicenseCategoryRepository } from '@/domain/interfaces/repositories/exam-mgmt/i-license-category-repository';
-import { LicenseCategoryMapper } from '@/infrastructure/database/mappers/exam-mgmt/license-category.mapper';
-import { ILicenseCategoryRecord, PrismaLicenseCategory } from '@/infrastructure/persistence/exam-mgmt/license-category.record';
-import { LicenseCategoryQueryDTO } from '@/application/dtos/request/license-category/license-category-query.request.dto';
-import { LicenseRelatedCount } from '@/shared/types/count.types';
+import { Prisma, PrismaClient } from "@prisma/client";
+import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
+import { ILicenseCategoryRepository } from "@/domain/interfaces/repositories/exam-mgmt/i-license-category-repository";
+import { LicenseCategoryMapper } from "@/infrastructure/database/mappers/exam-mgmt/license-category.mapper";
+import { PrismaLicenseCategory } from "@/infrastructure/persistence/exam-mgmt/license-category.record";
+import { LicenseCategoryQueryDTO } from "@/application/dtos/request/license-category/license-category-query.request.dto";
+import { LicenseRelatedCount } from "@/shared/types/count.types";
 /**
  * @interface IMySQLLicenseCategoryRepositoryCradle
  * @description Các phụ thuộc cần thiết cho LicenseCategory Repository.
@@ -40,7 +40,12 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
 
   public async findAll(): Promise<LicenseCategory[]> {
     const records = await this._prisma.licenseCategory.findMany({
-      where: { deletedAt: null }
+      where: {
+        deletedAt: null,
+      },
+      orderBy: {
+        orderIndex: "asc",
+      },
     });
 
     return records
@@ -50,21 +55,21 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
 
   public async findById(id: string): Promise<LicenseCategory | null> {
     const record = await this._prisma.licenseCategory.findFirst({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
 
   public async findByIdActive(id: string): Promise<LicenseCategory | null> {
     const record = await this._prisma.licenseCategory.findFirst({
-      where: { id }
+      where: { id },
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
 
   public async findByName(name: string): Promise<LicenseCategory | null> {
     const record = await this._prisma.licenseCategory.findFirst({
-      where: { name  }
+      where: { name },
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
@@ -73,17 +78,17 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     const record = LicenseCategoryMapper.toCreatePersistence(category);
 
     await this._prisma.licenseCategory.create({
-      data: record
+      data: record,
     });
   }
 
   public async updateLicenseCategory(category: LicenseCategory): Promise<void> {
-    if(!category.id) return;
+    if (!category.id) return;
     const persistence = LicenseCategoryMapper.toUpdatePersistence(category);
 
     await this._prisma.licenseCategory.update({
       where: { id: category.id },
-      data: persistence
+      data: persistence,
     });
   }
 
@@ -97,8 +102,8 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     const count = await this._prisma.licenseCategory.count({
       where: {
         id,
-        deletedAt: null // Quan trọng: Chỉ tính những bản ghi "đang sống"
-      }
+        deletedAt: null, // Quan trọng: Chỉ tính những bản ghi "đang sống"
+      },
     });
 
     // Nếu count > 0 nghĩa là có tồn tại
@@ -111,34 +116,29 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
    * @returns {Promise<LicenseRelatedCount>} Đối tượng chứa số lượng bản ghi liên quan.
    */
   public async countRelatedData(id: string): Promise<LicenseRelatedCount> {
-    const [questions, matrices, exams, attempts] = await Promise.all([
+    const [questions, matrices, exams] = await Promise.all([
       // 1. Đếm số liên kết với câu hỏi (Chỉ tính các câu hỏi chưa bị xóa mềm)
       this._prisma.questionLicenseCategory.count({
         where: {
           licenseCategoryId: id,
-          question: { deletedAt: null } // Lọc theo trạng thái của câu hỏi
-        }
+          question: { deletedAt: null }, // Lọc theo trạng thái của câu hỏi
+        },
       }),
 
       // 2. Đếm số lượng ma trận đề thi (Chỉ tính ma trận chưa bị xóa mềm)
       this._prisma.examMatrix.count({
         where: {
           licenseCategoryId: id,
-          deletedAt: null
-        }
+          deletedAt: null,
+        },
       }),
 
       // 3. Đếm số lượng kỳ thi (Chỉ tính kỳ thi chưa bị xóa mềm)
       this._prisma.exam.count({
         where: {
           licenseCategoryId: id,
-          deletedAt: null
-        }
-      }),
-
-      // 4. Đếm số lượt thi (Lịch sử thi - Thường không có xóa mềm nên đếm tất cả)
-      this._prisma.examAttempt.count({
-        where: { licenseCategoryId: id }
+          deletedAt: null,
+        },
       }),
     ]);
 
@@ -146,13 +146,14 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
       questions,
       matrices,
       exams,
-      attempts,
     };
   }
 
-  public async findByIdIncludingDeleted(id: string): Promise<LicenseCategory | null> {
+  public async findByIdIncludingDeleted(
+    id: string,
+  ): Promise<LicenseCategory | null> {
     const record = await this._prisma.licenseCategory.findUnique({
-      where: { id }
+      where: { id },
     });
     return this._toDomain(record as PrismaLicenseCategory);
   }
@@ -163,67 +164,68 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
   public async findAndCount(
     query: LicenseCategoryQueryDTO,
     skip: number,
-    limit: number
+    limit: number,
   ): Promise<[LicenseCategory[], number]> {
-    // Khai báo kiểu WhereInput chuẩn của Prisma ngay từ đầu
     const where: Prisma.LicenseCategoryWhereInput = {};
 
-    // --- 1. GÁN THỦ CÔNG (Explicit Assignment) ---
-    // Bạn chọn trường nào trên Dropdown, FE gửi trường đó về, mình gán đúng trường đó.
+    // --- 1. FILTERS (GIỮ NGUYÊN) ---
+    if (query.name) where.name = { contains: query.name };
+    if (query.description) where.description = { contains: query.description };
+    if (query.minAge) where.minAge = Number(query.minAge);
 
-    if (query.search) {
-      where.name = { contains: query.search };
-    }
-
-    if (query.description) {
-      where.description = { contains: query.description };
-    }
-
-    if (query.minAge) {
-      // Ép kiểu về Number để tránh lỗi Prisma nếu dữ liệu từ URL là string
-      where.minAge = Number(query.minAge);
-    }
-
-    // --- 2. LOGIC TRẠNG THÁI (Status Tabs) ---
-    if (query.status === 'active') {
+    // --- 2. STATUS LOGIC ---
+    if (query.status === "active") {
       where.deletedAt = null;
-    } else if (query.status === 'deleted') {
+    } else if (query.status === "deleted") {
       where.deletedAt = { not: null };
     }
 
-    // --- 3. SEARCH TỔNG QUÁT (Nếu còn dùng ô search chung) ---
-    if (query.search) {
-      where.OR = [
-        { name: { contains: query.search } },
-        { description: { contains: query.search } },
-      ];
+    // --- 3. SORTING LOGIC (BUILD ORDER BY ARRAY) ---
+    const sortField =
+      query.sortBy === "status" ? "deletedAt" : query.sortBy || "name";
+    const sortOrder = query.sortOrder || "asc";
+
+    // Khởi tạo mảng orderBy với kiểu chuẩn của Prisma
+    const orderBy: Prisma.LicenseCategoryOrderByWithRelationInput[] = [];
+
+    // Ưu tiên 1: Gom nhóm theo trạng thái xóa (DeletedAt)
+    orderBy.push({ deletedAt: sortOrder });
+
+    // Ưu tiên 2: Nếu người dùng sort field khác, thêm vào làm tiêu chí phụ
+    if (sortField !== "deletedAt") {
+      orderBy.push({
+        [sortField]: sortOrder,
+      } as Prisma.LicenseCategoryOrderByWithRelationInput);
     }
-    const sortField = query.sortBy === 'status' ? 'deletedAt' : query.sortBy;
-    // --- 4. THỰC THI TRUY VẤN ---
+
+    // Ưu tiên 3: Tie-breaker theo tên để danh sách luôn ổn định
+    if (sortField !== "name") {
+      orderBy.push({ name: "asc" });
+    }
+
+    // --- 4. EXECUTE QUERY ---
     const [rawRecords, total] = await this._prisma.$transaction([
       this._prisma.licenseCategory.findMany({
         where,
-        // Dùng pagination helper hoặc tính toán trực tiếp
-        skip: skip,   // Truyền biến skip vào đây
+        skip,
         take: limit,
-        // Sắp xếp động theo sortBy
-        orderBy: { [sortField]: query.sortOrder },
+        orderBy: orderBy, // Truyền mảng orderBy đã build
       }),
       this._prisma.licenseCategory.count({ where }),
     ]);
 
-    // --- 5. MAPPING & RETURN ---
-    const domainEntities = rawRecords.map((record) =>
-      LicenseCategoryMapper.toDomain(record as unknown as ILicenseCategoryRecord)
+    // --- 5. MAPPING ---
+    const entities = rawRecords.map((record) =>
+      LicenseCategoryMapper.toDomain(record),
     );
 
-    return [domainEntities, total];
+    return [entities, total];
   }
 
   public async softDelete(id: string): Promise<void> {
     await this._prisma.licenseCategory.update({
       where: { id },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -233,10 +235,11 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     });
   }
 
-  public async restore(id: string): Promise<void> {
-    await this._prisma.licenseCategory.update({
+  public async restore(id: string): Promise<LicenseCategory> {
+    const record = await this._prisma.licenseCategory.update({
       where: { id },
-      data: { deletedAt: null }
+      data: { deletedAt: null },
     });
+    return LicenseCategoryMapper.toDomain(record);
   }
 }

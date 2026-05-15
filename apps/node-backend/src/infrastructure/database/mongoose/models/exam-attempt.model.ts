@@ -26,6 +26,7 @@ const ExamAttemptSchema = new Schema<IExamAttemptPersistence>(
     hasFailedCritical: { type: Boolean, required: true, default: false },
 
     durationSeconds: { type: Number, required: true },
+    totalTimeExam: { type: Number, required: true },
     isAutoSubmit: { type: Boolean, required: true },
     submittedAt: { type: Date, required: true },
 
@@ -40,6 +41,7 @@ const ExamAttemptSchema = new Schema<IExamAttemptPersistence>(
     deletedAt: { type: Date, default: null },
   },
   {
+    _id: false,
     timestamps: false,
     versionKey: false,
     toJSON: { virtuals: true },

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { licenseCategoryService } from "@/components/features/license/service/license-category.service";
 import {
   CreateLicenseCategoryRequest,
-  UpdateLicenseCategoryRequest
+  UpdateLicenseCategoryRequest,
 } from "@/components/features/license/types/license-category.types";
 import { QueryParams } from "@/types/paginaton.type";
 
@@ -30,16 +30,25 @@ export const useLicenseCategories = (params: QueryParams) => {
     onSuccess: () => {
       // Làm mới cache để cập nhật danh sách ngay lập tức.
       // (Invalidate cache to update list immediately)
-      queryClient.invalidateQueries({ queryKey: ["license-categories"] });
+      queryClient.invalidateQueries({
+        queryKey: ["master", "license-categories"],
+      });
     },
   });
 
   // 3. Mutation: Cập nhật (Update)
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateLicenseCategoryRequest }) =>
-      licenseCategoryService.updateCategory(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateLicenseCategoryRequest;
+    }) => licenseCategoryService.updateCategory(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["license-categories"] });
+      queryClient.invalidateQueries({
+        queryKey: ["master", "license-categories"],
+      });
     },
   });
 
@@ -47,7 +56,9 @@ export const useLicenseCategories = (params: QueryParams) => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => licenseCategoryService.deleteCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["license-categories"] });
+      queryClient.invalidateQueries({
+        queryKey: ["master", "license-categories"],
+      });
     },
   });
 
@@ -55,7 +66,9 @@ export const useLicenseCategories = (params: QueryParams) => {
   const restoreMutation = useMutation({
     mutationFn: (id: string) => licenseCategoryService.restoreCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["license-categories"] });
+      queryClient.invalidateQueries({
+        queryKey: ["master", "license-categories"],
+      });
     },
   });
 

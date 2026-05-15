@@ -39,14 +39,12 @@ export default function RegisterForm() {
 
     try {
       // Gọi API Đăng ký
-      const response = await authApi.register({
+       await authApi.register({
         username: data.username.trim(),
         email: data.email.trim(),
         fullName: data.fullName,
         password: data.password,
       });
-
-      console.log("Đăng ký thành công:", response);
 
       // Lưu tạm email để điền sẵn ở trang OTP
       localStorage.setItem("register_email", data.email);

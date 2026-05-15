@@ -34,7 +34,10 @@ import {
   MySQLQuestionRepository,
   MySQLLicenseCategoryRepository,
   MySQLExamRepository,
+  MySQLExamHistorySummaryRepository,
 } from "@/infrastructure/repositories/exam-mgmt";
+
+
 
 // Nhóm Exam Session (Xử lý thực thi & Kết quả - Multi DB)
 import {
@@ -66,6 +69,7 @@ import {
   QuestionService,
   ChapterService,
   LicenseCategoryService,
+  ExamHistorySummaryService,
 } from "@/application/services/exam-mgmt";
 
 import {
@@ -76,7 +80,7 @@ import {
 } from "@/application/services/exam-session";
 
 import { ExamGeneratorService } from "@/application/services/exam-engine";
-import { UserExamRankService } from "@/application/services/user-rank/user-exam-rank.service";
+import { UserExamRankService } from "@/application/services/user-rank/commands/user-exam-rank.service";
 
 import {
   ImportService,
@@ -94,6 +98,7 @@ import {
 
 import {
   ChapterQueryService,
+  ExamHistorySummartQueryService,
   ExamQueryService,
   LicenseCategoryQueryService,
   QuestionQueryService,
@@ -108,11 +113,11 @@ import { UserRankQueryService } from "@/application/services/user-rank/queries";
 import { ZipQueryService } from "@/application/services/integration/queries";
 
 // --- 4. EXTERNAL SERVICES & BACKGROUND TASKS ---
-import { NodemailerService } from "@/application/services/external-services/mailer";
+import { NodemailerService } from "@/application/services/external-services/commands/mailer";
 import {
   FileStorageService,
   TempStorageService,
-} from "@/application/services/external-services/storage";
+} from "@/application/services/external-services/commands/storage";
 import { ImportQueue } from "@/infrastructure/queues/import.queue";
 import { ImportWorker } from "@/infrastructure/workers/import.worker";
 
@@ -126,6 +131,8 @@ import {
 import {
   ChapterController,
   ExamController,
+  ExamHistoryController,
+  ExamHistorySummaryController,
   LicenseCategoryController,
   QuestionController,
 } from "@/api/controllers/exam-mgmt";
@@ -141,7 +148,12 @@ import { ImportController } from "@/api/controllers/integration";
 
 // Nhóm logger
 import { WinstonLogger } from "@/infrastructure/logging";
-import { RedisLeaderboardRepository } from "@/infrastructure/repositories";
+import { UserStatisticsService } from "@/application/services/statistics/commands/user-statistics.service";
+import { UserStatisticsQueryService, UserTopicStatisticsQueryService } from "@/application/services/statistics/queries";
+import { MySQLQuestionStatisticsRepository, MySQLUserStatisticsRepository, MySQLUserTopicStatisticsRepository } from "@/infrastructure/repositories/statistics";
+import { RedisLeaderboardRepository } from "@/infrastructure/repositories/leaderboard";
+import { QuestionStatisticsService, UserTopicStatisticsService } from "@/application/services/statistics/commands";
+import { UserStatisticsController, UserTopicStatisticsController } from "@/api/controllers/statistics";
 
 // Service
 /**
@@ -191,8 +203,12 @@ container.register({
   examRepository: asRepo(MySQLExamRepository),
   examAttemptRepository: asRepo(MongoExamAttemptRepository),
   activeSessionRepository: asRepo(MongoActiveSessionRepository),
-  userExamRankRepo: asRepo(MySQLUserExamRankRepository),
-  leaderboardCacheRepo: asRepo(RedisLeaderboardRepository),
+  userExamRankRepository: asRepo(MySQLUserExamRankRepository),
+  userStatsRepository: asRepo(MySQLUserStatisticsRepository),
+  historySummaryRepository: asRepo(MySQLExamHistorySummaryRepository),
+  leaderboardCacheRepository: asRepo(RedisLeaderboardRepository),
+  questionStatisticsRepository: asRepo(MySQLQuestionStatisticsRepository),
+  userTopicStatisticsRepository: asRepo(MySQLUserTopicStatisticsRepository),
 
   // --- TẦNG TIỆN ÍCH & BẢO MẬT (SECURITY & EXTERNAL SERVICES) ---
   tokenManager: asClass(JwtTokenManager).singleton(),
@@ -220,13 +236,18 @@ container.register({
   examPickerService: asClass(ExamPickerDomainService).singleton(),
   masterDataCacheService: asClass(MasterDataCacheService).singleton(),
   mediaService: asClass(MediaService).singleton(),
+  examHistorySummaryService: asClass(ExamHistorySummaryService).singleton(),
+  questionStatisticsService: asClass(QuestionStatisticsService),
   questionQueryService: asClass(QuestionQueryService).singleton(),
   chapterQueryService: asClass(ChapterQueryService).singleton(),
   licenseCategoryQueryService: asClass(LicenseCategoryQueryService).singleton(),
   examMatrixQueryService: asClass(ExamMatrixQueryService).singleton(),
   examQueryService: asClass(ExamQueryService).singleton(),
   roleQueryService: asClass(RoleQueryService).singleton(),
+  userTopicStatisticsService: asClass(UserTopicStatisticsService).singleton(),
   examAttemptQueryService: asClass(ExamAttemptQueryService).singleton(),
+  userStatsService: asClass(UserStatisticsService).singleton(),
+  userStatsQueryService: asClass(UserStatisticsQueryService).singleton(),
   userQueryService: asClass(UserQueryService).singleton(),
   zipQueryService: asClass(ZipQueryService).singleton(),
   mongodbService: asClass(MongoDBService).singleton(),
@@ -235,6 +256,8 @@ container.register({
   completeExamService: asClass(CompleteExamService).singleton(),
   userExamRankService: asClass(UserExamRankService).singleton(),
   userRankQueryService: asClass(UserRankQueryService).singleton(),
+  userTopicStatisticsQueryService: asClass(UserTopicStatisticsQueryService).singleton(),
+  examHistoryQuerySummaryService: asClass(ExamHistorySummartQueryService).singleton(),
 
   // --- TẦNG GIAO TIẾP (API LAYER - CONTROLLERS) ---
   userController: asClass(UserController).singleton(),
@@ -249,4 +272,8 @@ container.register({
   activeSessionController: asClass(ActiveSessionController).singleton(),
   examAttemptController: asClass(ExamAttemptController).singleton(),
   userRankController: asClass(UserRankController).singleton(),
+  examHistorySummaryController: asClass(ExamHistorySummaryController).singleton(),
+  userStatisticsController: asClass(UserStatisticsController).singleton(),
+  userTopicStatisticsController: asClass(UserTopicStatisticsController).singleton(),
+  examHistoryController: asClass(ExamHistoryController).singleton(),
 });

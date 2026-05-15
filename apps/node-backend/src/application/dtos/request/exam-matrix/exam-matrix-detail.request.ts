@@ -9,44 +9,53 @@ export interface IExamMatrixDetailInputDTO {
 }
 
 /**
- * @description DTO xử lý logic phân bổ câu hỏi theo từng chương.
- * Đảm bảo tỷ lệ phần trăm (percentage) nằm trong khoảng hợp lệ [0 - 100].
+ * @class ExamMatrixDetailRequestDTO
+ * @description DTO xử lý logic phân bổ câu hỏi theo từng chương, mapping trước khi validate.
  */
 export class ExamMatrixDetailRequestDTO implements IExamMatrixDetailInputDTO {
   public readonly chapterId: string;
   public readonly percentage: number;
 
-  constructor(data: IExamMatrixDetailInputDTO) {
-    // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
-    this.validate(data);
-
-    // 2. Gán giá trị và chuẩn hóa dữ liệu
-    this.chapterId = data.chapterId.trim();
-    this.percentage = Number(data.percentage);
-  }
-
   /**
-   * @description Hàm gác cổng thực hiện kiểm tra tính hợp lệ của phân bổ.
-   * @private
+   * @param {IExamMatrixDetailInputDTO} data
+   * @throws {AppError}
    */
-  private validate(data: IExamMatrixDetailInputDTO): void {
-    // Chống sập hệ thống nếu data bị undefined
+  constructor(data: IExamMatrixDetailInputDTO) {
+    // 0. Guard Clause chặn object null/undefined
     if (!data) {
       throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // Kiểm tra ID chương
-    if (!data.chapterId || typeof data.chapterId !== 'string') {
+    // 1. Mapping & Sanitization (Gán và làm sạch dữ liệu)
+    this.chapterId =
+      typeof data.chapterId === "string" ? data.chapterId.trim() : "";
+    this.percentage =
+      data.percentage !== undefined && data.percentage !== null
+        ? Number(data.percentage)
+        : NaN;
+
+    // 2. Validation (Kiểm tra dữ liệu dựa trên instance và data gốc)
+    this.validate(data);
+  }
+
+  /**
+   * @private
+   * @description Hàm gác cổng kiểm tra tính hợp lệ của phân bổ chương.
+   * @param {IExamMatrixDetailInputDTO} data - Dùng để kiểm tra kiểu dữ liệu nguyên bản.
+   * @throws {AppError}
+   */
+  private validate(data: IExamMatrixDetailInputDTO): void {
+    // 1. Kiểm tra ID chương (Dựa trên data gốc để check type)
+    if (!data.chapterId || typeof data.chapterId !== "string") {
       throw new AppError(ErrorCode.MATRIX.CHAPTER_ID_REQUIRED);
     }
 
-    // Kiểm tra tính hợp lệ của tỷ lệ phần trăm
+    // 2. Kiểm tra tính hợp lệ của tỷ lệ phần trăm (Dựa trên giá trị đã mapping)
     if (
-      data.percentage === undefined ||
-      typeof data.percentage !== 'number' ||
-      isNaN(data.percentage) ||
-      data.percentage < 0 ||
-      data.percentage > 100
+      isNaN(this.percentage) ||
+      typeof data.percentage !== "number" ||
+      this.percentage < 0 ||
+      this.percentage > 100
     ) {
       throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
     }

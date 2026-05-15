@@ -1,4 +1,4 @@
-import { UserResponseDTO } from "@/types/user-respone";
+import { UserResponseDTO } from "@/components/features/admin-users/types/user-respone";
 import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { TableColumnFactory } from "@/components/common/Generic-Table/table-column.factory";
 import { cn } from "@/lib/utils/utils";

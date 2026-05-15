@@ -4,22 +4,34 @@ import { StatusOption } from "@/types/types";
 // Dịch: Cấu trúc dữ liệu của một Hạng bằng lái
 export interface License {
   id: string | number;
-  code: string;           // Mã hạng bằng (A1, B2, C...)
-  name: string;           // Tên đầy đủ
-  description: string;    // Mô tả quyền hạn của bằng
-  minAge: number;         // Độ tuổi tối thiểu được phép thi
+  code: string; // Mã hạng bằng (A1, B2, C...)
+  name: string; // Tên đầy đủ
+  description: string; // Mô tả quyền hạn của bằng
+  minAge: number; // Độ tuổi tối thiểu được phép thi
   totalQuestions: number; // Tổng số câu trong 1 đề thi
-  passingScore: number;   // Số câu đúng tối thiểu để ĐẠT
-  testDuration: number;   // Thời gian thi (phút)
+  passingScore: number; // Số câu đúng tối thiểu để ĐẠT
+  testDuration: number; // Thời gian thi (phút)
   status: "active" | "draft" | "deleted";
 }
 
 // 2. Cấu hình Tab trạng thái
-export const LICENSE_STATUS_OPTIONS: StatusOption<License["status"] | "all">[] = [
-  { id: "all", label: "Tất cả" },
-  { id: "active", label: "Đang hoạt động", color: "text-emerald-600" },
-  { id: "deleted", label: "Thùng rác", color: "text-rose-600" },
-];
+export const LICENSE_STATUS_OPTIONS: StatusOption<License["status"] | "all">[] =
+  [
+    {
+      id: "all",
+      label: "Tất cả",
+    },
+    {
+      id: "active",
+      label: "Đang hoạt động",
+      color: "bg-emerald-500 shadow-lg shadow-emerald-200/50",
+    },
+    {
+      id: "deleted",
+      label: "Thùng rác",
+      color: "bg-rose-500 shadow-lg shadow-rose-200/50",
+    },
+  ];
 
 export const FILTER_FIELDS = [
   { label: "Tên hạng", value: "name" },
@@ -28,7 +40,7 @@ export const FILTER_FIELDS = [
   { label: "Độ tuổi", value: "minAge" },
 ];
 
-/** * 3. Dữ liệu mẫu (Mock Data) 
+/** * 3. Dữ liệu mẫu (Mock Data)
  * Cập nhật theo quy định thực tế của Tổng cục Đường bộ Việt Nam
  */
 export const MOCK_LICENSES: License[] = [
@@ -36,7 +48,8 @@ export const MOCK_LICENSES: License[] = [
     id: "1",
     code: "A1",
     name: "Hạng A1",
-    description: "Xe mô tô 2 bánh có dung tích xi lanh từ 50cm3 đến dưới 175cm3.",
+    description:
+      "Xe mô tô 2 bánh có dung tích xi lanh từ 50cm3 đến dưới 175cm3.",
     minAge: 18,
     totalQuestions: 25,
     passingScore: 21,
@@ -58,7 +71,8 @@ export const MOCK_LICENSES: License[] = [
     id: "3",
     code: "B1",
     name: "Hạng B1 (Số tự động)",
-    description: "Ô tô chở người đến 9 chỗ ngồi; ô tô tải chuyên dùng số tự động.",
+    description:
+      "Ô tô chở người đến 9 chỗ ngồi; ô tô tải chuyên dùng số tự động.",
     minAge: 18,
     totalQuestions: 30,
     passingScore: 27,
@@ -69,7 +83,8 @@ export const MOCK_LICENSES: License[] = [
     id: "4",
     code: "B2",
     name: "Hạng B2",
-    description: "Xe ô tô chở người đến 9 chỗ; xe tải dưới 3.500kg. Được phép kinh doanh vận tải.",
+    description:
+      "Xe ô tô chở người đến 9 chỗ; xe tải dưới 3.500kg. Được phép kinh doanh vận tải.",
     minAge: 18,
     totalQuestions: 35,
     passingScore: 32,
@@ -80,7 +95,8 @@ export const MOCK_LICENSES: License[] = [
     id: "5",
     code: "C",
     name: "Hạng C",
-    description: "Xe ô tô tải, kể cả ô tô tải chuyên dùng có trọng tải từ 3.500kg trở lên.",
+    description:
+      "Xe ô tô tải, kể cả ô tô tải chuyên dùng có trọng tải từ 3.500kg trở lên.",
     minAge: 21,
     totalQuestions: 40,
     passingScore: 36,
@@ -141,5 +157,5 @@ export const MOCK_LICENSES: License[] = [
     passingScore: 21,
     testDuration: 19,
     status: "deleted",
-  }
+  },
 ];

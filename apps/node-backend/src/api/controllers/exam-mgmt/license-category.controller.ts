@@ -54,7 +54,6 @@ export class LicenseCategoryController {
 
     const query = new LicenseCategoryQueryDTO(req.query as Record<string, unknown>);
     const categories = await this._licenseQueryService.getPaginatedCategories(query);
-
     Result.ok(
       res,
       categories,
@@ -119,7 +118,6 @@ export class LicenseCategoryController {
     const id = req.params.id as string;
 
     const result = await this._licenseService.deleteCategory(id);
-
     Result.ok(
       res,
       result,

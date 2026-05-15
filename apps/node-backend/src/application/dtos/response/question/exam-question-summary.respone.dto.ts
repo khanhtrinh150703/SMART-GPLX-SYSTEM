@@ -22,16 +22,20 @@ export interface IExamQuestionSummaryResponseDTO {
   /** @description Số thứ tự câu hỏi theo bộ đề chính thức. (Question index number according to the official set.) */
   readonly indexNumber: number;
 
-  /** @description Danh sách ID các hạng bằng lái mà câu hỏi này thuộc về. (List of license category IDs this question belongs to.) */
+  /** @description Nhãn hiển thị độ khó (VD: Dễ, Trung bình, Khó). (Label for difficulty level.) */
+  readonly difficultyLabel: string;
+
+  /** @description Danh sách ID các hạng bằng lái mà câu hỏi này thuộc về. (List of license category IDs.) */
   readonly licenseIds: string[];
 
-  /** @description Danh sách tên các hạng bằng lái mà câu hỏi này thuộc về. (List of license category names this question belongs to.) */
+  /** @description Danh sách tên các hạng bằng lái mà câu hỏi này thuộc về. (List of license category names.) */
   readonly licenseCategoryNames: string[];
 }
 
 /**
  * @description DTO vận chuyển dữ liệu câu hỏi rút gọn.
  * Đóng vai trò mang dữ liệu tinh gọn để phục vụ các logic chọn lọc câu hỏi trong dự án Smart-GPLX-System.
+ * (DTO for carrying shortened question data, serving selection logic in the Smart-GPLX-System.)
  */
 export class ExamQuestionSummaryResponseDTO implements IExamQuestionSummaryResponseDTO {
   public readonly id: string;
@@ -40,6 +44,7 @@ export class ExamQuestionSummaryResponseDTO implements IExamQuestionSummaryRespo
   public readonly chapterOrder: number;
   public readonly isCritical: boolean;
   public readonly indexNumber: number;
+  public readonly difficultyLabel: string;
   public readonly licenseIds: string[];
   public readonly licenseCategoryNames: string[];
 
@@ -50,6 +55,7 @@ export class ExamQuestionSummaryResponseDTO implements IExamQuestionSummaryRespo
     this.chapterOrder = data.chapterOrder;
     this.isCritical = data.isCritical;
     this.indexNumber = data.indexNumber;
+    this.difficultyLabel = data.difficultyLabel;
     this.licenseIds = Array.isArray(data.licenseIds) ? data.licenseIds : [];
     this.licenseCategoryNames = Array.isArray(data.licenseCategoryNames) ? data.licenseCategoryNames : [];
   }

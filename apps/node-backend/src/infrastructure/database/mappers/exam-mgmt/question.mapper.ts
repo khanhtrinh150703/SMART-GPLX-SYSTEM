@@ -1,17 +1,28 @@
-import { IQuestionAdminResponseDTO, QuestionAdminResponseDTO } from "@/application/dtos/response/question/admin-question.respone.dto";
-import { ExamQuestionSummaryResponseDTO, IExamQuestionSummaryResponseDTO } from "@/application/dtos/response/question/exam-question-summary.respone.dto";
-import { IQuestionResponseDTO, QuestionResponseDTO } from "@/application/dtos/response/question/question.respone.dto";
+import {
+  IQuestionAdminResponseDTO,
+  QuestionAdminResponseDTO,
+} from "@/application/dtos/response/question/admin-question.respone.dto";
+import {
+  ExamQuestionSummaryResponseDTO,
+  IExamQuestionSummaryResponseDTO,
+} from "@/application/dtos/response/question/exam-question-summary.respone.dto";
+import {
+  IQuestionResponseDTO,
+  QuestionResponseDTO,
+} from "@/application/dtos/response/question/question.respone.dto";
 import { labels } from "@/domain/constants/difficulty.constant";
 import { Answer } from "@/domain/entities/question/answer.entity";
 import { Question } from "@/domain/entities/question/question.entity";
 import { IQuestionProps } from "@/domain/entities/question/question.props";
-import { QuestionStatus } from "@/domain/entities/question/question.status";
-import { IQuestionRecord, QuestionWithDetails } from "@/infrastructure/persistence/exam-mgmt/question.record";
+import {
+  IQuestionRecord,
+  QuestionWithDetails,
+} from "@/infrastructure/persistence/exam-mgmt/question.record";
+import { Status } from "@/shared/config/status.config";
 import { formatImageUrl } from "@/shared/utils/url.util";
 import { Prisma } from "@prisma/client";
 
 export class QuestionMapper {
-
   /**
    * @description Chuyển đổi bản ghi DB sang thực thể Domain (Convert DB record to Domain Entity)
    * @param raw Dữ liệu thô từ Database (Raw DB record)
@@ -28,7 +39,7 @@ export class QuestionMapper {
         createdAt: a.createdAt,
         updatedAt: a.updatedAt,
         deletedAt: a.deletedAt ?? undefined,
-      })
+      }),
     );
 
     // 2. Tái tạo Question Entity với mảng Answer Entities đã chuẩn bị
@@ -43,7 +54,9 @@ export class QuestionMapper {
       chapterName: raw.chapter?.name || "Chưa phân loại",
 
       // Làm phẳng IDs và Names
-      licenseCategoryIds: (raw.licenseLinks || []).map((l) => l.licenseCategoryId),
+      licenseCategoryIds: (raw.licenseLinks || []).map(
+        (l) => l.licenseCategoryId,
+      ),
       licenseCategoryNames: (raw.licenseLinks || [])
         .map((l) => l.licenseCategory?.name)
         .filter((name): name is string => !!name),
@@ -61,24 +74,26 @@ export class QuestionMapper {
    * @param entity Thực thể câu hỏi (Question entity)
    * @returns Đối tượng để chèn dữ liệu vào DB kèm các quan hệ (Object for DB insertion with relations)
    */
-  public static toCreatePersistence(entity: Question): Prisma.QuestionCreateInput {
+  public static toCreatePersistence(
+    entity: Question,
+  ): Prisma.QuestionCreateInput {
     const props = entity.props;
 
     return {
       ...this.getCommonFields(props),
       answers: {
-        create: props.answers.map(ans => ({
+        create: props.answers.map((ans) => ({
           id: ans.id,
           content: ans.content,
           imageUrl: ans.imageUrl,
           isCorrect: ans.isCorrect,
-        }))
+        })),
       },
       licenseLinks: {
-        create: props.licenseCategoryIds.map(catId => ({
-          licenseCategory: { connect: { id: catId } }
-        }))
-      }
+        create: props.licenseCategoryIds.map((catId) => ({
+          licenseCategory: { connect: { id: catId } },
+        })),
+      },
     };
   }
 
@@ -87,7 +102,9 @@ export class QuestionMapper {
    * @param entity Thực thể câu hỏi (Question entity)
    * @returns Đối tượng cập nhật kèm logic đồng bộ Answers và Licenses (Update object with relation sync)
    */
-  public static toUpdatePersistence(entity: Question): Prisma.QuestionUpdateInput {
+  public static toUpdatePersistence(
+    entity: Question,
+  ): Prisma.QuestionUpdateInput {
     const props = entity.props;
 
     return {
@@ -95,32 +112,36 @@ export class QuestionMapper {
       answers: {
         updateMany: {
           where: {
-            id: { notIn: props.answers.map(a => a.id).filter((id): id is string => !!id) },
-            questionId: props.id
+            id: {
+              notIn: props.answers
+                .map((a) => a.id)
+                .filter((id): id is string => !!id),
+            },
+            questionId: props.id,
           },
-          data: { deletedAt: new Date() }
+          data: { deletedAt: new Date() },
         },
-        upsert: props.answers.map(ans => ({
-          where: { id: ans.id || 'new-identity' },
+        upsert: props.answers.map((ans) => ({
+          where: { id: ans.id || "new-identity" },
           update: {
             content: ans.content,
             imageUrl: ans.imageUrl,
             isCorrect: ans.isCorrect,
-            deletedAt: null
+            deletedAt: null,
           },
           create: {
             content: ans.content,
             imageUrl: ans.imageUrl,
-            isCorrect: ans.isCorrect
-          }
-        }))
+            isCorrect: ans.isCorrect,
+          },
+        })),
       },
       licenseLinks: {
         deleteMany: {},
-        create: props.licenseCategoryIds.map(catId => ({
-          licenseCategory: { connect: { id: catId } }
-        }))
-      }
+        create: props.licenseCategoryIds.map((catId) => ({
+          licenseCategory: { connect: { id: catId } },
+        })),
+      },
     };
   }
 
@@ -137,7 +158,7 @@ export class QuestionMapper {
       indexNumber: props.indexNumber,
       difficultyLevel: props.difficultyLevel,
       isCritical: props.isCritical,
-      status: props.status.toUpperCase() as QuestionStatus,
+      status: props.status.toUpperCase() as Status,
       deletedAt: props.deletedAt,
       // Dùng connect để đảm bảo tính toàn vẹn quan hệ ở tầng DB
       chapter: { connect: { id: props.chapterId } },
@@ -162,7 +183,7 @@ export class QuestionMapper {
       isCritical: props.isCritical,
       difficulty: {
         level: props.difficultyLevel,
-        label: labels[props.difficultyLevel] || 'Không xác định'
+        label: labels[props.difficultyLevel] || "Không xác định",
       },
       answers: props.answers.map((ans) => ({
         id: ans.id || "",
@@ -187,8 +208,12 @@ export class QuestionMapper {
       // Bổ sung các thông tin nhãn hiển thị đã được nạp vào Entity Props
       chapterName: entity.props.chapterName || "Chưa phân loại",
       licenseCategoryNames: entity.props.licenseCategoryNames || [],
-      deletedAt: entity.props.deletedAt ? entity.props.deletedAt.toISOString() : null,
-      createdAt: entity.props.createdAt ? entity.props.createdAt.toISOString() : new Date().toISOString(),
+      deletedAt: entity.props.deletedAt
+        ? entity.props.deletedAt.toISOString()
+        : null,
+      createdAt: entity.props.createdAt
+        ? entity.props.createdAt.toISOString()
+        : new Date().toISOString(),
     });
   }
 
@@ -198,20 +223,26 @@ export class QuestionMapper {
    * @param {number} chapterOrder - Thứ tự chương được giải quyết từ Cache hoặc Master Data.
    * @returns {IExamQuestionSummaryResponseDTO} DTO tóm tắt phục vụ hiển thị danh sách và Selection Pool.
    */
-  public static toSummaryDTO(raw: QuestionWithDetails, chapterOrder: number): IExamQuestionSummaryResponseDTO {
+  public static toSummaryDTO(
+    raw: QuestionWithDetails,
+    chapterOrder: number,
+  ): IExamQuestionSummaryResponseDTO {
     return new ExamQuestionSummaryResponseDTO({
       id: raw.id,
       content: raw.content,
-      // Ở đây chapterName nếu không join thì mặc định N/A, 
       // hoặc ông có thể lấy từ Cache truyền vào tham số thứ 3
+      difficultyLabel:
+        labels[raw.difficultyLevel as keyof typeof labels] ?? "EASY",
       chapterName: raw.chapter.name,
-      licenseCategoryNames: raw.licenseLinks.map(link => link.licenseCategory.name),
+      licenseCategoryNames: raw.licenseLinks.map(
+        (link) => link.licenseCategory.name,
+      ),
       chapterOrder: chapterOrder,
       isCritical: raw.isCritical,
       indexNumber: raw.indexNumber,
       // Vì là model thô nên licenseCategoryIds sẽ không có sẵn trừ khi ông include.
       // Nếu không cần hiển thị ngay ở Pool thì để mảng rỗng.
-      licenseIds: raw.licenseLinks.map(link => link.licenseCategoryId),
+      licenseIds: raw.licenseLinks.map((link) => link.licenseCategoryId),
     });
   }
 
@@ -224,9 +255,11 @@ export class QuestionMapper {
    */
   public static toSummaryDTOList(
     rawList: QuestionWithDetails[],
-    resolveChapterOrder: (id: string) => number
+    resolveChapterOrder: (id: string) => number,
   ): IExamQuestionSummaryResponseDTO[] {
-    return rawList.map(raw => this.toSummaryDTO(raw, resolveChapterOrder(raw.chapterId)));
+    return rawList.map((raw) =>
+      this.toSummaryDTO(raw, resolveChapterOrder(raw.chapterId)),
+    );
   }
 
   /**
@@ -243,7 +276,9 @@ export class QuestionMapper {
    * @param entities Danh sách thực thể câu hỏi (List of question entities)
    * @returns Danh sách DTO chi tiết cho admin (List of detailed DTOs for admins)
    */
-  public static toAdminResponseList(entities: Question[]): IQuestionAdminResponseDTO[] {
+  public static toAdminResponseList(
+    entities: Question[],
+  ): IQuestionAdminResponseDTO[] {
     return entities.map((entity) => this.toAdminResponse(entity));
   }
 }

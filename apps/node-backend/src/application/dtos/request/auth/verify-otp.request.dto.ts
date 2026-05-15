@@ -10,38 +10,46 @@ export interface IVerifyUserInputDTO {
 }
 
 /**
- * @description DTO xử lý xác thực tài khoản qua OTP.
- * Đảm bảo dữ liệu hiện diện và đúng định dạng cơ bản trước khi đẩy vào tầng nghiệp vụ.
+ * @class VerifyUserRequestDTO
+ * @description DTO xác thực tài khoản OTP, thực hiện mapping trước khi validate.
  */
 export class VerifyUserRequestDTO implements IVerifyUserInputDTO {
-  readonly email: string;
-  readonly otp: string;
-
-  constructor(data: IVerifyUserInputDTO) {
-    // 1. Chặn đứng mọi dữ liệu rác hoặc undefined
-    this.validate(data);
-
-    // 2. Làm sạch dữ liệu trước khi gán
-    this.email = data.email.trim().toLowerCase();
-    this.otp = data.otp.trim();
-  }
+  public readonly email: string;
+  public readonly otp: string;
 
   /**
-   * @description Hàm gác cổng, ném AppError chỉ với mã lỗi (ErrorCode).
-   * @private
+   * @param {IVerifyUserInputDTO} data
+   * @throws {AppError}
    */
-  private validate(data: IVerifyUserInputDTO): void {
-    // Chặn lỗi sập app nếu req.body bị undefined
+  constructor(data: IVerifyUserInputDTO) {
+    // 0. Guard Clause chặn object undefined/null
     if (!data) {
       throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // Kiểm tra tính hiện diện của email và otp
+    // 1. Mapping & Sanitization (Làm sạch và gán giá trị)
+    this.email =
+      typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+
+    this.otp = typeof data.otp === "string" ? data.otp.trim() : "";
+
+    // 2. Validation (Kiểm tra dữ liệu sau khi mapping)
+    this.validate(data);
+  }
+
+  /**
+   * @private
+   * @description Hàm gác cổng ném AppError dựa trên mã lỗi hệ thống.
+   * @param {IVerifyUserInputDTO} data - Dùng để check sự hiện diện nguyên bản.
+   * @throws {AppError}
+   */
+  private validate(data: IVerifyUserInputDTO): void {
+    // 1. Kiểm tra sự tồn tại (dựa trên data gốc)
     if (!data.email) throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
     if (!data.otp) throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
 
-    // Kiểm tra định dạng OTP (thường là 6 ký tự cho hệ thống thi GPLX)
-    if (data.otp.trim().length !== 6) {
+    // 2. Kiểm tra định dạng (dựa trên dữ liệu đã trim)
+    if (this.otp.length !== 6) {
       throw new AppError(ErrorCode.AUTH.OTP_INVALID);
     }
   }

@@ -1,0 +1,7 @@
+export * from './chapter.test-data';
+export * from './license.test-data';
+export * from './exam-matrix.test-data';
+export * from './question.test-data';
+export * from './user.test-data';
+export * from './auth.test-data';
+export * from './exam.test-data';

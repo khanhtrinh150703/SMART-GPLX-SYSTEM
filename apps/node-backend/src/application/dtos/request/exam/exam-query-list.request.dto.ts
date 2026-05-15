@@ -1,43 +1,49 @@
+import { BaseQueryDTO } from "@/shared/types/common-query.dto.types";
+
 /**
  * @description Các tiêu chí tìm kiếm và lọc bổ sung khi tìm bài thi.
  * English: Additional search and filter criteria for finding exams.
  */
 export interface IExamUserFilterOptions {
-  readonly search?: string;            // Tìm kiếm đơn giản theo tên bài thi
-  readonly licenseCode?: string;        // Lọc theo hạng bằng lái
+  readonly search?: string; // Tìm kiếm đơn giản theo tên bài thi
+  readonly licenseCode?: string; // Lọc theo hạng bằng lái
 }
 
 /**
  * @description DTO bóc tách tham số truy vấn từ phía người dùng (User/Học viên).
  * Chuyển đổi và làm sạch dữ liệu từ URL Query trước khi đưa vào hệ thống.
  */
-export class ExamUserQueryDTO implements IExamUserFilterOptions {
-  public readonly search?: string;
-  public readonly licenseCode?: string;
-  public readonly page?: number;
-  public readonly limit?: number;
+export class ExamUserQueryDTO
+  extends BaseQueryDTO
+  implements IExamUserFilterOptions
+{
+  public licenseCode?: string;
 
   /**
-   * @param data - Dữ liệu thô từ req.query.
+   * @param data - Dữ liệu thô từ req.query được ép kiểu Partial.
    */
-  constructor(data: Record<string, unknown>) {
-    // 1. Làm sạch chuỗi tìm kiếm (Tránh các ký tự rác hoặc khoảng trắng)
-    this.search = data.search ? String(data.search).trim() : undefined;
+  constructor(data: Partial<ExamUserQueryDTO>) {
+    super();
 
-    // 2. Định dạng mã hạng bằng lái (A1, B2...)
-    this.licenseCode = data.licenseCode ? String(data.licenseCode) : undefined;
+    // 1. Gán dữ liệu thô vào instance (Ghi đè các giá trị mặc định của Base nếu có)
+    Object.assign(this, data);
 
-    // 3. Ép kiểu an toàn cho phân trang (Mặc định trả về undefined nếu không phải số)
-    // English: Safe type casting for pagination (Returns undefined if not a valid number).
-    this.page = this._parseNumber(data.page);
-    this.limit = this._parseNumber(data.limit);
-  }
+    /**
+     * THỰC HIỆN ÉP KIỂU THỦ CÔNG (Manual Casting)
+     * Chuyển đổi từ String (URL Params) về đúng kiểu dữ liệu nghiệp vụ.
+     */
 
-  /**
-   * @description Hàm hỗ trợ ép kiểu số an toàn.
-   */
-  private _parseNumber(value: unknown): number | undefined {
-    const parsed = Number(value);
-    return !isNaN(parsed) && parsed > 0 ? parsed : undefined;
+    // 2. Ép kiểu cho các thuộc tính kế thừa từ BaseQueryDTO
+    if (this.page) this.page = Number(this.page);
+    if (this.limit) this.limit = Number(this.limit);
+
+    // 3. Normalization cho các chuỗi tìm kiếm/Lọc (Dịch: Normalizing search/filter strings)
+    if (this.search) {
+      this.search = String(this.search).trim();
+    }
+
+    if (this.licenseCode) {
+      this.licenseCode = String(this.licenseCode).trim();
+    }
   }
 }

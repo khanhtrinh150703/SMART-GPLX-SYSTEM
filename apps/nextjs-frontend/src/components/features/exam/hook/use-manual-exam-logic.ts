@@ -31,11 +31,6 @@ export function useManualExamLogic(
     // --- 2. LOGIC LỌC DỮ LIỆU (TỐI ƯU SỐ 1) ---
     const [searchTerm, setSearchTerm] = useState("");
 
-    /**
-     * 🌟 TỐI ƯU: Trì hoãn giá trị tìm kiếm.
-     * Khi bạn gõ, searchTerm thay đổi ngay để input mượt, 
-     * nhưng deferredSearchTerm sẽ đợi một nhịp CPU rảnh mới cập nhật.
-     */
     const deferredSearchTerm = useDeferredValue(searchTerm);
 
     const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
@@ -62,9 +57,6 @@ export function useManualExamLogic(
             .sort((a, b) => a.localeCompare(b, "en"));
     }, [pool]);
 
-    /**
-     * 🌟 BỘ LỌC TỔNG HỢP: Sử dụng deferredSearchTerm thay vì searchTerm
-     */
     const filteredPool = useMemo(() => {
         // Sử dụng giá trị trì hoãn ở đây
         const searchKey = normalizeString(deferredSearchTerm);

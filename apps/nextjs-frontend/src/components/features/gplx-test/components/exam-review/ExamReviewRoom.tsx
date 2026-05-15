@@ -68,6 +68,8 @@ export const ExamReviewRoom = ({ result, onExit }: ExamReviewRoomProps) => {
         currentIndex={currentIndex} // Từ State địa phương
         answers={reviewAnswers} // Object mapping vừa tạo ở trên
         timeRemaining={0} // Review thì timer = 0
+        timeSpent = {result.timeSpent}
+        totalTime = {result.timeExam}
         isReviewMode={true} // Bật cờ Review
         isAutoNext={false} // Review không cần auto-next
         onToggleAutoNext={() => {}} // No-op (hàm rỗng)

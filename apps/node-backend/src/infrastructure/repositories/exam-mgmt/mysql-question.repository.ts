@@ -2,11 +2,14 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { IQuestionRepository } from "@/domain/interfaces/repositories/exam-mgmt/i-question.repository";
 import { Question as DomainQuestion } from "@/domain/entities/question/question.entity";
 import { QuestionMapper } from "@/infrastructure/database/mappers/exam-mgmt/question.mapper";
-import { PrismaQuestionWithRelations, QuestionWithDetails } from "@/infrastructure/persistence/exam-mgmt/question.record";
+import {
+  PrismaQuestionWithRelations,
+  QuestionWithDetails,
+} from "@/infrastructure/persistence/exam-mgmt/question.record";
 import { QuestionsAdminQueryDto } from "@/application/dtos/request/question/question-query.request.dto";
-import { QuestionStatus } from "@/domain/entities/question/question.status";
 import { GetSelectionPoolDto } from "@/application/dtos/request/question/selection-question.request.dto";
 import { QuestionRelatedCount } from "@/shared/types/count.types";
+import { STATUS } from "@/shared/config/status.config";
 
 /**
  * @interface IMySQLQuestionRepositoryCradle
@@ -41,7 +44,9 @@ export class MySQLQuestionRepository implements IQuestionRepository {
   /**
    * Helper: Map trực tiếp từ Prisma Result sang IQuestionRecord (CamelCase).
    */
-  private _toDomain(raw: PrismaQuestionWithRelations | null): DomainQuestion | null {
+  private _toDomain(
+    raw: PrismaQuestionWithRelations | null,
+  ): DomainQuestion | null {
     if (!raw) return null;
     return QuestionMapper.toDomain(raw);
   }
@@ -61,8 +66,8 @@ export class MySQLQuestionRepository implements IQuestionRepository {
   }
 
   /**
-  * @description Cập nhật nội dung Question và đồng bộ danh sách Answer.
-  */
+   * @description Cập nhật nội dung Question và đồng bộ danh sách Answer.
+   */
   public async updateQuestion(entity: DomainQuestion): Promise<DomainQuestion> {
     const persistence = QuestionMapper.toUpdatePersistence(entity);
 
@@ -70,7 +75,7 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     const updated = await this._prisma.question.update({
       where: { id: entity.id },
       data: persistence,
-      include: this._includeRelations
+      include: this._includeRelations,
     });
 
     return QuestionMapper.toDomain(updated);
@@ -84,20 +89,22 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     const records = await this._prisma.question.findMany({
       where: {
         chapterId,
-        deletedAt: null // Lọc câu hỏi chưa bị xóa
+        deletedAt: null, // Lọc câu hỏi chưa bị xóa
       },
       include: {
         licenseLinks: true, // Hạng bằng lái thường không dùng Soft Delete nên include thẳng
         answers: {
           where: { deletedAt: null },
-          orderBy: { createdAt: 'asc' }
-        }
+          orderBy: { createdAt: "asc" },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     return records
-      .map((rec) => this._toDomain(rec as unknown as PrismaQuestionWithRelations))
+      .map((rec) =>
+        this._toDomain(rec as unknown as PrismaQuestionWithRelations),
+      )
       .filter((q): q is DomainQuestion => q !== null);
   }
 
@@ -108,20 +115,19 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     const record = await this._prisma.question.findUnique({
       where: {
         id,
-        deletedAt: null
+        deletedAt: null,
       },
       include: {
         licenseLinks: true,
         answers: {
-          where: { deletedAt: null } // Loại bỏ các đáp án "bóng ma"
-        }
+          where: { deletedAt: null }, // Loại bỏ các đáp án "bóng ma"
+        },
       },
     });
 
     if (!record) return null;
     return this._toDomain(record as PrismaQuestionWithRelations);
   }
-
 
   /**
    * @description Lấy danh sách chi tiết các câu hỏi và đáp án "Active" theo danh sách IDs.
@@ -133,18 +139,18 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     const records = await this._prisma.question.findMany({
       where: {
         id: { in: questionIds },
-        deletedAt: null // Chỉ lấy các câu hỏi chưa bị xóa
+        deletedAt: null, // Chỉ lấy các câu hỏi chưa bị xóa
       },
       include: {
         licenseLinks: true,
         answers: {
-          where: { deletedAt: null } // Chỉ lấy các đáp án chưa bị xóa
-        }
+          where: { deletedAt: null }, // Chỉ lấy các đáp án chưa bị xóa
+        },
       },
     });
     // 2. Map danh sách record sang danh sách Domain Entity
     return records
-      .map(record => this._toDomain(record as PrismaQuestionWithRelations))
+      .map((record) => this._toDomain(record as PrismaQuestionWithRelations))
       .filter((item): item is DomainQuestion => item !== null);
   }
 
@@ -159,8 +165,8 @@ export class MySQLQuestionRepository implements IQuestionRepository {
       include: {
         licenseLinks: true,
         answers: {
-          where: { deletedAt: null } // Loại bỏ các đáp án "bóng ma"
-        }
+          where: { deletedAt: null }, // Loại bỏ các đáp án "bóng ma"
+        },
       },
     });
 
@@ -179,8 +185,8 @@ export class MySQLQuestionRepository implements IQuestionRepository {
       where: { id },
       data: {
         deletedAt: new Date(),
-        status: "DELETED"
-      }
+        status: "DELETED",
+      },
     });
   }
 
@@ -203,7 +209,7 @@ export class MySQLQuestionRepository implements IQuestionRepository {
   public async restore(id: string): Promise<DomainQuestion> {
     const record = await this._prisma.question.update({
       where: { id },
-      data: { deletedAt: null },
+      data: { deletedAt: null, status: "ACTIVE" },
       include: {
         answers: true,
         licenseLinks: true,
@@ -213,47 +219,44 @@ export class MySQLQuestionRepository implements IQuestionRepository {
     return this._toDomain(record as PrismaQuestionWithRelations)!;
   }
 
-
   /**
-  * @description Tìm kiếm và phân trang câu hỏi dành cho Admin (Dịch: Find and count questions for Admin)
-  * @param {QuestionsAdminQueryDto} dto - DTO chứa các điều kiện lọc từ Client.
-  * @param {number} skip - Vị trí bắt đầu lấy dữ liệu.
-  * @param {number} limit - Số lượng bản ghi tối đa.
-  * @returns {Promise<[DomainQuestion[], number]>} Mảng thực thể Domain và tổng số lượng.
-  */
+   * @description Tìm kiếm và phân trang câu hỏi dành cho Admin (Dịch: Find and count questions for Admin)
+   * @param {QuestionsAdminQueryDto} dto - DTO chứa các điều kiện lọc từ Client.
+   * @param {number} skip - Vị trí bắt đầu lấy dữ liệu.
+   * @param {number} limit - Số lượng bản ghi tối đa.
+   * @returns {Promise<[DomainQuestion[], number]>} Mảng thực thể Domain và tổng số lượng.
+   */
   public async findAndCountAdmin(
     dto: QuestionsAdminQueryDto,
     skip: number,
-    limit: number
+    limit: number,
   ): Promise<[DomainQuestion[], number]> {
     const where: Prisma.QuestionWhereInput = {};
     // --- 1. GÁN ĐIỀU KIỆN CƠ BẢN (Dịch: Basic Filtering) ---
     if (dto.chapterId) where.chapterId = dto.chapterId;
-    if (dto.difficultyLevel !== undefined) where.difficultyLevel = dto.difficultyLevel;
+    if (dto.difficultyLevel !== undefined)
+      where.difficultyLevel = dto.difficultyLevel;
     if (dto.isCritical !== undefined) where.isCritical = dto.isCritical;
 
     // --- 2. LOGIC TRẠNG THÁI TỔNG HỢP (Dịch: Integrated Status Logic) ---
     // Xử lý thông minh: Phân biệt giữa Tab UI và Business Status (Enum)
-    if (dto.status === 'all') {
+    if (dto.status === "all") {
       // Không thêm điều kiện -> Lấy hết (Cả đã xóa và chưa xóa)
-    }
-    else if (dto.status === 'active') {
-      where.status = dto.status.toUpperCase() as QuestionStatus;
+    } else if (dto.status === "active") {
+      where.status = STATUS.ACTIVE;
       where.deletedAt = null;
-    }
-    else if (dto.status === 'deleted') {
+    } else if (dto.status === "deleted") {
       where.deletedAt = { not: null };
-    }
-    else if (dto.status) {
+    } else if (dto.status) {
       // Nếu là DRAFT hoặc PUBLISHED: Phải viết hoa để khớp Enum Prisma
-      where.status = dto.status.toUpperCase() as QuestionStatus;
+      where.status = STATUS.DRAFT;
       where.deletedAt = null; // Thường xem status nghiệp vụ thì chỉ xem cái chưa xóa
     }
 
     // --- 3. LOGIC QUAN HỆ & SEARCH (Dịch: Relation & Search Logic) ---
     if (dto.licenseCategoryIds) {
       where.licenseLinks = {
-        some: { licenseCategoryId: dto.licenseCategoryIds }
+        some: { licenseCategoryId: dto.licenseCategoryIds },
       };
     }
 
@@ -267,60 +270,62 @@ export class MySQLQuestionRepository implements IQuestionRepository {
         if (!isNaN(searchAsNumber)) {
           where.indexNumber = searchAsNumber;
         }
-      }
-      /**
-       * TRƯỜNG HỢP 2: Tìm kiếm mờ theo nội dung văn bản (Mặc định)
-       */
-      else {
-        where.OR = [
-          { content: { contains: dto.search } }
-        ];
+      } else {
+        /**
+         * TRƯỜNG HỢP 2: Tìm kiếm mờ theo nội dung văn bản (Mặc định)
+         */
+        where.OR = [{ content: { contains: dto.search } }];
       }
     }
 
     // --- 4. XỬ LÝ SẮP XẾP PHỨC TẠP (Dịch: Complex Sorting Logic) ---
     const sortBy = dto.sortBy;
-    const sortOrder = dto.sortOrder || 'desc';
+    const sortOrder = dto.sortOrder || "desc";
     const sortCriteria: Prisma.QuestionOrderByWithRelationInput[] = [];
 
     /**
      * LOGIC MẶC ĐỊNH (Khi mới vào trang hoặc sortBy là 'createdAt')
      */
-    if (!sortBy || sortBy === 'createdAt' || sortBy === 'all') {
-      sortCriteria.push({ deletedAt: 'asc' });
-      sortCriteria.push({ status: 'asc' });
-      sortCriteria.push({ licenseLinks: { _count: 'desc' } });
-      sortCriteria.push({ content: 'asc' });
-    }
-    else {
+    if (!sortBy || sortBy === "createdAt" || sortBy === "all") {
+      sortCriteria.push({ deletedAt: "asc" });
+      sortCriteria.push({ status: "asc" });
+      sortCriteria.push({ licenseLinks: { _count: "desc" } });
+      sortCriteria.push({ content: "asc" });
+    } else {
       // TRƯỜNG HỢP ADMIN CLICK CHỌN CỘT CỤ THỂ
       switch (sortBy) {
-        case 'answers':
+        case "answers":
           sortCriteria.push({ imageUrl: sortOrder });
           sortCriteria.push({ answers: { _count: sortOrder } });
           break;
-        case 'chapterName':
+        case "chapterName":
           sortCriteria.push({ chapter: { name: sortOrder } });
           break;
-        case 'licenseCategoryNames':
+        case "licenseCategoryNames":
           sortCriteria.push({ licenseLinks: { _count: sortOrder } });
-          sortCriteria.push({ content: 'asc' });
+          sortCriteria.push({ content: "asc" });
           break;
-        case 'status':
-          sortCriteria.push({ deletedAt: sortOrder === 'desc' ? 'asc' : 'desc' });
+        case "status":
+          sortCriteria.push({
+            deletedAt: sortOrder === "desc" ? "asc" : "desc",
+          });
           sortCriteria.push({ status: sortOrder });
           break;
-        case 'difficulty':
+        case "difficulty":
           sortCriteria.push({ chapter: { name: sortOrder } });
-          sortCriteria.push({ deletedAt: sortOrder === 'desc' ? 'asc' : 'desc' });
+          sortCriteria.push({
+            deletedAt: sortOrder === "desc" ? "asc" : "desc",
+          });
           sortCriteria.push({ difficultyLevel: sortOrder });
           break;
         default:
-          sortCriteria.push({ [sortBy]: sortOrder } as Prisma.QuestionOrderByWithRelationInput);
+          sortCriteria.push({
+            [sortBy]: sortOrder,
+          } as Prisma.QuestionOrderByWithRelationInput);
       }
 
       // Chốt chặn cuối cùng cho mọi trường hợp click cột khác
-      sortCriteria.push({ createdAt: 'desc' });
+      sortCriteria.push({ createdAt: "desc" });
     }
 
     const finalOrderBy = [...sortCriteria];
@@ -336,40 +341,78 @@ export class MySQLQuestionRepository implements IQuestionRepository {
           answers: true,
           chapter: { select: { name: true } },
           licenseLinks: {
-            include: { licenseCategory: { select: { name: true } } }
-          }
-        }
+            include: { licenseCategory: { select: { name: true } } },
+          },
+        },
       }),
-      this._prisma.question.count({ where })
+      this._prisma.question.count({ where }),
     ]);
 
     // --- 6. MAPPING (Dịch: Domain Mapping) ---
-    const entities = rawRecords.map((record) => QuestionMapper.toDomain(record));
+    const entities = rawRecords.map((record) =>
+      QuestionMapper.toDomain(record),
+    );
 
     return [entities, total];
   }
 
-  public async findByLicenseCategory(licenseNames: string[]): Promise<DomainQuestion[]> {
+  /**
+   * @description Lấy danh sách câu hỏi dựa trên mảng tên hạng bằng lái (B1, B2...), nạp đầy đủ các bảng quan hệ liên quan.
+   * @param {string[]} licenseNames - Danh sách tên các hạng bằng lái cần tìm kiếm câu hỏi.
+   * @returns {Promise<DomainQuestion[]>} Danh sách các thực thể Domain Question hợp lệ (đã lọc các bản ghi lỗi/null).
+   */
+  public async findByLicenseCategoryIds(
+    licenseNames: string[],
+  ): Promise<DomainQuestion[]> {
     const records = await this._prisma.question.findMany({
       where: {
         licenseLinks: {
           some: {
             licenseCategory: {
-              name: { in: licenseNames }
-            }
-          }
+              name: { in: licenseNames },
+            },
+          },
         },
-        deletedAt: null
+        deletedAt: null,
       },
       include: {
         answers: true,
         licenseLinks: true,
-        chapter: true
-      }
+        chapter: true,
+      },
     });
 
     return records
-      .map((rec) => this._toDomain(rec as unknown as PrismaQuestionWithRelations))
+      .map((rec) =>
+        this._toDomain(rec as unknown as PrismaQuestionWithRelations),
+      )
+      .filter((q): q is DomainQuestion => q !== null);
+  }
+
+  /**
+   * @description Lấy toàn bộ danh sách câu hỏi thuộc về các chương học được chỉ định qua danh sách ID.
+   * @param {string[]} chapterIds - Mảng các UUID định danh của các chương học cần quét câu hỏi.
+   * @returns {Promise<DomainQuestion[]>} Danh sách các thực thể Domain Question thuộc các chương học đó.
+   */
+  public async findByChapterIds(
+    chapterIds: string[],
+  ): Promise<DomainQuestion[]> {
+    const records = await this._prisma.question.findMany({
+      where: {
+        chapterId: { in: chapterIds },
+        deletedAt: null,
+      },
+      include: {
+        answers: true,
+        licenseLinks: true,
+        chapter: true,
+      },
+    });
+
+    return records
+      .map((rec) =>
+        this._toDomain(rec as unknown as PrismaQuestionWithRelations),
+      )
       .filter((q): q is DomainQuestion => q !== null);
   }
 
@@ -393,13 +436,17 @@ export class MySQLQuestionRepository implements IQuestionRepository {
    * @param {GetSelectionPoolDto} filter - Bộ lọc từ Application Layer.
    * @returns {Promise<QuestionWithDetails[]>} Danh sách câu hỏi.
    */
-  public async findSelectionPool(filter: GetSelectionPoolDto): Promise<QuestionWithDetails[]> {
-    return await this._prisma.question.findMany({
+  public async findSelectionPool(
+    filter: GetSelectionPoolDto,
+  ): Promise<QuestionWithDetails[]> {
+    return (await this._prisma.question.findMany({
       where: {
         // Nếu licenseId rỗng, ta truyền undefined để Prisma bỏ qua filter này
-        licenseLinks: filter.licenseId ? {
-          some: { licenseCategoryId: filter.licenseId }
-        } : undefined,
+        licenseLinks: filter.licenseId
+          ? {
+              some: { licenseCategoryId: filter.licenseId },
+            }
+          : undefined,
 
         // Tương tự cho chapterId
         chapterId: filter.chapterId || undefined,
@@ -411,23 +458,25 @@ export class MySQLQuestionRepository implements IQuestionRepository {
         content: filter.search ? { contains: filter.search } : undefined,
 
         // Loại trừ IDs: Chỉ filter khi mảng có phần tử
-        id: filter.excludeIds?.length ? { notIn: filter.excludeIds } : undefined,
+        id: filter.excludeIds?.length
+          ? { notIn: filter.excludeIds }
+          : undefined,
 
         // Trạng thái: isActive
-        status: filter.isActive ? 'ACTIVE' : undefined
+        status: filter.isActive ? "ACTIVE" : undefined,
       },
       orderBy: {
-        indexNumber: 'asc' // Sắp xếp tăng dần theo số thứ tự câu hỏi
+        indexNumber: "asc", // Sắp xếp tăng dần theo số thứ tự câu hỏi
       },
       include: {
         chapter: true, // Lấy toàn bộ thông tin chương
         licenseLinks: {
           include: {
-            licenseCategory: { select: { name: true } } // Chỉ lấy tên hạng bằng
-          }
-        }
-      }
-    }) as QuestionWithDetails[];
+            licenseCategory: { select: { name: true } }, // Chỉ lấy tên hạng bằng
+          },
+        },
+      },
+    })) as QuestionWithDetails[];
   }
 
   /**
@@ -448,30 +497,33 @@ export class MySQLQuestionRepository implements IQuestionRepository {
    * @returns {Promise<QuestionRelatedCount>} Đối tượng chứa số lượng chi tiết các mối quan hệ. (Object containing counts of related entities).
    */
   public async countRelatedData(id: string): Promise<QuestionRelatedCount> {
-    // 1. Kiểm tra liên kết với Chương (Quan hệ 1-N, Foreign Key nằm tại bảng Question)
-    // (Check link with Chapter: 1-N relationship, Foreign Key is on Question table)
-    const question = await this._prisma.question.findUnique({
-      where: { id },
-      select: { chapterId: true }, // Chỉ select đúng trường cần thiết để tối ưu hiệu suất (Cheap Query)
-    });
+    // 1. Chạy song song tất cả các truy vấn I/O (Dịch: Run all I/O queries in parallel)
+    // Việc này giúp giảm tổng thời gian chờ đợi xuống mức thấp nhất
+    const [
+      question,
+      licenseLinksCount,
+      examQuestionsCount,
+      questionStatsCount,
+    ] = await Promise.all([
+      this._prisma.question.findUnique({
+        where: { id },
+        select: { chapterId: true }, // Cheap Query: Chỉ lấy đúng field cần
+      }),
+      this._prisma.questionLicenseCategory.count({
+        where: { questionId: id }, // Pivot Table: Bảng trung gian N-N
+      }),
+      this._prisma.examQuestion.count({
+        where: { questionId: id },
+      }),
+      this._prisma.questionStatistics.count({
+        where: { questionId: id },
+      }),
+    ]);
 
-    // Nếu câu hỏi tồn tại và có giá trị chapterId, nghĩa là nó đang thuộc về 1 chương.
-    const chapterCount = (question && question.chapterId) ? 1 : 0;
-
-    // 2. Đếm số lượng hạng bằng lái đang liên kết (Bảng trung gian N-N)
-    // (Count linked license categories: N-N Pivot Table)
-    const licenseLinksCount = await this._prisma.questionLicenseCategory.count({
-      where: { questionId: id },
-    });
-
-    // 3. Đếm số lượng đề thi đang chứa câu hỏi này (Bảng trung gian N-N)
-    // (Count exams containing this question: N-N Pivot Table)
-    const examQuestionsCount = await this._prisma.examQuestion.count({
-      where: { questionId: id },
-    });
-
+    // 2. Trả về kết quả đã được thống kê (Dịch: Return aggregated stats)
     return {
-      chapter: chapterCount,
+      questionStats: questionStatsCount, // Đã sửa lỗi sai tên biến (Fixed variable naming mismatch)
+      chapter: question?.chapterId ? 1 : 0,
       licenseLinks: licenseLinksCount,
       examQuestions: examQuestionsCount,
     };

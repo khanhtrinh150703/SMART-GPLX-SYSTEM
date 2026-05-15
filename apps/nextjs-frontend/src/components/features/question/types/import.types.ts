@@ -25,6 +25,16 @@ export interface ImportFinalResponse {
 }
 
 /**
+ * @description Data Transfer Object for initializing import.
+ * (Đối tượng chuyển đổi dữ liệu để khởi tạo quá trình nhập).
+ */
+export interface IInitImportInputDTO {
+  readonly fileName: string;
+  readonly totalSize: number;
+  readonly totalChunks: number; // FE tính toán dựa trên CHUNK_SIZE mặc định
+}
+
+/**
  * ImportMutationParams: Tham số truyền vào Hook React Query
  */
 export interface ImportMutationParams {

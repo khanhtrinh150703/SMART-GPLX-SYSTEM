@@ -1,4 +1,4 @@
-import { QuestionStatus } from "@/domain/entities/question/question.status";
+import { Status } from "@/shared/config/status.config";
 
 /**
  * @description Giao diện dữ liệu chi tiết của một đáp án trả về cho Client.
@@ -66,7 +66,7 @@ export interface IQuestionResponseDTO {
   };
 
   /** @description Trạng thái hiện tại của câu hỏi. (Current status of the question.) */
-  readonly status: QuestionStatus;
+  readonly status: Status;
 
   /** @description Danh sách các lựa chọn đáp án đi kèm. (List of accompanying answer options.) */
   readonly answers: IAnswerResponseDTO[];
@@ -90,7 +90,7 @@ export class QuestionResponseDTO implements IQuestionResponseDTO {
     readonly level: number;
     readonly label: string;
   };
-  public readonly status: QuestionStatus;
+  public readonly status: Status;
   public readonly answers: IAnswerResponseDTO[];
   public readonly licenseCategoryIds: string[];
 

@@ -4,7 +4,7 @@ import { Role } from "@/domain/entities/role/role.entity";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { RoleMapper } from "@/infrastructure/database/mappers/identity/role.mapper";
 import { ISelectionResponseDTO } from "@/application/dtos/response/shared/selection.response.dto";
-import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
+import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service";
 
 /**
  * @interface IRoleQueryServiceCradle

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useTransition, useMemo } from "react";
 import { Zap, RotateCcw, Plus, Sparkles } from "lucide-react";
-import axios from "axios";
 
 // UI Components
 import { ManagementToolbar } from "@/components/common/ManagementToolbar/ManagementToolbar";
@@ -20,11 +19,6 @@ import { ExamTable } from "./ExamTable";
 
 // Hooks & Logic
 import { EXAM_STATUS_OPTIONS, EXAM_FILTER_FIELDS } from "./exam-config";
-import {
-  containerVariants,
-  toolbarVariants,
-  actionButtonVariants,
-} from "./exam-content.variants";
 
 import { examGenerationToolbarVariants as variants } from "./exam-generation-toolbar.variants";
 
@@ -36,7 +30,12 @@ import { useExamActions } from "../hook/use-action";
 import { ManualExamForm } from "./manual-form/ManualExamForm";
 import { useSelectionPool } from "../hook/use-question-selection";
 import { ISelectionPoolParams } from "@/types/paginaton.type";
-import { GenerateExamInput } from "./exam-generation.schema";
+import { GenerateExamInput } from "../schema/exam-generation.schema";
+import {
+  useExamMatrixOptions,
+  useLicenseOptions,
+} from "@/hooks/use-master-data";
+import { actionButtonVariants } from "./exam-content.variants";
 
 /**
  * @description Component quản lý nội dung đề thi (Exam Content Management)
@@ -55,7 +54,7 @@ export function ExamContent() {
     getApiParams,
   } = useExamUrlParams();
 
-  const [queryParams, setQueryParams] = useState<ISelectionPoolParams>({
+  const [queryParams] = useState<ISelectionPoolParams>({
     licenseCategoryId: "",
     search: "",
     chapterId: "",
@@ -91,8 +90,10 @@ export function ExamContent() {
 
   // --- 3. DATA FETCHING (TRUY VẤN DỮ LIỆU) ---
   const apiParams = useMemo(() => getApiParams(), [getApiParams]);
-  const { exams, pagination, isLoading, examMatrixOptions, licenseOptions } =
-    useExams(apiParams);
+  const { exams, pagination, isLoading } = useExams(apiParams);
+  const { data: matrixOptions = [] } = useExamMatrixOptions();
+
+  const { data: licenseOptions = [] } = useLicenseOptions();
   const {
     isMutating,
     actions: { delete: deletExam, createManual, update },
@@ -138,13 +139,6 @@ export function ExamContent() {
     return () => clearTimeout(handler);
   }, [searchValue, activeValue, localActiveField, handleSearchByField]);
 
-  // Hàm tiện ích nội bộ để bắt lỗi API nhanh gọn (Utility to extract API error)
-  const getApiError = (error: unknown) => {
-    return axios.isAxiosError(error)
-      ? error.response?.data?.message || "Lỗi kết nối đến máy chủ"
-      : "Đã xảy ra lỗi không xác định.";
-  };
-
   // --- 5. ACTION HANDLERS (HÀM XỬ LÝ HÀNH ĐỘNG) ---
   const handleOpenGenerator = () => {
     setMessage(null);
@@ -163,17 +157,7 @@ export function ExamContent() {
       });
       setSheetOpen(false);
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        setMessage({
-          intent: "error",
-          text: error.response?.data?.message || "Lỗi máy chủ",
-        });
-      } else {
-        setMessage({
-          intent: "error",
-          text: "Đã xảy ra lỗi không xác định.",
-        });
-      }
+      throw error;
     }
   };
 
@@ -185,7 +169,7 @@ export function ExamContent() {
       setSelectedId(null);
       setMessage({ intent: "success", text: "Đã xóa ma trận thành công!" });
     } catch (error) {
-      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
     }
   };
 
@@ -200,15 +184,19 @@ export function ExamContent() {
       setSelectedExam(null);
       setMessage({ intent: "success", text: "Lưu đề thi thành công!" });
     } catch (error) {
-      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
     }
   };
 
   const handleEdit = (exam: IExamResponse) => {
-    // 1. Lưu dữ liệu đề thi vào state để truyền vào prop initialData
-    setSelectedExam(exam);
-    // 2. Mở Sheet tương ứng
-    setManualSheetOpen(true);
+    try {
+      // 1. Lưu dữ liệu đề thi vào state để truyền vào prop initialData
+      setSelectedExam(exam);
+      // 2. Mở Sheet tương ứng
+      setManualSheetOpen(true);
+    } catch (error) {
+      throw error;
+    }
   };
 
   // --- 6. SUB-RENDER FUNCTIONS (HÀM RENDER PHỤ) ---
@@ -224,10 +212,6 @@ export function ExamContent() {
       <h1 className="text-4xl font-black text-slate-900 tracking-tight">
         Quản lý Đề thi <span className="text-emerald-500">.</span>
       </h1>
-      <p className="text-slate-500 text-sm max-w-2xl">
-        Hệ thống lưu trữ và quản lý toàn bộ các bộ đề thi sát hạch đã được khởi
-        tạo.
-      </p>
     </div>
   );
 
@@ -236,17 +220,29 @@ export function ExamContent() {
    * Vị trí: Thông tin tổng số nằm bên trái dưới Toolbar.
    */
   const renderToolbar = () => (
-    <div className="flex flex-col gap-3">
-      {/* 1. MAIN TOOLBAR CONTAINER */}
-      <div className={toolbarVariants()}>
-        {/* Nhóm Reset & Field Select (Reset & Filter Group) */}
+    <div className={variants.root()}>
+      <div className={variants.tabsContainer()}>
+        <StatusTabs
+          options={EXAM_STATUS_OPTIONS}
+          currentValue={searchParams.get("status") || "all"}
+          onChange={(val) => updateUrlParam("status", val)}
+        />
+      </div>
+      <div className={variants.mainToolbar()}>
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={clearFilters}
-            className="h-12 w-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95"
-            title="Đặt lại bộ lọc (Reset filters)"
+            onClick={() => {
+              setSearchValue("");
+              setLocalActiveField("name");
+              clearFilters();
+            }}
+            className={variants.resetButton()}
+            title="Đặt lại bộ lọc"
           >
-            <RotateCcw size={20} />
+            <RotateCcw
+              size={18}
+              className="group-hover:-rotate-180 transition-transform duration-500"
+            />
           </button>
 
           <FilterSelect
@@ -254,7 +250,7 @@ export function ExamContent() {
             value={localActiveField}
             onChange={setLocalActiveField}
             variant="solid"
-            className="h-12 border-none bg-slate-50 rounded-2xl font-bold text-slate-600 px-4 min-w-[140px]"
+            className={variants.filterSelect()}
           />
         </div>
 
@@ -264,8 +260,7 @@ export function ExamContent() {
             searchValue={searchValue}
             onSearchChange={setSearchValue}
             showAddButton={false}
-            searchPlaceholder="Tìm kiếm đề thi theo tên hoặc mã đề..."
-            className="h-12"
+            searchPlaceholder={`Tìm kiếm theo ${EXAM_FILTER_FIELDS.find((f) => f.value === localActiveField)?.label.toLowerCase()}...`}
           />
         </div>
 
@@ -304,18 +299,8 @@ export function ExamContent() {
   }
 
   return (
-    <div className={containerVariants()}>
+    <div className="flex flex-col gap-8 w-full animate-in fade-in duration-700">
       {renderHeader()}
-
-      {/* Status Bar */}
-      <div className="flex items-center justify-between px-2">
-        <StatusTabs
-          options={EXAM_STATUS_OPTIONS}
-          currentValue={searchParams.get("status") || "all"}
-          onChange={(val) => updateUrlParam("status", val)}
-        />
-      </div>
-
       {renderToolbar()}
 
       {message && (
@@ -331,8 +316,8 @@ export function ExamContent() {
       <ExamTable
         exams={exams}
         isLoading={isLoading || isPending}
-        page={apiParams.page}
-        limit={apiParams.limit}
+        page={Number(searchParams.get("page")) || 1}
+        limit={10}
         onView={handleEdit}
         onDelete={(exam) => {
           setSelectedId(exam.id);
@@ -343,7 +328,8 @@ export function ExamContent() {
         }
         sortConfig={{
           key: apiParams.sortBy as keyof IExamResponse,
-          direction: apiParams.sortOrder,
+          direction:
+            (searchParams.get("sortOrder") as "asc" | "desc") || "desc",
         }}
         onSort={(key) => {
           const nextOrder = apiParams.sortOrder === "asc" ? "desc" : "asc";
@@ -377,20 +363,19 @@ export function ExamContent() {
       >
         <AutomaticGeneratorForm
           // 1. Dữ liệu lựa chọn (Selection data)
-          matrices={examMatrixOptions}
+          matrices={matrixOptions}
           // 2. Logic xử lý (Action logic)
           onSubmit={handleAutoSubmit}
           isLoading={isGenerating}
           // 3. Thông báo hệ thống (System notifications)
-          apiMessage={message}
           onClearMessage={() => setMessage(null)}
           // 4. Điều khiển hiển thị (Visibility control)
           onClose={() => setSheetOpen(false)}
         />
       </Sheet>
-      {isManualSheetOpen && ( // Sử dụng biến đồng nhất ở đây
+      {isManualSheetOpen && (
         <Sheet
-          isOpen={isManualSheetOpen} // Prop điều khiển hiển thị (Internal visibility)
+          isOpen={isManualSheetOpen}
           onClose={() => {
             setManualSheetOpen(false);
             setSelectedExam(null);
@@ -402,7 +387,6 @@ export function ExamContent() {
           }
         >
           <ManualExamForm
-            // Key giúp React destroy và recreate component khi đổi mode (Idempotency)
             key={selectedExam?.id || "create-manual"}
             initialData={selectedExam}
             pool={pool ?? []}

@@ -25,6 +25,8 @@ import { EditQuestionModal } from "./EditQuestionModal";
 import BaseConfirmModal from "@/components/common/Modals/BaseConfirmModal";
 import SplashScreen from "@/components/common/Loaders/SplashScreen";
 import { GenericPagination } from "@/components/common/Pagination/GenericPagination";
+import { useChapterOptions, useLicenseOptions } from "@/hooks/use-master-data";
+import { useForm } from "react-hook-form";
 
 export function QuestionsContent() {
   const {
@@ -56,12 +58,19 @@ export function QuestionsContent() {
     text: string;
   } | null>(null);
 
-  const [filterForm, setFilterForm] = useState<QuestionFilterForm>({
-    chapterId: searchParams.get("chapterId") || "",
-    licenseCategoryIds: searchParams.get("licenseCategoryIds") || "",
-    difficultyLevel: searchParams.get("difficultyLevel") || "",
-    isCritical: searchParams.get("isCritical") || "",
-    indexNumber: searchParams.get("indexNumber") || "",
+  const {
+    control,
+    reset,
+    getValues,
+    formState: { errors },
+  } = useForm<QuestionFilterForm>({
+    defaultValues: {
+      chapterId: searchParams.get("chapterId") || "",
+      licenseCategoryIds: searchParams.get("licenseCategoryIds") || "",
+      difficultyLevel: searchParams.get("difficultyLevel") || "",
+      isCritical: searchParams.get("isCritical") || "",
+      indexNumber: searchParams.get("indexNumber") || "",
+    },
   });
 
   // --- 2. EFFECTS ---
@@ -72,14 +81,16 @@ export function QuestionsContent() {
   useEffect(() => {
     setSearchValue(activeValue);
     setLocalActiveField(activeField);
-    setFilterForm({
+
+    // Dùng reset() để cập nhật lại toàn bộ giá trị form khi URL thay đổi
+    reset({
       chapterId: searchParams.get("chapterId") || "",
       licenseCategoryIds: searchParams.get("licenseCategoryIds") || "",
       difficultyLevel: searchParams.get("difficultyLevel") || "",
       isCritical: searchParams.get("isCritical") || "",
       indexNumber: searchParams.get("indexNumber") || "",
     });
-  }, [searchParams, activeValue, activeField]);
+  }, [searchParams, activeValue, activeField, reset]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -94,26 +105,41 @@ export function QuestionsContent() {
   const {
     questions = [],
     pagination,
-    chapterOptions = [],
-    licenseOptions = [],
     actions,
     isFetching,
   } = useQuestions(getApiParams());
 
+  const { data: licenseOptions = [] } = useLicenseOptions();
+
+  const { data: chapterOptions = [] } = useChapterOptions();
+
   // --- 4. HANDLERS ---
+
+  /**
+   * 1. Áp dụng bộ lọc: Lấy dữ liệu từ form ném lên URL
+   */
   const handleApplyFilters = () => {
+    // getValues() sẽ bốc toàn bộ dữ liệu hiện tại của react-hook-form ra
+    const currentFormValues = getValues();
+
     updateMultipleUrlParams({
-      ...filterForm,
+      ...currentFormValues,
       search: searchValue,
       field: localActiveField,
     });
+
     setIsFilterOpen(false);
   };
 
+  /**
+   * 2. Xóa tất cả: Reset cả URL, thanh Search và dữ liệu trong Form
+   */
   const handleClearAll = () => {
-    clearFilters();
-    setSearchValue("");
-    setFilterForm({
+    clearFilters(); // Xóa trên URL
+    setSearchValue(""); // Xóa state search bar
+
+    // reset() đưa các field trong form về rỗng/mặc định
+    reset({
       chapterId: "",
       licenseCategoryIds: "",
       difficultyLevel: "",
@@ -122,8 +148,15 @@ export function QuestionsContent() {
     });
   };
 
+  /**
+   * 3. Thay đổi bộ lọc: Cập nhật từng phần dữ liệu vào form
+   */
   const handleFilterChange = (updates: Partial<QuestionFilterForm>) => {
-    setFilterForm((prev) => ({ ...prev, ...updates }));
+    // Chúng ta lấy giá trị hiện tại trộn với giá trị mới rồi reset lại form
+    reset({
+      ...getValues(),
+      ...updates,
+    });
   };
 
   // Hàm tiện ích nội bộ để bắt lỗi API nhanh gọn (Utility to extract API error)
@@ -146,7 +179,6 @@ export function QuestionsContent() {
         text: "Hệ thống đã tạo câu hỏi mới thành công!",
       });
     } catch (error: unknown) {
-      // Gọi hàm lấy đúng lỗi API (Get exact API error)
       setMessage({ intent: "error", text: getApiError(error) });
     } finally {
       setIsSubmitting(false);
@@ -168,10 +200,6 @@ export function QuestionsContent() {
         text: "Cập nhật nội dung câu hỏi thành công!",
       });
     } catch (error: unknown) {
-      // ❌ Không dùng setMessage ở đây nữa để tránh bị lỗi "Double Alert" (Thông báo kép)
-      // setMessage({ intent: "error", text: getApiError(error) });
-
-      // ✅ BẮT BUỘC PHẢI CÓ: Ném lỗi ngược lại cho EditQuestionModal bắt! (Throw error back to Modal)
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -185,16 +213,30 @@ export function QuestionsContent() {
       setIsSubmitting(true);
       setMessage(null);
 
-      await actions.delete(selectedQuestion.id);
+      // Hứng trực tiếp kết quả từ Backend trả về qua mutateAsync
+      const response = await actions.delete(selectedQuestion.id);
+      if (!response) return;
+      const { type, count } = response; // Bóc tách id, type, count từ DTO
 
       setIsDeleteModalOpen(false);
       setSelectedQuestion(null);
+
+      // Tạo thông báo "có tâm" hơn dựa trên dữ liệu thật
+      const isSoft = type?.toLowerCase() === "soft";
+      const detailText =
+        count > 0 ? ` (bao gồm ${count} đáp án liên quan)` : "";
+
       setMessage({
         intent: "success",
-        text: "Đã chuyển câu hỏi vào thùng rác thành công!",
+        text: isSoft
+          ? `Đã chuyển câu hỏi vào thùng rác thành công${detailText}.`
+          : `Đã xóa vĩnh viễn câu hỏi khỏi hệ thống${detailText}.`,
       });
     } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
+      setMessage({
+        intent: "error",
+        text: getApiError(error) || "Không thể thực hiện thao tác xóa.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -305,7 +347,9 @@ export function QuestionsContent() {
             chapterOptions={chapterOptions}
             licenseOptions={licenseOptions}
             difficultyOptions={DIFFICULTY_OPTIONS}
-            filterForm={filterForm}
+            filterForm={getValues()}
+            control={control}
+            errors={errors}
             onFilterChange={handleFilterChange}
             onApply={handleApplyFilters}
             onClear={handleClearAll}
@@ -383,6 +427,7 @@ export function QuestionsContent() {
       </div>
 
       {/* Modals */}
+
       <CreateQuestionModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

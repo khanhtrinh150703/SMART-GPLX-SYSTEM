@@ -1,1 +1,1 @@
-export * from './zip-query.service'
+export * from './zip.query.service'

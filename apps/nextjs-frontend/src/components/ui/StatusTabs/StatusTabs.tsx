@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/utils";
 import { 
   statusTabsContainerVariants, 
@@ -8,13 +9,10 @@ import {
   type StatusTabsContainerProps 
 } from "./status-tab.variants";
 
-/**
- * Cấu trúc dữ liệu cho một tùy chọn (Option structure).
- */
 export interface StatusOption<T> {
   id: T;
   label: string;
-  color?: string; // Class màu chữ (Ví dụ: text-emerald-600, text-rose-500...)
+  color?: string; // Dùng cái này làm class màu nền (Pill) luôn
 }
 
 interface StatusTabsProps<T> extends StatusTabsContainerProps {
@@ -24,10 +22,6 @@ interface StatusTabsProps<T> extends StatusTabsContainerProps {
   className?: string;
 }
 
-/**
- * Component chuyển đổi trạng thái - Phiên bản không viền, tùy biến màu sắc.
- * @template T - Kiểu dữ liệu định danh (Identifier type).
- */
 export function StatusTabs<T extends string | number>({
   options,
   currentValue,
@@ -41,22 +35,42 @@ export function StatusTabs<T extends string | number>({
       {options.map((option) => {
         const isActive = currentValue === option.id;
 
+        // Xử lý màu nền Pill: 
+        // Nếu là 'all' thì tự ốp màu xám, các tab khác thì lấy từ thuộc tính `color`
+        const pillBgClass = option.id === "all" 
+          ? (option.color || "bg-slate-500 shadow-lg shadow-slate-200/60")
+          : (option.color || "bg-white shadow-sm");
+
         return (
           <button
             key={option.id}
             type="button"
             onClick={() => onChange(option.id)}
             className={cn(
+              "relative",
               statusTabsButtonVariants({
                 status: isActive ? "active" : "inactive",
                 size,
                 shape,
               }),
-              // Nếu đang active: Ưu tiên dùng màu trong option, nếu không có mặc định dùng emerald
-              isActive && (option.color || "text-emerald-600")
+              // Active thì auto chữ trắng, không active thì màu xám nhạt
+              isActive ? "text-white" : "text-slate-500 hover:text-slate-700" 
             )}
           >
-            {option.label}
+            {/* HIỆU ỨNG NỀN CHẠY */}
+            {isActive && (
+              <motion.div
+                layoutId="status-tabs-active-bg"
+                className={cn(
+                  "absolute inset-0 z-0",
+                  shape === "full" ? "rounded-full" : "rounded-xl",
+                  pillBgClass // Bơm thẳng màu nền vào đây
+                )}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+              />
+            )}
+
+            <span className="relative z-10">{option.label}</span>
           </button>
         );
       })}

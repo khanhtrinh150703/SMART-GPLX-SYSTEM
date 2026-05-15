@@ -1,5 +1,5 @@
 // user.props.ts
-import { UserStatus } from "./user.status";
+import { Status } from "@/shared/config/status.config";
 import { Role } from "../role/role.entity";
 
 export interface IUserProps {
@@ -9,7 +9,7 @@ export interface IUserProps {
   fullName: string;
   phoneNumber: string;
   passwordHash: string;
-  status: UserStatus;
+  status: Status;
   urlPicture: string;
   roles: Role[];
   createdAt: Date;

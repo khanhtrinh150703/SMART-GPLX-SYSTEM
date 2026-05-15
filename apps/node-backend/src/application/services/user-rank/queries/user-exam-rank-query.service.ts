@@ -6,8 +6,8 @@ import { UserExamRankMapper } from "@/infrastructure/database/mappers/use-rank";
 import { UserExamRankEntity } from "@/domain/entities/user-rank/user-exam-rank.entity";
 
 interface ICradle {
-  userExamRankRepo: IUserExamRankRepository;
-  leaderboardCacheRepo: ILeaderboardCacheRepository;
+  userExamRankRepository: IUserExamRankRepository;
+  leaderboardCacheRepository: ILeaderboardCacheRepository;
 }
 
 /**
@@ -17,9 +17,9 @@ export class UserRankQueryService implements IUserRankQueryService {
   private readonly _sqlRepo: IUserExamRankRepository;
   private readonly _cacheRepo: ILeaderboardCacheRepository;
 
-  constructor({ userExamRankRepo, leaderboardCacheRepo }: ICradle) {
-    this._sqlRepo = userExamRankRepo;
-    this._cacheRepo = leaderboardCacheRepo;
+  constructor({ userExamRankRepository, leaderboardCacheRepository }: ICradle) {
+    this._sqlRepo = userExamRankRepository;
+    this._cacheRepo = leaderboardCacheRepository;
   }
 
   /** @description Lấy top bảng xếp hạng theo đề thi (Hybrid: Redis -> SQL) */

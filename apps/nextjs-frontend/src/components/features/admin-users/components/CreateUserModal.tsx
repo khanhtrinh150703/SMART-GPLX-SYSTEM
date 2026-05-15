@@ -15,7 +15,6 @@ import { CreateUserPayload, createUserSchema } from "../schema/user.schema";
 interface CreateUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // Hàm xử lý lưu dữ liệu (Save Handler) nhận đầu vào là Payload sạch
   onSave: (data: CreateUserPayload) => Promise<void>; 
   isLoading: boolean;
 }

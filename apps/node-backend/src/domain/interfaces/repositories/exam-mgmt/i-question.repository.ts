@@ -73,8 +73,8 @@ export interface IQuestionRepository {
   restore(id: string): Promise<Question>;
 
   /**
-   * @description Truy vấn danh sách câu hỏi và tổng số lượng bản ghi phục vụ cho giao diện quản trị (Admin). 
-   * @param {QuestionsAdminQueryDto} dto - Đối tượng chứa các tiêu chí lọc (Search, Chapter, License, Difficulty, Status) 
+   * @description Truy vấn danh sách câu hỏi và tổng số lượng bản ghi phục vụ cho giao diện quản trị (Admin).
+   * @param {QuestionsAdminQueryDto} dto - Đối tượng chứa các tiêu chí lọc (Search, Chapter, License, Difficulty, Status)
    * @param {number} skip - Số bản ghi bỏ qua.
    * @param {number} take - Số bản ghi lấy ra.
    * @returns {Promise<[Question[], number]>} Một Tuple bao gồm:
@@ -82,15 +82,23 @@ export interface IQuestionRepository {
   findAndCountAdmin(
     dto: QuestionsAdminQueryDto,
     skip: number,
-    take: number
-  ): Promise<[Question[], number]>
+    take: number,
+  ): Promise<[Question[], number]>;
 
   /**
-   * @description Lấy toàn bộ câu hỏi khả dụng cho hạng bằng lái.
-   * @param licenseId - ID của hạng bằng (B1, B2, C...).
+   * @description Lấy toàn bộ danh sách câu hỏi khả dụng theo danh sách mã hạng bằng lái.
+   * @param {string[]} licenseCategoryIds - Danh sách mã định danh của các hạng bằng lái (B1, B2, C...).
+   * @returns {Promise<Question[]>} Danh sách các thực thể câu hỏi tìm thấy phù hợp với các hạng bằng.
    */
-  findByLicenseCategory(licenseId: string[]): Promise<Question[]>;
+  findByLicenseCategoryIds(licenseCategoryIds: string[]): Promise<Question[]>;
 
+  /**
+   * @description Lấy toàn bộ danh sách câu hỏi dựa trên danh sách mã chương học được chỉ định.
+   * @param {string[]} chapterIds - Danh sách mã định danh của các chương học cần truy vấn câu hỏi.
+   * @returns {Promise<Question[]>} Danh sách các thực thể câu hỏi thuộc về các chương học đó.
+   */
+  findByChapterIds(chapterIds: string[]): Promise<Question[]>;
+  
   /**
    * @description Đếm số lượng câu hỏi đang hoạt động (không bị xóa mềm) dựa trên danh sách ID.
    * @param {string[]} ids - Mảng danh sách các UUID của câu hỏi.
@@ -103,7 +111,9 @@ export interface IQuestionRepository {
    * @param {GetSelectionPoolDto} filter - Đối tượng chứa các tiêu chí lọc câu hỏi.
    * @returns {Promise<QuestionWithDetails[]>} Danh sách tóm tắt các câu hỏi thỏa điều kiện.
    */
-  findSelectionPool(filter: GetSelectionPoolDto): Promise<QuestionWithDetails[]>;
+  findSelectionPool(
+    filter: GetSelectionPoolDto,
+  ): Promise<QuestionWithDetails[]>;
 
   /**
    * @description Kiểm tra sự tồn tại của một danh sách ID câu hỏi.

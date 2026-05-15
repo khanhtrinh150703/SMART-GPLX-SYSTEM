@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { UserResponseDTO } from "@/types/user-respone";
+import { UserResponseDTO } from "@/components/features/admin-users/types/user-respone";
 import { GenericTable } from "@/components/common/Generic-Table/GenericTable";
 import { getUserColumns } from "./user-columns";
 

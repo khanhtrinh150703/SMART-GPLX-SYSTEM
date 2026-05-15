@@ -18,6 +18,7 @@ export interface IExamUserResultResponseDTO {
   readonly passed: boolean; // Trạng thái Đạt hay Không đạt
   readonly hasFailedCritical: boolean;
   readonly passingScore: number;
+  readonly timeExam: number;
 
   // 3. Phân tích thời gian (Time Analytics) - Yêu cầu của bạn
   readonly timeSpent: number; // Tổng thời gian làm bài (giây)
@@ -44,6 +45,7 @@ export class ExamUserResultResponseDTO implements IExamUserResultResponseDTO {
   public readonly passingScore: number;
 
   public readonly timeSpent: number;
+  public readonly timeExam: number;
   public readonly timeRemaining: number;
   public readonly isAutoSubmit: boolean;
   public readonly clientFinishedAt: string;
@@ -62,7 +64,8 @@ export class ExamUserResultResponseDTO implements IExamUserResultResponseDTO {
     this.passed = data.passed;
     this.hasFailedCritical = data.hasFailedCritical;
     this.passingScore = data.passingScore;
-
+    this.timeExam = data.timeExam;
+    
     this.timeSpent = data.timeSpent;
     this.timeRemaining = data.timeRemaining;
     this.isAutoSubmit = data.isAutoSubmit;

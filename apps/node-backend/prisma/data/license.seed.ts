@@ -1,4 +1,4 @@
-import { LicenseSeed } from "../interface.seed";
+import { LicenseSeed } from "./interface.seed";
 
 /**
  * @description Danh sách dữ liệu mẫu cho các hạng bằng lái xe tại Việt Nam.

@@ -108,15 +108,15 @@ export const userSteps = (
       it('❌ Nên trả về lỗi 401 khi không cung cấp Token xác thực', async () => {
         const res = await request(app)
           .patch(USER_ENDPOINTS.USER_STATUS(regularUserId))
-          .send({ status: 'active' });
+          .send({ status: 'ACTIVE' });
         expect(res.status).toBe(401); // Unauthorized
       });
 
       it('Nên cho phép Admin cập nhật trạng thái người dùng khác', async () => {
         const response = await request(app)
           .patch(USER_ENDPOINTS.USER_STATUS(regularUserId))
-          .set(getAuthHeader(adminToken)) // Dùng token Admin
-          .send({ status: 'active' });
+          .set(getAuthHeader(adminToken)) 
+          .send({ status: 'ACTIVE' });
 
         expect(response.status).toBe(200);
         expect(response.body.message).toBe(Message.USER.STATUS_UPDATED);

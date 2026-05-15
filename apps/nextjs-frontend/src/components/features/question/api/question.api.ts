@@ -4,6 +4,7 @@ import { StandardResponse } from "@/types/common.type";
 import { ISelectionPoolParams, PaginatedResult, QueryParams } from "@/types/paginaton.type";
 import { Question } from "../types/question.types";
 import { IExamQuestionSummary } from "../types/question-summary.types";
+import { DeleteResponse } from "@/types/respone/delete.common";
 
 /**
  * Question API: Quản lý nghiệp vụ câu hỏi (Lý thuyết GPLX).
@@ -67,8 +68,8 @@ export const questionApi = {
    * Xóa mềm câu hỏi (Chuyển trạng thái is_active = false).
    * (Soft delete question - Change status to inactive)
    */
-  delete: async (id: string): Promise<StandardResponse<void>> => {
-    const response = await axiosClient.delete<StandardResponse<void>>(
+  delete: async (id: string): Promise<StandardResponse<DeleteResponse>> => {
+    const response = await axiosClient.delete<StandardResponse<DeleteResponse>>(
       `${ENDPOINTS.QUESTION.BASE}/${id}`
     );
     return response.data;
@@ -80,7 +81,7 @@ export const questionApi = {
    */
   restore: async (id: string): Promise<StandardResponse<Question>> => {
     const response = await axiosClient.patch<StandardResponse<Question>>(
-      `${ENDPOINTS.QUESTION.BASE}/${id}/restore`
+      `${ENDPOINTS.QUESTION.RESTORE(id)}`
     );
     return response.data;
   },

@@ -2,7 +2,6 @@ import { CreateManualExamRequestDTO, ICreateManualExamInputDTO } from '@/applica
 import { ExamQueryDTO } from '@/application/dtos/request/exam/exam-query.request.dto';
 import { GenerateExamDTO } from '@/application/dtos/request/exam/generate-exam.request.dto';
 import { IUpdateExamInputDTO, UpdateExamRequestDTO } from '@/application/dtos/request/exam/update-exam.request.dto';
-import { IExamGeneratorService } from '@/domain/interfaces/services/exam-engine';
 import { IExamService } from '@/domain/interfaces/services/exam-mgmt';
 import { IExamQueryService } from '@/domain/interfaces/services/exam-mgmt/queries';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
@@ -12,6 +11,8 @@ import { IAuthRequest } from '@/shared/types/authRequest.types';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Response } from 'express';
 import { ExamUserQueryDTO } from '@/application/dtos/request/exam/exam-query-list.request.dto';
+import { IExamGeneratorService } from '@/domain/interfaces/services/exam-engine/commands';
+import { Status } from '@/shared/config/status.config';
 
 /**
  * @interface IExamControllerCradle
@@ -128,15 +129,14 @@ export class ExamController {
         const dto = new GenerateExamDTO({
             matrixId: req.body.matrixId,
             name: req.body.name,
-            userId: userId as string
+            userId: userId as string,
+            status: req.body.status as Status,
         });
 
-        // 3. Tự thực hiện Validation logic
-
-        // 4. Ủy quyền (Delegate) cho Service thực hiện logic nghiệp vụ
+        // 3. Ủy quyền (Delegate) cho Service thực hiện logic nghiệp vụ
         const response = await this._examGeneratorService.generate(dto);
 
-        // 5. Trả về kết quả thông qua Utility Class Result
+        // 4. Trả về kết quả thông qua Utility Class Result
         Result.ok(
             res,
             response,
@@ -161,9 +161,7 @@ export class ExamController {
             userId: userId as string
         });
 
-        // 2. Validate
-
-        // 3. Gọi Service Generator (Thường xử lý bốc đề/kiểm tra tính hợp lệ của câu hỏi)
+        // 2. Gọi Service Generator (Thường xử lý bốc đề/kiểm tra tính hợp lệ của câu hỏi)
         const response = await this._examService.createManual(dto);
 
         Result.ok(

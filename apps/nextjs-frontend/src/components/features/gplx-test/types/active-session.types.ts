@@ -29,6 +29,7 @@ export interface IActiveSessionAnswerResponseDTO {
   readonly questionId: string;
   readonly selectedAnswerIndex: number | null;
   readonly updatedAt: string; // ISO String
+  readonly timeSpent: number;
 }
 
 /**
@@ -40,5 +41,6 @@ export interface IActiveSessionResponseDTO {
   readonly createdAt: string; // ISO String - Thời điểm hết hạn (Chốt bởi BE)
   readonly serverTime: string; // ISO String - Thời điểm hiện tại của Server
   readonly remainingSeconds: number;
+  readonly timeSpent: number;
   readonly currentAnswers: IActiveSessionAnswerResponseDTO[];
 }
