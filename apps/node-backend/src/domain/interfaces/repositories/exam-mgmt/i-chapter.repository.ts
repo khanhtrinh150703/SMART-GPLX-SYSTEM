@@ -46,7 +46,7 @@ export interface IChapterRepository {
    * @param {Chapter} chapter - Thực thể chứa các thông tin đã cập nhật.
    * @returns {Promise<void>}
    */
-  updateChapter(id: string, chapter: Chapter): Promise<void>;
+  updateChapter(chapter: Chapter): Promise<void>;
 
   /**
    * @description Thống kê chi tiết số lượng các bản ghi đang tham chiếu đến Chương này.
@@ -72,9 +72,9 @@ export interface IChapterRepository {
   /**
    * @description Khôi phục chương lý thuyết đã bị xóa mềm bằng cách gỡ bỏ đánh dấu thời gian xóa (deletedAt).
    * @param {string} id - UUID của chương cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<Chapter>}
    */
-  restore(id: string): Promise<void>;
+  restore(id: string): Promise<Chapter>;
 
   /**
    * @description Tìm kiếm và đếm tổng số lượng hạng bằng lái có phân trang.

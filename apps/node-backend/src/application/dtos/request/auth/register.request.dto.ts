@@ -1,46 +1,89 @@
 import { REGEX } from "@/domain/constants/regex.constant";
+import { AppError } from "@/shared/errors";
+import { ErrorCode } from "@/shared/errors/error-codes";
 
 /**
- * @description DTO chứa dữ liệu yêu cầu đăng ký tài khoản mới.
- * Tự chịu trách nhiệm kiểm tra tính hợp lệ về định dạng của các trường dữ liệu.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu đăng ký tài khoản.
  */
-export class RegisterRequestDTO {
-  readonly username!: string;
-  readonly email!: string;
-  readonly password!: string;
-  readonly confirmPassword!: string;
+export interface IRegisterInputDTO {
+  readonly username: string;
+  readonly email: string;
+  readonly password: string;
+  readonly confirmPassword: string;
   readonly fullName?: string;
+}
 
-  constructor(data: Partial<RegisterRequestDTO>) {
-    Object.assign(this, data);
+/**
+ * @class RegisterRequestDTO
+ * @description DTO xử lý đăng ký tài khoản mới, mapping trước khi validate.
+ */
+export class RegisterRequestDTO implements IRegisterInputDTO {
+  public readonly username: string;
+  public readonly email: string;
+  public readonly password: string;
+  public readonly confirmPassword: string;
+  public readonly fullName?: string;
+
+  /**
+   * @param {IRegisterInputDTO} data
+   * @throws {AppError}
+   */
+  constructor(data: IRegisterInputDTO) {
+    // 0. Guard Clause chặn object null/undefined
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
+
+    // 1. Mapping & Sanitization (Gán và làm sạch dữ liệu)
+    this.username =
+      typeof data.username === "string"
+        ? data.username.trim().toLowerCase()
+        : "";
+
+    this.email =
+      typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+
+    this.password = typeof data.password === "string" ? data.password : "";
+
+    this.confirmPassword =
+      typeof data.confirmPassword === "string" ? data.confirmPassword : "";
+
+    this.fullName =
+      typeof data.fullName === "string" ? data.fullName.trim() : undefined;
+
+    // 2. Validation (Kiểm tra logic trên dữ liệu đã mapping)
+    this.validate(data);
   }
 
   /**
-   * @description Kiểm tra tổng thể tính hợp lệ của dữ liệu đầu vào.
-   * @returns {boolean}
+   * @private
+   * @description Kiểm tra tính hợp lệ đa tầng, giữ nguyên các case cũ.
+   * @param {IRegisterInputDTO} data - Dùng để check dữ liệu thô nếu cần.
+   * @throws {AppError}
    */
-  public isValid(): boolean {
-    return (
-      this.isEmail() &&
-      this.isPasswordMatching() &&
-      this.isPassword()
-    );
-  }
+  private validate(data: IRegisterInputDTO): void {
+    // --- Validate Username ---
+    if (!data.username || this.username.length < 3) {
+      throw new AppError(ErrorCode.AUTH.USERNAME_INVALID);
+    }
 
-  /** @description Kiểm tra độ dài và độ phức tạp mật khẩu. */
-  public isPassword(): boolean {
-    if (!this.password) return false;
-    return this.password.length >= 8 && REGEX.PASSWORD.COMPLEXITY.test(this.password);
-  }
+    // --- Validate Email ---
+    if (!data.email || !REGEX.EMAIL.BASIC.test(data.email)) {
+      throw new AppError(ErrorCode.AUTH.EMAIL_INVALID);
+    }
 
-  /** @description Kiểm tra định dạng Email qua Regex. */
-  public isEmail(): boolean {
-    if (!this.email) return false;
-    return REGEX.EMAIL.BASIC.test(this.email);
-  }
+    // --- Validate Password (Độ dài và độ phức tạp) ---
+    if (
+      !this.password ||
+      this.password.length < 8 ||
+      !REGEX.PASSWORD.COMPLEXITY.test(this.password)
+    ) {
+      throw new AppError(ErrorCode.AUTH.PASSWORD_TOO_WEAK);
+    }
 
-  /** @description Xác nhận mật khẩu và nhập lại mật khẩu phải trùng khớp. */
-  public isPasswordMatching(): boolean {
-    return !!this.password && this.password === this.confirmPassword;
+    // --- Validate Confirm Password ---
+    if (this.password !== this.confirmPassword) {
+      throw new AppError(ErrorCode.AUTH.PASSWORD_MISMATCH);
+    }
   }
 }

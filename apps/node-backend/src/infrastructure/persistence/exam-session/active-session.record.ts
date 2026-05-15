@@ -8,6 +8,7 @@ export interface IActiveSessionPersistence {
   _id: string;
   userId: string;
   examId: string;
+  currentQuestionIndex: number;
   currentAnswers: IActiveSessionAnswer[];
   expiresAt: Date;
   createdAt: Date;

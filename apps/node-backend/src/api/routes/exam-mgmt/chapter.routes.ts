@@ -1,16 +1,18 @@
-import { Router } from 'express';
+import { Router } from "express";
 
 // 1. Controller (Gom từ index của exam-mgmt)
-import { ChapterController } from '@/api/controllers/exam-mgmt';
+import { ChapterController } from "@/api/controllers/exam-mgmt";
 
 // 2. Middlewares (Gom từ nhóm bảo mật của identity)
-import { authMiddleware, requirePermission } from '@/api/middlewares/identity';
+import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
 // 3. DI Container
-import { container } from '@/shared/utils/container';
+import { container } from "@/shared/utils/container";
 
 const router = Router();
-const chapterController = container.resolve('chapterController') as ChapterController;
+const chapterController = container.resolve(
+  "chapterController",
+) as ChapterController;
 
 // ============================================================================
 // CẤU HÌNH CHUNG: TẤT CẢ ROUTE TRONG MODULE ĐỀU CẦN AUTH
@@ -28,9 +30,9 @@ router.use(authMiddleware);
  * @access Private (Admin/Instructor)
  */
 router.get(
-  '/selection',
-  requirePermission('chapters:read'),
-  chapterController.getChapterSelections
+  "/selection",
+  requirePermission("chapters:read"),
+  chapterController.getChapterSelections,
 );
 
 /**
@@ -38,27 +40,27 @@ router.get(
  * @route GET /api/v1/chapters
  * @access Public/Private (Yêu cầu đăng nhập)
  */
-router.get('/', requirePermission('chapters:read'), chapterController.list);
-
+router.get("/", requirePermission("chapters:read"), chapterController.list);
 
 // ============================================================================
 // NHÓM 2: QUYỀN QUẢN LÝ (MANAGE SCOPE)
 // Kể từ đây, tất cả các route đều yêu cầu vé 'chapters:manage'.
 // Instructor và Admin đều có quyền này để quản lý nội dung.
 // ============================================================================
-router.use(requirePermission('chapters:manage'));
+router.use(requirePermission("chapters:manage"));
 
 /**
  * @description Tạo mới một chương học lý thuyết.
  * @route POST /api/v1/chapters
  * @access Private (Admin/Instructor)
  */
-router.post('/', chapterController.create);
+router.post("/", chapterController.create);
 
 /**
  * Nhóm các hành động thao tác dựa trên ID ":id" để tối ưu đường dẫn.
  */
-router.route('/:id')
+router
+  .route("/:id")
   /**
    * @description Cập nhật thông tin chi tiết của một chương học theo ID.
    * @route PATCH /api/v1/chapters/:id
@@ -78,6 +80,6 @@ router.route('/:id')
  * @route PATCH /api/v1/chapters/:id/restore
  * @access Private (Admin/Instructor)
  */
-router.patch('/:id/restore', chapterController.restore);
+router.patch("/:id/restore", chapterController.restore);
 
 export default router;

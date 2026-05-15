@@ -1,44 +1,65 @@
+import { Status } from "@/shared/config/status.config";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
-export interface IGenerateExamInput {
-  matrixId: string;
-  userId: string;
-  name: string;
+/**
+ * @description Giao diện dữ liệu đầu vào khởi tạo đề thi tự động.
+ */
+export interface IGenerateExamInputDto {
+  readonly matrixId: string;
+  readonly userId: string;
+  readonly name: string;
+  readonly status: Status;
 }
 
-export class GenerateExamDTO {
+/**
+ * @description DTO xử lý và chuẩn hóa dữ liệu tạo đề thi từ ma trận.
+ */
+export class GenerateExamDTO implements IGenerateExamInputDto {
   public readonly matrixId: string;
   public readonly userId: string;
   public readonly name: string;
+  public readonly status: Status;
 
-  constructor(data: IGenerateExamInput) {
+  constructor(data: IGenerateExamInputDto) {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
+
     this.matrixId = data.matrixId;
+    this.status = data.status;
     this.userId = data.userId;
-    this.name = data.name?.trim(); // Trim luôn cho sạch dữ liệu
+    this.name = data.name?.trim() || "";
+
+    this.validate();
   }
 
   /**
-   * @description Tự kiểm tra tính hợp lệ của yêu cầu tạo đề.
+   * @description Hàm gác cổng kiểm tra tính hợp lệ đa tầng.
    */
-  public isValid(): void {
-    // 1. Kiểm tra Matrix ID (Luật thi)
-    if (!this.matrixId || typeof this.matrixId !== 'string') {
+  private validate(): void {
+    if (!this.matrixId || typeof this.matrixId !== "string") {
       throw new AppError(ErrorCode.EXAM.INVALID_MATRIX_ID);
     }
 
-    // 2. Kiểm tra User ID (Người tạo/Người thi)
-    if (!this.userId || typeof this.userId !== 'string') {
-      throw new AppError(ErrorCode.USER.NOT_FOUND); // Hoặc mã lỗi phù hợp
+    if (!isUUID(this.matrixId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
     }
 
-    // 3. Kiểm tra Name (Nếu có truyền lên thì không được để trống hoặc quá dài)
-    if (this.name !== undefined) {
-      if (this.name.length === 0) {
-        throw new AppError(ErrorCode.EXAM.NAME_REQUIRED);
-      }
-      if (this.name.length > 100) {
-        throw new AppError(ErrorCode.EXAM.NAME_TOO_LONG);
-      }
+    if (!this.userId || typeof this.userId !== "string") {
+      throw new AppError(ErrorCode.EXAM.USER_ID_REQUIRED);
+    }
+
+    if (!isUUID(this.userId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    if (!this.name || this.name.length === 0) {
+      throw new AppError(ErrorCode.EXAM.NAME_REQUIRED);
+    }
+
+    if (this.name.length > 100) {
+      throw new AppError(ErrorCode.EXAM.NAME_TOO_LONG);
     }
   }
 }

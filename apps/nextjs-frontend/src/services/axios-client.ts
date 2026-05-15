@@ -1,108 +1,166 @@
-import axios from 'axios';
-import { useUserStore } from '../store/user/user.store';
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+} from "axios";
+import { useUserStore } from "../store/user/user.store";
 
-const axiosClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1',
+// 1. Định nghĩa Type chặt chẽ - "Say NO to any"
+interface CustomAxiosConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+  _ignoreError?: boolean;
+}
+
+interface PendingRequest {
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}
+
+// Khởi tạo Client riêng cho Refresh để tránh bị Interceptor chính "tóm" được
+// (Separate client for refreshing to avoid interceptor loops)
+const refreshClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1",
+});
+
+// 2. Biến kiểm soát trạng thái hàng đợi
+let isRefreshing = false;
+let failedQueue: PendingRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((request) => {
+    if (error) {
+      request.reject(error);
+    } else if (token) {
+      request.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const axiosClient: AxiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// 1. Request Interceptor: Giữ nguyên logic gắn Token
+// REQUEST INTERCEPTOR
 axiosClient.interceptors.request.use(
   (config) => {
-    // 1. Lấy token từ Zustand Store
     const token = useUserStore.getState().accessToken;
 
-    // 2. Xử lý gửi tệp tin (FormData)
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      delete config.headers["Content-Type"];
     }
 
-    // 3. Kiểm tra Token và nhét vào Headers
-    // Kiểm tra đúng biến "token" vừa lấy ở trên
-    if (token && token !== 'undefined' && token !== 'null') {
-      // Gắn token vào thẻ Authorization (Nhớ có chữ Bearer đằng trước tùy backend yêu cầu)
+    if (token && token !== "undefined" && token !== "null") {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      // Bật dòng này lên nếu bạn muốn theo dõi xem có API nào đang gọi mà thiếu token không
-      // console.warn("Axios Interceptor: Đang gửi API mà không có Token hợp lệ!");
     }
 
-    // 4. QUAN TRỌNG NHẤT: Bắt buộc phải trả lại config để Axios chạy tiếp
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
-// 2. Response Interceptor: Nơi xử lý "Hồi sinh" Token
-/**
- * Response Interceptor: Centralized Error Handling & Token Resurrection
- * (Bộ chặn phản hồi: Xử lý lỗi tập trung và Hồi sinh Token)
- */
+// RESPONSE INTERCEPTOR
 axiosClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as CustomAxiosConfig;
 
-    if (originalRequest._ignoreError) {
+    // 🛡️ CẦU DAO CÁCH LY (CIRCUIT BREAKER)
+    // Nếu không có config hoặc request bị chặn lỗi thì reject luôn
+    if (!originalRequest || originalRequest._ignoreError) {
       return Promise.reject(error);
     }
 
-    // 1. Network Error handling (Xử lý mất mạng)
+    // 1. Network Error (Lỗi kết nối)
     if (!error.response) {
-      window.location.replace("/error/network");
+      if (typeof window !== "undefined")
+        window.location.replace("/error/network");
       return Promise.reject(error);
     }
 
     const { status } = error.response;
+    const authPath = "/auth/refresh-token"; // Đường dẫn API refresh
 
-    // 2. Critical Infrastructure Errors (403, 404, 500...)
-    const criticalErrors = [403, 404, 500, 502, 503];
+    // 2. Xử lý 401 - Silent Refresh
+    // ĐIỀU KIỆN CHẶN LOOP: Không được retry nếu chính URL này là API Refresh
+    if (
+      status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes(authPath)
+    ) {
+      // Nếu đang có một request khác đang đi Refresh rồi, đưa mình vào hàng đợi
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return axiosClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
 
-    if (criticalErrors.includes(status)) {
-      window.location.replace(`/error/${status}`);
-      return Promise.reject(error);
-    }
-
-    // 3. Logic Silent Refresh (401)
-    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        const refreshToken = useUserStore.getState().refreshToken;
+        const { refreshToken, clearLocalAuth, setTokens } =
+          useUserStore.getState();
 
         if (!refreshToken) {
-          handleForceLogout();
+          clearLocalAuth();
+          window.location.href = "/login";
           return Promise.reject(error);
         }
 
-        // Gọi API Refresh với instance axios mới (không dùng interceptor này)
-        const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {
-          refreshToken
-        });
-
+        // Gọi API Refresh (Dùng refreshClient đã tạo ở ngoài)
+        const res = await refreshClient.post(authPath, { refreshToken });
         const { accessToken, refreshToken: newRefreshToken } = res.data.data;
-        useUserStore.getState().setTokens(accessToken, newRefreshToken);
 
-        // Thử lại request cũ với token mới
+        // Cập nhật Store & Cookies
+        setTokens(accessToken, newRefreshToken);
+
+        // Giải phóng các request đang chờ trong hàng đợi (Release the queue)
+        processQueue(null, accessToken);
+
+        // Thử lại chính request hiện tại
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return axiosClient(originalRequest);
-
       } catch (refreshError) {
-        handleForceLogout();
+        // Nếu refresh thất bại (Token hết hạn hoàn toàn), xóa sạch và đá ra ngoài
+        processQueue(refreshError, null);
+        useUserStore.getState().clearLocalAuth();
+        window.location.href = "/login";
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
+    // 3. Xử lý trường hợp chính API Refresh bị 401 (Trường hợp tử huyệt)
+    if (status === 401 && originalRequest.url?.includes(authPath)) {
+      useUserStore.getState().clearLocalAuth();
+      window.location.href = "/login";
+    }
+
+    // 4. Critical Errors (Các lỗi nghiêm trọng khác)
+    const criticalErrors = [403, 404, 500, 502, 503];
+    if (criticalErrors.includes(status)) {
+      if (typeof window !== "undefined")
+        window.location.replace(`/error/${status}`);
+    }
+
     return Promise.reject(error);
-  }
+  },
 );
 
-const handleForceLogout = () => {
-  useUserStore.getState().logout();
-  // 💡 Ép về Login và xóa lịch sử để không Back lại Dashboard được
-  window.location.replace('/login');
-};
+// const handleForceLogout = () => {
+//   useUserStore.getState().logout();
+//   if (typeof window !== "undefined") window.location.replace("/login");
+// };
 
 export default axiosClient;

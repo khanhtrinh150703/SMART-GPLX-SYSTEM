@@ -77,6 +77,9 @@ export default function ProfileForm() {
     }
   }, [user, reset]);
 
+  if (!isMounted) {
+    return <SplashScreen variant="user" />;
+  }
   /**
    * Update Profile Handler
    * (Xử lý cập nhật thông tin cá nhân)

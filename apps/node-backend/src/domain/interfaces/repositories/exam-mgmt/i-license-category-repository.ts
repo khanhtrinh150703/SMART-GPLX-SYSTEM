@@ -45,7 +45,7 @@ export interface ILicenseCategoryRepository {
    * @param {LicenseCategory} category - Thực thể đã được thay đổi dữ liệu.
    * @returns {Promise<void>}
    */
-  updateLicenseCategory(id: string, category: LicenseCategory): Promise<void>;
+  updateLicenseCategory(category: LicenseCategory): Promise<void>;
 
   /**
    * @description Thống kê chi tiết số lượng các bản ghi đang tham chiếu đến Hạng bằng lái này.
@@ -78,9 +78,9 @@ export interface ILicenseCategoryRepository {
   /**
    * @description Khôi phục hạng bằng lái đã bị xóa mềm (gỡ bỏ đánh dấu deleted_at).
    * @param {string} id - UUID của hạng bằng cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<LicenseCategory>}
    */
-  restore(id: string): Promise<void>;
+  restore(id: string): Promise<LicenseCategory>;
 
   /**
    * @description Tìm kiếm và đếm tổng số lượng hạng bằng lái có phân trang.

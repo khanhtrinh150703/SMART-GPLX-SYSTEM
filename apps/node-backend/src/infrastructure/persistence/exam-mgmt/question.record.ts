@@ -1,5 +1,5 @@
-import { QuestionStatus } from "@/domain/entities/question/question.status";
-import { Prisma} from "@prisma/client";
+import { Status } from "@/shared/config/status.config";
+import { Prisma } from "@prisma/client";
 
 // 1. Interface cho Answer (Dịch: Answer record interface)
 export interface IAnswerRecord {
@@ -41,7 +41,7 @@ export interface IQuestionRecord {
   chapter?: {
     name: string;
   };
-  status: QuestionStatus;
+  status: Status;
 
   // Các trường "ảo" dùng để map sang Entity dễ hơn
   chapterName?: string;
@@ -65,3 +65,16 @@ export type PrismaQuestionWithRelations = Prisma.QuestionGetPayload<{
   };
 }>;
 
+/**
+ * @description Type mở rộng cho Question bao gồm đầy đủ thông tin Chapter và tên Hạng bằng lái.
+ */
+export type QuestionWithDetails = Prisma.QuestionGetPayload<{
+  include: {
+    chapter: true,
+    licenseLinks: {
+      include: {
+        licenseCategory: { select: { name: true } }
+      }
+    }
+  }
+}>;

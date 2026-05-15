@@ -1,7 +1,7 @@
 // src/api/auth/auth.api.ts
-import axiosClient from '../../services/axios-client';
-import { ENDPOINTS } from '@/constants/api-endpoints.constant';
-import type { StandardResponse } from '@/types/common.type';
+import axiosClient from "../../services/axios-client";
+import { ENDPOINTS } from "@/constants/api-endpoints.constant";
+import type { StandardResponse } from "@/types/common.type";
 
 // Import (Nhập) thêm các Payload (Dữ liệu gửi lên) mới
 import type {
@@ -15,65 +15,86 @@ import type {
   LoginResponseData,
   // ForgotPasswordPayload,  // Dữ liệu gửi lên khi yêu cầu quên mật khẩu
   // ResetPasswordPayload    // Dữ liệu gửi lên khi đặt lại mật khẩu mới
-} from '@/types/auth.type';
+} from "@/types/auth.type";
 
 export const authApi = {
   // Bọc RegisterResponse bên trong StandardResponse (Phản hồi tiêu chuẩn)
-  register: async (data: RegisterPayload): Promise<StandardResponse<RegisterResponse>> => {
+  register: async (
+    data: RegisterPayload,
+  ): Promise<StandardResponse<RegisterResponse>> => {
     const response = await axiosClient.post<StandardResponse<RegisterResponse>>(
       ENDPOINTS.AUTH.REGISTER,
-      data
+      data,
     );
     return response.data; // Trả về toàn bộ khối StandardResponse
   },
 
   // Xác thực OTP (Giả sử Backend không trả về data lõi, chỉ trả về message/thông báo thành công)
-  verifyOtp: async (data: VerifyOtpPayload): Promise<StandardResponse<null>> => {
+  verifyOtp: async (
+    data: VerifyOtpPayload,
+  ): Promise<StandardResponse<null>> => {
     const response = await axiosClient.post<StandardResponse<null>>(
       ENDPOINTS.AUTH.VERIFY_OTP,
-      data
+      data,
     );
     return response.data;
   },
 
   // Gửi yêu cầu Đăng nhập (Login Request)
   // Trả về: Promise<StandardResponse<LoginResponseData>>
-  login: async (data: LoginPayload): Promise<StandardResponse<LoginResponseData>> => {
-    const response = await axiosClient.post<StandardResponse<LoginResponseData>>(
-      ENDPOINTS.AUTH.LOGIN,
-      data
-    );
+  login: async (
+    data: LoginPayload,
+  ): Promise<StandardResponse<LoginResponseData>> => {
+    const response = await axiosClient.post<
+      StandardResponse<LoginResponseData>
+    >(ENDPOINTS.AUTH.LOGIN, data);
     // Trả về toàn bộ response.data theo chuẩn StandardResponse
+    return response.data;
+  },
+  logout: async (token?: string): Promise<StandardResponse<void>> => {
+    const response = await axiosClient.post<StandardResponse<void>>(
+      ENDPOINTS.AUTH.LOGOUT,
+      {}, // Body trống
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    );
     return response.data;
   },
 
   // --- CÁC HÀM BỔ SUNG (ADDITIONAL FUNCTIONS) ---
 
   // Yêu cầu gửi lại mã OTP (Resend OTP)
-  resendOtp: async (data: ResendOtpPayload): Promise<StandardResponse<null>> => {
+  resendOtp: async (
+    data: ResendOtpPayload,
+  ): Promise<StandardResponse<null>> => {
     const response = await axiosClient.post<StandardResponse<null>>(
       ENDPOINTS.AUTH.RESEND_OTP,
-      data
+      data,
     );
     return response.data;
   },
 
   // Gửi yêu cầu quên mật khẩu (Forgot Password Request)
   // Thường gửi email lên để nhận link hoặc mã xác nhận
-  forgotPassword: async (data: ForgotPasswordPayload): Promise<StandardResponse<null>> => {
+  forgotPassword: async (
+    data: ForgotPasswordPayload,
+  ): Promise<StandardResponse<null>> => {
     const response = await axiosClient.post<StandardResponse<null>>(
       ENDPOINTS.AUTH.FORGOT_PASSWORD,
-      data
+      data,
     );
     return response.data;
   },
 
   // Đặt lại mật khẩu mới (Reset Password)
   // Thường gửi kèm mật khẩu mới và token/mã xác nhận lấy từ URL hoặc email
-  resetPassword: async (data: ResetPasswordPayload): Promise<StandardResponse<null>> => {
+  resetPassword: async (
+    data: ResetPasswordPayload,
+  ): Promise<StandardResponse<null>> => {
     const response = await axiosClient.post<StandardResponse<null>>(
       ENDPOINTS.AUTH.RESET_PASSWORD,
-      data
+      data,
     );
     return response.data;
   },

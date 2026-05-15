@@ -1,55 +1,93 @@
-
+import { REGEX } from "@/domain/constants/regex.constant";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
- * @description DTO dùng để tạo mới một chương lý thuyết (Data Transfer Object for Chapter Creation).
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật chương lý thuyết.
  */
-export class UpdateChapterRequestDto {
-  /** @property {string} id - Tên chương (Ví dụ: Khái niệm và quy tắc giao thông). */
+export interface IUpdateChapterInputDTO {
+  readonly id: string;
+  readonly name: string;
+  readonly code: string;
+  readonly description: string;
+  readonly orderIndex: number;
+}
+
+/**
+ * @description DTO xử lý cập nhật thông tin chương lý thuyết.
+ */
+export class UpdateChapterRequestDTO implements IUpdateChapterInputDTO {
   public readonly id: string;
-
-  /** @property {string} name - Tên chương (Ví dụ: Khái niệm và quy tắc giao thông). */
   public readonly name: string;
-
-  /** @property {string} description - Mô tả nội dung chương (Mặc định: chuỗi rỗng). */
+  public readonly code: string;
   public readonly description: string;
-
-  /** @property {number} orderIndex - Thứ tự sắp xếp của chương (Mặc định: 0). */
   public readonly orderIndex: number;
 
-  /** @property {string} code - Mã nhận diện chương (Ví dụ: CH-01). */
-  public readonly code: string;
+  constructor(data: IUpdateChapterInputDTO) {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
 
-  /**
-   * @description Hàm khởi tạo với cơ chế gán giá trị mặc định.
-   * @param {Partial<UpdateChapterRequestDto>} data - Dữ liệu thô từ Request.
-   */
-  constructor(data: Partial<UpdateChapterRequestDto>) {
-    this.id = data.id ?? "";
-    this.name = data.name?.trim() ?? '';
-    this.description = data.description?.trim() ?? '';
-    this.orderIndex = data.orderIndex ?? 0;
-    this.code = data.code?.trim() ?? '';
+    // --- BƯỚC 1: MAPPING & CHUẨN HÓA (Sanitization) ---
+    this.id = data.id; // ID thường là UUID nên không cần trim/lowercase
+    // Mapping & Sanitization trực tiếp, cực kỳ chuyên nghiệp
+    this.name = typeof data.name === "string" ? data.name.trim() : "";
+
+    this.code =
+      typeof data.code === "string" ? data.code.trim().toLowerCase() : "";
+
+    this.description =
+      typeof data.description === "string" ? data.description.trim() : "";
+
+    // Ép kiểu số an toàn đề phòng dữ liệu từ multipart hoặc query string
+    this.orderIndex =
+      data.orderIndex !== undefined ? Number(data.orderIndex) : 0;
+
+    // --- BƯỚC 2: TỰ XÁC THỰC (Validate Self) ---
+    this.validate();
   }
 
   /**
-   * @description Kiểm tra tính hợp lệ của dữ liệu (Manual Validation).
-   * @returns {{ isValid: boolean; errors: string[] }} Kết quả xác thực.
+   * @description Hàm bảo vệ kiểm tra tính toàn vẹn dựa trên thuộc tính nội bộ.
+   * @private
    */
-  public isValid(): void {
+  private validate(): void {
+    const { CHAPTER } = ErrorCode;
+    // 1. Kiểm tra ID (Bắt buộc phải có để xác định bản ghi cần update)
     if (!this.id) {
-      throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED);
+      throw new AppError(CHAPTER.ID_REQUIRED);
     }
 
-    if (!this.name) throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
-    if (!this.code) throw new AppError(ErrorCode.VALIDATION.CODE_REQUIRED);
-    if (this.orderIndex < 0) throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER);
-    if (!this.description) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED);
+    if (!isUUID(this.id)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    // 2. Kiểm tra Name (Sử dụng this.name đã được trim)
+    if (this.name.length === 0) {
+      throw new AppError(CHAPTER.NAME_REQUIRED);
+    }
+
+    // 3. Kiểm tra Code
+    if (this.code.length === 0) {
+      throw new AppError(CHAPTER.CODE_REQUIRED);
+    }
+
+    if (!REGEX.COMMON.NO_SPACE_SPECIAL_CHAR.test(this.code)) {
+      throw new AppError(CHAPTER.INVALID_CODE);
+    }
+
+    // 4. Kiểm tra Description
+    if (this.description.length === 0) {
+      throw new AppError(CHAPTER.DESCRIPTION_REQUIRED);
     }
 
     if (this.description.length > 500) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+      throw new AppError(CHAPTER.DESCRIPTION_TOO_LONG);
+    }
+
+    // 5. Kiểm tra OrderIndex (Đã được ép kiểu Number)
+    if (isNaN(this.orderIndex) || this.orderIndex < 0) {
+      throw new AppError(CHAPTER.INVALID_ORDER);
     }
   }
 }

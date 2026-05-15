@@ -1,142 +1,392 @@
+import { securityResponses, deleteResponse } from "../swaggerHelpers";
+
 export const questionPaths = {
-    /**
-     * ROUTE: /questions
-     * Thao tác trên danh sách câu hỏi
-     */
-    [`/questions`]: {
-        get: {
-            tags: ['Question Management'],
-            summary: 'Lấy danh sách câu hỏi',
-            description: 'Lấy toàn bộ câu hỏi đang hoạt động. Có thể lọc theo chapterId hoặc licenseId.',
-            parameters: [
-                { name: 'chapterId', in: 'query', schema: { type: 'string', format: 'uuid' } },
-                { name: 'licenseId', in: 'query', schema: { type: 'string', format: 'uuid' } },
-            ],
-            responses: {
-                '200': {
-                    description: 'Thành công',
-                    content: {
-                        'application/json': {
-                            schema: { type: 'array', items: { $ref: '#/components/schemas/QuestionResponseDTO' } },
-                        },
-                    },
-                },
-            },
+  [`/questions/chapter/{chapterId}`]: {
+    get: {
+      tags: ["Question (Public)"],
+      summary: "Lấy câu hỏi theo chương",
+      parameters: [
+        {
+          name: "chapterId",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
         },
-        post: {
-            tags: ['Question Management'],
-            summary: 'Tạo câu hỏi mới',
-            requestBody: {
-                required: true,
-                content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateUpdateQuestionDTO' } } },
+      ],
+      responses: {
+        200: {
+          description: "Thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/QuestionListResponse" },
             },
-            responses: {
-                '201': { description: 'Tạo thành công' },
-                '400': {
-                    description: 'Lỗi Validation nghiệp vụ: \n' +
-                        '- QST_001: Thiếu chương \n' +
-                        '- QST_002: Nội dung quá ngắn \n' +
-                        '- QST_003: Thiếu hạng bằng \n' +
-                        '- QST_004: Thiếu số đáp án \n' +
-                        '- QST_005: Thiếu đáp án đúng \n' +
-                        '- QST_006: URL ảnh lỗi',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-                '404': {
-                    description: 'ID Chương hoặc ID Hạng bằng không tồn tại trong hệ thống',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-                '409': {
-                    description: 'QST_409: Nội dung câu hỏi này đã tồn tại',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-            },
+          },
         },
+        ...securityResponses,
+      },
     },
+  },
 
-    /**
-     * ROUTE: /questions/{id}
-     * Thao tác trên một câu hỏi cụ thể
-     */
-    [`/questions/{id}`]: {
-        get: {
-            tags: ['Question Management'],
-            summary: 'Lấy chi tiết câu hỏi',
-            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-            responses: {
-                '200': {
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionResponseDTO' } } },
-                },
-                '404': {
-                    description: 'QST_404: Không tìm thấy câu hỏi',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-            },
-        },
-        put: {
-            tags: ['Question Management'],
-            summary: 'Cập nhật câu hỏi (Smart Update)',
-            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-            requestBody: {
-                required: true,
-                content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateUpdateQuestionDTO' } } },
-            },
-            responses: {
-                '200': { description: 'Cập nhật thành công' },
-                '400': {
-                    description: 'Lỗi Validation nghiệp vụ: \n' +
-                        '- QST_001: Thiếu chương \n' +
-                        '- QST_002: Nội dung quá ngắn \n' +
-                        '- QST_003: Thiếu hạng bằng \n' +
-                        '- QST_004: Thiếu số đáp án \n' +
-                        '- QST_005: Thiếu đáp án đúng \n' +
-                        '- QST_006: URL ảnh lỗi, \n' +
-                        '- QUESTION_ANSWERS_SYNC_ERROR: Lỗi truyền thiếu/sai ID đáp án cũ',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-                '404': {
-                    description: 'Không tìm thấy ID câu hỏi (QST_404), ID chương hoặc ID hạng bằng',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-                '409': {
-                    description: 'QST_409: Nội dung mới bị trùng với một câu hỏi khác',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-            },
-        },
-        delete: {
-            tags: ['Question Management'],
-            summary: 'Xóa mềm câu hỏi',
-            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-            responses: {
-                '200': { description: 'Xóa thành công' },
-                '400': {
-                    description: 'QUESTION_CANNOT_DELETE_CRITICAL: Không được xóa câu hỏi điểm liệt',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuestionErrorResponse' } } },
-                },
-                '404': { description: 'QST_404: Không tìm thấy câu hỏi để xóa' },
-            },
-        },
-    },
+  // ============================================================================
+  // 2. QUẢN LÝ DANH SÁCH (CRUD ROOT)
+  // ============================================================================
 
-    /**
-     * ROUTE: /questions/{id}/restore
-     * Khôi phục dữ liệu
-     */
-    [`/questions/{id}/restore`]: {
-        patch: {
-            tags: ['Question Management'],
-            summary: 'Khôi phục câu hỏi đã xóa',
-            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-            responses: {
-                '200': {
-                    description: 'Khôi phục thành công',
-                    content: {
-                        'application/json': { schema: { $ref: '#/components/schemas/QuestionResponseDTO' } },
-                    },
-                },
-                '404': { description: 'QST_404: Không tìm thấy bản ghi để khôi phục' },
-            },
+  [`/questions`]: {
+    get: {
+      tags: ["Question (Private)"],
+      summary: "Lấy danh sách câu hỏi (Admin/Instructor)",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: "page", in: "query", schema: { type: "integer" } },
+        { name: "limit", in: "query", schema: { type: "integer" } },
+        { name: "search", in: "query", schema: { type: "string" } },
+        { name: "chapterId", in: "query", schema: { type: "string" } },
+        {
+          name: "licenseCategoryIds",
+          in: "query",
+          schema: { type: "string" },
+          description: "Lọc theo hạng bằng (VD: B1,B2)",
         },
+        { name: "difficultyLevel", in: "query", schema: { type: "integer" } },
+        { name: "isCritical", in: "query", schema: { type: "boolean" } },
+      ],
+      responses: {
+        200: {
+          description: "Thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/QuestionListResponse" },
+            },
+          },
+        },
+        ...securityResponses,
+      },
     },
+    post: {
+      tags: ["Question (Private)"],
+      summary: "Tạo mới câu hỏi",
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                chapterId: { type: "string", format: "uuid" },
+                content: { type: "string", minLength: 10 },
+                answers: {
+                  type: "string",
+                  description: "JSON String của mảng IAnswerResponseDTO",
+                },
+                licenseCategoryIds: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+                isCritical: { type: "boolean" },
+                difficultyLevel: { type: "integer" },
+                questionImage: { type: "string", format: "binary" },
+              },
+              required: [
+                "chapterId",
+                "content",
+                "answers",
+                "licenseCategoryIds",
+                "isCritical",
+              ],
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "Tạo thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/QuestionSingleResponse" },
+            },
+          },
+        },
+        400: {
+          description: "Lỗi dữ liệu đầu vào & Nghiệp vụ",
+          content: {
+            "application/json": {
+              examples: {
+                // --- NHÓM 1XX: VALIDATION ---
+                chapterReq: {
+                  value: {
+                    success: false,
+                    code: "QST_001",
+                    statusCode: 400,
+                    message: "Thiếu ID chương",
+                  },
+                },
+                contentInv: {
+                  value: {
+                    success: false,
+                    code: "QST_002",
+                    statusCode: 400,
+                    message: "Nội dung câu hỏi quá ngắn",
+                  },
+                },
+                licenseReq: {
+                  value: {
+                    success: false,
+                    code: "QST_003",
+                    statusCode: 400,
+                    message: "Thiếu hạng bằng lái áp dụng",
+                  },
+                },
+                ansInsu: {
+                  value: {
+                    success: false,
+                    code: "QST_004",
+                    statusCode: 400,
+                    message: "Số lượng đáp án phải từ 2 trở lên",
+                  },
+                },
+                correctMissing: {
+                  value: {
+                    success: false,
+                    code: "QST_005",
+                    statusCode: 400,
+                    message: "Câu hỏi chưa có đáp án đúng",
+                  },
+                },
+                imgInv: {
+                  value: {
+                    success: false,
+                    code: "QST_006",
+                    statusCode: 400,
+                    message: "Link ảnh hoặc định dạng ảnh không hợp lệ",
+                  },
+                },
+
+                // --- NHÓM 1XX: LOGIC & FORMAT ---
+                multiCorrect: {
+                  value: {
+                    success: false,
+                    code: "QST_102",
+                    statusCode: 400,
+                    message: "Chỉ được phép có duy nhất 1 đáp án đúng",
+                  },
+                },
+                ansContentReq: {
+                  value: {
+                    success: false,
+                    code: "QST_103",
+                    statusCode: 400,
+                    message: "Nội dung đáp án không được để trống",
+                  },
+                },
+                diffInv: {
+                  value: {
+                    success: false,
+                    code: "QST_106",
+                    statusCode: 400,
+                    message: "Mức độ khó không hợp lệ",
+                  },
+                },
+                criticalInv: {
+                  value: {
+                    success: false,
+                    code: "QST_109",
+                    statusCode: 400,
+                    message: "Giá trị điểm liệt phải là True hoặc False",
+                  },
+                },
+              },
+            },
+          },
+        },
+        409: {
+          description: "Lỗi xung đột dữ liệu",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "QST_409",
+                statusCode: 409,
+                message: "Nội dung câu hỏi này đã tồn tại trong hệ thống",
+              },
+            },
+          },
+        },
+        500: {
+          description: "Lỗi hệ thống",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "QST_500",
+                statusCode: 500,
+                message: "Lỗi đồng bộ dữ liệu đáp án",
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+  },
+
+  // ============================================================================
+  // 3. CHI TIẾT & THAO TÁC THEO ID
+  // ============================================================================
+
+  [`/questions/{id}`]: {
+    get: {
+      tags: ["Question (Public)"],
+      summary: "Chi tiết câu hỏi",
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/QuestionSingleResponse" },
+            },
+          },
+        },
+        404: {
+          description: "Không tìm thấy",
+          content: {
+            "application/json": {
+              example: {
+                success: false,
+                code: "QST_404",
+                statusCode: 404,
+                message: "Câu hỏi không tồn tại",
+              },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+    put: {
+    tags: ["Question (Private)"],
+    summary: "Cập nhật câu hỏi",
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: "id",
+        in: "path",
+        required: true,
+        schema: { type: "string", format: "uuid" },
+        description: "ID của câu hỏi cần cập nhật"
+      },
+    ],
+    requestBody: {
+      content: {
+        "multipart/form-data": {
+          schema: {
+            type: "object",
+            properties: {
+              // Tui tách nhỏ các field thay vì dùng Ref DTO để hỗ trợ binary file dễ nhìn trên UI
+              chapterId: { type: "string", format: "uuid" },
+              content: { type: "string", minLength: 10 },
+              answers: { type: "string", description: "JSON String mảng đáp án" },
+              licenseCategoryIds: { type: "array", items: { type: "string" } },
+              isCritical: { type: "boolean" },
+              difficultyLevel: { type: "integer" },
+              indexNumber: { type: "integer" },
+              questionImage: { type: "string", format: "binary", description: "Ảnh mới (nếu có)" }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      200: { 
+        description: "Cập nhật thành công",
+        content: { "application/json": { schema: { $ref: "#/components/schemas/QuestionSingleResponse" } } }
+      },
+      400: {
+        description: "Lỗi xác thực dữ liệu & Logic cập nhật",
+        content: {
+          "application/json": {
+            examples: {
+              // --- LỖI ĐỊNH DANH ---
+              idReq: { value: { success: false, code: "QST_100", statusCode: 400, message: "Thiếu ID câu hỏi để cập nhật" } },
+              
+              // --- LỖI NỘI DUNG & CHƯƠNG ---
+              chapterReq: { value: { success: false, code: "QST_001", statusCode: 400, message: "Thiếu ID chương" } },
+              contentInv: { value: { success: false, code: "QST_002", statusCode: 400, message: "Nội dung câu hỏi không hợp lệ" } },
+              
+              // --- LỖI ĐÁP ÁN ---
+              ansInsu: { value: { success: false, code: "QST_004", statusCode: 400, message: "Số lượng đáp án không đủ (tối thiểu 2)" } },
+              correctMissing: { value: { success: false, code: "QST_005", statusCode: 400, message: "Phải có ít nhất 1 đáp án đúng" } },
+              multiCorrect: { value: { success: false, code: "QST_102", statusCode: 400, message: "Luật mới chỉ cho phép duy nhất 1 đáp án đúng" } },
+              ansContent: { value: { success: false, code: "QST_103", statusCode: 400, message: "Nội dung đáp án không được để trống" } },
+
+              // --- LỖI CHỈ SỐ & KIỂU DỮ LIỆU ---
+              diffInv: { value: { success: false, code: "QST_106", statusCode: 400, message: "Mức độ khó không hợp lệ" } },
+              indexInv: { value: { success: false, code: "QST_107", statusCode: 400, message: "Số thứ tự câu hỏi không hợp lệ" } },
+              criticalInv: { value: { success: false, code: "QST_109", statusCode: 400, message: "Giá trị câu hỏi điểm liệt phải là boolean" } }
+            }
+          }
+        }
+      },
+      404: {
+        description: "Không tìm thấy câu hỏi",
+        content: {
+          "application/json": {
+            example: { success: false, code: "QST_404", statusCode: 404, message: "Câu hỏi không tồn tại trong hệ thống" }
+          }
+        }
+      },
+      ...securityResponses
+    }},
+    delete: {
+      tags: ["Question (Private)"],
+      summary: "Xóa mềm câu hỏi",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        ...deleteResponse,
+        ...securityResponses,
+      },
+    },
+  },
+
+  [`/questions/{id}/restore`]: {
+    patch: {
+      tags: ["Question (Private)"],
+      summary: "Khôi phục câu hỏi",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Khôi phục thành công",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/QuestionSingleResponse" },
+            },
+          },
+        },
+        ...securityResponses,
+      },
+    },
+  },
 };

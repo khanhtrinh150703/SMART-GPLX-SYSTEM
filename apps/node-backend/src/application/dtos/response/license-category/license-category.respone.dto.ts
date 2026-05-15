@@ -1,23 +1,50 @@
 /**
- * DTO phản hồi thông tin hạng bằng lái, cung cấp dữ liệu tinh gọn cho Client.
- * (DTO responding with license category info, providing lean data for the Client)
+ * @description Giao diện dữ liệu trả về cho thông tin hạng bằng lái.
+ * (Interface for responding with license category information.)
  */
-export class LicenseCategoryResponse {
-  /** @property {string} id - Mã định danh duy nhất (UUID). */
-  public readonly id!: string;
+export interface ILicenseCategoryResponseDTO {
+  /** @description Mã định danh duy nhất (UUID). */
+  readonly id: string;
 
-  /** @property {string} name - Tên hạng bằng (VD: A1, B2). */
-  public readonly name!: string;
+  /** @description Tên hạng bằng (VD: A1, B2). */
+  readonly name: string;
 
-  /** @property {string} description - Mô tả chi tiết về hạng bằng. */
-  public readonly description!: string;
+  /** @description Mô tả chi tiết về hạng bằng. */
+  readonly description: string;
 
-  /** @property {number} minAge - Độ tuổi tối thiểu bắt buộc để được cấp hạng bằng này. */
-  public readonly minAge!: number;
+  /** @description Độ tuổi tối thiểu bắt buộc để được cấp hạng bằng này. */
+  readonly minAge: number;
 
-  /** @property {string} status - Trạng thái hoạt động của hạng bằng (VD: active, draft, deleted). */
-  public readonly status!: string;
+  /** @description Trạng thái hoạt động của hạng bằng (VD: 'active', 'draft', 'deleted'). */
+  readonly status: string;
 
-  /** @property {string} createdAt - Thời điểm tạo bản ghi (định dạng ISO 8601). */
-  public readonly createdAt!: string;
+  /** @description Thứ tự hiện thị*/
+  readonly orderIndex: number;
+
+  /** @description Thời điểm tạo bản ghi (định dạng ISO 8601). */
+  readonly createdAt: string | Date;
+}
+
+/**
+ * @description DTO vận chuyển thông tin hạng bằng lái.
+ * Cung cấp dữ liệu tinh gọn cho phía Client trong dự án Smart-GPLX-System.
+ */
+export class LicenseCategoryResponseDTO implements ILicenseCategoryResponseDTO {
+  public readonly id: string;
+  public readonly name: string;
+  public readonly description: string;
+  public readonly minAge: number;
+  public readonly orderIndex: number;
+  public readonly status: string;
+  public readonly createdAt: string | Date;
+
+  constructor(data: ILicenseCategoryResponseDTO) {
+    this.id = data.id;
+    this.name = data.name;
+    this.description = data.description;
+    this.orderIndex = data.orderIndex;
+    this.minAge = data.minAge;
+    this.status = data.status;
+    this.createdAt = data.createdAt;
+  }
 }

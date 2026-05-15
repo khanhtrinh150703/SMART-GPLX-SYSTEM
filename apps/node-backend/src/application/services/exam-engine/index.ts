@@ -1,1 +1,1 @@
-export * from './exam-generator.service'
+export * from './commands'

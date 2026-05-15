@@ -23,20 +23,6 @@ export const useQuestions = (params?: QueryParams) => {
 
   // --- 2. TRUY VẤN DỮ LIỆU DANH MỤC (FETCH MASTER DATA) ---
 
-  // Lấy danh sách Chương rút gọn (Fetch chapter selection)
-  const chaptersQuery = useQuery({
-    queryKey: ["chapters-selection"],
-    queryFn: () => masterService.getChapterSelection(),
-    staleTime: 5 * 60 * 1000, // Cache 5 phút vì dữ liệu ít thay đổi
-  });
-
-  // Lấy danh sách Hạng bằng rút gọn (Fetch license category selection)
-  const licensesQuery = useQuery({
-    queryKey: ["license-categories-selection"],
-    queryFn: () => masterService.getLicenseCategorySelection(),
-    staleTime: 5 * 60 * 1000,
-  });
-
   // --- 3. CÁC THAO TÁC BIẾN ĐỔI (MUTATIONS) ---
 
   // Thêm mới (Create)
@@ -63,9 +49,17 @@ export const useQuestions = (params?: QueryParams) => {
   // Xóa mềm (Delete)
   const deleteMutation = useMutation({
     mutationFn: (id: string) => questionService.delete(id),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response) return; 
+
+      const result = response;
+
       queryClient.invalidateQueries({ queryKey: ["questions"] });
-      toast.success("Đã ẩn câu hỏi thành công.");
+
+      // Hiển thị toast dựa trên type trả về từ Backend
+      const actionText =
+        result.type === "soft" ? "ẩn (xóa mềm)" : "xóa vĩnh viễn";
+      toast.success(`Thành công: Đã ${actionText} câu hỏi.`);
     },
     onError: () => toast.error("Xóa câu hỏi thất bại."),
   });
@@ -86,9 +80,6 @@ export const useQuestions = (params?: QueryParams) => {
     questions: questionsQuery.data?.data || [],
     pagination: questionsQuery.data?.meta,
     isFetching: questionsQuery.isFetching,
-    chapterOptions: chaptersQuery.data || [],
-    licenseOptions: licensesQuery.data || [],
-    isLoadingOptions: chaptersQuery.isLoading || licensesQuery.isLoading,
 
     // ĐẢM BẢO CÓ ĐOẠN NÀY ĐỂ UI KHÔNG BỊ LỖI 'actions'
     actions: {
@@ -99,5 +90,5 @@ export const useQuestions = (params?: QueryParams) => {
     },
 
     isMutating: createMutation.isPending || updateMutation.isPending,
-  }
+  };
 };

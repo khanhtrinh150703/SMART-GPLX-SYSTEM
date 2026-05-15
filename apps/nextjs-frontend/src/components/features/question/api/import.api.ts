@@ -5,6 +5,7 @@ import { ENDPOINTS } from "@/constants/api-endpoints.constant";
 import { 
   IImportJobResponseDTO, 
   IImportJobStatusDTO, 
+  IInitImportInputDTO, 
   ImportFinalResponse 
 } from "../types/import.types";
 
@@ -17,10 +18,10 @@ export const ImportApi = {
    * @description Initialize a new import session 
    * (Khởi tạo một phiên nhập dữ liệu mới)
    */
-  init: async (totalSize: number): Promise<StandardResponse<IImportJobResponseDTO>> => {
+  init: async (data: IInitImportInputDTO): Promise<StandardResponse<IImportJobResponseDTO>> => {
     const response = await axiosClient.post<StandardResponse<IImportJobResponseDTO>>(
       ENDPOINTS.IMPORT.INIT, 
-      { totalSize }
+      data 
     );
     return response.data;
   },

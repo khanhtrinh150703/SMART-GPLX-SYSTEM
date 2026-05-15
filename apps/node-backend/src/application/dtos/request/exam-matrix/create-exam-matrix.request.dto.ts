@@ -1,115 +1,160 @@
 import { AppError, ErrorCode } from "@/shared/errors";
-import { IExamMatrixDetailRequest } from "./exam-matrix-detail.request";
+import { ExamMatrixDetailRequestDTO } from "./exam-matrix-detail.request";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
- * @description DTO dùng cho yêu cầu tạo mới Ma trận đề thi.
- * Tự chịu trách nhiệm kiểm tra tính hợp lệ về kiểu dữ liệu (Input Validation).
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo Ma trận đề thi.
  */
-export class CreateExamMatrixDTO {
-    public readonly licenseCategoryId: string;
-    public readonly name: string;
-    public readonly totalQuestions: number;
-    public readonly passingScore: number;
-    public readonly durationMinutes: number;
-    public readonly minCriticalQuestions: number;
-    public readonly isDefault: boolean;
-    public readonly details: IExamMatrixDetailRequest[];
+export interface ICreateExamMatrixInputDTO {
+  readonly licenseCategoryId: string;
+  readonly name: string;
+  readonly totalQuestions: number;
+  readonly passingScore: number;
+  readonly durationMinutes: number;
+  readonly minCriticalQuestions: number;
+  readonly isDefault: boolean;
+  readonly isChapter: boolean;
+  readonly details: ExamMatrixDetailRequestDTO[];
+}
 
-    constructor(data: CreateExamMatrixDTO) {
-        this.name = data.name;
-        this.licenseCategoryId = data.licenseCategoryId;
-        this.totalQuestions = data.totalQuestions;
-        this.passingScore = data.passingScore;
-        this.durationMinutes = data.durationMinutes;
-        this.minCriticalQuestions = data.minCriticalQuestions;
-        this.details = data.details;
-        this.isDefault = data.isDefault;
+/**
+ * @class CreateExamMatrixRequestDTO
+ * @description DTO xử lý tạo mới Ma trận đề thi, thực hiện mapping trước khi validate.
+ * @description English: DTO for creating a new Exam Matrix, mapping before validation.
+ */
+export class CreateExamMatrixRequestDTO implements ICreateExamMatrixInputDTO {
+  public readonly licenseCategoryId: string;
+  public readonly name: string;
+  public readonly totalQuestions: number;
+  public readonly passingScore: number;
+  public readonly durationMinutes: number;
+  public readonly minCriticalQuestions: number;
+  public readonly isDefault: boolean;
+  public readonly isChapter: boolean;
+  public readonly details: ExamMatrixDetailRequestDTO[];
+
+  /**
+   * @param {ICreateExamMatrixInputDTO} data
+   * @throws {AppError}
+   */
+  constructor(data: ICreateExamMatrixInputDTO) {
+    // 0. Guard Clause chặn dữ liệu null/undefined
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+
+    // 1. Mapping & Sanitization (Gán sạch vào this trước)
+    this.licenseCategoryId =
+      typeof data.licenseCategoryId === "string"
+        ? data.licenseCategoryId.trim()
+        : "";
+    this.name = typeof data.name === "string" ? data.name.trim() : "";
+    this.totalQuestions =
+      data.totalQuestions !== undefined && data.totalQuestions !== null
+        ? Number(data.totalQuestions)
+        : NaN;
+    this.passingScore =
+      data.passingScore !== undefined && data.passingScore !== null
+        ? Number(data.passingScore)
+        : NaN;
+    this.durationMinutes =
+      data.durationMinutes !== undefined && data.durationMinutes !== null
+        ? Number(data.durationMinutes)
+        : NaN;
+    this.minCriticalQuestions =
+      data.minCriticalQuestions !== undefined &&
+      data.minCriticalQuestions !== null
+        ? Number(data.minCriticalQuestions)
+        : NaN;
+    this.isDefault =
+      typeof data.isDefault === "boolean" ? data.isDefault : false;
+    this.isChapter =
+      typeof data.isChapter === "boolean" ? data.isChapter : false;
+    this.details = Array.isArray(data.details) ? data.details : [];
+
+    // 2. Validation (Kiểm tra toàn bộ logic ràng buộc bằng thuộc tính của instance)
+    this.validate();
+  }
+
+  /**
+   * @private
+   * @description Hàm gác cổng thực hiện kiểm tra logic hoàn toàn dựa trên 'this'.
+   * @throws {AppError}
+   */
+  private validate(): void {
+    // 1. Kiểm tra định danh và tên
+    if (!this.name) {
+      throw new AppError(ErrorCode.MATRIX.NAME_REQUIRED);
     }
 
-    /**
-     * @description Kiểm tra tính hợp lệ của dữ liệu đầu vào trước khi vào tầng Service.
-     * Đảm bảo các ràng buộc về kiểu dữ liệu và logic cơ bản của Ma trận.
-     * @throws {AppError} Ném lỗi nếu dữ liệu không đúng định dạng hoặc vi phạm quy tắc ma trận.
-     */
-    public isValid(): void {
-        // 1. Kiểm tra các thông tin cơ bản
-
-        const mandatoryFields = [
-            { value: this.licenseCategoryId, name: 'licenseCategoryId' },
-            { value: this.totalQuestions, name: 'totalQuestions' },
-            { value: this.passingScore, name: 'passingScore' },
-            { value: this.durationMinutes, name: 'durationMinutes' },
-            { value: this.minCriticalQuestions, name: 'minCriticalQuestions' },
-            { value: this.name, name: 'name' },
-            { value: this.isDefault, name: 'isDefault' },
-        ];
-
-        for (const field of mandatoryFields) {
-            // Kiểm tra null hoặc undefined (0 vẫn được chấp nhận nếu logic cho phép, 
-            // nhưng ở đây totalQuestions > 0 nên ta check kỹ hơn)
-            if (field.value === undefined || field.value === null) {
-                throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-            }
-        }
-
-        if (!this.name) {
-            throw new AppError(ErrorCode.MATRIX.NAME_REQUIRED)
-        }
-
-        if (this.name.length > 100) {
-            throw new AppError(ErrorCode.MATRIX.NAME_TOO_LONG)
-        }
-
-        if (!this.licenseCategoryId) {
-            throw new AppError(ErrorCode.VALIDATION.ID_REQUIRED); // Hoặc mã lỗi chung cho Input
-        }
-      
-        if (this.totalQuestions <= 0) {
-            throw new AppError(ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS);
-        }
-
-        if (this.passingScore <= 0) {
-            throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
-        }
-
-        if (this.durationMinutes <= 0) {
-            throw new AppError(ErrorCode.MATRIX.INVALID_DURATION);
-        }
-
-        // Logic nghiệp vụ: Điểm đạt không được phép lớn hơn tổng số câu hỏi
-        if (this.passingScore > this.totalQuestions) {
-            throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
-        }
-
-        // Kiểm tra logic: Điểm đạt không được lớn hơn tổng số câu
-        if (this.passingScore > this.totalQuestions) {
-            throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
-        }
-
-        // 2. Kiểm tra danh sách chi tiết (details)
-        if (!Array.isArray(this.details) || this.details.length === 0) {
-            throw new AppError(ErrorCode.MATRIX.NO_DETAILS);
-        }
-
-        let totalPercent = 0;
-
-        // 3. Kiểm tra từng phần tử trong mảng details
-        this.details.forEach((detail) => {
-            // ĐỔI THÀNH "string" để khớp với Schema Prisma của bạn
-            if (typeof detail.chapterId !== "string" || typeof detail.percentage !== "number") {
-                throw new AppError(ErrorCode.MATRIX.CHAPTER_ID_REQUIRED);
-            }
-
-            if (detail.percentage < 0 || detail.percentage > 100) {
-                throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
-            }
-
-            totalPercent += detail.percentage;
-        });
-
-        // 4. Kiểm tra tổng phần trăm phải bằng 100%
-        if (totalPercent !== 100) {
-            throw new AppError(ErrorCode.MATRIX.INVALID_PERCENTAGE);
-        }
+    if (this.name.length > 100) {
+      throw new AppError(ErrorCode.MATRIX.NAME_TOO_LONG);
     }
+
+    if (!this.licenseCategoryId) {
+      throw new AppError(ErrorCode.MATRIX.LICENSE_CATEGORY_REQUIRED);
+    }
+
+    if (!isUUID(this.licenseCategoryId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    // 2. Kiểm tra thông số kỹ thuật
+    if (this.totalQuestions <= 0 || isNaN(this.totalQuestions)) {
+      throw new AppError(ErrorCode.MATRIX.INVALID_TOTAL_QUESTIONS);
+    }
+
+    if (this.passingScore <= 0 || isNaN(this.passingScore)) {
+      throw new AppError(ErrorCode.MATRIX.INVALID_PASSING_SCORE);
+    }
+
+    if (this.durationMinutes <= 0 || isNaN(this.durationMinutes)) {
+      throw new AppError(ErrorCode.MATRIX.INVALID_DURATION);
+    }
+
+    if (this.passingScore > this.totalQuestions) {
+      throw new AppError(ErrorCode.MATRIX.PASSING_SCORE_TOO_HIGH);
+    }
+
+    // 3. Kiểm tra cấu trúc chi tiết (Details)
+    if (this.details.length === 0) {
+      throw new AppError(ErrorCode.MATRIX.NO_DETAILS);
+    }
+
+    // 4. Check trùng lặp chương và tính tổng phần trăm
+    const processedChapters = new Set<string>();
+    let totalPercent = 0;
+
+    for (const detail of this.details) {
+      if (!detail.chapterId || typeof detail.percentage !== "number") {
+        throw new AppError(ErrorCode.MATRIX.CHAPTER_ID_REQUIRED);
+      }
+
+      if (processedChapters.has(detail.chapterId)) {
+        throw new AppError(ErrorCode.MATRIX.DUPLICATE_CHAPTER);
+      }
+      processedChapters.add(detail.chapterId);
+
+      if (detail.percentage <= 0 || detail.percentage > 100) {
+        throw new AppError(ErrorCode.MATRIX.CHAPTER_PERCENTAGE_OUT_OF_RANGE);
+      }
+
+      totalPercent += detail.percentage;
+    }
+
+    if (totalPercent !== 100) {
+      throw new AppError(ErrorCode.MATRIX.TOTAL_PERCENTAGE_NOT_100);
+    }
+
+    // 5. Check logic câu điểm liệt (Tách mã lỗi chi tiết)
+    if (isNaN(this.minCriticalQuestions)) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_REQUIRED);
+    }
+
+    if (this.minCriticalQuestions < 0) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_NEGATIVE);
+    }
+
+    if (this.minCriticalQuestions > this.totalQuestions) {
+      throw new AppError(ErrorCode.MATRIX.MIN_CRITICAL_TOO_HIGH);
+    }
+  }
 }

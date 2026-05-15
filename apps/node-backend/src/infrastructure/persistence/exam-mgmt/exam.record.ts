@@ -1,4 +1,5 @@
-import { ExamStatus, Prisma } from "@prisma/client";
+import { Status } from "@/shared/config/status.config";
+import { Prisma } from "@prisma/client";
 
 /**
  * @description Type hỗ trợ lấy dữ liệu từ Prisma kèm quan hệ Questions.
@@ -26,17 +27,14 @@ export interface IExamRecord {
   passingScore: number;
   durationMinutes: number;
   minCriticalQuestions: number;
-  status: ExamStatus;
+  status: Status;
+  isChapter: boolean;
   score: number;
   isPassed: boolean;
   startedAt: Date;
   endedAt: Date | null;
   questions?: IExamQuestionRecord[];
 }
-
-export type PrismaExamWithRelations = Prisma.ExamGetPayload<{
-  include: typeof examInclude
-}>;
 
 export const examInclude = {
   user: {
@@ -51,8 +49,25 @@ export const examInclude = {
     }
   },
   questions: {
+    include: {
+      question: {
+        include: {
+          answers: true,
+          chapter: true  
+        }
+      }
+    },
+    // Truy cập sâu: ExamQuestion -> Question -> Chapter -> orderIndex
     orderBy: {
-      indexNumber: 'asc'
+      question: {
+        chapter: {
+          orderIndex: 'asc' // Sắp xếp tăng dần theo chương
+        }
+      }
     }
   },
-} as const;;
+} as const;
+
+export type PrismaExamWithRelations = Prisma.ExamGetPayload<{
+  include: typeof examInclude
+}>;

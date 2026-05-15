@@ -11,14 +11,9 @@ enum Status {
   ACTIVE   
   DRAFT    
   DELETED
+  ARCHIVED
 }
 
-enum ExamStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-  DELETED
-}
 
 // ==========================================
 // PHÂN HỆ 1: RBAC (ROLE-BASED ACCESS CONTROL)
@@ -30,7 +25,7 @@ model User {
   phoneNumber  String     @map("phone_number") @db.VarChar(20)
   passwordHash String     @map("password_hash") @db.VarChar(255)
   fullName     String?    @map("full_name") @db.VarChar(100)
-  status       String     @default("active") @db.VarChar(20)
+  status       Status     @default(ACTIVE)
   urlPicture   String?    @map("url_picture") @db.VarChar(255)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
@@ -38,10 +33,11 @@ model User {
 
   // Quan hệ
   userRoles      UserRole[]
-  examAttempts   ExamAttempt[]
-  userWeaknesses UserWeakness[]
   exams Exam[]
-  
+  statistics  UserStatistics?
+  examHistory ExamHistory[]
+  topicStatistics UserTopicStatistics[]
+  questionProgress UserQuestionProgress[]
   @@index([deletedAt])
   @@map("users")
 }
@@ -105,11 +101,10 @@ model LicenseCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
   minAge      Int       @default(18) @map("min_age")
-  orderIndex   Int       @default(0) @map("order_index") 
+  orderIndex   Int      @default(0) @map("order_index") 
 
   questionLinks   QuestionLicenseCategory[]
   examMatrix      ExamMatrix[]
-  examAttempts    ExamAttempt[]
   exams       Exam[]
 
   @@index([id])
@@ -120,7 +115,7 @@ model Chapter {
   id          String    @id @default(uuid()) @db.VarChar(36)
   name        String    @db.VarChar(255) @unique
   description String?   @db.Text 
-  code        String     @unique
+  code        String    @unique @db.VarChar(36)
   orderIndex  Int       @default(0) @map("order_index") 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -128,9 +123,8 @@ model Chapter {
 
   // Quan hệ
   questions      Question[]
-  userWeaknesses UserWeakness[]
   examMatrixDetails  ExamMatrixDetail[]
-  
+  userProgress UserQuestionProgress[]
   @@map("chapters")
 }
 
@@ -145,14 +139,15 @@ model Question {
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
   status          Status    @map("status")
-  indexNumber     Int      @map("index_number")
+  indexNumber     Int       @map("index_number")
 
-  chapter        Chapter                   @relation(fields: [chapterId], references: [id])
-  answers        Answer[]
-  licenseLinks   QuestionLicenseCategory[]
-  aiExplanation  AiExplanation?
-  attemptDetails AttemptDetail[]
+  chapter         Chapter   @relation(fields: [chapterId], references: [id])
+  answers         Answer[]
+  licenseLinks    QuestionLicenseCategory[]
+  aiExplanation   AiExplanation?
   examQuestions   ExamQuestion[]
+  statistics      QuestionStatistics?
+  userProgress    UserQuestionProgress[]
 
   @@index([indexNumber])
   @@index([chapterId])
@@ -163,7 +158,7 @@ model QuestionLicenseCategory {
   questionId        String @map("question_id") @db.VarChar(36)
   licenseCategoryId String @map("license_category_id") @db.VarChar(36)
 
-  question        Question        @relation(fields: [questionId], references: [id])
+  question        Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
   licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
 
   @@id([questionId, licenseCategoryId])
@@ -180,26 +175,10 @@ model Answer {
   updatedAt  DateTime  @updatedAt @map("updated_at")
   deletedAt  DateTime? @map("deleted_at")
 
-  question       Question        @relation(fields: [questionId], references: [id])
-  attemptDetails AttemptDetail[]
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
   @@map("answers")
-}
-
-model QuestionArchive {
-  id              String    @id @db.VarChar(36)
-  chapterId       String    @map("chapter_id") @db.VarChar(36)
-  content         String    @db.Text
-  imageUrl        String?   @map("image_url") @db.VarChar(255)
-  difficultyLevel Int       @map("difficulty_level") @db.TinyInt
-  isCritical      Boolean   @map("is_critical")
-  createdAt       DateTime  @map("created_at")
-  updatedAt       DateTime  @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
-  archivedAt      DateTime  @default(now()) @map("archived_at")
-
-  @@map("questions_archive")
 }
 
 // ==========================================
@@ -207,21 +186,22 @@ model QuestionArchive {
 // ==========================================
 
 model ExamMatrix {
-  id                String       @id @default(uuid()) @db.VarChar(36)
-  licenseCategoryId String       @map("license_category_id") @db.VarChar(36)
-  name              String       @db.VarChar(100)
-  isDefault         Boolean      @default(false) @map("is_default")
-  totalQuestions    Int          @map("total_questions")
-  passingScore      Int          @map("passing_score")
-  durationMinutes   Int          @map("duration_minutes")
-  minCriticalQuestions Int       @default(1) @map("min_critical_questions") 
-  createdAt         DateTime  @map("created_at")
-  updatedAt         DateTime  @map("updated_at")
-  deletedAt         DateTime? @map("deleted_at")
+  id                   String            @id @default(uuid()) @db.VarChar(36)
+  licenseCategoryId    String            @map("license_category_id") @db.VarChar(36)
+  name                 String            @unique @db.VarChar(100)
+  isDefault            Boolean           @default(false) @map("is_default")
+  isChapter            Boolean           @default(false) @map("is_chapter") 
+  totalQuestions       Int               @map("total_questions")
+  passingScore         Int               @map("passing_score")
+  durationMinutes      Int               @map("duration_minutes")
+  minCriticalQuestions Int               @default(1) @map("min_critical_questions") 
+  createdAt            DateTime          @map("created_at")
+  updatedAt            DateTime          @map("updated_at")
+  deletedAt            DateTime?         @map("deleted_at")
 
-  licenseCategory   LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
-  details           ExamMatrixDetail[]
-  exams             Exam[]
+  licenseCategory      LicenseCategory   @relation(fields: [licenseCategoryId], references: [id])
+  details              ExamMatrixDetail[]
+  exams                Exam[]
   @@index([licenseCategoryId])  
   @@map("exam_matrices")
 }
@@ -239,27 +219,31 @@ model ExamMatrixDetail {
 }
 
 model Exam {
-  id                   String         @id @default(uuid()) @db.VarChar(36)
-  name                 String         @db.VarChar(100)
-  userId               String         @map("user_id") @db.VarChar(36)
-  examMatrixId         String?        @map("exam_matrix_id") @db.VarChar(36)
-  licenseCategoryId    String         @map("license_category_id") @db.VarChar(36)
+  id                   String          @id @default(uuid()) @db.VarChar(36)
+  name                 String          @unique @db.VarChar(100) 
+  userId               String          @map("user_id") @db.VarChar(36)
+  examMatrixId         String?         @map("exam_matrix_id") @db.VarChar(36)
+  licenseCategoryId    String          @map("license_category_id") @db.VarChar(36)
+  isChapter            Boolean         @default(false) @map("is_chapter") 
     
-  totalQuestions       Int            @map("total_questions")
-  passingScore         Int            @map("passing_score")
-  durationMinutes      Int            @map("duration_minutes")
-  minCriticalQuestions Int            @map("min_critical_questions")
-
-  status               ExamStatus     @default(PUBLISHED)
-  score                Int            @default(0)
-  isPassed             Boolean        @default(false)
+  totalQuestions       Int             @map("total_questions")
+  passingScore         Int             @map("passing_score")
+  durationMinutes      Int             @map("duration_minutes")
+  minCriticalQuestions Int             @map("min_critical_questions")
+  isEdited             Boolean         @default(false) @map("is_edited")
   
-  startedAt            DateTime       @default(now()) @map("started_at")
-  endedAt              DateTime?      @map("ended_at")
-  deletedAt            DateTime?      @map("deleted_at")
+  status               Status          @default(ACTIVE)
+  score                Int             @default(0)
+  isPassed             Boolean         @default(false)
+  
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  startedAt            DateTime        @default(now()) @map("started_at")
+  endedAt              DateTime?       @map("ended_at")
+  deletedAt            DateTime?       @map("deleted_at")
 
   user                 User            @relation(fields: [userId], references: [id])
-  examMatrix           ExamMatrix?      @relation(fields: [examMatrixId], references: [id])
+  examMatrix           ExamMatrix?     @relation(fields: [examMatrixId], references: [id])
   licenseCategory      LicenseCategory @relation(fields: [licenseCategoryId], references: [id]) 
   questions            ExamQuestion[]
   @@index([userId, status])
@@ -282,42 +266,195 @@ model ExamQuestion {
   @@map("exam_questions")
 }
 
+model UserExamRank {
+  id                String   @id @default(uuid())
+  
+  userId            String   @map("user_id")
+  examId            String   @map("exam_id") 
+  
+  bestScore         Int      @default(0) @map("best_score")
+  fastestSeconds    Int      @default(0) @map("fastest_seconds")
+  
+  lastAttemptId     String?  @map("last_attempt_id")
+  
+  licenseCategoryId String   @map("license_category_id")
 
-// ==========================================
-// PHÂN HỆ 4: LỊCH SỬ THI (EXAM EXECUTION)
-// ==========================================
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-model ExamAttempt {
-  id                String    @id @default(uuid()) @db.VarChar(36)
-  userId            String    @map("user_id") @db.VarChar(36)
-  licenseCategoryId String    @map("license_category_id") @db.VarChar(36)
-  startTime         DateTime  @default(now()) @map("start_time")
-  endTime           DateTime? @map("end_time")
-  totalCorrect      Int       @default(0) @map("total_correct")
-  isPassed          Boolean   @default(false) @map("is_passed")
-  failedByCritical  Boolean   @default(false) @map("failed_by_critical")
+  @@unique([userId, examId], name: "user_exam_unique_key")
 
-  user            User            @relation(fields: [userId], references: [id])
-  licenseCategory LicenseCategory @relation(fields: [licenseCategoryId], references: [id])
-  details         AttemptDetail[]
-
-  @@index([userId])
-  @@map("exam_attempts")
+  @@index([examId, bestScore(sort: Desc), fastestSeconds(sort: Asc)])
+  @@index([licenseCategoryId])
+  
+  @@map("user_exam_rank") // Tên bảng trong DB
 }
 
-model AttemptDetail {
-  id               String  @id @default(uuid()) @db.VarChar(36)
-  attemptId        String  @map("attempt_id") @db.VarChar(36)
-  questionId       String  @map("question_id") @db.VarChar(36)
-  selectedAnswerId String? @map("selected_answer_id") @db.VarChar(36)
-  isCorrect        Boolean @default(false) @map("is_correct")
+// ---------------------------------------------------------
+// MODULE: Exam-Mgmt / Statistics
+// ---------------------------------------------------------
 
-  attempt        ExamAttempt @relation(fields: [attemptId], references: [id])
-  question       Question    @relation(fields: [questionId], references: [id])
-  selectedAnswer Answer?     @relation(fields: [selectedAnswerId], references: [id])
+model UserStatistics {
+  // --- IDENTIFICATION (Định danh) ---
+  userId                 String                @id @map("user_id")
+  user                   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([attemptId])
-  @@map("attempt_details")
+  // --- EXAM OVERVIEW (Tổng quan bài thi) ---
+  totalExams             Int                   @default(0) @map("total_exams")
+  passedExams            Int                   @default(0) @map("passed_exams")
+  failedExams            Int                   @default(0) @map("failed_exams")
+  failedByCritical       Int                   @default(0) @map("failed_by_critical") 
+
+  // --- ACCURACY & QUESTIONS (Câu hỏi & Độ chính xác) ---
+  totalQuestionsAnswered Int                   @default(0) @map("total_questions_answered")
+  totalCorrectAnswers    Int                   @default(0) @map("total_correct_answers")
+  totalWrongAnswers      Int                   @default(0) @map("total_wrong_answers")
+  totalUnanswered        Int                   @default(0) @map("total_unanswered")
+
+  // --- SCORES & PERCENTAGES (Điểm số & Tỷ lệ) ---
+  averageScore           Float                 @default(0) @map("average_score") 
+  highScore              Int                   @default(0) @map("high_score")
+  lowScore               Int                   @default(100) @map("low_score")
+
+  // --- DURATION METRICS (Số liệu thời gian - Tính bằng giây) ---
+  averageDuration        Int                   @default(0) @map("average_duration")
+  fastestDuration        Int                   @default(999999) @map("fastest_duration")
+  slowestDuration        Int                   @default(0) @map("slowest_duration")
+
+  // --- PERFORMANCE & RANKING (Phong độ & Thứ hạng) ---
+  currentStreak          Int                   @default(0) @map("current_streak")
+  maxStreak              Int                   @default(0) @map("max_streak")
+  currentRank            String?               @map("current_rank") // Ví dụ: "Tay lái lụa", "Học viên ưu tú"
+
+  // --- RECORD DETAILS (Thông tin chi tiết kỷ lục) ---
+  highScoreExamId        String?               @map("high_score_exam_id")
+  highScoreExamName      String?               @map("high_score_exam_name")
+  lowScoreExamId         String?               @map("low_score_exam_id")
+  lowScoreExamName       String?               @map("low_score_exam_name")
+  fastestExamId          String?               @map("fastest_exam_id")
+  fastestExamName        String?               @map("fastest_exam_name")
+
+  // --- TIMESTAMPS (Dấu thời gian) ---
+  lastExamAt             DateTime              @default(now()) @map("last_exam_at")
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  deletedAt              DateTime?             @map("deleted_at")
+
+  // --- RELATIONS (Quan hệ) ---
+  topicStatistics        UserTopicStatistics[]
+
+  @@map("user_statistics")
+}
+
+model UserTopicStatistics {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+  topicId        String         @map("topic_id")
+  topicName      String         @map("topic_name")
+
+  // --- QUESTION METRICS ---
+  totalQuestions Int            @default(0) @map("total_questions")
+  correctAnswers Int            @default(0) @map("correct_answers")
+  wrongAnswers   Int            @default(0) @map("wrong_answers")
+  unanswered     Int            @default(0) @map("unanswered") // Số câu bỏ qua
+  questionsAttempted Int        @default(0) @map("questions_attempted")
+
+  // --- PERCENTAGE METRICS ---
+  accuracyRate   Float          @default(0) @map("accuracy_rate") // Tỷ lệ đúng (%)
+  errorRate      Float          @default(0) @map("error_rate")    // Tỷ lệ sai (%)
+
+  // --- TIME METRICS (Bổ sung bộ đôi này) ---
+  totalDurationSum Float        @default(0) @map("total_duration_sum") 
+  averageDuration  Float        @default(0) @map("average_duration")
+
+  // --- TIMESTAMPS ---
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  // --- RELATIONS ---
+  statistics     UserStatistics? @relation(fields: [userId], references: [userId], onDelete: Cascade, map: "uts_to_statistics_fkey")
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade, map: "uts_to_user_fkey")
+
+  @@unique([userId, topicId])
+  @@map("user_topic_statistics")
+}
+
+model QuestionStatistics {
+  questionId     String   @id @map("question_id")
+  
+  // --- ATTEMPT METRICS (Số lượt tương tác) ---
+  totalAttempts  Int      @default(0) @map("total_attempts")
+  correctCount   Int      @default(0) @map("correct_count")
+  wrongCount     Int      @default(0) @map("wrong_count")
+  unansweredCount Int     @default(0) @map("unanswered_count") 
+
+  // --- ANALYTICS (Tỷ lệ phân tích) ---
+  accuracyRate   Float    @default(0) @map("accuracy_rate") 
+  errorRate      Float    @default(0) @map("error_rate")    
+  
+  // --- TIME METRICS (Bổ sung ở đây) ---
+  totalDurationSum Float   @default(0) @map("total_duration_sum") 
+  averageDuration  Float   @default(0) @map("average_duration")
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([errorRate])
+  @@index([accuracyRate]) 
+  @@map("question_statistics")
+}
+
+model UserQuestionProgress {
+  userId      String    @map("user_id") @db.VarChar(36)
+  questionId  String    @map("question_id") @db.VarChar(36)
+  // Đổi topicId thành chapterId cho đồng bộ với model Question của bạn
+  chapterId   String    @map("chapter_id") @db.VarChar(36)
+  
+  isPassed    Boolean   @default(false) @map("is_passed")
+  wrongCount  Int       @default(0) @map("wrong_count") @db.Int
+  timeSpent   Float     @default(0) @map("time_spent")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  lastAttemptAt DateTime @updatedAt @map("last_attempt_at")
+
+  // --- RELATIONS ---
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  chapter     Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@index([userId, chapterId]) 
+  @@map("user_question_progress")
+}
+
+// ---------------------------------------------------------
+// MODULE: Exam-Mgmt / History
+// ---------------------------------------------------------
+model ExamHistory {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  licenseCategoryId String  @map("license_category_id") // A1, A2, B2...
+  licenseCategoryName String @map("license_category_name") 
+  examName         String @map("exam_name") 
+
+  score            Int      @map("score")
+  totalQuestions   Int      @map("total_questions")
+  isPassed         Boolean  @map("is_passed")
+  duration         Int      @map("duration") 
+  
+  snapshotId       String   @unique @map("snapshot_id")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  deletedAt        DateTime?      @map("deleted_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("exam_histories")
 }
 
 // ==========================================
@@ -335,20 +472,6 @@ model AiExplanation {
   question Question @relation(fields: [questionId], references: [id])
 
   @@map("ai_explanations")
-}
-
-model UserWeakness {
-  id             String   @id @default(uuid()) @db.VarChar(36)
-  userId         String   @map("user_id") @db.VarChar(36)
-  chapterId      String   @map("chapter_id") @db.VarChar(36)
-  errorRate      Float    @map("error_rate") @db.Float
-  lastAnalyzedAt DateTime @default(now()) @map("last_analyzed_at")
-
-  user    User    @relation(fields: [userId], references: [id])
-  chapter Chapter @relation(fields: [chapterId], references: [id])
-
-  @@index([userId])
-  @@map("user_weaknesses")
 }
 
 model ImportJob {

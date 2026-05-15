@@ -28,3 +28,9 @@ export interface QueryParams {
   sortOrder?: "asc" | "desc"; // Kiểu Literal chuẩn
   [key: string]: string | number | boolean | undefined;
 }
+
+export interface ISelectionPoolParams {
+  licenseCategoryId: string; // BẮT BUỘC: Không có cái này là "ăn" lỗi ngay từ lúc gõ code
+  search?: string;           // Tùy chọn: Tìm kiếm trong kho
+  chapterId?: string;        // Tùy chọn: Lọc theo chương
+}

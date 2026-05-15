@@ -62,18 +62,20 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:push": "prisma db push --accept-data-loss",
+    "db:format": "prisma format",
     "db:push:test": "dotenv -e .env.local -- prisma db push --accept-data-loss",
     "db:push:cicd": "dotenv -e .env.test -- prisma db push --accept-data-loss",
     "db:pull": "prisma db pull",
     "db:pull:test": "dotenv -e .env.local -- prisma db pull",
     "db:gen": "npx prisma generate",
-    "db:seed": "dotenv -e .env -- prisma db seed",
-    "db:seed:test": "dotenv -e .env.local -- prisma db seed",
-    "db:seed:cicd": "dotenv -e .env.test -- prisma db seed",
-    "db:see" : "npx prisma studio",
+    "db:seed": "dotenv -e .env -- npx tsx -r tsconfig-paths/register prisma/seed.main.ts",
+    "db:seed:test": "dotenv -e .env.local -- npx tsx -r tsconfig-paths/register prisma/seed.test.ts",
+    "db:seed:cicd": "dotenv -e .env.test -- npx tsx -r tsconfig-paths/register prisma/seed.test.ts",
+    "db:see": "npx prisma studio",
+    "db:reset": "prisma migrate reset --force && redis-cli flushall",
     "type-check": "tsc --noEmit"
   },
   "prisma": {
-    "seed": "npx tsx -r tsconfig-paths/register prisma/seed.ts"
+    "seed": "npx tsx -r tsconfig-paths/register prisma/seed.main.ts"
   }
 }

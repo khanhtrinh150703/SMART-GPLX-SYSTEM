@@ -1,56 +1,46 @@
 import { Request, Response } from 'express';
-import { CreateExamMatrixDTO } from '@/application/dtos/request/exam-matrix/create-exam-matrix.request.dto';
-import { UpdateExamMatrixDTO } from '@/application/dtos/request/exam-matrix/update-exam-matrix.request.dto';
+import { CreateExamMatrixRequestDTO } from '@/application/dtos/request/exam-matrix/create-exam-matrix.request.dto';
+import { UpdateExamMatrixRequestDTO } from '@/application/dtos/request/exam-matrix/update-exam-matrix.request.dto';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { Result } from '@/shared/responses/api-response';
+import { Result } from '@/application/dtos/response/shared/api.response.dto';
 import { IExamMatrixService } from '@/domain/interfaces/services/exam-session';
+import { IExamMatrixQueryService } from '@/domain/interfaces/services/exam-session/queries';
 import { ExamMatrixQueryDTO } from '@/application/dtos/request/exam-matrix/exam-matrix-query.request.dto';
 
 /**
  * @interface IExamMatrixControllerCradle
- * @description Định nghĩa các phụ thuộc (dependencies) cần thiết cho Exam Matrix Controller.
- * Chứa Service để điều phối các luồng nghiệp vụ chính.
+ * @description "Túi đồ nghề" (Dependency Container) định nghĩa các phụ thuộc cần thiết để vận hành Ma trận đề thi (Exam Matrix).
  */
 export interface IExamMatrixControllerCradle {
+    /** @description Dịch vụ thực hiện các thay đổi cấu trúc ma trận (Tạo mới, cập nhật tỷ lệ câu hỏi). */
     examMatrixService: IExamMatrixService;
+
+    /** @description Dịch vụ chuyên trách truy vấn cấu hình ma trận và các ràng buộc liên quan.  */
+    examMatrixQueryService: IExamMatrixQueryService;
 }
 
 /**
  * @class ExamMatrixController
- * @description Controller xử lý các yêu cầu HTTP liên quan đến Ma trận đề thi (Exam Matrix).
- * Đóng vai trò là "cửa ngõ" tiếp nhận data từ Client và trả về phản hồi chuẩn hóa.
+ * @description Lớp điều phối (Orchestrator) các yêu cầu HTTP liên quan đến việc thiết lập Ma trận đề thi.
+ * @principle Blueprint Governance - Đảm bảo các quy tắc về số lượng câu hỏi, phân bổ chương và câu hỏi điểm liệt luôn tuân thủ đúng quy định của Tổng cục Đường bộ..
  */
 export class ExamMatrixController {
+    /** @private @readonly @description Instance xử lý logic nghiệp vụ thay đổi cấu hình ma trận. */
     private readonly _examMatrixService: IExamMatrixService;
 
+    /** @private @readonly @description Instance xử lý các yêu cầu đọc và kiểm tra tham số ma trận. */
+    private readonly _examMatrixQueryService: IExamMatrixQueryService;
+
     /**
-     * @description Khởi tạo Controller với "vũ khí" Service được "tiêm" từ DI Container.
-     * @param {IExamMatrixControllerCradle} cradle - Chứa ExamMatrixService.
+     * @constructor
+     * @description Khởi tạo ExamMatrixController bằng cách giải nén các "vũ khí" nghiệp vụ từ Cradle thông qua Awilix.
+     * @param {IExamMatrixControllerCradle} cradle - Chứa các dịch vụ chuyên biệt để quản lý cấu trúc đề thi.
      */
-    constructor({ examMatrixService }: IExamMatrixControllerCradle) {
+    constructor({ examMatrixService, examMatrixQueryService }: IExamMatrixControllerCradle) {
         this._examMatrixService = examMatrixService;
+        this._examMatrixQueryService = examMatrixQueryService;
     }
-
-    /**
-     * @description Truy vấn danh sách toàn bộ ma trận đề thi trong hệ thống.
-     * @route GET /api/v1/exam-matrices
-     * @returns {Promise<void>} Phản hồi danh sách ExamMatrixResponseDTO.
-     */
-    public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
-        // Khởi tạo DTO từ query params với cơ chế Self-validating
-        const query = new ExamMatrixQueryDTO(req.query as Record<string, unknown>);
-
-        const response = await this._examMatrixService.getPaginatedExamMatrices(query);
-
-        // Trả về Standard Response sử dụng Result Pattern
-        Result.ok(
-            res,
-            response,
-            Message.MATRIX.FETCH_SUCCESS,
-            'EXAM_MATRIX_GET_SUCCESS'
-        );
-    });
 
     /**
      * @description Tiếp nhận yêu cầu tạo mới một ma trận đề thi.
@@ -60,9 +50,8 @@ export class ExamMatrixController {
      * @returns {Promise<void>}
      */
     public create = catchAsync(async (req: Request, res: Response): Promise<void> => {
-        const dto = new CreateExamMatrixDTO(req.body);
+        const dto = new CreateExamMatrixRequestDTO(req.body);
         // Tự validate input trước khi xuống Service
-        dto.isValid();
         const data = await this._examMatrixService.create(dto);
 
         Result.ok(
@@ -70,26 +59,6 @@ export class ExamMatrixController {
             data,
             Message.MATRIX.CREATE_SUCCESS,
             'MATRIX_CREATE_SUCCESS'
-        );
-    });
-
-    /**
-     * @description Lấy chi tiết một ma trận đề thi theo ID.
-     * @route GET /api/v1/exam-matrices/:id
-     * @param {Request} req - Chứa id trong params.
-     * @param {Response} res - Phản hồi tiêu chuẩn.
-     * @returns {Promise<void>}
-     */
-    public getById = catchAsync(async (req: Request, res: Response): Promise<void> => {
-        const id = req.params.id as string;
-
-        const data = await this._examMatrixService.getById(id);
-        const result = await this._examMatrixService.toResponse(data)
-        Result.ok(
-            res,
-            result,
-            Message.MATRIX.FETCH_SUCCESS,
-            'MATRIX_FETCH_SUCCESS'
         );
     });
 
@@ -102,9 +71,7 @@ export class ExamMatrixController {
      */
     public update = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const id = req.params.id as string;
-        const dto = new UpdateExamMatrixDTO({ id, ...req.body });
-        dto.isValid();
-
+        const dto = new UpdateExamMatrixRequestDTO({ id, ...req.body });
         const data = await this._examMatrixService.update(id, dto);
 
         Result.ok(
@@ -150,6 +117,45 @@ export class ExamMatrixController {
     });
 
     /**
+    * @description Truy vấn danh sách toàn bộ ma trận đề thi trong hệ thống.
+    * @route GET /api/v1/exam-matrices
+    * @returns {Promise<void>} Phản hồi danh sách ExamMatrixResponseDTO.
+    */
+    public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
+        // Khởi tạo DTO từ query params với cơ chế Self-validating
+        const query = new ExamMatrixQueryDTO(req.query as Record<string, unknown>);
+
+        const response = await this._examMatrixQueryService.getPaginatedExamMatrices(query);
+
+        // Trả về Standard Response sử dụng Result Pattern
+        Result.ok(
+            res,
+            response,
+            Message.MATRIX.FETCH_SUCCESS,
+            'EXAM_MATRIX_GET_SUCCESS'
+        );
+    });
+
+    /**
+     * @description Lấy chi tiết một ma trận đề thi theo ID.
+     * @route GET /api/v1/exam-matrices/:id
+     * @param {Request} req - Chứa id trong params.
+     * @param {Response} res - Phản hồi tiêu chuẩn.
+     * @returns {Promise<void>}
+     */
+    public getById = catchAsync(async (req: Request, res: Response): Promise<void> => {
+        const id = req.params.id as string;
+
+        const data = await this._examMatrixQueryService.getDetail(id);
+        Result.ok(
+            res,
+            data,
+            Message.MATRIX.FETCH_SUCCESS,
+            'MATRIX_FETCH_SUCCESS'
+        );
+    });
+
+    /**
      * @description Lấy danh sách các ma trận đề thi định dạng selection (value/label) hỗ trợ hiển thị trên UI.
      * @route GET /api/v1/exams/matrices/selection
      * @param {Request} _req - Đối tượng Request của Express.
@@ -158,12 +164,11 @@ export class ExamMatrixController {
      */
     public getExamMatrixSelections = catchAsync(async (_req: Request, res: Response) => {
         // Gọi service để lấy danh sách ma trận (thường đã qua Mapper.toSelectionList và sort theo createdAt)
-        const result = await this._examMatrixService.getExamMatrixSelections();
-
+        const result = await this._examMatrixQueryService.getExamMatrixSelections();
         Result.ok(
             res,
             result,
-            Message.EXAM.FETCH_SUCCESS, // Hoặc Message.EXAM_MATRIX.GET_SELECTION_SUCCESS nếu bạn tách riêng
+            Message.EXAM.FETCH_SUCCESS, 
             'EXAM_MATRIX_SELECTION_SUCCESS'
         );
     });

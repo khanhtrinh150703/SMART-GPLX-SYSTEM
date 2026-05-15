@@ -10,9 +10,10 @@ export type StatusType =
   | "inactive"
   | "deleted"
   | "draft"
-  | "pending";
+  | "pending"
+  | "locked";
 
-const STATUS_VARIANTS: Record<
+export const STATUS_VARIANTS: Record<
   StatusType,
   { label: string; className: string }
 > = {
@@ -35,6 +36,11 @@ const STATUS_VARIANTS: Record<
   pending: {
     label: "Chờ duyệt",
     className: "bg-blue-50 text-blue-600 border-blue-100",
+  },
+  locked: {
+    label: "Đã khóa",
+    // Màu Tím/Violet để trông khác biệt hẳn với các màu còn lại
+    className: "bg-purple-50 text-purple-600 border-purple-100",
   },
 };
 

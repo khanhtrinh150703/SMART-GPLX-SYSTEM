@@ -1,16 +1,18 @@
 /**
- * 💡 TIP: Thường thì chúng ta chỉ để PATH ở đây. 
+ * 💡 TIP: Thường thì chúng ta chỉ để PATH ở đây.
  * Base URL sẽ được cấu hình tập trung ở file axios-client để code linh hoạt hơn.
  */
 
 export const ENDPOINTS = {
   AUTH: {
     LOGIN: `/auth/login`,
+    LOGOUT: `/auth/logout`,
     REGISTER: `/auth/register/init`,
     VERIFY_OTP: `/auth/register/verify`,
     RESEND_OTP: `/auth/resend-otp`,
     FORGOT_PASSWORD: `/auth/forgot-password`,
     RESET_PASSWORD: `/auth/reset-password`,
+    REFRESH_TOKEN: "/auth/refresh-token",
   },
 
   USER: {
@@ -39,6 +41,7 @@ export const ENDPOINTS = {
 
   QUESTION: {
     BASE: "/questions",
+    SLECTION: "questions/selection-pool",
     DETAIL: (id: string) => `/questions/${id}`,
     RESTORE: (id: string) => `/questions/${id}/restore`,
   },
@@ -53,14 +56,47 @@ export const ENDPOINTS = {
     COMPLETE: "/import/complete",
     STATUS: "/import/status",
   },
+
   EXAM_MATRICES: {
-    BASE: '/exam-matrices',
+    BASE: "/exam-matrices",
     DETAILS: (id: string) => `/exam-matrices/${id}`,
     RESTORE: (id: string) => `/exam-matrices/${id}/restore`,
+    SELECTION: "/exam-matrices/selection",
   },
 
   EXAM: {
-    BASE: '/exams',
+    AUTO: "/exams/generate-auto",
+    MANUAL: "/exams/manual",
+    BASE: "/exams",
+    DETAILS: (id: string) => `/exams/${id}`,
+    USER_DETAILS: (id: string) => `/exams/detail/${id}`,
+    RESTORE: (id: string) => `/exams/${id}/restore`,
     GENERATION: "/exams/generate-auto",
-  }
+    LIST: "/exams/list",
+    SUBMIT: "/exam-attempts/complete",
+    GUEST_SUBMIT: "/exam-attempts/guest/complete",
+  },
+
+  /**
+   * ACTIVE SESSION ENDPOINTS
+   * (Định tuyến cho Dịch vụ Phiên làm bài)
+   */
+  ACTIVE_SESSION: {
+    // 1. GUEST ROUTES (PUBLIC)
+    GUEST_START: "/active-sessions/guest/start",
+
+    // 2. PROTECTED ROUTES (PRIVATE)
+    CURRENT: "/active-sessions/current",
+    START: "/active-sessions/start",
+    SYNC: "/active-sessions/sync",
+  },
+
+  HISTORY: {
+    BASE: "/exam-histories",
+    SUMMARY: "/exam-histories/summary",
+    DETAILS: (id: string) => `/exam-histories/summary/${id}`,
+  },
+  STATS: {
+    BASE: "/statistics/me",
+  },
 };

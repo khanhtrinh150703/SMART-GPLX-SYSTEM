@@ -9,10 +9,27 @@ import { Question } from "../types/question.types";
 export const QUESTION_STATUS_OPTIONS: StatusOption<
   NonNullable<Question["status"]> | "all"
 >[] = [
-  { id: "all", label: "Tất cả" },
-  { id: "active", label: "Đang hoạt động", color: "text-emerald-600" },
-  { id: "draft", label: "Bản nháp", color: "text-slate-500" },
-  { id: "deleted", label: "Thùng rác", color: "text-rose-600" },
+  {
+    id: "all",
+    label: "Tất cả",
+    color: "bg-slate-500 shadow-lg shadow-slate-200/60",
+  },
+  {
+    id: "active",
+    label: "Đang hoạt động",
+    color: "bg-emerald-500 shadow-lg shadow-emerald-200/50",
+  },
+  {
+    id: "draft",
+    label: "Bản nháp",
+    // Dùng slate-400 để nhạt hơn tab "Tất cả", thể hiện trạng thái chưa chính thức
+    color: "bg-slate-400 shadow-lg shadow-slate-200/50",
+  },
+  {
+    id: "deleted",
+    label: "Thùng rác",
+    color: "bg-rose-500 shadow-lg shadow-rose-200/50",
+  },
 ];
 
 /**

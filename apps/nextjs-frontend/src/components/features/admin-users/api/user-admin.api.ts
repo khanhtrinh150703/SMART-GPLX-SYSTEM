@@ -3,9 +3,10 @@ import { ENDPOINTS } from '@/constants/api-endpoints.constant';
 import type { StandardResponse } from '@/types/common.type';
 import { PaginatedResult } from '@/types/paginaton.type';
 import { UserQueryDTO } from '@/types/query-user';
-import { UserResponseDTO } from '@/types/user-respone';
+import { UserResponseDTO } from '@/components/features/admin-users/types/user-respone';
 import { IUpdateProfileResponse } from '@/types/user.type';
 import { AdminUpdatePayload } from '../schema/user.schema';
+import { DeleteResponse } from '@/types/respone/delete.common';
 
 /**
  * User Admin API: Quản trị viên quản lý danh sách người dùng.
@@ -40,9 +41,9 @@ export const userAdminApi = {
    * Xóa tài khoản người dùng (Soft delete).
    * (Delete user account)
    */
-  delete: async (id: string): Promise<StandardResponse<null>> => {
-    const response = await axiosClient.delete<StandardResponse<null>>(
-      `${ENDPOINTS.USER.DELETE}/${id}`
+  delete: async (id: string): Promise<StandardResponse<DeleteResponse>> => {
+    const response = await axiosClient.delete<StandardResponse<DeleteResponse>>(
+      `${ENDPOINTS.USER.DELETE(id)}`
     );
     return response.data;
   },
@@ -53,7 +54,7 @@ export const userAdminApi = {
    */
   restore: async (id: string): Promise<StandardResponse<null>> => {
     const response = await axiosClient.patch<StandardResponse<null>>(
-      `${ENDPOINTS.USER.RESTORE}/${id}/restore`
+      `${ENDPOINTS.USER.RESTORE(id)}`
     );
     return response.data;
   },

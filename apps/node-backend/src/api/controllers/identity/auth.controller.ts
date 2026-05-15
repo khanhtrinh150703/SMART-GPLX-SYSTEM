@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { Message } from '@/shared/errors/messages/success-messages-vn';
-import { Result } from '@/shared/responses/api-response';
+import { Result } from '@/application/dtos/response/shared/api.response.dto';
 import { catchAsync } from '@/shared/utils/catch-async.utils';
-import { AuthRequest } from '@/shared/types/auth.types';
+import { IAuthRequest } from '@/shared/types/authRequest.types';
 import { RegisterRequestDTO } from '@/application/dtos/request/auth/register.request.dto';
 import { VerifyUserRequestDTO } from '@/application/dtos/request/auth/verify-otp.request.dto';
 import { LoginRequestDTO } from '@/application/dtos/request/auth/login.request.dto';
@@ -12,29 +12,35 @@ import { IAuthService, IRegistrationService } from '@/domain/interfaces/services
 
 /**
  * @interface IAuthControllerCradle
- * @description "Túi đồ nghề" bảo mật cho AuthController.
- * Tập hợp các service cần thiết để điều phối luồng Xác thực và Đăng ký.
+ * @description "Túi đồ nghề" bảo mật (Security Toolbox) chứa các dịch vụ cần thiết để điều phối luồng Xác thực và Đăng ký.
  */
 export interface IAuthControllerCradle {
+  /** @description Dịch vụ xử lý đăng nhập, tạo mã thông báo (token) và quản lý phiên làm việc. */
   authService: IAuthService;
+
+  /** @description Dịch vụ chuyên trách quy trình đăng ký tài khoản mới và xác thực thông tin đầu vào. */
   registrationService: IRegistrationService;
 }
 
 /**
  * @class AuthController
- * @description Tiếp nhận và điều phối các yêu cầu HTTP liên quan đến Xác thực, Đăng ký và OTP.
- * Tuân thủ: Chuyển tiếp lỗi cho Global Error Middleware qua wrapper (ví dụ: catchAsync).
+ * @description Lớp điều phối (Orchestrator) các yêu cầu HTTP liên quan đến Xác thực, Đăng ký và mã OTP.
+ * @principle Fail-Safe & Centralized Error Handling - Đảm bảo mọi lỗi phát sinh đều được chuyển tiếp cho Global Error Middleware để xử lý thống nhất, tránh rò rỉ thông tin nhạy cảm.
  */
 export class AuthController {
+  /** @private @readonly @description Instance xử lý các logic nghiệp vụ về xác thực. */
   private readonly _authService: IAuthService;
+
+  /** @private @readonly @description Instance xử lý các yêu cầu đăng ký người dùng mới. */
   private readonly _registrationService: IRegistrationService;
 
   /**
-   * @description Khởi tạo AuthController với các phụ thuộc chuyên biệt.
-   * @param {IAuthControllerCradle} cradle - Dependencies được tiêm tự động từ DI Container.
+   * @constructor
+   * @description Khởi tạo AuthController thông qua cơ chế tiêm phụ thuộc (DI).
+   * @param {IAuthControllerCradle} cradle - Chứa các dịch vụ chuyên biệt cần thiết để vận hành module bảo mật.
    */
   constructor({ authService, registrationService }: IAuthControllerCradle) {
-    // CHỈ NHẬN NHỮNG THỨ CẦN THIẾT CHO AUTH & REGISTRATION
+    // Chỉ nhận các thành phần tối cần thiết để tuân thủ Interface Segregation Principle.
     this._authService = authService;
     this._registrationService = registrationService;
   }
@@ -69,7 +75,6 @@ export class AuthController {
    */
   public refreshToken = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const dto = new RefreshTokenRequestDTO(req.body);
-    dto.isValid();
 
     const newToken = await this._authService.refresh(dto);
 
@@ -110,12 +115,11 @@ export class AuthController {
 
   /**
    * @description Tác dụng: Xử lý đăng xuất người dùng bằng cách thu hồi token.
-   * @param {AuthRequest} req - Request đã qua xác thực, chứa TokenPayload.
+   * @param {IAuthRequest} req - Request đã qua xác thực, chứa TokenPayload.
    * @param {Response} res - Phản hồi tiêu chuẩn.
    * @param {NextFunction} next - Hàm chuyển tiếp lỗi của Express.
    */
-  public logout = catchAsync(async (req: AuthRequest, res: Response): Promise<void> => {
-    // 1. Không dùng '!', dùng trực tiếp từ AuthRequest (đã được middleware đảm bảo)
+  public logout = catchAsync(async (req: IAuthRequest, res: Response): Promise<void> => {
     const payload = req.user;
 
     // 2. Gọi Service xử lý (catchAsync sẽ lo việc bắt lỗi nếu có)

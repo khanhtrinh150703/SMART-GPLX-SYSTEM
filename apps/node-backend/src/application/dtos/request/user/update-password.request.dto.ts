@@ -2,42 +2,55 @@ import { REGEX } from "@/domain/constants/regex.constant";
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
- * @description DTO chứa dữ liệu yêu cầu thay đổi mật khẩu định kỳ.
- * Đảm bảo tính bảo mật bằng cách yêu cầu mật khẩu cũ và kiểm tra độ mạnh của mật khẩu mới.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu thay đổi mật khẩu.
  */
-export class ChangePasswordRequestDTO {
-  /** @property {string} oldPassword - Mật khẩu hiện tại để xác thực quyền sở hữu. */
-  public readonly oldPassword: string;
+export interface IChangePasswordInputDTO {
+  readonly oldPassword: string;
+  readonly newPassword: string;
+}
 
-  /** @property {string} newPassword - Mật khẩu mới cần thiết lập. */
+/**
+ * @description DTO xử lý thay đổi mật khẩu, đảm bảo tính bảo mật và tính toàn vẹn của dữ liệu.
+ */
+export class ChangePasswordRequestDTO implements IChangePasswordInputDTO {
+  public readonly oldPassword: string;
   public readonly newPassword: string;
 
-  /**
-   * @description Khởi tạo và ép kiểu dữ liệu an toàn cho các trường mật khẩu.
-   */
-  constructor(data: Record<string, unknown>) {
-    this.oldPassword = typeof data.oldPassword === 'string' ? data.oldPassword : '';
-    this.newPassword = typeof data.newPassword === 'string' ? data.newPassword : '';
+  constructor(data: IChangePasswordInputDTO) {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
+
+    // Mapping và ép kiểu dữ liệu tường minh
+    this.oldPassword = String(data.oldPassword || "");
+    this.newPassword = String(data.newPassword || "");
+
+    this.validate();
   }
 
   /**
-   * @description Thực hiện kiểm tra logic nghiệp vụ cho mật khẩu.
-   * @throws {AppError} Ném lỗi nếu mật khẩu trống, trùng mật khẩu cũ hoặc không đủ độ mạnh.
+   * @description Hàm gác cổng kiểm tra các ràng buộc bảo mật mật khẩu dựa trên instance.
    */
-  public validateOrThrow(): void {
-    // 1. Kiểm tra sự hiện diện
-    if (!this.oldPassword || !this.newPassword) {
-      throw new AppError(ErrorCode.VALIDATION.PASSWORD_INVALID);
+  private validate(): void {
+    const { USER } = ErrorCode;
+
+    // 1. Kiểm tra sự hiện diện của mật khẩu (Sau khi ép kiểu)
+    if (this.oldPassword === "") {
+      throw new AppError(USER.OLD_PASSWORD_REQUIRED);
     }
 
-    // 2. Kiểm tra tính khác biệt (UX: Không nên đổi mật khẩu mới giống hệt mật khẩu cũ)
+    if (this.newPassword === "") {
+      throw new AppError(USER.NEW_PASSWORD_REQUIRED);
+    }
+
+    // 2. Kiểm tra tính khác biệt giữa mật khẩu cũ và mới
     if (this.oldPassword === this.newPassword) {
-      throw new AppError(ErrorCode.VALIDATION.PASSWORD_MUST_BE_DIFFERENT);
+      throw new AppError(USER.PASSWORD_MUST_BE_DIFFERENT);
     }
 
-    // 3. Kiểm tra độ phức tạp dựa trên chính sách bảo mật (Regex)
+    // 3. Kiểm tra độ mạnh mật khẩu qua Regex
     if (!REGEX.PASSWORD.STRONG.test(this.newPassword)) {
-      throw new AppError(ErrorCode.VALIDATION.PASSWORD_INVALID);
+      throw new AppError(USER.PASSWORD_TOO_WEAK);
     }
   }
 }

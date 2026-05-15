@@ -7,7 +7,7 @@ import { ImportWorker } from '@/infrastructure/workers/import.worker';
 import app from '@/app';
 import { env } from 'process';
 import { Server } from 'http';
-import { IMasterDataCacheService } from '@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service';
+import { IMasterDataCacheService } from '@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service';
 
 const PORT = env.PORT || 3000;
 let serverInstance: Server | null = null;

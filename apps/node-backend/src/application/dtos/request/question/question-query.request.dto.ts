@@ -16,25 +16,29 @@ export class QuestionsAdminQueryDto extends BaseQueryDTO {
     // 1. Phân trang & Sắp xếp (Kế thừa từ BaseQueryDTO)
     this.page = data.page ? Math.max(1, Number(data.page)) : 1;
     this.limit = data.limit ? Math.max(1, Number(data.limit)) : 10;
-    this.sortBy = typeof data.sortBy === 'string' ? data.sortBy : 'createdAt';
-    this.sortOrder = data.sortOrder === 'asc' ? 'asc' : 'desc';
-    this.status = typeof data.status === 'string' ? data.status : undefined;
+    this.sortBy = typeof data.sortBy === "string" ? data.sortBy : "createdAt";
+    this.sortOrder = data.sortOrder === "asc" ? "asc" : "desc";
+    this.status = typeof data.status === "string" ? data.status : undefined;
     // 2. Lọc cơ bản (String)
-    this.licenseCategoryIds = typeof data.licenseCategoryIds === 'string' ? data.licenseCategoryIds : undefined;
-    this.chapterId = typeof data.chapterId === 'string' ? data.chapterId : undefined;
-    this.search = typeof data.search === 'string' ? data.search : undefined;
+    this.licenseCategoryIds =
+      typeof data.licenseCategoryIds === "string"
+        ? data.licenseCategoryIds
+        : undefined;
+    this.chapterId =
+      typeof data.chapterId === "string" ? data.chapterId : undefined;
+    this.search = typeof data.search === "string" ? data.search : undefined;
 
     // 3. Ép kiểu Number & Boolean (Dịch: Explicit Casting)
-    if (data.difficultyLevel !== undefined && data.difficultyLevel !== '') {
+    if (data.difficultyLevel !== undefined && data.difficultyLevel !== "") {
       this.difficultyLevel = Number(data.difficultyLevel);
     }
 
-    if (data.indexNumber !== undefined && data.indexNumber !== '') {
-      this.indexNumber = String(data.indexNumber).toLowerCase() === 'true';
+    if (data.indexNumber !== undefined && data.indexNumber !== "") {
+      this.indexNumber = String(data.indexNumber).toLowerCase() === "true";
     }
 
-    if (data.isCritical !== undefined && data.isCritical !== '') {
-      this.isCritical = String(data.isCritical).toLowerCase() === 'true';
+    if (data.isCritical !== undefined && data.isCritical !== "") {
+      this.isCritical = String(data.isCritical).toLowerCase() === "true";
     }
   }
 }

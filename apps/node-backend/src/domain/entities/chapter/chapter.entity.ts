@@ -1,6 +1,8 @@
-import { ErrorCode } from "@/shared/errors/error-codes";
-import { CreateChapterProps, IChapterProps } from "./chapter.props";
-import { AppError } from "@/shared/errors/error-app"; // Đổi sang ValidationError cho đúng chuẩn mình làm nãy giờ nhé
+import {
+  CreateChapterProps,
+  IChapterProps,
+  IChapterUpdateProps,
+} from "./chapter.props";
 import { BaseEntity } from "@/domain/seedwork/entity.base";
 
 /**
@@ -8,10 +10,9 @@ import { BaseEntity } from "@/domain/seedwork/entity.base";
  * Kế thừa BaseEntity để đảm bảo tính nhất quán về định danh và thời gian.
  */
 export class Chapter extends BaseEntity<IChapterProps> {
-
   /**
-     * @description Constructor đơn giản, chỉ nhận dữ liệu đã "sạch".
-     */
+   * @description Constructor đơn giản, chỉ nhận dữ liệu đã "sạch".
+   */
   private constructor(props: IChapterProps) {
     super(props);
   }
@@ -50,25 +51,38 @@ export class Chapter extends BaseEntity<IChapterProps> {
   }
 
   // --- Getters: Phải trỏ vào trong _props ---
-  get id(): string { return this._props.id; }
-  get name(): string { return this._props.name; }
-  get description(): string | null { return this._props.description; }
-  get code(): string { return this._props.code; }
-  get orderIndex(): number { return this._props.orderIndex; }
-  get createdAt(): Date | undefined { return this._props.createdAt; }
-  get updatedAt(): Date | undefined { return this._props.updatedAt; }
-  get deletedAt(): Date | null | undefined { return this._props.deletedAt; }
+  get id(): string {
+    return this._props.id;
+  }
+  get name(): string {
+    return this._props.name;
+  }
+  get description(): string | null {
+    return this._props.description;
+  }
+  get code(): string {
+    return this._props.code;
+  }
+  get orderIndex(): number {
+    return this._props.orderIndex;
+  }
+  get createdAt(): Date | undefined {
+    return this._props.createdAt;
+  }
+  get updatedAt(): Date | undefined {
+    return this._props.updatedAt;
+  }
+  get deletedAt(): Date | null | undefined {
+    return this._props.deletedAt;
+  }
 
   /**
    * Cập nhật thông tin chương với Business Rules.
    */
-  public updateDetails(data: { name?: string; description?: string | null; orderIndex?: number }): void {
+  public updateDetails(data: IChapterUpdateProps): void {
     if (data.name !== undefined) {
       const trimmedName = data.name.trim();
-      if (trimmedName.length === 0) {
-        throw new AppError(ErrorCode.VALIDATION.REQUIRED);
-      }
-      this._props.name = trimmedName; // Cập nhật vào props
+      this._props.name = trimmedName;
     }
 
     if (data.description !== undefined) {
@@ -76,10 +90,11 @@ export class Chapter extends BaseEntity<IChapterProps> {
     }
 
     if (data.orderIndex !== undefined) {
-      if (data.orderIndex < 0) {
-        throw new AppError(ErrorCode.VALIDATION.INVALID_FORMAT);
-      }
       this._props.orderIndex = data.orderIndex;
+    }
+
+    if (data.code !== undefined) {
+      this._props.code = data.code;
     }
 
     this.touch();

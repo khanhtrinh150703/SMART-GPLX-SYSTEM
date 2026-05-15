@@ -1,66 +1,115 @@
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
-// 1. Định nghĩa interface cho từng câu trả lời
+/**
+ * @description Giao diện dữ liệu cho từng câu trả lời của người dùng.
+ */
 export interface IUserAnswerDTO {
   readonly questionId: string;
-  readonly answer: number; 
+  readonly answer: number;
+  readonly timeSpent: number;
 }
 
-// 2. Chuyển sang dùng Class hoàn chỉnh để tận dụng method isValid
-export class CompleteExamInputDTO {
-  constructor(
-    public readonly examId: string,
-    public readonly answers: IUserAnswerDTO[]
-  ) {}
+/**
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu nộp bài thi (Bổ sung metadata thời gian và phiên).
+ */
+export interface ICompleteExamInputDTO {
+  readonly examId: string;
+  readonly sessionId: string;
+  readonly answers: IUserAnswerDTO[];
+  readonly timeSpent: number;
+  readonly timeRemaining: number;
+  readonly isAutoSubmit: boolean;
+  readonly shouldShuffle: boolean;
+  readonly clientFinishedAt: string;
+}
 
-  /**
-   * @description Kiểm tra tính toàn vẹn và hợp lệ của dữ liệu đầu vào.
-   */
-  public isValid(): void {
-    // 1. Kiểm tra examId
-    if (!this.examId) {
-      throw new AppError(ErrorCode.EXAM_ATTEMPT.ID_REQUIRED);
+/**
+ * @description DTO xử lý nộp bài và chấm điểm bài thi.
+ */
+export class CompleteExamInputRequestDTO implements ICompleteExamInputDTO {
+  public readonly examId: string;
+  public readonly sessionId: string;
+  public readonly answers: IUserAnswerDTO[];
+  public readonly timeSpent: number;
+  public readonly timeRemaining: number;
+  public readonly isAutoSubmit: boolean;
+  public readonly shouldShuffle: boolean;
+  public readonly clientFinishedAt: string;
+
+  constructor(data: ICompleteExamInputDTO) {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // 2. Chặn mảng rỗng hoặc không phải mảng
-    if (!Array.isArray(this.answers) || this.answers.length === 0) {
-      throw new AppError(ErrorCode.EXAM.ANSWERS_EMPTY);
+    this.examId = data.examId?.trim() || "";
+    this.sessionId = data.sessionId?.trim() || "";
+    this.answers = Array.isArray(data.answers) ? data.answers : [];
+    this.timeSpent = data.timeSpent;
+    this.timeRemaining = data.timeRemaining;
+    this.isAutoSubmit = !!data.isAutoSubmit;
+    this.shouldShuffle = !!data.shouldShuffle;
+    this.clientFinishedAt = data.clientFinishedAt?.trim() || "";
+
+    this.validate();
+  }
+
+  /**
+   * @description Hàm gác cổng kiểm tra tính toàn vẹn của bài thi dựa trên dữ liệu instance.
+   */
+  private validate(): void {
+    if (!this.examId || typeof this.examId !== "string") {
+      throw new AppError(ErrorCode.SESSION.INVALID_EXAM_ID);
+    }
+
+    if (!isUUID(this.examId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    if (!this.sessionId || typeof this.sessionId !== "string") {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
+
+    if (!isUUID(this.sessionId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    if (typeof this.timeSpent !== "number" || this.timeSpent < 0) {
+      throw new AppError(ErrorCode.SESSION.INVALID_TIME_SPENT);
+    }
+
+    if (typeof this.timeRemaining !== "number" || this.timeRemaining < 0) {
+      throw new AppError(ErrorCode.SESSION.INVALID_TIME_REMAINING);
+    }
+
+    if (!this.clientFinishedAt || isNaN(Date.parse(this.clientFinishedAt))) {
+      throw new AppError(ErrorCode.SESSION.INVALID_FINISHED_DATE);
+    }
+
+    if (this.answers.length === 0) {
+      throw new AppError(ErrorCode.SESSION.ANSWERS_REQUIRED);
     }
 
     const questionIds = new Set<string>();
 
     for (const ans of this.answers) {
-      // 3. Kiểm tra định dạng từng object (Thiếu questionId hoặc answer không phải số)
-      if (!ans.questionId || typeof ans.answer !== 'number') {
-        throw new AppError(ErrorCode.EXAM.ANSWER_FORMAT_INVALID);
+      if (!ans.questionId || typeof ans.answer !== "number") {
+        throw new AppError(ErrorCode.SESSION.ANSWER_FORMAT_INVALID);
       }
 
-      // 4. Kiểm tra giá trị đáp án (phải là số nguyên dương)
+      if (!isUUID(ans.questionId)) {
+        throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+      }
+
       if (ans.answer <= 0 || !Number.isInteger(ans.answer)) {
-        throw new AppError(ErrorCode.EXAM.ANSWER_FORMAT_INVALID);
+        throw new AppError(ErrorCode.SESSION.INVALID_ANSWER_VALUE);
       }
 
-      // 5. Check trùng lặp questionId trong cùng một lần nộp bài
       if (questionIds.has(ans.questionId)) {
-        throw new AppError(ErrorCode.EXAM.ANSWER_FORMAT_INVALID);
+        throw new AppError(ErrorCode.SESSION.DUPLICATE_QUESTION);
       }
 
       questionIds.add(ans.questionId);
     }
   }
-}
-
-export interface ICompleteExamInputDTO {
-  readonly examId: string;
-}
-
-export interface ICompleteExamResponseDTO {
-  readonly attemptId: string;
-  readonly score: number;
-  readonly isPassed: boolean;
-  readonly submittedAt: Date;
-}
-
-export interface ICompleteExamService {
-  execute(userId: string, dto: ICompleteExamInputDTO): Promise<ICompleteExamResponseDTO>;
 }

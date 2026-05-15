@@ -1,47 +1,77 @@
+import { REGEX } from "@/domain/constants/regex.constant";
 import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
- * @description DTO dùng để tạo mới một chương lý thuyết (Data Transfer Object for Chapter Creation).
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo chương lý thuyết.
  */
-export class CreateChapterRequestDto {
-  /** @property {string} name - Tên chương (Ví dụ: Khái niệm và quy tắc giao thông). */
+export interface ICreateChapterInputDTO {
+  readonly name: string;
+  readonly code: string;
+  readonly description: string;
+  readonly orderIndex: number;
+}
+
+/**
+ * @description DTO xử lý tạo mới chương lý thuyết.
+ * Đảm bảo tính toàn vẹn của dữ liệu và thứ tự sắp xếp ngay khi khởi tạo.
+ */
+export class CreateChapterRequestDTO implements ICreateChapterInputDTO {
   public readonly name: string;
-
-  /** @property {string} description - Mô tả nội dung chương (Mặc định: chuỗi rỗng). */
+  public readonly code: string;
   public readonly description: string;
-
-  /** @property {number} orderIndex - Thứ tự sắp xếp của chương (Mặc định: 0). */
   public readonly orderIndex: number;
 
-  /** @property {string} code - Mã nhận diện chương (Ví dụ: CH-01). */
-  public readonly code: string;
+  constructor(data: ICreateChapterInputDTO) {
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
-  /**
-   * @description Hàm khởi tạo với cơ chế gán giá trị mặc định.
-   * @param {Partial<CreateChapterRequestDto>} data - Dữ liệu thô từ Request.
-   */
-  constructor(data: Partial<CreateChapterRequestDto>) {
-    this.name = data.name?.trim() ?? '';
-    this.description = data.description?.trim() ?? '';
-    this.orderIndex = data.orderIndex ?? 0;
-    this.code = data.code?.trim() ?? '';
+    // --- BƯỚC 1: MAPPING & CHUẨN HÓA (Dọn rác trước) ---
+    this.name = typeof data.name === "string" ? data.name.trim() : "";
+
+    this.code =
+      typeof data.code === "string" ? data.code.trim().toLowerCase() : "";
+
+    this.description =
+      typeof data.description === "string" ? data.description.trim() : "";
+    this.orderIndex =
+      data.orderIndex !== undefined ? Number(data.orderIndex) : 0;
+
+    // --- BƯỚC 2: TỰ XÁC THỰC (Kiểm tra trên chính mình) ---
+    this.validate();
   }
 
   /**
-   * @description Kiểm tra tính hợp lệ của dữ liệu (Manual Validation).
-   * @returns {{ isValid: boolean; errors: string[] }} Kết quả xác thực.
+   * @description Hàm gác cổng kiểm tra dữ liệu đã được làm sạch (this.xxx)
+   * @private
    */
-  public isValid(): void {
+  private validate(): void {
+    const { CHAPTER } = ErrorCode;
 
-    if (!this.name) throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
-    if (!this.code) throw new AppError(ErrorCode.VALIDATION.CODE_REQUIRED);
-    if (this.orderIndex < 0) throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER);
-    if (!this.description) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED);
+    // Kiểm tra tên (this.name đã được trim)
+    if (this.name.length === 0) {
+      throw new AppError(CHAPTER.NAME_REQUIRED);
+    }
+
+    // Kiểm tra mã chương (this.code đã được trim và lowercase)
+    if (this.code.length === 0) {
+      throw new AppError(CHAPTER.CODE_REQUIRED);
+    }
+
+    if (!REGEX.COMMON.NO_SPACE_SPECIAL_CHAR.test(this.code)) {
+      throw new AppError(CHAPTER.INVALID_CODE);
+    }
+
+    // Kiểm tra mô tả
+    if (this.description.length === 0) {
+      throw new AppError(CHAPTER.DESCRIPTION_REQUIRED);
     }
 
     if (this.description.length > 500) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+      throw new AppError(CHAPTER.DESCRIPTION_TOO_LONG);
+    }
+
+    // Kiểm tra thứ tự sắp xếp (this.orderIndex đã được ép kiểu Number)
+    if (isNaN(this.orderIndex) || this.orderIndex < 0) {
+      throw new AppError(CHAPTER.INVALID_ORDER);
     }
   }
 }

@@ -1,69 +1,94 @@
 import { REGEX } from "@/domain/constants/regex.constant";
-import { AppError } from "@/shared/errors";
-import { ErrorCode } from "@/shared/errors/error-codes";
+import { AppError, ErrorCode } from "@/shared/errors";
 
 /**
- * Data Transfer Object cho việc tạo mới Hạng bằng lái.
- * Sử dụng cho việc nhận và kiểm tra dữ liệu từ Request Body.
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo mới Hạng bằng lái.
  */
-export class CreateLicenseCategoryRequestDTO {
-  public readonly id?: string; // ID thường là optional khi tạo mới (DB tự gen)
+export interface ICreateLicenseCategoryInputDTO {
+  readonly id?: string;
+  readonly name: string;
+  readonly description: string;
+  readonly minAge: number;
+  readonly orderIndex: number;
+}
+
+/**
+ * @description DTO xử lý tạo mới Hạng bằng lái.
+ */
+export class CreateLicenseCategoryRequestDTO implements ICreateLicenseCategoryInputDTO {
+  public readonly id?: string;
   public readonly name: string;
   public readonly description: string;
   public readonly minAge: number;
   public readonly orderIndex: number;
 
-  /**
-   * Constructor nhận vào dữ liệu thô để khởi tạo object.
-   * Thực hiện trim() dữ liệu ngay từ đầu để tránh lỗi khoảng trắng.
-   */
-  constructor(data: Partial<CreateLicenseCategoryRequestDTO>) {
-    this.id = data.id;
-    this.name = data.name?.trim() || "";
-    this.description = data.description?.trim() || "";
-    this.minAge = data.minAge ?? 18;
-    this.orderIndex = data.orderIndex ?? 1;
+  constructor(data: ICreateLicenseCategoryInputDTO) {
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+
+    // --- 1. LÀM SẠCH DỮ LIỆU TRƯỚC (Normalize First) ---
+    this.id = typeof data.id === "string" ? data.id.trim() : "";
+
+    this.name =
+      typeof data.name === "string" ? data.name.trim().toUpperCase() : "";
+
+    this.description =
+      typeof data.description === "string" ? data.description.trim() : "";
+    this.minAge =
+      data.minAge !== undefined && data.minAge !== null
+        ? Number(data.minAge)
+        : NaN;
+
+    this.orderIndex =
+      data.orderIndex !== undefined && data.orderIndex !== null
+        ? Number(data.orderIndex)
+        : 0;
+
+    // --- 2. KIỂM TRA DỮ LIỆU SAU (Validate Self) ---
+    this.validate();
   }
 
   /**
-   * Kiểm tra tính hợp lệ của dữ liệu đầu vào.
-   * Tự động lookup Message và Status Code thông qua ValidationError.
-   * @throws {AppError}
+   * @description Hàm gác cổng check 100% logic của Trinh trên dữ liệu đã sạch.
+   * @private
    */
-  public isValid(): void {
-    // 1. Kiểm tra Tên hạng bằng (Name Validation)
-    if (!this.name) {
-      throw new AppError(ErrorCode.VALIDATION.NAME_REQUIRED);
+  private validate(): void {
+    const { LICENSE } = ErrorCode;
+
+    // 1. Kiểm tra Tên hạng bằng (Sử dụng this.name đã lowercase)
+    if (this.name.length === 0) {
+      throw new AppError(LICENSE.NAME_REQUIRED);
     }
 
-    if (this.name.length < 1 || this.name.length > 10) {
-      throw new AppError(ErrorCode.VALIDATION.NAME_INVALID_LENGTH);
+    if (this.name.length > 10) {
+      throw new AppError(LICENSE.NAME_INVALID_LENGTH);
     }
 
-    if (this.minAge === undefined || this.minAge === null || typeof this.minAge !== 'number' || Number.isNaN(this.minAge)) {
-      throw new AppError(ErrorCode.VALIDATION.AGE_MUST_BE_NUMBER); // "Độ tuổi phải là một con số hợp lệ."
+    // LIC_103: Regex này sẽ PASS vì name đã được lowercase
+    if (!REGEX.LICENSE.NAME_FORMAT.test(this.name)) {
+      throw new AppError(LICENSE.NAME_FORMAT_INVALID);
+    }
+
+    // 2. Kiểm tra Độ tuổi (LIC_105)
+    if (isNaN(this.minAge)) {
+      throw new AppError(LICENSE.AGE_REQUIRED);
     }
 
     if (this.minAge < 18) {
-      throw new AppError(ErrorCode.VALIDATION.AGE_INVALID); // "Độ tuổi tối thiểu không được nhỏ hơn 18."
+      throw new AppError(LICENSE.AGE_INVALID);
     }
 
-    if (this.orderIndex < 0) {
-      throw new AppError(ErrorCode.CHAPTER.INVALID_ORDER); 
-    }
-
-    // Kiểm tra định dạng bằng Regex (VD: A1, B1, B2...)
-    if (!REGEX.LICENSE.NAME_FORMAT.test(this.name)) {
-      throw new AppError(ErrorCode.VALIDATION.NAME_FORMAT_INVALID);
-    }
-
-    // 2. Kiểm tra Mô tả (Description Validation)
-    if (!this.description) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_REQUIRED);
+    // 3. Kiểm tra Mô tả (LIC_106, LIC_107)
+    if (this.description.length === 0) {
+      throw new AppError(LICENSE.DESCRIPTION_REQUIRED);
     }
 
     if (this.description.length > 500) {
-      throw new AppError(ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG);
+      throw new AppError(LICENSE.DESCRIPTION_TOO_LONG);
+    }
+
+    // 4. Kiểm tra Thứ tự sắp xếp (LIC_108)
+    if (this.orderIndex < 0) {
+      throw new AppError(LICENSE.INVALID_ORDER);
     }
   }
 }

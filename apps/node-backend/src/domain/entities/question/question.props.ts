@@ -1,7 +1,7 @@
 // domain/entities/question/question.props.ts
 
+import { Status } from "@/shared/config/status.config";
 import { Answer } from "./answer.entity";
-import { QuestionStatus } from "./question.status";
 
 export interface IQuestionProps {
   id: string;
@@ -13,7 +13,7 @@ export interface IQuestionProps {
   answers: Answer[];
   licenseCategoryIds: string[];
   indexNumber: number;
-  status: QuestionStatus;
+  status: Status;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;

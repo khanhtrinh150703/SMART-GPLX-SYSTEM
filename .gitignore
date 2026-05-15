@@ -144,3 +144,4 @@ Dockerfile
 uploads/
 storage/temp
 public/
+temp/

@@ -2,6 +2,7 @@ import { StandardResponse } from '@/types/common.type';
 import { examMatrixApi } from '../api/exam-matrix.api';
 import { IExamMatrixRequest, IExamMatrixResponse } from '../types/exam-management';
 import { PaginatedResult, QueryParams } from '@/types/paginaton.type';
+import { DeleteResponse } from '@/types/respone/delete.common';
 
 /**
  * @description Service layer for Exam Matrix logic.
@@ -59,7 +60,6 @@ export const examMatrixService = {
          * (Nhận tham số -> Truy vấn qua API -> Trả kết quả về UI.)
          */
         const response = await examMatrixApi.getAll(params);
-        console.log(response)
         return response;
     },
 
@@ -89,7 +89,7 @@ export const examMatrixService = {
      */
     removeMatrix: async (
         id: string
-    ): Promise<StandardResponse<void>> => {
+    ): Promise<StandardResponse<DeleteResponse>> => {
         /**
          * Execution Flow (Luồng xử lý):
          * Receive ID -> Request API deletion -> Return result to UI.

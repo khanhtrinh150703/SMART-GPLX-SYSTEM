@@ -1,10 +1,12 @@
-import {
-  IMasterDataCacheService,
-} from "@/domain/interfaces/services/exam-mgmt/i-master-data-cache.service";
+import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service";
 import prisma from "../../../prisma/prisma";
-import { ICachedCategory, ICachedChapter, ICachedExamMatrix, ICachedRole } from "@/shared/master-data";
+import {
+  ICachedCategory,
+  ICachedChapter,
+  ICachedExamMatrix,
+  ICachedRole,
+} from "@/shared/master-data";
 import { AppError, ErrorCode } from "@/shared/errors";
-
 
 /**
  * @description Dịch vụ quản lý bộ nhớ đệm Master Data (Implementation)
@@ -27,14 +29,24 @@ export class MasterDataCacheService implements IMasterDataCacheService {
 
   public async initialize(): Promise<void> {
     try {
-      const [rolesFromDb, chaptersFromDb, categoriesFromDb, matricesFromDb] = await Promise.all([
-        prisma.role.findMany({
-          include: { rolePermissions: { include: { permission: true } } }
-        }),
-        prisma.chapter.findMany(),
-        prisma.licenseCategory.findMany(),
-        prisma.examMatrix.findMany({ where: { deletedAt: null } })
-      ]);
+      const [rolesFromDb, chaptersFromDb, categoriesFromDb, matricesFromDb] =
+        await Promise.all([
+          // 1. Lấy danh sách Role kèm phân quyền chi tiết
+          prisma.role.findMany({
+            include: { rolePermissions: { include: { permission: true } } },
+          }),
+
+          // 2. Lấy Chapter có ít nhất một câu hỏi (kèm số lượng câu hỏi)
+          prisma.chapter.findMany({ orderBy: { orderIndex: "asc" } }),
+
+          // 3. Lấy danh sách hạng bằng lái
+          prisma.licenseCategory.findMany({ orderBy: { orderIndex: "asc" } }),
+
+          // 4. Lấy ma trận đề thi chưa bị xóa mềm
+          prisma.examMatrix.findMany({
+            where: { deletedAt: null },
+          }),
+        ]);
 
       // 1. Kiểm tra dữ liệu sống còn (Dữ liệu bắt buộc phải có trong DB)
       if (categoriesFromDb.length === 0 || chaptersFromDb.length === 0) {
@@ -44,37 +56,58 @@ export class MasterDataCacheService implements IMasterDataCacheService {
       this._clearAllCaches();
 
       // 2. Map Roles
-      rolesFromDb.forEach(role => {
+      rolesFromDb.forEach((role) => {
         const cached: ICachedRole = {
           id: role.id,
           name: role.name,
           description: role.description || "",
-          permissions: role.rolePermissions.map(rp => rp.permission.name)
+          permissions: role.rolePermissions.map((rp) => rp.permission.name),
         };
         this._rolesById.set(role.id, cached);
         this._rolesByName.set(role.name, cached);
       });
 
       // 3. Map Chapters
-      chaptersFromDb.forEach(chapter => {
-        const cached: ICachedChapter = { id: chapter.id, name: chapter.name, orderIndex: chapter.orderIndex };
+      chaptersFromDb.forEach((chapter) => {
+        const cached: ICachedChapter = {
+          id: chapter.id,
+          name: chapter.name,
+          orderIndex: chapter.orderIndex,
+        };
         this._chaptersById.set(chapter.id, cached);
-        this._chaptersByNormalizedName.set(chapter.name.trim().toLowerCase(), cached);
-        this._chaptersByCode.set(String(chapter.code).trim().toLowerCase(), cached);
+        this._chaptersByNormalizedName.set(
+          chapter.name.trim().toLowerCase(),
+          cached,
+        );
+        this._chaptersByCode.set(
+          String(chapter.code).trim().toLowerCase(),
+          cached,
+        );
       });
 
       // 4. Map Categories
-      categoriesFromDb.forEach(category => {
-        const cached: ICachedCategory = { id: category.id, name: category.name, orderIndex: category.orderIndex };
+      categoriesFromDb.forEach((category) => {
+        const cached: ICachedCategory = {
+          id: category.id,
+          name: category.name,
+          orderIndex: category.orderIndex,
+        };
         this._categoriesById.set(category.id, cached);
-        this._categoriesByNormalizedName.set(category.name.trim().toLowerCase(), cached);
+        this._categoriesByNormalizedName.set(
+          category.name.trim().toLowerCase(),
+          cached,
+        );
       });
 
       // 5. Map ExamMatrices
-      matricesFromDb.forEach(matrix => {
+      matricesFromDb.forEach((matrix) => {
+        const categoryName =
+          this._categoriesById.get(matrix.licenseCategoryId)?.name || "N/A";
         const cached: ICachedExamMatrix = {
           id: matrix.id,
           name: matrix.name,
+          minCriticalQuestions: matrix.minCriticalQuestions,
+          licenseCategoryName: categoryName,
           licenseCategoryId: matrix.licenseCategoryId,
           totalQuestions: matrix.totalQuestions,
           durationMinutes: matrix.durationMinutes,
@@ -83,12 +116,15 @@ export class MasterDataCacheService implements IMasterDataCacheService {
         };
         this._matricesById.set(matrix.id, cached);
 
-        const existing = this._matricesByLicenseId.get(matrix.licenseCategoryId) || [];
-        this._matricesByLicenseId.set(matrix.licenseCategoryId, [...existing, cached]);
+        const existing =
+          this._matricesByLicenseId.get(matrix.licenseCategoryId) || [];
+        this._matricesByLicenseId.set(matrix.licenseCategoryId, [
+          ...existing,
+          cached,
+        ]);
       });
 
       this._isInitialized = true;
-
     } catch (error) {
       this._isInitialized = false;
       // Nếu là lỗi AppError (như EMPTY_DATA) thì ném tiếp, nếu không thì ném lỗi REFRESH_FAILED
@@ -145,7 +181,6 @@ export class MasterDataCacheService implements IMasterDataCacheService {
     return this._categoriesByNormalizedName.get(rawName.trim().toLowerCase());
   }
 
-
   /** * @description Lấy thông tin Role dựa trên tên chính xác.
    * @param name Tên Role (ví dụ: 'Admin', 'User').
    * @returns Đối tượng Role hoặc undefined.
@@ -184,10 +219,22 @@ export class MasterDataCacheService implements IMasterDataCacheService {
   }
 
   // --- Check Methods ---
-  public existsRole(id: string) { this._ensureInitialized(); return this._rolesById.has(id); }
-  public existsChapter(id: string) { this._ensureInitialized(); return this._chaptersById.has(id); }
-  public existsCategory(id: string) { this._ensureInitialized(); return this._categoriesById.has(id); }
-  public existsMatrix(id: string) { this._ensureInitialized(); return this._matricesById.has(id); }
+  public existsRole(id: string) {
+    this._ensureInitialized();
+    return this._rolesById.has(id);
+  }
+  public existsChapter(id: string) {
+    this._ensureInitialized();
+    return this._chaptersById.has(id);
+  }
+  public existsCategory(id: string) {
+    this._ensureInitialized();
+    return this._categoriesById.has(id);
+  }
+  public existsMatrix(id: string) {
+    this._ensureInitialized();
+    return this._matricesById.has(id);
+  }
 
   private _clearAllCaches(): void {
     this._rolesById.clear();

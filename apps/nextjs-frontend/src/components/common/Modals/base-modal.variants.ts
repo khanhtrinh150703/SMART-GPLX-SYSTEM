@@ -1,5 +1,6 @@
 // src/components/common/Modals/base-modal.variants.ts
 import { cva } from "class-variance-authority";
+import { Variants } from 'framer-motion';
 
 export const baseModalVariants = {
   // Lớp phủ nền mờ (Dịch: Overlay Backdrop)
@@ -56,4 +57,43 @@ export const baseModalVariants = {
 
   // Phần thân (Dịch: Modal Body)
   body: cva("p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar"),
+};
+
+
+/**
+ * @description Hiệu ứng lớp nền (Backdrop) - mờ nhanh hơn
+ */
+export const backdropVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.15 } }
+};
+
+/**
+ * @description Hiệu ứng Modal "Siêu nhẹ" (Lightweight Modal Pop)
+ */
+export const modalVariants: Variants = {
+  hidden: { 
+    opacity: 0, 
+    scale: 0.98, // Chỉ co lại 2% (Less distortion)
+    y: 4,        // Chỉ trượt nhẹ 4px (Minimal travel distance)
+  },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 550, // Rất cứng - phản hồi tức thì (Instant response)
+      damping: 35,    // Dập tắt dao động nhanh (Quickly stops bouncing)
+      mass: 0.5,      // Trọng lượng cực nhẹ (Feather-light feel)
+      restDelta: 0.01 // Kết thúc animation sớm hơn khi đạt ngưỡng gần khớp
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.99, 
+    y: 2,
+    transition: { duration: 0.1, ease: "easeOut" } 
+  }
 };

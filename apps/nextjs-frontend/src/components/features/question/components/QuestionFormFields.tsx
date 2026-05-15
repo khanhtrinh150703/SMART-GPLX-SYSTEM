@@ -8,6 +8,7 @@ import {
   Path,
   PathValue,
   FieldArrayPath,
+  Controller,
 } from "react-hook-form";
 import {
   FileText,
@@ -18,17 +19,20 @@ import {
   Trash2,
   X,
   Image as ImageIcon,
-  Hash,
-  Layers,
-  Activity,
 } from "lucide-react";
 import Image from "next/image";
-
+import TextareaAutosize from "react-textarea-autosize";
 import { cn } from "@/lib/utils/utils";
 import { FormField } from "@/components/common/Form/FormField";
-import { Select } from "@/components/ui/Select/Select";
 import { questionFormVariants as v } from "./variants/question-modal.variants";
 import { DIFFICULTY_OPTIONS } from "./question.config";
+import { DataSelect } from "@/components/ui/Data-Select/data-select";
+import { slateTheme } from "@/components/ui/Data-Select/date-select-theme";
+import { StatusSelect } from "@/components/ui/Status-Select/status-select";
+import { slateStatusTheme } from "@/components/ui/Status-Select/status-theme";
+import { QUESTION_STATUS_OPTIONS } from "../constants/status-options";
+import { slateInputTheme } from "@/components/ui/Data-Input/input-theme";
+import { DataInput } from "@/components/ui/Data-Input/data-input";
 
 /**
  * @description Interface for Question Form Fields using Generic T.
@@ -130,63 +134,76 @@ export function QuestionFormFields<T extends FieldValues>({
           disabled={isLoading}
           className="h-40"
         />
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Chapter Selection */}
-          <Select
-            label="Chủ đề chương (Chapter Topic)"
-            icon={Layers}
-            {...register("chapterId" as Path<T>)}
-            options={options.chapters}
-            error={errors.chapterId?.message as string}
-            disabled={isLoading}
+          <Controller
+            name={"chapterId" as Path<T>}
+            control={control}
+            render={({ field }) => (
+              <DataSelect
+                label="Chủ đề chương"
+                placeholder="Chọn chương..."
+                options={options.chapters}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.chapterId?.message as string}
+                disabled={isLoading}
+                theme={slateTheme}
+                size="lg"
+              />
+            )}
           />
 
           {/* Index Number */}
-          <FormField
+          <DataInput
             label="Số thứ tự (Index Number)"
-            icon={Hash}
             type="number"
             placeholder="VD: 1"
+            // Ép kiểu chuỗi về Path<T> để register nhận diện đúng field trong generic T
             {...register("indexNumber" as Path<T>, { valueAsNumber: true })}
+            // Ép kiểu message về string để khớp với prop error của DataInput
             error={errors.indexNumber?.message as string}
-            disabled={isLoading}
+            sizeName="lg"
+            theme={slateInputTheme}
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Difficulty Selection */}
-          <div className={v.inputGroup}>
-            <label className={v.label}>
-              <Activity size={14} /> Độ khó (Difficulty)
-            </label>
-            <select
-              {...register("difficultyLevel" as Path<T>, {
-                valueAsNumber: true,
-              })}
-              className={cn(v.inputField, "h-14 px-4")}
-              disabled={isLoading}
-            >
-              {DIFFICULTY_OPTIONS.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Controller
+            name={"difficultyLevel" as Path<T>}
+            control={control}
+            render={({ field }) => (
+              <DataSelect
+                label="Độ khó"
+                placeholder="Chọn độ khó..."
+                options={DIFFICULTY_OPTIONS}
+                value={String(field.value)}
+                onChange={(val) => field.onChange(Number(val))}
+                error={errors.difficultyLevel?.message as string}
+                disabled={isLoading}
+                theme={slateTheme}
+                size="lg"
+              />
+            )}
+          />
 
           {/* Status Selection */}
-          <div className={v.inputGroup}>
-            <label className={v.label}>Trạng thái (Status)</label>
-            <select
-              {...register("status" as Path<T>)}
-              className={cn(v.inputField, "h-14 px-4")}
-              disabled={isLoading}
-            >
-              <option value="ACTIVE">Hoạt động (Active)</option>
-              <option value="DRAFT">Bản nháp (Draft)</option>
-            </select>
-          </div>
+          <Controller
+            name={"status" as Path<T>}
+            control={control}
+            render={({ field }) => (
+              <StatusSelect
+                label="Trạng thái"
+                options={QUESTION_STATUS_OPTIONS}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.status?.message as string}
+                theme={slateStatusTheme}
+                size="lg"
+              />
+            )}
+          />
         </div>
 
         {/* License Categories Selection */}
@@ -355,10 +372,12 @@ export function QuestionFormFields<T extends FieldValues>({
                     </button>
 
                     {/* Answer Content Input */}
-                    <input
+                    <TextareaAutosize
                       {...register(`answers.${index}.content` as Path<T>)}
                       placeholder={`Nhập đáp án ${index + 1}...`}
-                      className="flex-1 bg-transparent border-none outline-none font-bold text-sm text-slate-700"
+                      minRows={1}
+                      maxRows={6}
+                      className="flex-1 bg-transparent border-none outline-none font-bold text-sm text-slate-700 resize-none leading-relaxed py-1"
                       disabled={isLoading}
                     />
 

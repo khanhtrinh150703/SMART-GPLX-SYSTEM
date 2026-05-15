@@ -1,62 +1,116 @@
-import { QuestionStatus } from "@/domain/entities/question/question.status";
+import { Status } from "@/shared/config/status.config";
 
 /**
- * @interface AnswerResponseDto
- * @description Dữ liệu chi tiết của một đáp án (lựa chọn) trả về cho Client.
- * (Detailed data of an answer option returned to the Client)
+ * @description Giao diện dữ liệu chi tiết của một đáp án trả về cho Client.
+ * (Interface for the detailed data of an answer option returned to the Client.)
  */
-export interface AnswerResponseDto {
-  /** @property {string} id - Mã định danh duy nhất của đáp án (UUID). */
-  id: string;
+export interface IAnswerResponseDTO {
+  /** @description Mã định danh duy nhất của đáp án (UUID). (Unique identifier of the answer.) */
+  readonly id: string;
 
-  /** @property {string} content - Nội dung văn bản của đáp án. */
-  content: string;
+  /** @description Nội dung văn bản của đáp án. (Text content of the answer.) */
+  readonly content: string;
 
-  /** @property {boolean} isCorrect - Đánh dấu đây có phải là đáp án đúng hay không. */
-  isCorrect: boolean;
+  /** @description Đánh dấu đây có phải là đáp án đúng hay không. (Flag indicating if this is the correct answer.) */
+  readonly isCorrect: boolean;
 
-  /** @property {string | null} imageUrl - Đường dẫn hình ảnh minh họa cho đáp án (nếu có). */
-  imageUrl: string | null;
+  /** @description Đường dẫn hình ảnh minh họa cho đáp án (nếu có). (Illustration image URL for the answer, if any.) */
+  readonly imageUrl: string | null;
 }
 
 /**
- * @interface QuestionResponseDTO
- * @description Dữ liệu câu hỏi đầy đủ trả về cho Client, đảm bảo sạch và an toàn.
- * (Full question data returned to the Client, ensuring clean and safe structure)
+ * @description DTO vận chuyển dữ liệu đáp án.
+ * Đóng vai trò mang dữ liệu sạch từ tầng Application ra ngoài API.
  */
-export interface QuestionResponseDTO {
-  /** @property {string} id - Mã định danh duy nhất của câu hỏi (UUID). */
-  id: string;
+export class AnswerResponseDTO implements IAnswerResponseDTO {
+  public readonly id: string;
+  public readonly content: string;
+  public readonly isCorrect: boolean;
+  public readonly imageUrl: string | null;
 
-  /** @property {number} indexNumber - Số thứ tự câu hỏi trong bộ đề. */
-  indexNumber: number;
+  constructor(data: IAnswerResponseDTO) {
+    this.id = data.id;
+    this.content = data.content;
+    this.isCorrect = data.isCorrect;
+    this.imageUrl = data.imageUrl;
+  }
+}
 
-  /** @property {string} chapterId - ID của chương học chứa câu hỏi này. */
-  chapterId: string;
+/**
+ * @description Giao diện dữ liệu câu hỏi đầy đủ trả về cho Client.
+ * (Interface for full question data returned to the Client, ensuring a clean and safe structure.)
+ */
+export interface IQuestionResponseDTO {
+  /** @description Mã định danh duy nhất của câu hỏi (UUID). (Unique identifier of the question.) */
+  readonly id: string;
 
-  /** @property {string} content - Nội dung câu hỏi dùng để hiển thị. */
-  content: string;
+  /** @description Số thứ tự câu hỏi trong bộ đề. (The sequence number of the question in the set.) */
+  readonly indexNumber: number;
 
-  /** @property {string | null} imageUrl - Đường dẫn hình ảnh minh họa tình huống giao thông (nếu có). */
-  imageUrl: string | null;
+  /** @description ID của chương học chứa câu hỏi này. (ID of the chapter containing this question.) */
+  readonly chapterId: string;
 
-  /** @property {boolean} isCritical - Đánh dấu đây có phải là "Câu điểm liệt" hay không. */
-  isCritical: boolean;
+  /** @description Nội dung câu hỏi dùng để hiển thị. (The question content for display.) */
+  readonly content: string;
 
-  /** * @property {object} difficulty - Cấu trúc phân loại mức độ khó của câu hỏi.
-   * @property {number} difficulty.level - Cấp độ số (VD: 1, 2, 3).
-   * @property {string} difficulty.label - Nhãn hiển thị (VD: 'Dễ', 'Trung bình', 'Khó').
-   */
-  difficulty: {
-    level: number; 
-    label: string; 
+  /** @description Đường dẫn hình ảnh minh họa tình huống (nếu có). (Situation illustration image URL, if any.) */
+  readonly imageUrl: string | null;
+
+  /** @description Đánh dấu đây có phải là "Câu điểm liệt" hay không. (Flag indicating if this is a "Critical Question".) */
+  readonly isCritical: boolean;
+
+  /** @description Cấu trúc phân loại mức độ khó. (Structure classifying the difficulty level.) */
+  readonly difficulty: {
+    readonly level: number;
+    readonly label: string;
   };
 
-  status: QuestionStatus;
+  /** @description Trạng thái hiện tại của câu hỏi. (Current status of the question.) */
+  readonly status: Status;
 
-  /** @property {AnswerResponseDto[]} answers - Danh sách các lựa chọn đáp án đi kèm. */
-  answers: AnswerResponseDto[];
+  /** @description Danh sách các lựa chọn đáp án đi kèm. (List of accompanying answer options.) */
+  readonly answers: IAnswerResponseDTO[];
 
-  /** @property {string[]} licenseCategoryIds - Danh sách ID các hạng bằng lái áp dụng câu hỏi này (VD: B1, B2). */
-  licenseCategoryIds: string[];
+  /** @description Danh sách ID các hạng bằng lái áp dụng (VD: B1, B2). (List of applicable license category IDs.) */
+  readonly licenseCategoryIds: string[];
+}
+
+/**
+ * @description DTO vận chuyển dữ liệu câu hỏi hoàn chỉnh.
+ * Đảm bảo cấu trúc dữ liệu sạch, an toàn và nhất quán cho phía Client trong dự án Smart-GPLX-System.
+ */
+export class QuestionResponseDTO implements IQuestionResponseDTO {
+  public readonly id: string;
+  public readonly indexNumber: number;
+  public readonly chapterId: string;
+  public readonly content: string;
+  public readonly imageUrl: string | null;
+  public readonly isCritical: boolean;
+  public readonly difficulty: {
+    readonly level: number;
+    readonly label: string;
+  };
+  public readonly status: Status;
+  public readonly answers: IAnswerResponseDTO[];
+  public readonly licenseCategoryIds: string[];
+
+  constructor(data: IQuestionResponseDTO) {
+    this.id = data.id;
+    this.indexNumber = data.indexNumber;
+    this.chapterId = data.chapterId;
+    this.content = data.content;
+    this.imageUrl = data.imageUrl;
+    this.isCritical = data.isCritical;
+    this.difficulty = {
+      level: data.difficulty.level,
+      label: data.difficulty.label
+    };
+    this.status = data.status;
+    this.licenseCategoryIds = data.licenseCategoryIds;
+
+    // Khởi tạo danh sách Answer DTO từ dữ liệu đầu vào
+    this.answers = Array.isArray(data.answers)
+      ? data.answers.map(ans => new AnswerResponseDTO(ans))
+      : [];
+  }
 }

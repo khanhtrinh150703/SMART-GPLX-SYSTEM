@@ -30,6 +30,7 @@ import {
   EXAM_MATRIX_STATUS_OPTIONS,
   FILTER_FIELDS,
 } from "./exam-matrix.config";
+import { useLicenseOptions, useChapterOptions } from "@/hooks/use-master-data";
 
 /**
  * @description Quản lý Ma trận đề thi (Exam Matrix Management)
@@ -68,15 +69,12 @@ export function ExamMatrixContent() {
   } | null>(null);
 
   // --- 2. TRUY VẤN DỮ LIỆU (DATA FETCHING) ---
-  const {
-    matrices,
-    pagination,
-    actions,
-    isLoading,
-    isMutating,
-    chapterOptions = [],
-    licenseOptions = [],
-  } = useExamMatrices(getApiParams());
+  const { matrices, pagination, actions, isLoading, isMutating } =
+    useExamMatrices(getApiParams());
+
+  const { data: licenseOptions = [] } = useLicenseOptions();
+
+  const { data: chapterOptions = [] } = useChapterOptions();
 
   // --- 3. HIỆU ỨNG (EFFECTS) ---
   useEffect(() => {
@@ -127,7 +125,7 @@ export function ExamMatrixContent() {
 
   const handleCreateExamMatrix = async (data: IExamMatrixRequest) => {
     try {
-      setMessage(null);
+      // Không setMessage(null) ở đây để tránh chớp màn hình nếu đang có thông báo cũ
       if (selectedId) {
         await actions.update({ id: selectedId, data });
         setMessage({ intent: "success", text: "Cập nhật ma trận thành công!" });
@@ -135,21 +133,37 @@ export function ExamMatrixContent() {
         await actions.create(data);
         setMessage({ intent: "success", text: "Tạo ma trận mới thành công!" });
       }
+
       setSheetOpen(false);
     } catch (error) {
-      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
     }
   };
 
   const handleDelete = async () => {
     if (!selectedId) return;
     try {
-      await actions.delete(selectedId);
+      const response = await actions.delete(selectedId);
       setIsDeleteModalOpen(false);
       setSelectedId(null);
-      setMessage({ intent: "success", text: "Đã xóa ma trận thành công!" });
+      if (!response.data) return;
+      const { type, count } = response.data;
+
+      setIsDeleteModalOpen(false);
+
+      // Tạo thông báo "có tâm" hơn dựa trên dữ liệu thật
+      const isSoft = type?.toLowerCase() === "soft";
+      const detailText =
+        count > 0 ? ` (bao gồm ${count} đáp án liên quan)` : "";
+
+      setMessage({
+        intent: "success",
+        text: isSoft
+          ? `Đã chuyển cấu trúc ma trận vào thùng rác thành công${detailText}.`
+          : `Đã xóa vĩnh viễn cấu trúc ma trận khỏi hệ thống${detailText}.`,
+      });
     } catch (error) {
-      setMessage({ intent: "error", text: getApiError(error) });
+      throw error;
     }
   };
 
