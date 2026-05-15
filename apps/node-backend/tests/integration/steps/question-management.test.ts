@@ -52,11 +52,14 @@ export const questionSteps = (
       });
 
       it("❌ Nên thất bại (QST_001) khi thiếu id chương (Admin thực hiện)", async () => {
+        const { chapterId: _chapterId, ...payloadWithoutChapter } =
+          QUESTION_DATA.NORMAL_PAYLOAD;
+
         const res = await request(app)
           .post(QUESTION_ENDPOINTS.BASE)
           .set(getAuthHeader(getAdminToken()))
           .send({
-            ...QUESTION_DATA.NORMAL_PAYLOAD,
+            ...payloadWithoutChapter, 
             licenseCategoryIds: [getLicenseId()],
           });
 
@@ -106,7 +109,6 @@ export const questionSteps = (
         };
 
         const res = await attachMultipart(req, payload);
-        console.log(res.body, getLicenseId());
 
         expect(res.status).toBe(400);
         expect(res.body.code).toBe(ErrorCode.QUESTION.ANSWERS_INSUFFICIENT);

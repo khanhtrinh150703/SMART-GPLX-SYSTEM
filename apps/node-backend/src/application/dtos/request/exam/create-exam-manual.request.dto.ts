@@ -1,6 +1,7 @@
 import { IExamQuestionProps } from "@/domain/entities/exam/exam.props";
 import { STATUS, Status } from "@/shared/config/status.config";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo bài thi thủ công.
@@ -115,6 +116,20 @@ export class CreateManualExamRequestDTO implements ICreateManualExamInputDTO {
 
     if (!this.licenseCategoryId) {
       throw new AppError(ErrorCode.EXAM.LICENSE_CATEGORY_REQUIRED);
+    }
+
+    if (!this.userId) {
+      throw new AppError(ErrorCode.EXAM.USER_ID_REQUIRED);
+    }
+    if (!isUUID(this.userId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    if (!this.licenseCategoryId) {
+      throw new AppError(ErrorCode.EXAM.LICENSE_CATEGORY_REQUIRED);
+    }
+    if (!isUUID(this.licenseCategoryId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
     }
 
     // 2. Kiểm tra logic danh sách câu hỏi

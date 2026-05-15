@@ -10,55 +10,58 @@ export interface IUpdateAdminInputDTO {
 
 /**
  * @description DTO xử lý yêu cầu cập nhật thông tin tài khoản Admin.
- * Đảm bảo dữ liệu đầu vào hợp lệ và ngăn chặn việc gửi yêu cầu rỗng.
  */
 export class UpdateAdminRequestDTO implements IUpdateAdminInputDTO {
   public readonly fullName?: string;
   public readonly roles?: string[];
 
   constructor(data: IUpdateAdminInputDTO) {
-    // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
-    this.validate(data);
-
-    // 2. Gán giá trị và chuẩn hóa dữ liệu
-    if (data.fullName !== undefined) {
-      this.fullName = data.fullName.trim();
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    if (data.roles !== undefined) {
-      this.roles = Array.isArray(data.roles) ? data.roles : [];
-    }
+    // Mapping và chuẩn hóa dữ liệu sang instance
+    this.fullName =
+      data.fullName !== undefined ? String(data.fullName).trim() : undefined;
+
+    this.roles = Array.isArray(data.roles)
+      ? data.roles.map((role) => String(role).trim()).filter(Boolean)
+      : data.roles !== undefined
+        ? []
+        : undefined;
+
+    this.validate();
   }
 
   /**
-   * @description Hàm gác cổng thực hiện kiểm tra tính hợp lệ đa tầng.
-   * @private
+   * @description Hàm gác cổng kiểm tra tính hợp lệ đa tầng của instance.
    */
-  private validate(data: IUpdateAdminInputDTO): void {
-    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-
+  private validate(): void {
     const { USER } = ErrorCode;
 
-    const hasFullName = data.fullName !== undefined;
-    const hasRoles = data.roles !== undefined;
-
-    // 1. Check xem có trường nào được gửi lên không
-    if (!hasFullName && !hasRoles) {
+    // 1. Kiểm tra xem có ít nhất một trường dữ liệu được cung cấp để cập nhật hay không
+    if (this.fullName === undefined && this.roles === undefined) {
       throw new AppError(USER.MISSING_UPDATE_FIELDS);
     }
 
-    // 2. Validate Name
-    if (hasFullName) {
-      const name = data.fullName?.trim() || '';
-      if (name.length === 0) throw new AppError(USER.NAME_REQUIRED);
-      if (name.length < 2) throw new AppError(USER.NAME_TOO_SHORT);
-      if (name.length > 100) throw new AppError(USER.NAME_TOO_LONG);
+    // 2. Kiểm tra tính hợp lệ của họ tên (nếu có)
+    if (this.fullName !== undefined) {
+      if (this.fullName.length === 0) {
+        throw new AppError(USER.NAME_REQUIRED);
+      }
+      if (this.fullName.length < 2) {
+        throw new AppError(USER.NAME_TOO_SHORT);
+      }
+      if (this.fullName.length > 100) {
+        throw new AppError(USER.NAME_TOO_LONG);
+      }
     }
 
-    // 3. Validate Roles
-    if (hasRoles) {
-      if (!Array.isArray(data.roles)) throw new AppError(USER.INVALID_ROLES_FORMAT);
-      if (data.roles.length === 0) throw new AppError(USER.ROLES_REQUIRED);
+    // 3. Kiểm tra tính hợp lệ của danh sách vai trò (nếu có)
+    if (this.roles !== undefined) {
+      if (this.roles.length === 0) {
+        throw new AppError(USER.ROLES_REQUIRED);
+      }
     }
   }
 }

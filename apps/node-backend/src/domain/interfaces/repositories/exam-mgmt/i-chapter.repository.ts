@@ -72,9 +72,9 @@ export interface IChapterRepository {
   /**
    * @description Khôi phục chương lý thuyết đã bị xóa mềm bằng cách gỡ bỏ đánh dấu thời gian xóa (deletedAt).
    * @param {string} id - UUID của chương cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<Chapter>}
    */
-  restore(id: string): Promise<void>;
+  restore(id: string): Promise<Chapter>;
 
   /**
    * @description Tìm kiếm và đếm tổng số lượng hạng bằng lái có phân trang.

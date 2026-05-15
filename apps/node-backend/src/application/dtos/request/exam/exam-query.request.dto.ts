@@ -52,5 +52,6 @@ export class ExamQueryDTO extends BaseQueryDTO {
     this.examMatrixId = this.examMatrixId?.trim();
     this.status = this.status?.trim() as Status;
     this.startedAt = this.startedAt?.trim();
+
   }
 }

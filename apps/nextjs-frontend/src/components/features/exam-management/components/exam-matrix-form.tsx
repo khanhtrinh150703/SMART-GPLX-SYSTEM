@@ -212,6 +212,7 @@ export function ExamMatrixForm({
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3">
+                {/* Toggle 1: Theo chương */}
                 <label className="flex items-center gap-2 cursor-pointer group shrink-0">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-500 transition-colors">
                     Theo chương
@@ -222,12 +223,14 @@ export function ExamMatrixForm({
                       {...register("isChapter")}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    {/* Đã sửa translate-x-full thành translate-x-5 */}
+                    <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                   </div>
                 </label>
 
                 <div className="hidden sm:block w-px h-4 bg-slate-200/60" />
 
+                {/* Toggle 2: Thiết lập mặc định */}
                 <label className="flex items-center gap-2 cursor-pointer group shrink-0">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-500 transition-colors">
                     Thiết lập mặc định
@@ -238,7 +241,8 @@ export function ExamMatrixForm({
                       {...register("isDefault")}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    {/* Đã sửa translate-x-full thành translate-x-5 */}
+                    <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                   </div>
                 </label>
               </div>

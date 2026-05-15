@@ -127,7 +127,8 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.VALIDATION.NAME_INVALID_LENGTH]: 'Tên có độ dài không phù hợp.',
     [ErrorCode.VALIDATION.NAME_FORMAT_INVALID]: 'Tên chứa ký tự không hợp lệ.',
     [ErrorCode.VALIDATION.DESCRIPTION_TOO_LONG]: 'Mô tả quá dài, vui lòng rút gọn.',
-
+    [ErrorCode.VALIDATION.ID_INVALID_UUID]: 'Mã định danh (ID) không đúng định dạng chuỗi chuẩn (UUID).',
+    
     // --- VALIDATION (2xx: Security) ---
     [ErrorCode.VALIDATION.PASSWORD_INVALID]: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm cả chữ và số.',
     [ErrorCode.VALIDATION.PASSWORD_CONFIRM_MISMATCH]: 'Mật khẩu xác nhận không trùng khớp.',

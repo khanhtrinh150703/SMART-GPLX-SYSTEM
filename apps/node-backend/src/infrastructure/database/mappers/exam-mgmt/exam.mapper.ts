@@ -74,6 +74,7 @@ export class ExamMapper {
       status: raw.status as Status,
       score: raw.score,
       isPassed: raw.isPassed,
+      deletedAt: raw.deletedAt,
       startedAt: raw.startedAt,
       endedAt: raw.endedAt ?? null,
       questions,

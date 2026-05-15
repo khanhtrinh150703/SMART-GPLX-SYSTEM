@@ -79,8 +79,8 @@ export interface IExamMatrixRepository {
   /**
    * @description Khôi phục Ma trận đề thi đã bị xóa mềm.
    * @param {string} id - Mã định danh của ma trận cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<ExamMatrix>}
    * @throws {AppError} Ném lỗi nếu không tìm thấy ma trận hoặc có lỗi hệ thống.
    */
-  restore(id: string): Promise<void>;
+  restore(id: string): Promise<ExamMatrix>;
 }

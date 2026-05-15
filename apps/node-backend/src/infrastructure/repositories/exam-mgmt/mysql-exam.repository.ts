@@ -231,13 +231,21 @@ export class MySQLExamRepository implements IExamRepository {
     });
   }
 
-  public async restore(id: string): Promise<void> {
-    await this._prisma.exam.update({
+  public async restore(id: string): Promise<ExamEntity> {
+    // Lệnh update của Prisma trả về luôn record vừa sửa
+    const updatedRecord = await this._prisma.exam.update({
       where: { id },
-      data: { deletedAt: null, status: "ACTIVE" },
+      data: {
+        deletedAt: null,
+        status: "ACTIVE",
+      },
+      include: examInclude, // Đảm bảo gom đủ câu hỏi/snapshot đi kèm nếu Mapper yêu cầu
     });
-  }
 
+    // Ép kiểu qua Mapper và trả ngược lên tầng nghiệp vụ (Service)
+    return ExamMapper.toDomain(updatedRecord);
+  }
+  
   /**
    * @description Thống kê các thành phần phụ thuộc của Đề thi.
    * @param {string} id - Định danh duy nhất (UUID) của đề thi.

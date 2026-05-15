@@ -186,11 +186,13 @@ export class MySQLUserRepository implements IUserRepository {
     return this._toDomain(raw) as User;
   }
 
-  public async restore(id: string): Promise<void> {
-    await this._prisma.user.update({
+  public async restore(id: string): Promise<User | null> {
+    const record = await this._prisma.user.update({
       where: { id },
       data: { deletedAt: null, status: STATUS.ACTIVE },
+      include: this._userInclude,
     });
+    return this._toDomain(record);
   }
 
   /**

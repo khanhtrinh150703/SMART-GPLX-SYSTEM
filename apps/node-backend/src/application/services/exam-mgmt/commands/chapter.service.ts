@@ -118,9 +118,7 @@ export class ChapterService implements IChapterService {
     if (dto.code && dto.code !== chapter.code) {
       checkTasks.push(
         (async () => {
-          const existingCode = await this._chapterRepo.findByCode(
-            dto.code,
-          );
+          const existingCode = await this._chapterRepo.findByCode(dto.code);
           if (existingCode)
             throw new AppError(ErrorCode.CHAPTER.CODE_ALREADY_EXISTS);
         })(),
@@ -200,9 +198,9 @@ export class ChapterService implements IChapterService {
     }
 
     chapter.restore();
-    await this._chapterRepo.restore(id);
+    const restored = await this._chapterRepo.restore(id);
     this._cacheService.refresh();
-    return ChapterMapper.toResponse(chapter);
+    return ChapterMapper.toResponse(restored);
   }
 
   /**

@@ -1,5 +1,6 @@
 import { REGEX } from "@/domain/constants/regex.constant";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật hạng bằng lái.
@@ -13,8 +14,7 @@ export interface IUpdateLicenseCategoryInputDTO {
 }
 
 /**
- * @class UpdateLicenseCategoryRequestDTO
- * @description DTO xử lý cập nhật hạng giấy phép lái xe, mapping trước khi validate.
+ * @description DTO xử lý cập nhật hạng giấy phép lái xe, tự động chuẩn hóa và kiểm tra dữ liệu.
  */
 export class UpdateLicenseCategoryRequestDTO implements IUpdateLicenseCategoryInputDTO {
   public readonly id: string;
@@ -23,51 +23,40 @@ export class UpdateLicenseCategoryRequestDTO implements IUpdateLicenseCategoryIn
   public readonly minAge: number;
   public readonly orderIndex: number;
 
-  /**
-   * @param {IUpdateLicenseCategoryInputDTO} data
-   * @throws {AppError}
-   */
   constructor(data: IUpdateLicenseCategoryInputDTO) {
-    // 0. Guard Clause cho đầu vào
     if (!data) {
       throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // 1. Mapping & Sanitization (Gán và chuẩn hóa dữ liệu)
     this.id = typeof data.id === "string" ? data.id.trim() : "";
-
     this.name =
       typeof data.name === "string" ? data.name.trim().toUpperCase() : "";
-
     this.description =
       typeof data.description === "string" ? data.description.trim() : "";
     this.minAge =
       data.minAge !== undefined && data.minAge !== null
         ? Number(data.minAge)
         : NaN;
-
     this.orderIndex =
       data.orderIndex !== undefined && data.orderIndex !== null
         ? Number(data.orderIndex)
         : 0;
 
-    // 2. Validate dữ liệu đã được gán vào instance
-    this.validate(data);
+    this.validate();
   }
 
   /**
-   * @private
-   * @description Hàm gác cổng giữ nguyên các trường hợp kiểm tra của hệ thống.
-   * @param {IUpdateLicenseCategoryInputDTO} data - Dùng để check các trường undefined/null nguyên bản
-   * @throws {AppError}
+   * @description Hàm gác cổng kiểm tra tính hợp lệ đa tầng của hạng giấy phép lái xe dựa trên dữ liệu instance.
    */
-  private validate(data: IUpdateLicenseCategoryInputDTO): void {
-    // 1. Kiểm tra ID bắt buộc
-    if (!this.id || this.id.trim() === "") {
+  private validate(): void {
+    if (!this.id || this.id === "") {
       throw new AppError(ErrorCode.LICENSE.ID_REQUIRED);
     }
 
-    // 2. Kiểm tra Tên hạng bằng (Name)
+    if (!isUUID(this.id)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
     if (this.name === "") {
       throw new AppError(ErrorCode.LICENSE.NAME_REQUIRED);
     }
@@ -80,12 +69,7 @@ export class UpdateLicenseCategoryRequestDTO implements IUpdateLicenseCategoryIn
       throw new AppError(ErrorCode.LICENSE.NAME_FORMAT_INVALID);
     }
 
-    // 3. Kiểm tra Độ tuổi tối thiểu (Min Age)
-    if (
-      data.minAge === undefined ||
-      data.minAge === null ||
-      isNaN(this.minAge)
-    ) {
+    if (isNaN(this.minAge)) {
       throw new AppError(ErrorCode.LICENSE.AGE_REQUIRED);
     }
 
@@ -93,8 +77,7 @@ export class UpdateLicenseCategoryRequestDTO implements IUpdateLicenseCategoryIn
       throw new AppError(ErrorCode.LICENSE.AGE_INVALID);
     }
 
-    // 4. Kiểm tra Thứ tự hiển thị và Mô tả
-    if (data.orderIndex !== undefined && this.orderIndex < 0) {
+    if (isNaN(this.orderIndex) || this.orderIndex < 0) {
       throw new AppError(ErrorCode.LICENSE.INVALID_ORDER);
     }
 

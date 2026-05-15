@@ -5,59 +5,50 @@ import { IUploadedFile } from "@/shared/types/file.type";
  * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật hồ sơ cá nhân.
  */
 export interface IUpdateProfileInputDTO {
-    readonly fullName?: string;
-    readonly pictureFile?: IUploadedFile;
+  readonly fullName?: string;
+  readonly pictureFile?: IUploadedFile;
 }
 
 /**
- * @description DTO xử lý cập nhật hồ sơ cá nhân.
- * Đảm bảo dữ liệu được chuẩn hóa và ngăn chặn các yêu cầu rỗng.
+ * @description DTO xử lý cập nhật hồ sơ cá nhân, đảm bảo dữ liệu được chuẩn hóa trước khi lưu trữ.
  */
 export class UpdateProfileRequestDTO implements IUpdateProfileInputDTO {
-    public readonly fullName?: string;
-    public readonly pictureFile?: IUploadedFile;
+  public readonly fullName?: string;
+  public readonly pictureFile?: IUploadedFile;
 
-    constructor(data: IUpdateProfileInputDTO) {
-        // 1. Chặn đứng dữ liệu lỗi/undefined ngay từ constructor
-        this.validate(data);
-
-        // 2. Làm sạch và gán giá trị
-        this.fullName = data.fullName?.trim();
-        this.pictureFile = data.pictureFile;
+  constructor(data: IUpdateProfileInputDTO) {
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    /**
-     * @description Hàm gác cổng thực hiện ném AppError dựa trên mã lỗi hệ thống.
-     * @private
-     */
-    private validate(data: IUpdateProfileInputDTO): void {
-        // Guard Clause: Chống sập hệ thống
-        if (!data) {
-            throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-        }
+    // Mapping và ép kiểu dữ liệu tường minh sang instance
+    this.fullName =
+      data.fullName !== undefined ? String(data.fullName).trim() : undefined;
+    this.pictureFile = data.pictureFile;
 
-        const { USER } = ErrorCode;
+    this.validate();
+  }
 
-        // 1. Phải cung cấp ít nhất một trường để cập nhật (fullName hoặc avatar)
-        const hasFullName = data.fullName !== undefined;
-        const hasAvatar = data.pictureFile !== undefined;
+  /**
+   * @description Hàm gác cổng kiểm tra tính hợp lệ của hồ sơ dựa trên dữ liệu instance.
+   */
+  private validate(): void {
+    const { USER } = ErrorCode;
 
-        if (!hasFullName && !hasAvatar) {
-            throw new AppError(USER.MISSING_UPDATE_FIELDS);
-        }
-
-        // 2. Kiểm tra độ dài tên (nếu có cung cấp)
-        if (hasFullName) {
-            const trimmedName = data.fullName?.trim() || '';
-
-            // Nếu gửi fullName nhưng lại để chuỗi rỗng
-            if (trimmedName.length === 0) {
-                throw new AppError(USER.NAME_REQUIRED); // Tận dụng lại USER_101
-            }
-
-            if (trimmedName.length > 50) {
-                throw new AppError(USER.NAME_TOO_LONG);
-            }
-        }
+    // 1. Kiểm tra xem có ít nhất một trường thông tin được gửi lên hay không
+    if (this.fullName === undefined && this.pictureFile === undefined) {
+      throw new AppError(USER.MISSING_UPDATE_FIELDS);
     }
+
+    // 2. Kiểm tra tính hợp lệ của họ tên (nếu có cung cấp)
+    if (this.fullName !== undefined) {
+      if (this.fullName.length === 0) {
+        throw new AppError(USER.NAME_REQUIRED);
+      }
+
+      if (this.fullName.length > 50) {
+        throw new AppError(USER.NAME_TOO_LONG);
+      }
+    }
+  }
 }

@@ -1,9 +1,9 @@
 import { Status } from "@/shared/config/status.config";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
- * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật đề thi.
- * Hầu hết các trường là optional vì đây là thao tác cập nhật từng phần (Partial Update).
+ * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật đề thi (Partial Update).
  */
 export interface IUpdateExamInputDTO {
   readonly id: string;
@@ -24,8 +24,7 @@ export interface IUpdateExamInputDTO {
 }
 
 /**
- * @description DTO xử lý cập nhật thông tin đề thi.
- * Đảm bảo tính toàn vẹn của dữ liệu và các ràng buộc logic giữa các con số.
+ * @description DTO xử lý và kiểm tra tính toàn vẹn của dữ liệu cập nhật đề thi.
  */
 export class UpdateExamRequestDTO implements IUpdateExamInputDTO {
   public readonly id: string;
@@ -45,79 +44,112 @@ export class UpdateExamRequestDTO implements IUpdateExamInputDTO {
   public readonly questionIds: string[];
 
   constructor(data: IUpdateExamInputDTO) {
-    // 1. Chặn đứng dữ liệu lỗi ngay tại constructor
-    this.validate(data);
+    if (!data) {
+      throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    }
 
-    // 2. Gán giá trị và chuẩn hóa dữ liệu
     this.id = data.id;
     if (data.name !== undefined) this.name = data.name.trim();
     if (data.userId !== undefined) this.userId = data.userId;
     if (data.examMatrixId !== undefined) this.examMatrixId = data.examMatrixId;
-    if (data.licenseCategoryId !== undefined) this.licenseCategoryId = data.licenseCategoryId;
+    if (data.licenseCategoryId !== undefined)
+      this.licenseCategoryId = data.licenseCategoryId;
 
-    if (data.totalQuestions !== undefined) this.totalQuestions = Number(data.totalQuestions);
-    if (data.passingScore !== undefined) this.passingScore = Number(data.passingScore);
-    if (data.durationMinutes !== undefined) this.durationMinutes = Number(data.durationMinutes);
-    if (data.minCriticalQuestions !== undefined) this.minCriticalQuestions = Number(data.minCriticalQuestions);
+    if (data.totalQuestions !== undefined)
+      this.totalQuestions = Number(data.totalQuestions);
+    if (data.passingScore !== undefined)
+      this.passingScore = Number(data.passingScore);
+    if (data.durationMinutes !== undefined)
+      this.durationMinutes = Number(data.durationMinutes);
+    if (data.minCriticalQuestions !== undefined)
+      this.minCriticalQuestions = Number(data.minCriticalQuestions);
 
     if (data.status !== undefined) this.status = data.status;
     if (data.score !== undefined) this.score = Number(data.score);
     if (data.isPassed !== undefined) this.isPassed = data.isPassed;
 
     if (data.startedAt !== undefined) this.startedAt = new Date(data.startedAt);
-    if (data.endedAt !== undefined) this.endedAt = data.endedAt ? new Date(data.endedAt) : null;
+    if (data.endedAt !== undefined)
+      this.endedAt = data.endedAt ? new Date(data.endedAt) : null;
 
     this.questionIds = Array.isArray(data.questionIds) ? data.questionIds : [];
+
+    this.validate();
   }
 
   /**
-   * @description Hàm gác cổng thực hiện kiểm tra logic đa tầng.
-   * @private
+   * @description Hàm gác cổng kiểm tra tính hợp lệ đa tầng dựa trên dữ liệu instance.
    */
-  private validate(data: IUpdateExamInputDTO): void {
-    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-
-    // 1. Kiểm tra ID bắt buộc
-    if (!data.id || data.id.trim() === '') {
+  private validate(): void {
+    if (!this.id || this.id.trim() === "") {
       throw new AppError(ErrorCode.EXAM.ID_REQUIRED);
     }
 
-    // 2. Kiểm tra tính hiện diện của các trường (nếu cung cấp)
-    if (data.name !== undefined && data.name.trim() === '') {
+    if (!isUUID(this.id)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    }
+
+    if (this.name !== undefined && this.name === "") {
       throw new AppError(ErrorCode.EXAM.NAME_REQUIRED);
     }
 
-    if (data.userId !== undefined && !data.userId) {
-      throw new AppError(ErrorCode.EXAM.USER_ID_REQUIRED);
+    if (this.userId !== undefined) {
+      if (!this.userId || this.userId.trim() === "") {
+        throw new AppError(ErrorCode.EXAM.USER_ID_REQUIRED);
+      }
+      if (!isUUID(this.userId)) {
+        throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+      }
     }
 
-    // 3. Kiểm tra logic con số
-    if (data.durationMinutes !== undefined && Number(data.durationMinutes) <= 0) {
+    if (this.examMatrixId) {
+      if (!isUUID(this.examMatrixId)) {
+        throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+      }
+    }
+
+    if (this.licenseCategoryId) {
+      if (!isUUID(this.licenseCategoryId)) {
+        throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+      }
+    }
+
+    if (this.durationMinutes !== undefined && this.durationMinutes <= 0) {
       throw new AppError(ErrorCode.EXAM.INVALID_DURATION);
     }
 
-    if (data.totalQuestions !== undefined && Number(data.totalQuestions) <= 0) {
+    if (this.totalQuestions !== undefined && this.totalQuestions <= 0) {
       throw new AppError(ErrorCode.EXAM.TOTAL_QUESTIONS_INVALID);
     }
 
-    // 4. Kiểm tra logic chéo
-    const questionCount = data.questionIds?.length || 0;
-    if (data.passingScore !== undefined && questionCount > 0) {
-      if (Number(data.passingScore) > questionCount) {
+    if (
+      this.minCriticalQuestions !== undefined &&
+      this.minCriticalQuestions < 0
+    ) {
+      throw new AppError(ErrorCode.EXAM.MIN_CRITICAL_INVALID);
+    }
+
+    const questionCount = this.questionIds.length;
+    if (this.passingScore !== undefined && questionCount > 0) {
+      if (this.passingScore > questionCount) {
         throw new AppError(ErrorCode.EXAM.PASSING_SCORE_TOO_HIGH);
       }
     }
 
-    if (data.minCriticalQuestions !== undefined && Number(data.minCriticalQuestions) < 0) {
-      throw new AppError(ErrorCode.EXAM.MIN_CRITICAL_INVALID);
+    if (this.startedAt && this.endedAt) {
+      if (this.endedAt.getTime() <= this.startedAt.getTime()) {
+        throw new AppError(ErrorCode.EXAM.INVALID_TIME_RANGE);
+      }
     }
 
-    // 5. Kiểm tra logic thời gian
-    if (data.startedAt && data.endedAt) {
-      const start = new Date(data.startedAt).getTime();
-      const end = new Date(data.endedAt).getTime();
-      if (end <= start) {
-        throw new AppError(ErrorCode.EXAM.INVALID_TIME_RANGE);
+    if (this.questionIds.length > 0) {
+      for (const qId of this.questionIds) {
+        if (!isUUID(qId)) {
+          throw new AppError(
+            ErrorCode.VALIDATION.INVALID_FORMAT,
+            "Mã định danh Câu hỏi trong danh sách sai định dạng UUID.",
+          );
+        }
       }
     }
   }

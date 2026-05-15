@@ -245,11 +245,10 @@ export class ExamMatrixService implements IExamMatrixService {
     }
 
     // 2. Thực hiện khôi phục
-    await this._examMatrixRepo.restore(id);
+    const restored = await this._examMatrixRepo.restore(id);
 
-    const restored = await this._examMatrixRepo.findById(id);
     this._cacheService.refresh();
-    return this.toResponse(restored!);
+    return this.toResponse(restored);
   }
 
   public async validateExistence(id: string): Promise<void> {

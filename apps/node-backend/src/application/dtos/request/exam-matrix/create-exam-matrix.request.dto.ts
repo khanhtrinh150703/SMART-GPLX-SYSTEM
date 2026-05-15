@@ -1,5 +1,6 @@
 import { AppError, ErrorCode } from "@/shared/errors";
 import { ExamMatrixDetailRequestDTO } from "./exam-matrix-detail.request";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu tạo Ma trận đề thi.
@@ -90,6 +91,10 @@ export class CreateExamMatrixRequestDTO implements ICreateExamMatrixInputDTO {
 
     if (!this.licenseCategoryId) {
       throw new AppError(ErrorCode.MATRIX.LICENSE_CATEGORY_REQUIRED);
+    }
+
+    if (!isUUID(this.licenseCategoryId)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
     }
 
     // 2. Kiểm tra thông số kỹ thuật

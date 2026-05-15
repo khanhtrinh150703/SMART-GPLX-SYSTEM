@@ -108,9 +108,9 @@ export interface IUserRepository {
   /**
    * @description Khôi phục hạng bằng lái đã bị xóa mềm (gỡ bỏ đánh dấu deleted_at).
    * @param {string} id - UUID của hạng bằng cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<User | null>}
    */
-  restore(id: string): Promise<void>;
+  restore(id: string): Promise<User | null>;
 
   /**
    * @description Thống kê chi tiết các dữ liệu nghiệp vụ đang liên kết với tài khoản người dùng này.

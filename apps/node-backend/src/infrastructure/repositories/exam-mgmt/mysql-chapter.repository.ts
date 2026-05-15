@@ -135,7 +135,7 @@ export class MySQLChapterRepository implements IChapterRepository {
         where,
         skip,
         take: limit,
-        orderBy: orderBy, 
+        orderBy: orderBy,
       }),
       this._prisma.chapter.count({ where }),
     ]);
@@ -194,10 +194,11 @@ export class MySQLChapterRepository implements IChapterRepository {
     });
   }
 
-  public async restore(id: string): Promise<void> {
-    await this._prisma.chapter.update({
+  public async restore(id: string): Promise<Chapter> {
+    const record = await this._prisma.chapter.update({
       where: { id },
       data: { deletedAt: null },
     });
+    return ChapterMapper.toDomain(record);
   }
 }

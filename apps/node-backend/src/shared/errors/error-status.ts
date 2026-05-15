@@ -94,7 +94,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 400, // Bad Request (Yêu cầu vượt quá khả năng đáp ứng của kho)
   [ErrorCode.EXAM.INSUFFICIENT_CHAPTER_QUESTIONS]: 400, // Bad Request
   [ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS]: 400, // Bad Request
-  [ErrorCode.EXAM.QUESTION_DATA_INVALID]: 500, // Internal Server Error (Dữ liệu DB lỗi là lỗi hệ thống)
+  [ErrorCode.EXAM.QUESTION_DATA_INVALID]: 422, 
 
   // --- Nhóm 4xx: State/Flow (Lỗi trạng thái bài thi) ---
   [ErrorCode.EXAM.NOT_FOUND]: 404, // Not Found
@@ -121,6 +121,7 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.VALIDATION.CODE_REQUIRED]: 400,
   [ErrorCode.VALIDATION.INVALID_NUMBER]: 400,
   [ErrorCode.VALIDATION.INVALID_INPUT]: 400,
+  [ErrorCode.VALIDATION.ID_INVALID_UUID]: 400,
 
   // --- 1xx: Identity & Contact ---
   [ErrorCode.VALIDATION.EMAIL_INVALID]: 400,

@@ -87,9 +87,9 @@ export interface IExamRepository {
   /**
    * @description Khôi phục đề thi đã bị xóa mềm bằng cách gỡ bỏ đánh dấu thời gian xóa (deletedAt).
    * @param {string} id - ID của đề thi cần khôi phục.
-   * @returns {Promise<void>}
+   * @returns {Promise<ExamEntity>}
    */
-  restore(id: string): Promise<void>;
+  restore(id: string): Promise<ExamEntity>;
 
   /**
    * @description Tìm kiếm và đếm tổng số lượng đề thi có phân trang kèm bộ lọc.

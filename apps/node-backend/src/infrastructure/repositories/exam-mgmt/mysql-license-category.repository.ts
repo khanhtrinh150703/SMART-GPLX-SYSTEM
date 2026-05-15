@@ -2,9 +2,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 import { ILicenseCategoryRepository } from "@/domain/interfaces/repositories/exam-mgmt/i-license-category-repository";
 import { LicenseCategoryMapper } from "@/infrastructure/database/mappers/exam-mgmt/license-category.mapper";
-import {
-  PrismaLicenseCategory,
-} from "@/infrastructure/persistence/exam-mgmt/license-category.record";
+import { PrismaLicenseCategory } from "@/infrastructure/persistence/exam-mgmt/license-category.record";
 import { LicenseCategoryQueryDTO } from "@/application/dtos/request/license-category/license-category-query.request.dto";
 import { LicenseRelatedCount } from "@/shared/types/count.types";
 /**
@@ -223,7 +221,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
 
     return [entities, total];
   }
-  
+
   public async softDelete(id: string): Promise<void> {
     await this._prisma.licenseCategory.update({
       where: { id },
@@ -237,10 +235,11 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
     });
   }
 
-  public async restore(id: string): Promise<void> {
-    await this._prisma.licenseCategory.update({
+  public async restore(id: string): Promise<LicenseCategory> {
+    const record = await this._prisma.licenseCategory.update({
       where: { id },
       data: { deletedAt: null },
     });
+    return LicenseCategoryMapper.toDomain(record);
   }
 }

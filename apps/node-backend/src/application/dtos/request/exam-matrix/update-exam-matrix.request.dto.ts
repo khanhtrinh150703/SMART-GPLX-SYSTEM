@@ -1,5 +1,6 @@
 import { AppError, ErrorCode } from "@/shared/errors";
 import { IExamMatrixDetailInputDTO } from "./exam-matrix-detail.request";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật ma trận đề thi.
@@ -77,6 +78,10 @@ export class UpdateExamMatrixRequestDTO implements IUpdateExamMatrixInputDto {
     // 1. Kiểm tra ID và Tên
     if (!this.id) {
       throw new AppError(ErrorCode.MATRIX.ID_REQUIRED);
+    }
+
+    if (!isUUID(this.id)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
     }
 
     if (!this.name) {

@@ -151,7 +151,8 @@ export const ErrorCode = {
     CODE_REQUIRED: "VAL_006",
     INVALID_NUMBER: "VAL_007", // Định dạng số không hợp lệ
     INVALID_INPUT: "VAL_008",
-
+    ID_INVALID_UUID: "VAL_009", // ID không đúng định dạng UUID
+    
     // --- 1xx: Identity & Contact (Định danh & Liên lạc) ---
     EMAIL_INVALID: "VAL_101",
     NAME_INVALID_LENGTH: "VAL_102",

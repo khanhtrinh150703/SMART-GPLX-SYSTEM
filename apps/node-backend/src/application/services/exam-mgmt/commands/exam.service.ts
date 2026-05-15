@@ -207,31 +207,14 @@ export class ExamService implements IExamService {
 
     // Tìm bản ghi kể cả đã xóa mềm (Dùng query hệ thống không lọc deletedAt)
     const existing = await this._examRepo.findByIdSystem(id);
-
     if (!existing || !existing.isDeleted()) {
       throw new AppError(ErrorCode.EXAM.NOT_FOUND);
     }
 
-    // 2. KIỂM TRA RÀNG BUỘC DUY NHẤT (UNIQUE CONSTRAINT) TRƯỚC KHI KHÔI PHỤC
-    const duplicate = await this._prisma.exam.findFirst({
-      where: {
-        licenseCategoryId: existing.props.licenseCategoryId,
-        userId: existing.props.userId, // Thêm kiểm tra theo User nếu cần
-        deletedAt: null,
-        id: { not: id },
-      },
-    });
-
-    if (duplicate) {
-      // Nếu đã có đề thi mới đang chạy, không cho khôi phục cái cũ
-      throw new AppError(ErrorCode.VALIDATION.RESTORE_FAILED_DUPLICATE);
-    }
-
     // 3. Thực hiện khôi phục
-    await this._examRepo.restore(id);
+    const restored = await this._examRepo.restore(id);
 
-    const restored = await this._examRepo.findById(id);
-    return ExamMapper.toResponse(restored!);
+    return ExamMapper.toResponse(restored);
   }
 
   /**
@@ -266,8 +249,6 @@ export class ExamService implements IExamService {
       await this._examRepo.hardDelete(id);
       type = DeleteType.HARD;
     }
-
-    // 4. Đồng bộ hóa Cache nếu cần (Sync Cache if necessary)
 
     // 5. Trả về DTO - Logic tạo tin nhắn đã nằm gọn trong Class DeleteResponseDTO
     return new DeleteResponseDTO({

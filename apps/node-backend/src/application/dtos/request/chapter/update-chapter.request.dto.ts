@@ -1,5 +1,6 @@
 import { REGEX } from "@/domain/constants/regex.constant";
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util";
 
 /**
  * @description Giao diện dữ liệu đầu vào cho yêu cầu cập nhật chương lý thuyết.
@@ -52,10 +53,13 @@ export class UpdateChapterRequestDTO implements IUpdateChapterInputDTO {
    */
   private validate(): void {
     const { CHAPTER } = ErrorCode;
-
     // 1. Kiểm tra ID (Bắt buộc phải có để xác định bản ghi cần update)
     if (!this.id) {
       throw new AppError(CHAPTER.ID_REQUIRED);
+    }
+
+    if (!isUUID(this.id)) {
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
     }
 
     // 2. Kiểm tra Name (Sử dụng this.name đã được trim)

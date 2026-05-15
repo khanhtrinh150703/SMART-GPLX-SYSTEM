@@ -239,10 +239,12 @@ export class MySQLExamMatrixRepository implements IExamMatrixRepository {
    * @description Khôi phục trạng thái hoạt động của bản ghi bằng cách xóa dấu vết deletedAt (Persistence/Database - Restore).
    * @param {string} id - UUID của ma trận cần khôi phục.
    */
-  public async restore(id: string): Promise<void> {
-    await this._prisma.examMatrix.update({
+  public async restore(id: string): Promise<ExamMatrixEntity> {
+    const record = await this._prisma.examMatrix.update({
       where: { id },
       data: { deletedAt: null },
+      include: EXAM_MATRIX_INCLUDE,
     });
+    return ExamMatrixMapper.toDomain(record);
   }
 }
