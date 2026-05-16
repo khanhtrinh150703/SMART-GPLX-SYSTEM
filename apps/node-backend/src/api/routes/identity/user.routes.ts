@@ -1,28 +1,29 @@
-import { Router } from 'express';
+import { Router } from "express";
 
 // 1. Controller (Gom từ index của identity)
-import { UserController } from '@/api/controllers/identity';
+import { UserController } from "@/api/controllers/identity";
 
 // 2. Middlewares (Phân tầng rõ rệt: Bảo mật | Tích hợp | Hệ thống)
-import { authMiddleware, requirePermission } from '@/api/middlewares/identity';
-import { upload } from '@/api/middlewares/integration'; // Xử lý upload thường nằm ở integration
-import { validateFileSize } from '@/api/middlewares/shared';
+import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
+import { upload } from "@/api/middlewares/integration"; // Xử lý upload thường nằm ở integration
+import { validateFileSize } from "@/api/middlewares/shared";
 
 // 3. DI Container
-import { container } from '@/shared/utils/container';
+import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 const router = Router();
 
 /**
  * Resolve Controller từ Awilix Container.
  */
-const userController = container.resolve('userController') as UserController;
+const userController = container.resolve("userController") as UserController;
 
 // ============================================================================
 // CẤU HÌNH MIDDLEWARE CHUNG (GLOBAL FOR THIS ROUTER)
 // ============================================================================
 
-/** * Vì tất cả các route trong file này đều yêu cầu đăng nhập, 
- * ta áp dụng authMiddleware một lần duy nhất tại đây. 
+/** * Vì tất cả các route trong file này đều yêu cầu đăng nhập,
+ * ta áp dụng authMiddleware một lần duy nhất tại đây.
  */
 router.use(authMiddleware);
 
@@ -35,65 +36,87 @@ router.use(authMiddleware);
  * @route PATCH /api/v1/users/me/profile
  * @access Private (Authenticated User)
  */
-router.patch('/me/profile', validateFileSize(upload.single('pictureFile')), userController.updateProfile);
+router.patch(
+  "/me/profile",
+  validateFileSize(upload.single("pictureFile")),
+  userController.updateProfile,
+);
 
 /**
  * @description Thay đổi mật khẩu của người dùng hiện tại.
  * @route PATCH /api/v1/users/me/password
  * @access Private (Authenticated User)
  */
-router.patch('/me/password', userController.changePassword);
+router.patch("/me/password", userController.changePassword);
 
 // ============================================================================
 // NHÓM 2: QUẢN TRỊ (ADMIN SCOPE)
 // ============================================================================
 
-
-router.use(requirePermission('users:manage'));
+router.use(requirePermission("users:manage"));
 
 /**
  * @description Lấy danh sách toàn bộ người dùng với các bộ lọc, tìm kiếm và phân trang.
  * @route GET /api/v1/users
  * @access Private (Admin)
  */
-router.get('/', userController.getUsers);
+router.get("/", userController.getUsers);
 
 /**
  * @description Quản trị viên cập nhật thông tin chi tiết và ảnh đại diện của người dùng khác.
  * @route PATCH /api/v1/users/admin/:id
  * @access Private (Admin)
  */
-router.patch('/admin/:id', upload.single('pictureFile'), userController.updateProfileAdmin);
+router.patch(
+  "/admin/:id",
+  validateUuidParam("id"), 
+  upload.single("pictureFile"),
+  userController.updateProfileAdmin,
+);
 
 /**
  * Nhóm các hành động thao tác dựa trên ID người dùng để code gọn gàng hơn.
  */
-router.route('/:id')
-    /**
-     * @description Xóa (xóa mềm) tài khoản người dùng khỏi hệ thống.
-     * @route DELETE /api/v1/users/:id
-     */
-    .delete(userController.deleteUser);
+router
+  .route("/:id")
+  .all(validateUuidParam("id"))
+  /**
+   * @description Xóa (xóa mềm) tài khoản người dùng khỏi hệ thống.
+   * @route DELETE /api/v1/users/:id
+   */
+  .delete(userController.deleteUser);
 
 /**
  * @description Cập nhật trạng thái hoạt động (Active/Inactive) cho tài khoản người dùng.
  * @route PATCH /api/v1/users/:id/status
  * @access Private (Admin)
  */
-router.patch('/:id/status', userController.updateStatus);
+router.patch(
+  "/:id/status",
+  validateUuidParam("id"),
+  userController.updateStatus,
+);
 
 /**
  * @description Khôi phục lại tài khoản người dùng đã bị xóa mềm trước đó.
  * @route PATCH /api/v1/users/:id/restore
  * @access Private (Admin)
  */
-router.patch('/:id/restore', userController.restoreUser);
+router.patch(
+  "/:id/restore",
+  validateUuidParam("id"),
+  userController.restoreUser,
+);
 
 /**
  * @description Quản trị viên cập nhật thông tin chi tiết và vai trò của người dùng.
  * @route PUT /api/v1/users/:id/admin
  * @access Private (Admin)
  */
-router.put('/:id/admin', userController.updateUserByAdmin);
+router.put(
+  "/:id/admin",
+  validateUuidParam("id"),
+  userController.updateUserByAdmin,
+);
 
 export default router;
