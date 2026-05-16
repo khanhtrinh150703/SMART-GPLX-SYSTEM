@@ -45,7 +45,7 @@ services:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=smart_gplx_test
     ports:
-      - "3307:3306"
+      - "3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
       interval: 5s
@@ -65,7 +65,7 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
     ports:
-      - "27016:27017" # Port mặc định để kết nối từ máy thật hoặc client UI
+      - "27017:27017" # Port mặc định để kết nối từ máy thật hoặc client UI
     volumes:
       - mongo_data:/data/db # Gắn volume lưu dữ liệu bền vững cho Mongo
     networks:
