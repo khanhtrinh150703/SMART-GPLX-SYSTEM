@@ -8,6 +8,7 @@ import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
 // 3. DI Container
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 const chapterController = container.resolve(
@@ -61,6 +62,7 @@ router.post("/", chapterController.create);
  */
 router
   .route("/:id")
+  .all(validateUuidParam("id"))
   /**
    * @description Cập nhật thông tin chi tiết của một chương học theo ID.
    * @route PATCH /api/v1/chapters/:id
@@ -80,6 +82,10 @@ router
  * @route PATCH /api/v1/chapters/:id/restore
  * @access Private (Admin/Instructor)
  */
-router.patch("/:id/restore", chapterController.restore);
+router.patch(
+  "/:id/restore",
+  validateUuidParam("id"),
+  chapterController.restore,
+);
 
 export default router;

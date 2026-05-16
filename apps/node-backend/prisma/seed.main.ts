@@ -208,8 +208,7 @@ async function main(): Promise<void> {
         },
       },
     });
-  }
-
+  } 
   console.log("✨ --- TẤT CẢ DỮ LIỆU ĐÃ ĐƯỢC ĐỒNG BỘ THÀNH CÔNG ---");
 }
 
