@@ -8,13 +8,15 @@ import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
 // 3. DI Container
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
-const controller = container.resolve('examMatrixController') as ExamMatrixController;
+const controller = container.resolve(
+  "examMatrixController",
+) as ExamMatrixController;
 
 /**
- * @description Tất cả các route quản lý Ma trận đều yêu cầu đăng nhập 
- * (Dịch: All matrix management routes require authentication)
+ * @description Tất cả các route quản lý Ma trận đều yêu cầu đăng nhập
  */
 router.use(authMiddleware);
 
@@ -23,11 +25,7 @@ router.use(authMiddleware);
  * @route GET /api/v1/exam-matrices
  * @returns {Promise<void>} Phản hồi danh sách ExamMatrixResponseDTO.
  */
-router.get(
-    '/',
-    requirePermission('exam-matrices:read'),
-    controller.list
-);
+router.get("/", requirePermission("exam-matrices:read"), controller.list);
 
 /**
  * @description Lấy danh sách các ma trận đề thi học định dạng selection (value/label) cho dropdown.
@@ -35,66 +33,57 @@ router.get(
  * @access Private (Admin/Instructor)
  */
 router.get(
-    '/selection',
-    requirePermission('exam-matrices:read'),
-    controller.getExamMatrixSelections
+  "/selection",
+  requirePermission("exam-matrices:read"),
+  controller.getExamMatrixSelections,
 );
-
 
 /**
  * @description Áp dụng quyền quản lý ma trận cho toàn bộ các endpoint bên dưới
- * (Dịch: Apply matrix management permission for all endpoints below)
  */
-router.use(requirePermission('matrices:manage'));
+router.use(requirePermission("exam-matrices:manage"));
 
 /**
  * @description Tạo mới một ma trận đề thi kèm theo cấu trúc tỉ trọng các chương.
  * @route POST /api/v1/exam-matrices
- * @access Private (Yêu cầu quyền matrices:manage)
+ * @access Private (Yêu cầu quyền exam-matrices:manage)
  */
-router.post(
-    "/",
-    controller.create
-);
+router.post("/", controller.create);
 
-/**
- * @description Lấy thông tin chi tiết của một ma trận đề thi bao gồm tỉ trọng các chương.
- * @route GET /api/v1/exam-matrices/:id
- * @access Private (Yêu cầu quyền matrices:manage)
- */
-router.get(
-    "/:id",
-    controller.getById
-);
+router
+  .route("/:id")
+  // 💡 Gom bộ middleware gác cổng dùng chung cho GET, PUT, DELETE tại đây
+  .all(validateUuidParam("id"))
+  /**
+   * @description Lấy thông tin chi tiết của một ma trận đề thi bao gồm tỉ trọng các chương.
+   * @route GET /api/v1/exam-matrices/:id
+   * @access Private (Yêu cầu quyền exam-matrices:manage)
+   */
+  .get(controller.getById)
 
-/**
- * @description Cập nhật thông tin ma trận và thay thế toàn bộ danh sách chi tiết tỉ trọng.
- * @route PUT /api/v1/exam-matrices/:id
- * @access Private (Yêu cầu quyền matrices:manage)
- */
-router.put(
-    "/:id",
-    controller.update
-);
+  /**
+   * @description Cập nhật thông tin ma trận và thay thế toàn bộ danh sách chi tiết tỉ trọng.
+   * @route PUT /api/v1/exam-matrices/:id
+   * @access Private (Yêu cầu quyền exam-matrices:manage)
+   */
+  .put(controller.update)
 
-/**
- * @description Xóa ma trận đề thi theo cơ chế thông minh (Hard Delete nếu chưa dùng, Soft Delete nếu đã sinh đề).
- * @route DELETE /api/v1/exam-matrices/:id
- * @access Private (Yêu cầu quyền matrices:manage)
- */
-router.delete(
-    "/:id",
-    controller.delete
-);
+  /**
+   * @description Xóa ma trận đề thi theo cơ chế thông minh.
+   * @route DELETE /api/v1/exam-matrices/:id
+   * @access Private (Yêu cầu quyền exam-matrices:manage)
+   */
+  .delete(controller.delete);
 
 /**
  * @description Khôi phục ma trận đề thi đã bị xóa mềm quay trở lại trạng thái hoạt động.
  * @route PATCH /api/v1/exam-matrices/:id/restore
- * @access Private (Yêu cầu quyền matrices:manage)
+ * @access Private (Yêu cầu quyền exam-matrices:manage)
  */
 router.patch(
-    "/:id/restore",
-    controller.restore
+  "/:id/restore",
+  validateUuidParam("id"),
+  controller.restore,
 );
 
 export default router;

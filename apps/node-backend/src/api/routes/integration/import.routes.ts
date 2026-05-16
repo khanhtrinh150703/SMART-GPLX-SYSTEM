@@ -10,6 +10,7 @@ import { validateFileSize } from "@/api/middlewares/shared";
 
 // 3. DI Container
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 const router = Router();
 const controller = container.resolve('importController') as ImportController;
 
@@ -34,11 +35,11 @@ router.post(
  * @description Bước 2: Tải lên từng mảnh dữ liệu của file (Dịch: Upload file chunk).
  * Lưu ý: 'chunk' là key trong FormData gửi từ phía Frontend.
  * @route POST /api/v1/import/upload-chunk
- * @access Private (Yêu cầu quyền import:questions)
+ * @access Private (Yêu cầu quyền questions:import)
  */
 router.post(
     "/upload-chunk", 
-    requirePermission('import:questions'), 
+    requirePermission('iquestions:import'), 
     validateFileSize(uploadImport.single('chunk')), 
     controller.uploadChunk
 );
@@ -46,11 +47,11 @@ router.post(
 /**
  * @description Bước 3: Hoàn tất quá trình tải lên và bắt đầu xử lý dữ liệu vào hệ thống (Dịch: Finalize and process).
  * @route POST /api/v1/import/complete
- * @access Private (Yêu cầu quyền import:questions)
+ * @access Private (Yêu cầu quyền questions:import)
  */
 router.post(
     "/complete", 
-    requirePermission('import:questions'), 
+    requirePermission('questions:import'), 
     controller.complete
 );
 
@@ -61,6 +62,7 @@ router.post(
  */
 router.get(
     '/status/:jobId', 
+    validateUuidParam("jobId"), 
     controller.getStatus
 );
 

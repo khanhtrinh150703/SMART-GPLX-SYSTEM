@@ -12,9 +12,22 @@ import { IExamQuestionProps } from "@/domain/entities/exam/exam.props";
 import {
   ExamAttemptResponseDTO,
   IExamAttemptResponseDTO,
+  IQuestionSnapshotResponseDTO,
 } from "@/application/dtos/response/exam-attempt/exam-attempt.respone.dto";
 import { AppError } from "@/shared/errors/error-app";
 import { ErrorCode } from "@/shared/errors/error-codes";
+import { formatImageUrl } from "@/shared/utils/url.util";
+
+/**
+ * @description Blueprint input for the mapping orchestration.
+ * (Dữ liệu đầu vào cho quá trình điều phối mapper).
+ */
+export interface ICreateAttemptInput {
+  exam: ExamEntity;
+  fullQuestions: Question[];
+  userAnswers: Map<string, number | null>;
+  isAutoSubmit?: boolean;
+}
 
 /**
  * @class ExamAttemptMapper
@@ -48,13 +61,14 @@ export class ExamAttemptMapper {
       isPassed: props.isPassed,
       hasFailedCritical: props.hasFailedCritical ?? false,
       passingScore: props.passingScore,
-
+      
       // Metadata & Snapshot
       durationSeconds: props.durationSeconds,
       isAutoSubmit: props.isAutoSubmit,
       submittedAt: props.submittedAt,
+      totalTimeExam: props.totalTimeExam,
       snapshot: props.snapshot,
-
+      
       // Timestamps
       createdAt: props.createdAt as Date,
       updatedAt: props.updatedAt as Date,
@@ -80,11 +94,10 @@ export class ExamAttemptMapper {
   ): Partial<IExamAttemptPersistence> {
     const record = this.toCommonPersistence(entity);
 
-    // Loại bỏ các trường KHÔNG ĐƯỢC PHÉP update sau khi đã tạo
     const {
-      _id, // Biến này đã có "_" nên thường Linter sẽ bỏ qua
-      userId: _userId, // Đổi tên thành _userId
-      createdAt: _createdAt, // Đổi tên thành _createdAt
+      _id,
+      userId: _userId,
+      createdAt: _createdAt,
       ...updateData
     } = record;
 
@@ -98,7 +111,6 @@ export class ExamAttemptMapper {
    */
   public static toDomain(raw: IExamAttemptPersistence): ExamAttemptEntity {
     // Mapping ngược từ _id (DB) sang id (Entity Props)
-    // Đảm bảo khớp 100% với IExamAttemptProps đã định nghĩa
     const props: IExamAttemptProps = {
       id: raw._id,
       userId: raw.userId,
@@ -122,6 +134,7 @@ export class ExamAttemptMapper {
       durationSeconds: raw.durationSeconds,
       isAutoSubmit: raw.isAutoSubmit,
       submittedAt: raw.submittedAt,
+      totalTimeExam: raw.totalTimeExam,
 
       // Snapshot được giữ nguyên vì interface IExamSnapshot đã đồng bộ
       snapshot: raw.snapshot,
@@ -143,11 +156,9 @@ export class ExamAttemptMapper {
    * @param isAutoSubmit Cờ xác định nộp bài tự động hay thủ công.
    */
   public static toCreateProps(
-    exam: ExamEntity,
-    fullQuestions: Question[],
-    userAnswers: Map<string, number | null>,
-    isAutoSubmit: boolean = false,
+    input: ICreateAttemptInput,
   ): CreateExamAttemptProps {
+    const { exam, fullQuestions, userAnswers, isAutoSubmit = false } = input;
     const questionSnapshots: IQuestionSnapshot[] = exam.props.questions.map(
       (eq) => {
         const qEntity = fullQuestions.find((q) => q.id === eq.questionId);
@@ -166,7 +177,7 @@ export class ExamAttemptMapper {
 
     return {
       userId: exam.props.userId,
-      userName: exam.props.userName ?? "Người dùng",
+      userName: exam.props.fullName ?? "Người dùng",
       examId: exam.id ?? "",
       licenseCategoryId: exam.props.licenseCategoryId,
       licenseCategoryName: exam.props.licenseCategoryName ?? "",
@@ -184,13 +195,10 @@ export class ExamAttemptMapper {
       passingScore: exam.props.passingScore,
 
       // Metadata thời gian
-      durationSeconds: this._calculateDuration(
-        exam.props.startedAt,
-        exam.props.endedAt!,
-      ),
+      durationSeconds: exam.props.resultMetadata?.timeSpent ?? 0,
       isAutoSubmit: isAutoSubmit,
       submittedAt: exam.props.endedAt!,
-
+      totalTimeExam: exam.props.durationMinutes,
       // Toàn bộ nội dung tại thời điểm nộp
       snapshot: {
         title: exam.props.name,
@@ -207,8 +215,8 @@ export class ExamAttemptMapper {
    * @description Chuyển đổi dữ liệu câu hỏi và câu trả lời thành bản Snapshot.
    */
   private static _toQuestionSnapshot(
-    examQuestion: IExamQuestionProps,
-    questionEntity: Question,
+    examQuestion: IExamQuestionProps, 
+    questionEntity: Question, 
     userSelectedIndex: number | null,
   ): IQuestionSnapshot {
     const isCorrect = userSelectedIndex === examQuestion.correctAnswer;
@@ -221,14 +229,20 @@ export class ExamAttemptMapper {
       }),
     );
 
+    const finalChapterName =
+      examQuestion.chapterName ||
+      questionEntity.props.chapterName ||
+      "Chưa phân loại";
+
     return {
       questionId: examQuestion.questionId,
-      indexNumber: examQuestion.indexNumber,
+      indexNumber: questionEntity.props.indexNumber,
       content: questionEntity.props.content,
+      timeSpent: examQuestion.timeSpent ?? 0,
       imageUrl: questionEntity.props.imageUrl,
       isCritical: examQuestion.isCritical,
       chapterId: questionEntity.props.chapterId,
-      chapterName: questionEntity.props.chapterName || "Chưa phân loại",
+      chapterName: finalChapterName,
       options: options,
       selectedAnswerIndex: userSelectedIndex,
       correctAnswerIndex: examQuestion.correctAnswer,
@@ -236,52 +250,76 @@ export class ExamAttemptMapper {
     };
   }
 
-  /**
-   * @description Tính toán thời gian làm bài (giây)
-   */
-  private static _calculateDuration(start: Date, end: Date): number {
-    return Math.floor((end.getTime() - start.getTime()) / 1000);
+  public static toEntity(input: ICreateAttemptInput): ExamAttemptEntity {
+    const props = this.toCreateProps(input);
+
+    // Trả về Entity (Tự sinh ID và Validate bên trong)
+    return ExamAttemptEntity.create(props);
   }
 
   /**
-   * @description Chuyển đổi từ Domain Entity sang Response DTO (Bản đầy đủ chi tiết).
-   * Phục vụ trang xem lại bài thi (History Review).
+   * @description Mapper chuyển đổi từ ExamAttemptEntity (NoSQL) sang DTO phản hồi chuẩn.
+   * Đảm bảo khớp 100% với IExamAttemptResponseDTO và fix lỗi property missing.
    */
   public static toResponseDTO(
     entity: ExamAttemptEntity,
   ): IExamAttemptResponseDTO {
     const { props } = entity;
+    const { snapshot } = props;
 
+    // Sử dụng class constructor để tận dụng logic _formatDuration tự động
     return new ExamAttemptResponseDTO({
+      // 1. Thông tin định danh & Người dùng
       id: entity.id!,
       userId: props.userId,
       userName: props.userName,
       examId: props.examId,
-      examTitle: props.snapshot.title,
+      title: snapshot.title, // Tên hiển thị chung
       licenseCategoryName: props.licenseCategoryName,
 
-      // Metrics (Các chỉ số chấm điểm)
+      // 2. Kết quả chấm điểm (Core Results - Đã đồng bộ tên chuẩn)
       score: props.score,
-      correctCount: props.correctCount,
-      wrongCount: props.wrongCount ?? 0,
-      skippedCount: props.skippedCount ?? 0,
       totalQuestions: props.totalQuestions,
+      correctAnswers: props.correctCount, // correctCount -> correctAnswers
+      wrongAnswers: props.wrongCount ?? 0,
+      skippedAnswers: props.skippedCount ?? 0,
+      passed: props.isPassed, // isPassed -> passed
+      hasFailedCritical: props.hasFailedCritical ?? false,
       passingScore: props.passingScore,
 
-      // Status (Trạng thái đạt/loại)
-      isPassed: props.isPassed,
-      hasFailedCritical: props.hasFailedCritical ?? false,
-
-      // Time (Thời gian làm bài)
-      durationSeconds: props.durationSeconds,
+      // 3. Phân tích thời gian (Time Analytics - Đã đồng bộ tên chuẩn)
+      timeSpent: props.durationSeconds, // durationSeconds -> timeSpent
+      timeExam: props.totalTimeExam * 60,
       isAutoSubmit: props.isAutoSubmit,
-      submittedAt: props.submittedAt.toISOString(),
+      clientFinishedAt: props.submittedAt.toISOString(),
 
-      // Questions (Snapshot nội dung bài làm)
-      questions: props.snapshot.questions,
+      // 4. Nội dung Review (Mapped từ Snapshot NoSQL sang DTO Response)
+      questions: (snapshot.questions || []).map(
+        (q): IQuestionSnapshotResponseDTO => ({
+          questionId: q.questionId,
+          indexNumber: q.indexNumber,
+          content: q.content ?? "Nội dung câu hỏi không khả dụng",
+          imageUrl: formatImageUrl(q.imageUrl) ?? "",
+          isCritical: q.isCritical,
+          chapterId: q.chapterId,
+          chapterName: q.chapterName,
+          timeSpent: q.timeSpent ?? 0,
+          userSelectedAnswer: q.selectedAnswerIndex,
+          correctAnswer: q.correctAnswerIndex,
+          isCorrect: q.isCorrect,
+          explanation: q.explanation,
+
+          // Chuyển đổi từ 'options' (Snapshot) sang 'answers' (Response DTO)
+          answers: (q.options || []).map((opt) => ({
+            position: opt.answerIndex, // Giữ nguyên vị trí đáp án 1, 2, 3...
+            content: opt.content,
+            imageUrl: formatImageUrl(opt.imageUrl),
+          })),
+        }),
+      ),
     });
   }
-  
+
   /**
    * @description Chuyển đổi danh sách thực thể sang danh sách DTO.
    */

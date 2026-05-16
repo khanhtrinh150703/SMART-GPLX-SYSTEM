@@ -11,6 +11,7 @@ import { ExamHeader } from "../exam-header/ExamHeader";
 import { ExamNavigation } from "../exam-navigation/ExamNavigation";
 import { ExamSidebar } from "../exam-sidebar/ExamSidebar";
 import { QuestionSection } from "../question-section/QuestionSection";
+import SplashScreen from "@/components/common/Loaders/SplashScreen";
 
 interface ExamRoomProps {
   exam: IExamFullContent;
@@ -97,6 +98,9 @@ export const ExamRoom = ({ exam, onExit, onSubmit }: ExamRoomProps) => {
     }
   };
 
+  if (!currentQuestion) {
+    return <SplashScreen variant="take-exam" />; 
+  }
   return (
     <div className="fixed inset-0 z-[9999] bg-[#F8FAFC] flex gap-6 p-6 w-screen h-screen overflow-hidden font-sans">
       <main className="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden relative">

@@ -1,4 +1,5 @@
-import { ExamStatus, Prisma } from "@prisma/client";
+import { Status } from "@/shared/config/status.config";
+import { Prisma } from "@prisma/client";
 
 /**
  * @description Type hỗ trợ lấy dữ liệu từ Prisma kèm quan hệ Questions.
@@ -26,7 +27,8 @@ export interface IExamRecord {
   passingScore: number;
   durationMinutes: number;
   minCriticalQuestions: number;
-  status: ExamStatus;
+  status: Status;
+  isChapter: boolean;
   score: number;
   isPassed: boolean;
   startedAt: Date;
@@ -55,8 +57,13 @@ export const examInclude = {
         }
       }
     },
+    // Truy cập sâu: ExamQuestion -> Question -> Chapter -> orderIndex
     orderBy: {
-      indexNumber: 'asc'
+      question: {
+        chapter: {
+          orderIndex: 'asc' // Sắp xếp tăng dần theo chương
+        }
+      }
     }
   },
 } as const;

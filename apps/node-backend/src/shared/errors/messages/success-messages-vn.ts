@@ -136,4 +136,29 @@ export class Message {
     UPDATE_SUCCESS: "Cập nhật thông tin hạng thành công.",
     DELETE_SUCCESS: "Xóa hạng thành công.",
   } as const;
+
+  /** @description Thông báo thành công cho các nghiệp vụ liên quan đến Lịch sử thi. */
+  static readonly HISTORY = {
+    FETCH_SUCCESS: "Lấy danh sách lịch sử thi thành công.",
+    DETAIL_SUCCESS: "Lấy chi tiết lịch sử thi thành công.",
+    FETCH_ONE_SUCCESS: "Lấy chi tiết lịch sử thi thành công.",
+    CREATE_SUCCESS: "Lưu kết quả bài thi thành công.",
+    UPDATE_SUCCESS: "Cập nhật lịch sử thi thành công.",
+    DELETE_SUCCESS: "Xóa lịch sử thi thành công.",
+  } as const;
+
+  /** @description Thông báo thành công cho các nghiệp vụ Thống kê hệ thống. */
+  static readonly STATISTICS = {
+    FETCH_SUCCESS: "Lấy dữ liệu thống kê thành công.",
+    CHART_SUCCESS: "Lấy dữ liệu biểu đồ thống kê thành công.",
+    EXPORT_SUCCESS: "Xuất báo cáo thống kê thành công.",
+    SYNC_SUCCESS: "Đồng bộ hóa dữ liệu thống kê thành công.",
+  } as const;
+
+  /** @description Thông báo thành công cho các nghiệp vụ Thống kê người dùng. */
+  static readonly USER_STATS = {
+    FETCH_SUCCESS: "Lấy thông tin thống kê người dùng thành công.",
+    SYNC_SUCCESS: "Đồng bộ hóa dữ liệu thống kê thành công.",
+    RECALCULATE_SUCCESS: "Tính toán lại các chỉ số thống kê thành công.",
+  } as const;
 }

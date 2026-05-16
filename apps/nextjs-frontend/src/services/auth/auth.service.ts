@@ -1,4 +1,4 @@
-import { authApi } from '@/api/auth/auth.api';
+import { authApi } from "@/api/auth/auth.api";
 import type {
   LoginPayload,
   RegisterPayload,
@@ -6,16 +6,15 @@ import type {
   ForgotPasswordPayload,
   ResetPasswordPayload,
   ResendOtpPayload,
-  LoginResponseData
-} from '@/types/auth.type';
-import { useUserStore } from '../../store/user/user.store';
+  LoginResponseData,
+} from "@/types/auth.type";
+import { useUserStore } from "../../store/user/user.store";
 /**
  * Auth Service: Lớp xử lý nghiệp vụ xác thực (Authentication Business Logic).
  * Đóng vai trò cầu nối (Bridge) giữa Giao diện (UI) và Tầng truy cập dữ liệu (API Layer).
  * Quy tắc: Tuyệt đối KHÔNG dùng try/catch tại đây (để UI chủ động bắt lỗi).
  */
 export const authService = {
-
   /**
    * 1. Xử lý Đăng nhập (Login Business Logic)
    * Luồng: Gọi API -> Cập nhật Store (Zustand tự động sync xuống LocalStorage).
@@ -82,18 +81,8 @@ export const authService = {
    * 7. Đăng xuất (Sign Out)
    * Thực hiện dọn dẹp bộ nhớ (Cleaning Cache) và đưa người dùng về trạng thái ban đầu.
    */
-  logout() {
-    // 1. Dọn dẹp Store (Hàm clear này đã xóa sạch user và accessToken trong cả RAM và LocalStorage)
-    useUserStore.getState().logout();
-
-    // 2. Xóa các dữ liệu rác ngoài Store (Manual Cleanup)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('register_email');
-      localStorage.removeItem('reset_email');
-
-      // 3. Điều hướng cứng (Hard Redirect) để reset hoàn toàn ứng dụng
-      window.location.href = '/login';
-    }
-  }
+  async logout(token?: string) {
+    const response = await authApi.logout(token);
+    return response.data;
+  },
 };

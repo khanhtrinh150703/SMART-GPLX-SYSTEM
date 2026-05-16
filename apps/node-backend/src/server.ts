@@ -50,6 +50,8 @@ async function startServer() {
 
     const mongoService = container.resolve<IMongoDBService>("mongodbService");
     await mongoService.connect();
+
+    console.log("👷 [System] MongoDb are ready");
     // 4. Khởi chạy Server API
     const server = app.listen(PORT, () => {
       console.log(`🚀 [System] Backend is live at http://127.0.0.1:${PORT}`);

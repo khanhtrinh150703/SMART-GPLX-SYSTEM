@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { BookOpen, RotateCcw } from "lucide-react";
-import axios from "axios";
 
 // Components
 import { ChapterTable } from "@/components/features/chapter/components/ChapterTable";
@@ -26,20 +25,43 @@ import {
   UpdateChapterPayload,
 } from "@/components/features/chapter/schema/chapter.schema";
 import { chapterToolbarVariants as variants } from "./chapter-toolbar.variants";
+import { useChapterActions } from "../hooks/use-chapter-actions";
 
 export function ChapterContent() {
+  // 1. Khởi tạo Hooks (Init Hooks)
   const {
     searchParams,
     activeField,
     activeValue,
-    updateUrlParam,
-    updateMultipleUrlParams,
+    clearFilters,
     handleSearchByField,
     getApiParams,
+    updateMultipleUrlParams,
+    updateUrlParam,
     FILTER_FIELDS,
   } = useChapterUrlParams();
 
-  // --- 1. QUẢN LÝ STATE ---
+  // 2. Lớp dữ liệu (Data Layer - TanStack Query)
+  const mutations = useChapters(getApiParams());
+  const { result, isLoading } = mutations;
+
+  // 3. Lớp hành động (Action Layer - Đã sửa theo mẫu chuẩn của ông)
+  const {
+    message,
+    setMessage,
+    onCreate,
+    onUpdate,
+    onDelete,
+    onRestore,
+    pendingStates,
+  } = useChapterActions({
+    create: mutations.createChapter,
+    update: mutations.updateChapter,
+    remove: mutations.deleteChapter,
+    restore: mutations.restoreChapter,
+  });
+
+  // --- 1. QUẢN LÝ STATE GIAO DIỆN (UI State Management) ---
   const [isMounted, setIsMounted] = useState(false);
   const [searchValue, setSearchValue] = useState(activeValue);
   const [localActiveField, setLocalActiveField] = useState(activeField);
@@ -52,13 +74,7 @@ export function ChapterContent() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // CHỈ DÙNG 1 BIẾN MESSAGE DUY NHẤT (Only one message state)
-  const [message, setMessage] = useState<{
-    intent: "success" | "error" | "warning";
-    text: string;
-  } | null>(null);
-
-  // --- 2. ĐỒNG BỘ TRONG RENDER ---
+  // --- 2. ĐỒNG BỘ TRONG RENDER (Sync during render) ---
   if (activeValue !== prevActiveValue || activeField !== prevActiveField) {
     setPrevActiveValue(activeValue);
     setPrevActiveField(activeField);
@@ -66,11 +82,9 @@ export function ChapterContent() {
     setLocalActiveField(activeField);
   }
 
-  // --- 3. EFFECTS ---
+  // --- 3. EFFECTS (Vòng đời & Debounce) ---
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      setIsMounted(true);
-    });
+    const raf = requestAnimationFrame(() => setIsMounted(true));
     return () => cancelAnimationFrame(raf);
   }, []);
 
@@ -79,7 +93,7 @@ export function ChapterContent() {
       if (searchValue !== activeValue || localActiveField !== activeField) {
         handleSearchByField(localActiveField, searchValue);
       }
-    }, 400);
+    }, 400); // Debounce (Trễ) 400ms để tối ưu API call
     return () => clearTimeout(handler);
   }, [
     searchValue,
@@ -89,86 +103,35 @@ export function ChapterContent() {
     handleSearchByField,
   ]);
 
-  // --- 4. DATA FETCHING ---
-  const {
-    result,
-    isLoading,
-    createChapter,
-    updateChapter,
-    deleteChapter,
-    restoreChapter,
-  } = useChapters(getApiParams());
+  // --- 4. HANDLERS (Điều phối hành động) ---
 
-  // --- 5. HANDLERS ---
-
-  // Hàm trích xuất lỗi API chuẩn xác
-  const getApiError = (error: unknown) => {
-    return axios.isAxiosError(error)
-      ? error.response?.data?.message || "Lỗi kết nối đến máy chủ"
-      : "Đã xảy ra lỗi không xác định.";
+  const handleCreateSubmit = async (payload: CreateChapterPayload) => {
+    // Gọi onCreate từ Hook Action, Modal chỉ đóng khi thành công
+    await onCreate(payload).then(() => setIsCreateModalOpen(false));
   };
 
-  const handleCreate = async (payload: CreateChapterPayload) => {
-    try {
-      setMessage(null);
-      const res = await createChapter.mutateAsync(payload);
-      setIsCreateModalOpen(false);
-      setMessage({
-        intent: "success",
-        text: "Thêm mới chương bài học thành công!",
-      });
-      return res;
-    } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
-      throw error; // Bắn lỗi ra để form bên trong biết mà ngừng loading (nếu cần)
-    }
-  };
-
-  const handleUpdate = async (payload: UpdateChapterPayload) => {
+  const handleUpdateSubmit = async (payload: UpdateChapterPayload) => {
     if (!selectedChapter) return;
-    try {
-      setMessage(null);
-      const res = await updateChapter.mutateAsync({
-        id: selectedChapter.id,
-        data: payload,
-      });
-      setIsEditModalOpen(false);
-      setMessage({ intent: "success", text: "Cập nhật thành công!" });
-      return res;
-    } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
-      throw error;
-    }
+    await onUpdate(selectedChapter.id, payload).then(() =>
+      setIsEditModalOpen(false),
+    );
   };
 
-  const handleDelete = async () => {
+  const handleDeleteConfirm = async () => {
     if (!selectedChapter) return;
-    try {
-      setMessage(null);
-      await deleteChapter.mutateAsync(selectedChapter.id);
-      setIsDeleteModalOpen(false);
-      setMessage({ intent: "success", text: "Đã xóa chương bài học!" });
-    } catch (error: unknown) {
-      setMessage({ intent: "error", text: getApiError(error) });
-    }
+    await onDelete(selectedChapter.id).then(() => setIsDeleteModalOpen(false));
   };
 
-  const handleRestore = useCallback(
+  const handleRestoreAction = useCallback(
     async (chapter: Chapter) => {
-      try {
-        setMessage(null);
-        await restoreChapter.mutateAsync(chapter.id);
-        setMessage({ intent: "success", text: "Khôi phục chương thành công!" });
-      } catch (error: unknown) {
-        setMessage({ intent: "error", text: getApiError(error) });
-      }
+      await onRestore(chapter.id);
     },
-    [restoreChapter],
+    [onRestore],
   );
 
   // --- 6. RENDER PHASE ---
   if (!isMounted || (isLoading && !result)) {
-    return <SplashScreen variant="chapter"/>;
+    return <SplashScreen variant="chapter" />;
   }
 
   return (
@@ -201,7 +164,7 @@ export function ChapterContent() {
             <button
               onClick={() => {
                 setSearchValue("");
-                updateMultipleUrlParams({ q: "", status: "all", page: "1" });
+                clearFilters();
               }}
               className={variants.resetButton()}
             >
@@ -254,7 +217,7 @@ export function ChapterContent() {
           chapters={result?.data || []}
           page={Number(searchParams.get("page")) || 1}
           limit={10}
-          isLoading={isLoading || deleteChapter.isPending}
+          isLoading={isLoading || pendingStates.isDeleting}
           onEdit={(chapter) => {
             setSelectedChapter(chapter);
             setIsEditModalOpen(true);
@@ -263,7 +226,7 @@ export function ChapterContent() {
             setSelectedChapter(chapter);
             setIsDeleteModalOpen(true);
           }}
-          onRestore={handleRestore}
+          onRestore={handleRestoreAction}
           sortConfig={{
             key: (searchParams.get("sortBy") as keyof Chapter) || "name",
             direction:
@@ -299,8 +262,8 @@ export function ChapterContent() {
       <CreateChapterModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreate}
-        isLoading={createChapter.isPending}
+        onSave={handleCreateSubmit}
+        isLoading={pendingStates.isCreating}
         // Truyền apiMessage vào đây nếu CreateChapterModal dùng BaseModal ở trong
         // apiMessage={message}
         // onApiMessageClose={() => setMessage(null)}
@@ -311,16 +274,16 @@ export function ChapterContent() {
         isOpen={isEditModalOpen}
         chapter={selectedChapter}
         onClose={() => setIsEditModalOpen(false)}
-        onSave={handleUpdate}
-        isLoading={updateChapter.isPending}
+        onSave={handleUpdateSubmit}
+        isLoading={pendingStates.isUpdating}
       />
 
       <BaseConfirmModal
         isOpen={isDeleteModalOpen}
         title="Xác nhận xóa"
         variant="danger"
-        onConfirm={handleDelete}
-        isLoading={deleteChapter.isPending}
+        onConfirm={handleDeleteConfirm}
+        isLoading={pendingStates.isDeleting}
         // BẮT BUỘC PHẢI THÊM 2 DÒNG NÀY ĐỂ TRUYỀN LỖI VÀO MODAL
         apiMessage={message}
         onApiMessageClose={() => setMessage(null)}

@@ -1,6 +1,9 @@
 import { StandardResponse } from "@/types/common.type";
 import { IUpdateProfileResponse } from "@/types/user.type";
-import { ChangePasswordValues, ProfileFormValues } from "@/lib/validations/user.schema";
+import {
+  ChangePasswordValues,
+  ProfileFormValues,
+} from "@/lib/validations/user.schema";
 import { useUserStore } from "@/store/user/user.store";
 import { profileApi } from "../api/profile/profile.api";
 
@@ -12,7 +15,9 @@ export const profileService = {
   /**
    * Cập nhật hồ sơ và ảnh đại diện (Update Profile & Avatar)
    */
-  updateProfile: async (data: ProfileFormValues): Promise<StandardResponse<IUpdateProfileResponse>> => {
+  updateProfile: async (
+    data: ProfileFormValues,
+  ): Promise<StandardResponse<IUpdateProfileResponse>> => {
     // 1. Chuyển đổi sang FormData (Data Transformation)
     const formData = new FormData();
     formData.append("fullName", data.fullName);
@@ -26,7 +31,13 @@ export const profileService = {
 
     // 3. Side Effect: Cập nhật Zustand khi thành công (Update Global State)
     if (response.success && response.data?.user) {
-      useUserStore.getState().setUser(response.data.user);
+      useUserStore
+        .getState()
+        .setAuth(
+          response.data.user,
+          response.data.accessToken,
+          response.data.refreshToken,
+        );
     }
 
     return response;

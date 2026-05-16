@@ -1,31 +1,41 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import React, { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Zap, Info, ChevronDown, AlertTriangle, CheckCircle2, Settings } from "lucide-react";
+import {
+  Zap,
+  Info,
+  AlertTriangle,
+  CheckCircle2,
+  Settings,
+} from "lucide-react";
 
-// Components UI & Common
+// Components UI & Common (Thành phần giao diện & Dùng chung)
 import { Alert } from "@/components/ui/Alert";
+import Button from "@/components/ui/Button/Button";
 
-// Types & Schemas
+// Types & Schemas (Kiểu dữ liệu & Cấu trúc xác thực)
 import {
   generateExamSchema,
   GenerateExamInput,
-} from "./exam-generation.schema";
+} from "../schema/exam-generation.schema";
+import { ISelectionExamMatrix } from "@/types/common.type";
 
-// UI & Styles
+// UI & Styles (Giao diện & Kiểu dáng)
 import { generatorFormVariants } from "./automatic-generator-form.variants";
 import { cn } from "@/lib/utils/utils";
-import { ISelectionExamMatrix } from "@/types/common.type";
-import Button from "@/components/ui/Button/Button";
+import axios from "axios";
+import { ExamStatus } from "../types/enums";
+import { StatusSelect } from "@/components/ui/Status-Select/status-select";
+import { DataSelect } from "@/components/ui/Data-Select/data-select";
+import { EXAM_STATUS_OPTIONS } from "./constants/status-options";
 
 interface AutomaticGeneratorFormProps {
   matrices: ISelectionExamMatrix[];
   onSubmit: (data: GenerateExamInput) => Promise<void>; // Hàm xử lý gửi dữ liệu (Submit handler)
   isLoading: boolean; // Trạng thái đang tải (Loading state)
   onClose: () => void;
-  apiMessage?: { intent: "success" | "error" | "warning"; text: string } | null;
   onClearMessage?: () => void;
 }
 
@@ -34,22 +44,29 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
   onSubmit,
   isLoading,
   onClose,
-  apiMessage,
-  onClearMessage,
 }) => {
   // --- 1. FORM INITIALIZATION (Khởi tạo biểu mẫu) ---
   const {
     register,
     handleSubmit,
     watch,
+    reset,
+    control,
     formState: { errors },
   } = useForm<GenerateExamInput>({
     resolver: zodResolver(generateExamSchema),
     defaultValues: {
       name: "",
       matrixId: "",
+      status: ExamStatus.DRAFT, // Mặc định là bản nháp để đảm bảo an toàn (Default to Draft for safety)
     },
   });
+
+  // --- 2. LOCAL MESSAGE STATE (Trạng thái thông báo cục bộ) ---
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Theo dõi ma trận đang được chọn (Watch currently selected matrix)
   const selectedId = watch("matrixId");
@@ -57,26 +74,58 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
     () => matrices.find((m) => m.value === selectedId),
     [selectedId, matrices],
   );
-  console.log(selectedMatrix)
+
+  // Chuyển đổi dữ liệu ma trận sang định dạng DataSelect (Mapping matrix data to DataSelect format)
+  const matrixOptions = useMemo(
+    () =>
+      matrices.map((m) => ({
+        value: m.value,
+        label: `${m.label} (${m.totalQuestions} câu)`, // Hiển thị kèm tổng số câu (Display with total questions)
+      })),
+    [matrices],
+  );
+
+  // --- 3. HANDLE SUBMIT (Hàm xử lý gửi biểu mẫu) ---
+  const handleFormSubmit = async (values: GenerateExamInput) => {
+    try {
+      setMessage(null); // Xóa lỗi cũ (Clear old errors)
+
+      // Gọi hàm onSubmit từ cha (Call parent's onSubmit)
+      await onSubmit(values);
+
+      // Nếu thành công thì đóng và reset form (Success: close and reset)
+      if (onClose) onClose();
+      reset();
+    } catch (error: unknown) {
+      // Khởi tạo thông báo mặc định (Fallback error message)
+      let errorText = "Không thể tạo đề thi tự động. Vui lòng kiểm tra lại!";
+
+      // Bóc tách lỗi từ Backend qua Axios (Extract Backend Error)
+      if (axios.isAxiosError(error)) {
+        errorText = error.response?.data?.message || errorText;
+      }
+
+      setMessage({ type: "error", text: errorText });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      {/* HIỂN THỊ THÔNG BÁO LỖI/THÀNH CÔNG TỪ CHA */}
-      {apiMessage && (
+      {message && (
         <Alert
-          intent={apiMessage.intent}
-          message={apiMessage.text}
-          onClose={onClearMessage}
+          intent={message.type}
+          message={message.text}
+          onClose={() => setMessage(null)}
           duration={6000}
         />
       )}
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(handleFormSubmit)}
         className={generatorFormVariants.root()}
       >
         <fieldset disabled={isLoading} className="space-y-6">
-          {/* TRƯỜNG: TÊN ĐỀ THI */}
+          {/* TRƯỜNG 1: TÊN ĐỀ THI (Exam Name) - Chiếm toàn bộ chiều rộng */}
           <div className={generatorFormVariants.fieldGroup()}>
             <label className={generatorFormVariants.label()}>
               Tên đề thi hiển thị
@@ -96,43 +145,49 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
             )}
           </div>
 
-          {/* TRƯỜNG: CHỌN MA TRẬN */}
-          <div className={generatorFormVariants.fieldGroup()}>
-            <label className={generatorFormVariants.label()}>
-              Lựa chọn ma trận chuẩn
-            </label>
-            <div className="relative">
-              <select
-                {...register("matrixId")}
-                className={cn(
-                  generatorFormVariants.input(),
-                  "appearance-none cursor-pointer pr-12",
-                )}
-              >
-                <option value="">-- Chọn ma trận đề thi --</option>
-                {matrices.map((matrix) => (
-                  <option key={matrix.value} value={matrix.value}>
-                    {matrix.label} ({matrix.totalQuestions} câu)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                size={18}
-              />
-            </div>
-            {errors.matrixId && (
-              <span className={generatorFormVariants.error()}>
-                {errors.matrixId.message}
-              </span>
-            )}
+          {/* GRID 2 CỘT: MA TRẬN & TRẠNG THÁI (Matrix & Status Grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* TRƯỜNG 2: CHỌN MA TRẬN (Select Matrix) */}
+            {/* TRƯỜNG: LỰA CHỌN MA TRẬN CHUẨN (Sử dụng DataSelect Portal) */}
+            <Controller
+              name="matrixId"
+              control={control}
+              render={({ field }) => (
+                <div className={generatorFormVariants.fieldGroup()}>
+                  <DataSelect
+                    label="Lựa chọn ma trận chuẩn"
+                    placeholder="-- Chọn ma trận đề thi --"
+                    size="lg" // Kích thước đồng bộ h-12 (Synchronized size h-12)
+                    options={matrixOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.matrixId?.message}
+                    disabled={isLoading} // Khóa khi đang xử lý (Disable while loading)
+                  />
+                </div>
+              )}
+            />
+
+            {/* TRƯỜNG 3: TRẠNG THÁI ĐỀ THI (Exam Status) */}
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <StatusSelect
+                  label="Trạng thái khởi tạo"
+                  options={EXAM_STATUS_OPTIONS}
+                  value={field.value}
+                  size="lg"
+                  onChange={field.onChange}
+                  error={errors.status?.message}
+                />
+              )}
+            />
           </div>
 
-          {/* HIỂN THỊ THÔNG TIN CHI TIẾT MA TRẬN (INFO CARD) */}
-          {/* 3. THÔNG TIN CHI TIẾT MA TRẬN (SỬ DỤNG ĐÚNG DỮ LIỆU CÓ SẴN) */}
+          {/* 4. HIỂN THỊ THÔNG TIN CHI TIẾT MA TRẬN (Detailed Matrix Stats) */}
           {selectedMatrix && (
-            <div className="flex flex-col gap-4">
-              {/* Label cho phần preview */}
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
               <label className={generatorFormVariants.label()}>
                 Chi tiết cấu trúc ma trận (Detailed Matrix Stats)
               </label>
@@ -244,7 +299,7 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
             variant="ghost"
             onClick={onClose}
             disabled={isLoading}
-            className="h-12 px-6 font-bold text-slate-400"
+            className="h-12 px-6 font-bold text-slate-400 hover:bg-slate-100"
           >
             Hủy bỏ
           </Button>
@@ -252,7 +307,7 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
           <Button
             type="submit"
             isLoading={isLoading}
-            className="min-w-[160px] h-12 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-200 gap-2"
+            className="min-w-[160px] h-12 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-200 gap-2 hover:bg-emerald-700 active:scale-[0.98] transition-all"
           >
             {!isLoading && <Zap size={18} fill="currentColor" />}
             Sinh đề tự động

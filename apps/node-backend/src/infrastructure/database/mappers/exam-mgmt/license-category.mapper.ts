@@ -1,15 +1,22 @@
-import { ILicenseCategoryResponseDTO, LicenseCategoryResponseDTO } from "@/application/dtos/response/license-category/license-category.respone.dto";
+import {
+  ILicenseCategoryResponseDTO,
+  LicenseCategoryResponseDTO,
+} from "@/application/dtos/response/license-category/license-category.respone.dto";
 import { LicenseCategory } from "@/domain/entities/license-category/license-category.entity";
 import { ILicenseCategoryProps } from "@/domain/entities/license-category/license-category.props";
 import { ILicenseCategoryRecord } from "@/infrastructure/persistence/exam-mgmt/license-category.record";
 import { ICachedCategory } from "@/shared/master-data";
-import { ISelectionResponseDTO, SelectionResponseDTO } from "@/application/dtos/response/shared/selection.response.dto";
+import {
+  ISelectionResponseDTO,
+  SelectionResponseDTO,
+} from "@/application/dtos/response/shared/selection.response.dto";
 import { Prisma } from "@prisma/client";
+import { BaseMapper } from "@/shared/mappers/base.mapper";
 
 /**
  * @description Chuyển đổi dữ liệu giữa Database Record và Domain Entity.
  */
-export class LicenseCategoryMapper {
+export class LicenseCategoryMapper implements BaseMapper {
   /**
    * @description Chuyển từ DB Record sang Domain Entity.
    * @param {ILicenseCategoryRecord} raw - Dữ liệu từ Database.
@@ -26,14 +33,16 @@ export class LicenseCategoryMapper {
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt || undefined,
     };
-    return LicenseCategory.reconstitute(props)
+    return LicenseCategory.reconstitute(props);
   }
 
   /**
    * @description Ánh xạ sang cấu trúc Prisma cho hành động CREATE (Tạo mới).
    * Bao gồm cả ID vì ID thường được tạo từ tầng Domain.
    */
-  public static toCreatePersistence(domain: LicenseCategory): Prisma.LicenseCategoryCreateInput {
+  public static toCreatePersistence(
+    domain: LicenseCategory,
+  ): Prisma.LicenseCategoryCreateInput {
     return {
       id: domain.id,
       name: domain.name,
@@ -50,7 +59,9 @@ export class LicenseCategoryMapper {
    * @description Ánh xạ sang cấu trúc Prisma cho hành động UPDATE (Cập nhật).
    * Loại bỏ ID để tránh lỗi P2002 (Primary Key conflict).
    */
-  public static toUpdatePersistence(domain: LicenseCategory): Prisma.LicenseCategoryUpdateInput {
+  public static toUpdatePersistence(
+    domain: LicenseCategory,
+  ): Prisma.LicenseCategoryUpdateInput {
     return {
       name: domain.name,
       description: domain.description,
@@ -65,14 +76,19 @@ export class LicenseCategoryMapper {
    * @param {LicenseCategory} entity - Thực thể hạng bằng lái.
    * @returns {LicenseCategoryResponseDTO}
    */
-  public static toResponse(entity: LicenseCategory): LicenseCategoryResponseDTO {
+  public static toResponse(
+    entity: LicenseCategory,
+  ): ILicenseCategoryResponseDTO {
     return new LicenseCategoryResponseDTO({
-      id: entity.id || '',
+      id: entity.id || "",
       name: entity.name,
       minAge: entity.minAge,
       description: entity.description,
-      createdAt: entity.createdAt ? entity.createdAt.toISOString() : new Date().toISOString(),
-      status: entity.isDeleted() ? 'deleted' : 'active'
+      orderIndex: entity.orderIndex,
+      createdAt: entity.createdAt
+        ? entity.createdAt.toISOString()
+        : new Date().toISOString(),
+      status: entity.isDeleted() ? "deleted" : "active",
     });
   }
 
@@ -81,16 +97,20 @@ export class LicenseCategoryMapper {
    * @param {LicenseCategory[]} entities - Danh sách thực thể.
    * @returns {ILicenseCategoryResponseDTO[]}
    */
-  public static toResponseList(entities: LicenseCategory[]): ILicenseCategoryResponseDTO[] {
+  public static toResponseList(
+    entities: LicenseCategory[],
+  ): ILicenseCategoryResponseDTO[] {
     return entities.map((entity) => this.toResponse(entity));
   }
 
   /**
    * @description Chuyển đổi sang định dạng Selection dùng License Code làm Label (A1, B2...)
-   * @param {ICachedCategory} entity 
+   * @param {ICachedCategory} entity
    * @returns {ISelectionResponseDTO}
    */
-  public static toSelectionResponse(entity: ICachedCategory): ISelectionResponseDTO {
+  public static toSelectionResponse(
+    entity: ICachedCategory,
+  ): ISelectionResponseDTO {
     return new SelectionResponseDTO({
       value: entity.id!,
       label: entity.name,
@@ -104,7 +124,9 @@ export class LicenseCategoryMapper {
    * @param {LicenseCategory[]} entities - Mảng các thực thể LicenseCategory Domain.
    * @returns {ISelectionResponseDTO[]} Danh sách DTO đã sắp xếp để hiển thị trong Dropdown.
    */
-  public static toSelectionList(entities: ICachedCategory[]): ISelectionResponseDTO[] {
+  public static toSelectionList(
+    entities: ICachedCategory[],
+  ): ISelectionResponseDTO[] {
     // 1. Sử dụng Spread Operator để tạo bản sao, tránh gây ra Side Effect cho mảng gốc
     // 2. Sắp xếp tăng dần theo orderIndex (ưu tiên thứ tự nghiệp vụ)
     return [...entities]

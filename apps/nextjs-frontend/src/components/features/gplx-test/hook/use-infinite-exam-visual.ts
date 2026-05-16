@@ -4,7 +4,6 @@ import { QueryParams, PaginatedResult } from "@/types/paginaton.type";
 import { IExamItem } from "../types/exam-ui.types";
 import { examUserService } from "../service/exam-user.service";
 
-// src/hook/use-infinite-exam-visual.ts
 export const useInfiniteExamsVisual = (params: QueryParams) => {
     return useInfiniteQuery({
         queryKey: ["exams", "visual", "infinite", params],
@@ -14,7 +13,6 @@ export const useInfiniteExamsVisual = (params: QueryParams) => {
             if (!response.data) {
                 throw new Error("Data is missing from response");
             }
-
             return response.data;
         },
         

@@ -20,6 +20,7 @@ export interface IQuestionSnapshot {
   readonly isCritical: boolean;
   readonly chapterId: string;
   readonly chapterName: string;
+  readonly timeSpent?: number;
   readonly options: IAnswerSnapshot[];
   readonly selectedAnswerIndex: number | null; // Index User chọn
   readonly correctAnswerIndex: number; // Index đúng theo bảng ExamQuestion
@@ -60,6 +61,7 @@ export interface IExamAttemptProps extends IBaseProps {
 
   // Thời gian (giây) - Phục vụ "Shortest Time"
   readonly durationSeconds: number;
+  readonly totalTimeExam: number;
   readonly isAutoSubmit: boolean; // Giúp lọc ra những bài nộp chủ động để tính speed record
 
   readonly submittedAt: Date;

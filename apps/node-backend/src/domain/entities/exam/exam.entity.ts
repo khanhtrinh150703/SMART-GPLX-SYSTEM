@@ -1,13 +1,29 @@
 import { AppError, ErrorCode } from "@/shared/errors";
-import { ExamStatus } from "@prisma/client";
 import { CreateExamInput, IExamProps, IExamQuestionProps } from "./exam.props";
-import { IUserAnswerDTO } from "@/application/dtos/request/exam/complete-exam.request.dto";
+import { ICompleteExamInputDTO } from "@/application/dtos/request/exam/complete-exam.request.dto";
 import { BaseEntity } from "@/domain/seedwork/entity.base";
+import { STATUS, Status } from "@/shared/config/status.config";
+import { shuffleWithSeed, stringToSeed } from "@/shared/utils/random.util";
 
 /**
  * @description Thực thể Bài thi (Exam) - Quản lý vòng đời làm bài của User.
  * Tuân thủ Rich Domain Model để bảo vệ kết quả thi khỏi bị thay đổi tùy tiện.
  */
+
+export interface IUpdateExamProps {
+  name?: string;
+  userId?: string;
+  status?: Status;
+  score?: number;
+  examMatrixId?: string | null;
+  licenseCategoryId?: string;
+  totalQuestions?: number;
+  passingScore?: number;
+  durationMinutes?: number;
+  minCriticalQuestions?: number;
+  questions?: IExamQuestionProps[];
+}
+
 export class ExamEntity extends BaseEntity<IExamProps> {
   private constructor(props: IExamProps) {
     super(props);
@@ -62,7 +78,7 @@ export class ExamEntity extends BaseEntity<IExamProps> {
       id: crypto.randomUUID(),
 
       // Logic khởi tạo trạng thái mặc định
-      status: input.status ?? ExamStatus.PUBLISHED,
+      status: input.status ?? STATUS.ACTIVE,
       score: 0,
       isPassed: false,
 
@@ -95,20 +111,14 @@ export class ExamEntity extends BaseEntity<IExamProps> {
   }
 
   /**
-   * @description Logic chấm điểm bài thi.
-   * Một bài thi ĐẠT khi: Điểm >= passingScore VÀ không sai câu điểm liệt nào.
+   * @description Kết thúc bài thi, thực hiện chấm điểm và đóng gói kết quả.
+   * @param {ICompleteExamInputDTO} input - Dữ liệu hoàn thành bài thi từ tầng Application.
    */
-  public complete(input: {
-    answers: IUserAnswerDTO[];
-    timeSpent: number;
-    timeRemaining: number;
-    isAutoSubmit: boolean;
-    clientFinishedAt: string;
-  }): void {
+  public complete(input: ICompleteExamInputDTO): void {
     const { props } = this;
     const now = new Date();
 
-    // 1. Ghi nhận Metadata thời gian
+    // 1. Ghi nhận Metadata thời gian tổng thể
     this._props.resultMetadata = {
       timeSpent: input.timeSpent,
       timeRemaining: input.timeRemaining,
@@ -122,14 +132,17 @@ export class ExamEntity extends BaseEntity<IExamProps> {
     let skippedCount = 0;
     let hasFailedCritical = false;
 
-    // 2. Tối ưu Lookup O(1)
-    const answerMap = new Map(
-      input.answers.map((ua) => [ua.questionId, ua.answer]),
+    // 2. Tối ưu Lookup O(1): Lưu cả Object DTO để lấy được cả answer và timeSpent
+    const submissionMap = new Map(
+      input.answers.map((ua) => [ua.questionId, ua]),
     );
 
     // 3. Duyệt một lần duy nhất để tính toán tất cả các chỉ số
     this._props.questions = props.questions.map((q) => {
-      const submittedAnswer = answerMap.get(q.questionId);
+      const submission = submissionMap.get(q.questionId);
+      const submittedAnswer = submission?.answer;
+      // Lấy timeSpent từng câu (mặc định là 0 nếu bỏ qua)
+      const questionTimeSpent = submission?.timeSpent ?? 0;
 
       // Kiểm tra trạng thái trả lời
       const isSkipped =
@@ -151,15 +164,15 @@ export class ExamEntity extends BaseEntity<IExamProps> {
         ...q,
         userAnswer: submittedAnswer,
         isCorrect: isCorrect,
+        timeSpent: questionTimeSpent, // <--- Đã gán "spent" vào từng câu ở đây
       };
     });
 
     // 4. Cập nhật kết quả vào Props
     this._props.score = correctCount;
-    this._props.wrongCount = wrongCount; // <--- Thêm mới
-    this._props.skippedCount = skippedCount; // <--- Thêm mới
+    this._props.wrongCount = wrongCount;
+    this._props.skippedCount = skippedCount;
     this._props.hasFailedCritical = hasFailedCritical;
-    this._props.status = ExamStatus.PUBLISHED;
 
     // Điều kiện ĐẠT
     this._props.isPassed =
@@ -172,34 +185,30 @@ export class ExamEntity extends BaseEntity<IExamProps> {
    * @description Cập nhật thông tin đề thi và kiểm tra lại các ràng buộc nghiệp vụ.
    * @param data - Dữ liệu cập nhật từng phần.
    */
-  public update(data: {
-    name?: string;
-    userId?: string;
-    status?: ExamStatus;
-    score?: number;
-    examMatrixId?: string | null;
-    licenseCategoryId?: string;
-    totalQuestions?: number;
-    passingScore?: number;
-    durationMinutes?: number;
-    minCriticalQuestions?: number;
-    questions?: IExamQuestionProps[];
-  }): void {
-    // 1. Validate các trường cơ bản
-    if (data.name !== undefined && data.name.trim() === "") {
-      throw new AppError(
-        ErrorCode.EXAM.NAME_REQUIRED,
-        "Tên đề thi không được để trống.",
-      );
+  public update(data: IUpdateExamProps): void {
+    // --- 1. LOGIC IS_EDITED (Trọng tâm yêu cầu của Trinh) ---
+    if (this._props.examMatrixId) {
+      this._props.isEdited = true;
     }
 
-    // 2. Logic cập nhật danh sách câu hỏi (Snapshot)
+    // --- 2. VALIDATION CƠ BẢN ---
+    if (data.name !== undefined) {
+      if (data.name.trim() === "") {
+        throw new AppError(
+          ErrorCode.EXAM.NAME_REQUIRED,
+          "Tên đề thi không được để trống.",
+        );
+      }
+      this._props.name = data.name.trim();
+    }
+
+    // --- 3. LOGIC CẬP NHẬT CÂU HỎI (SNAPSHOT) ---
     if (data.questions !== undefined) {
-      // Đảm bảo số lượng câu hỏi điểm liệt vẫn thỏa mãn sau khi cập nhật
       const minCritical =
         data.minCriticalQuestions ?? this._props.minCriticalQuestions;
       const actualCritical = data.questions.filter((q) => q.isCritical).length;
 
+      // Kiểm tra ràng buộc số lượng câu điểm liệt
       if (actualCritical < minCritical) {
         throw new AppError(
           ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS,
@@ -207,22 +216,43 @@ export class ExamEntity extends BaseEntity<IExamProps> {
         );
       }
 
-      // Tự động cập nhật lại totalQuestions nếu không được truyền vào
-      if (data.totalQuestions === undefined) {
-        this._props.totalQuestions = data.questions.length;
-      }
-
+      // Tự động cập nhật tổng số câu nếu không truyền explicit
+      this._props.totalQuestions = data.totalQuestions ?? data.questions.length;
       this._props.questions = data.questions;
     }
 
-    // 3. Mapping các trường còn lại (Gán hàng loạt một cách an toàn)
-    Object.assign(this._props, {
-      ...data,
-      name: data.name?.trim() ?? this._props.name,
-    });
+    // --- 4. CẬP NHẬT CÁC TRƯỜNG CÒN LẠI (Sạch bóng Object.assign rủi ro) ---
+    if (data.userId !== undefined) this._props.userId = data.userId;
+    if (data.status !== undefined) this._props.status = data.status;
+    if (data.score !== undefined) this._props.score = data.score;
+    if (data.examMatrixId !== undefined)
+      this._props.examMatrixId = data.examMatrixId;
+    if (data.licenseCategoryId !== undefined)
+      this._props.licenseCategoryId = data.licenseCategoryId;
+    if (data.passingScore !== undefined)
+      this._props.passingScore = data.passingScore;
+    if (data.durationMinutes !== undefined)
+      this._props.durationMinutes = data.durationMinutes;
+    if (data.minCriticalQuestions !== undefined)
+      this._props.minCriticalQuestions = data.minCriticalQuestions;
 
-    // 4. Đánh dấu thời gian thay đổi
-    this.touch();
+    // --- 5. KẾT THÚC ---
+    this.touch(); // Cập nhật updatedAt
+    // this.validate(); // Đảm bảo trạng thái cuối cùng của Entity là hợp lệ
+  }
+
+  /**
+   * @description Xáo trộn danh sách câu hỏi dựa trên hạt giống từ Session ID
+   * @param sessionId Mã phiên làm việc của thí sinh
+   */
+  public applyShuffling(sessionId: string): void {
+    if (!this._props.questions || this._props.questions.length === 0) {
+      return;
+    }
+
+    const seed = stringToSeed(sessionId);
+    // Thực hiện xáo trộn và gán lại vào props
+    this._props.questions = shuffleWithSeed(this._props.questions, seed);
   }
 
   /**

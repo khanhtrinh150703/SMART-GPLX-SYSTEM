@@ -110,7 +110,8 @@ export const ErrorCode = {
     MIN_CRITICAL_INVALID: "EXM_112", // Số câu điểm liệt tối thiểu không hợp lệ
     INVALID_TIME_RANGE: "EXM_113", // Thời gian kết thúc phải sau thời gian bắt đầu
     TOTAL_QUESTIONS_INVALID: "EXM_114", // Tổng số câu hỏi không hợp lệ
-
+    NAME_ALREADY_EXISTS: "EXM_115", // Tên đề thi đã tồn tại
+    
     // --- Nhóm 2xx: Lỗi nghiệp vụ & Kho dữ liệu (Pool & Business) ---
     INSUFFICIENT_POOL_QUESTIONS: "EXM_201", // Tổng kho không đủ câu hỏi
     INSUFFICIENT_CHAPTER_QUESTIONS: "EXM_202", // Thiếu câu hỏi theo chương mục
@@ -150,7 +151,8 @@ export const ErrorCode = {
     CODE_REQUIRED: "VAL_006",
     INVALID_NUMBER: "VAL_007", // Định dạng số không hợp lệ
     INVALID_INPUT: "VAL_008",
-
+    ID_INVALID_UUID: "VAL_009", // ID không đúng định dạng UUID
+    
     // --- 1xx: Identity & Contact (Định danh & Liên lạc) ---
     EMAIL_INVALID: "VAL_101",
     NAME_INVALID_LENGTH: "VAL_102",
@@ -205,6 +207,7 @@ export const ErrorCode = {
     UPDATE_FAILED: "CHPT_002", // Lỗi khi cập nhật
     INVALID_ORDER: "CHPT_003", // Thứ tự hiển thị không hợp lệ
     INVALID_DESCRIPTION: "CHPT_004",
+    INVALID_CODE: "CHPT_005", // Mã chương không hợp lệ (Sai định dạng Regex)
     ID_REQUIRED: "CHPT_100", // Thiếu ID chương để cập nhật
     NAME_REQUIRED: "CHPT_101", // Tên chương không được trống
     CODE_REQUIRED: "CHPT_102", // Mã chương không được trống
@@ -218,6 +221,7 @@ export const ErrorCode = {
   },
 
   QUESTION: {
+    // --- 0xx: Validation (Lúc khởi tạo/nội dung) ---
     CHAPTER_REQUIRED: "QST_001", // Thiếu ID chương
     CONTENT_INVALID: "QST_002", // Nội dung không hợp lệ (ngắn quá)
     LICENSE_REQUIRED: "QST_003", // Thiếu hạng bằng lái
@@ -225,21 +229,27 @@ export const ErrorCode = {
     CORRECT_ANSWER_MISSING: "QST_005", // Thiếu đáp án đúng
     IMAGE_URL_INVALID: "QST_006", // Link ảnh không hợp lệ
 
+    // --- 1xx: Format & Logic Validation ---
     ID_REQUIRED: "QST_100", // Thiếu ID câu hỏi để cập nhật
     INVALID_FORMAT: "QST_101", // Dữ liệu câu hỏi gửi lên sai định dạng
-    MULTIPLE_CORRECT_ANSWERS: "QST_102", // Có nhiều hơn 1 đáp án đúng (Luật mới chỉ cho phép 1)
+    MULTIPLE_CORRECT_ANSWERS: "QST_102", // Có nhiều hơn 1 đáp án đúng
     ANSWER_CONTENT_REQUIRED: "QST_103", // Nội dung đáp án không được trống
-    EXPLANATION_TOO_LONG: "QST_104", // Giải thích đáp án quá dài (max 1000)
+    EXPLANATION_TOO_LONG: "QST_104", // Giải thích đáp án quá dài
     LICENSE_ID_INVALID: "QST_105", // Mã hạng bằng lái không hợp lệ
     DIFFICULTY_INVALID: "QST_106", // Mức độ khó không hợp lệ
     INDEX_INVALID: "QST_107", // Số thứ tự câu hỏi không hợp lệ
     STATUS_INVALID: "QST_108", // Trạng thái câu hỏi không hợp lệ
     IS_CRITICAL_INVALID: "QST_109", // Giá trị câu hỏi điểm liệt phải là boolean
 
-    NOT_FOUND: "QST_404", // Không tìm thấy câu hỏi
+    // --- 4xx: Data Lifecycle & Integrity ---
+    NOT_FOUND: "QST_404", // Không tìm thấy câu hỏi cụ thể theo ID
+    EMPTY_BANK: "QST_405", // Ngân hàng câu hỏi cho hạng bằng này đang trống (Không tìm thấy bất kỳ câu nào)
+    INCOMPLETE_DATA_SET: "QST_406", // Dữ liệu câu hỏi không đầy đủ để tạo bộ đề (Ví dụ: cần 35, chỉ có 20)
     ALREADY_EXISTS: "QST_409", // Câu hỏi đã tồn tại (trùng nội dung)
-    DELETE_CRITICAL_RESTRICTED: "QST_403", // Dùng 403 (Forbidden) vì hành động bị cấm do luật nghiệp vụ
-    ANSWERS_SYNC_FAILED: "QST_500", // Dùng 500 hoặc 50x vì đây là lỗi xử lý dữ liệu hệ thống
+    DELETE_CRITICAL_RESTRICTED: "QST_403", // Hành động bị cấm do luật nghiệp vụ
+
+    // --- 5xx: System Errors ---
+    ANSWERS_SYNC_FAILED: "QST_500", // Lỗi xử lý dữ liệu hệ thống
   },
 
   IMPORT: {
@@ -262,7 +272,7 @@ export const ErrorCode = {
     NAME_REQUIRED: "MTX_101", // Tên ma trận không được trống
     NAME_TOO_LONG: "MTX_102", // Tên ma trận quá dài
     NO_DETAILS: "MTX_103", // Ma trận không có chi tiết cấu trúc
-    INVALID_PERCENTAGE: "MTX_104", // Tổng tỉ lệ phần trăm không bằng 100%
+    INVALID_PERCENTAGE: "MTX_104", // Tỷ lệ phần trăm không hợp lệ
     INVALID_PASSING_SCORE: "MTX_105", // Điểm đạt không hợp lệ
     DUPLICATE_CHAPTER: "MTX_106", // Trùng lặp chương trong ma trận
     INVALID_TOTAL_QUESTIONS: "MTX_107",
@@ -273,6 +283,13 @@ export const ErrorCode = {
     PASSING_SCORE_TOO_HIGH: "MTX_112", // Điểm đạt vượt quá tổng số câu
     MIN_CRITICAL_INVALID: "MTX_113", // Số câu điểm liệt không hợp lệ
     IS_DEFAULT_INVALID: "MTX_114", // Giá trị isDefault phải là boolean
+    TOTAL_PERCENTAGE_NOT_100: "MTX_115", // Tổng tỉ lệ phần trăm không bằng 100%
+    CHAPTER_PERCENTAGE_OUT_OF_RANGE: "MTX_116", // Tỉ lệ chương phải lớn hơn 0% và <= 100%
+    TOO_MANY_CHAPTERS_FOR_TOTAL: "MTX_117", // Số lượng chương vượt quá tổng số câu hỏi
+    MIN_CRITICAL_REQUIRED: "MTX_118", // Thiếu số câu điểm liệt tối thiểu
+    MIN_CRITICAL_NEGATIVE: "MTX_119", // Số câu điểm liệt không được là số âm
+    MIN_CRITICAL_TOO_HIGH: "MTX_120", // Số câu điểm liệt vượt quá tổng số câu của ma trận
+    NAME_ALREADY_EXISTS: "MTX_121", // Tên ma trận đã tồn tại
 
     // --- Nhóm 4xx: State/Management (Lỗi trạng thái/Quản lý) ---
     NOT_FOUND: "MTX_404", // Không tìm thấy ma trận
@@ -354,7 +371,64 @@ export const ErrorCode = {
     ALREADY_SUBMITTED: "SES_409", // Đã nộp bài, không được sửa đáp án
     EXPIRED: "SES_410", // Đã hết giờ làm bài
   },
-  
+
+  /** * --- EXAM HISTORY (EH) ---
+   * Các lỗi liên quan đến lịch sử thi.
+   */
+  EXAM_HISTORY: {
+    INVALID_DURATION: "EH_001", // Đã có
+    INVALID_SCORE: "EH_002", // Đã có
+    USER_ID_REQUIRED: "EH_003", // Thiếu định danh người dùng
+    SNAPSHOT_ID_REQUIRED: "EH_004", // Thiếu định danh bản ghi câu trả lời (NoSQL)
+    CATEGORY_INFO_REQUIRED: "EH_005", // Thiếu thông tin hạng bằng (A1, B2...)
+    SCORE_CANNOT_BE_NEGATIVE: "EH_006", // Cấu trúc điểm số không logic (âm hoặc > tổng câu)
+    RESULT_STATUS_REQUIRED: "EH_007", // Thiếu trạng thái Đạt/Trượt
+    TOTAL_QUESTIONS_INVALID: "EH_008", // Tổng số câu hỏi phải lớn hơn 0
+    SCORE_EXCEEDS_TOTAL: "EH_009", // Điểm số vượt quá tổng số câu hỏi
+
+    HISTORY_NOT_FOUND: "EH_404",
+  },
+
+  // Thống kê chung
+  STATISTICS: {
+    NOT_FOUND: "ST_001",
+    DATA_EMPTY: "ST_002",
+    CALCULATION_ERROR: "ST_003",
+    INVALID_TIME_RANGE: "ST_004",
+  },
+
+  /** * --- USER STATISTICS (US) ---
+   * Các lỗi liên quan đến thống kê người dùng.
+   */
+  // Thống kê người dùng
+  USER_STATS: {
+    INVALID_TOTAL_EXAMS: "US_001",
+    USER_NOT_FOUND: "US_002",
+    SYNC_FAILED: "US_003",
+  },
+
+  /** * --- USER TOPIC STATISTICS (UTS) ---
+   * Thống kê tiến độ và kết quả của người dùng theo từng chủ đề/hạng bằng.
+   */
+  USER_TOPIC_STATS: {
+    TOPIC_ID_REQUIRED: "UTS_001", // ID chủ đề là bắt buộc
+    INVALID_COMPLETION_RATE: "UTS_002", // Tỉ lệ hoàn thành không hợp lệ (phải từ 0-100)
+    TOPIC_NOT_FOUND: "UTS_003", // Không tìm thấy dữ liệu thống kê cho chủ đề này
+    TOTAL_QUESTIONS_NEGATIVE: "UTS_004", // Tổng số câu hỏi không được âm
+    WRONG_ANSWERS_EXCEEDS_TOTAL: "UTS_005", // Số câu sai vượt quá tổng số câu
+
+    USER_ID_REQUIRED: "UTS_006", // Thiếu định danh người dùng
+    RESULTS_REQUIRED: "UTS_007", // Danh sách kết quả trống hoặc không hợp lệ
+    TOPIC_NAME_REQUIRED: "UTS_008", // Thiếu tên chủ đề trong dữ liệu delta
+    CORRECT_STATUS_REQUIRED: "UTS_009", // Trạng thái đúng/sai phải là boolean
+  },
+
+  /** * --- QUESTION STATISTICS (QS) ---
+   * Các lỗi liên quan đến thống kê chi tiết từng câu hỏi.
+   */
+  QUESTION_STATS: {
+    QUESTION_ID_REQUIRED: "QS_001", // ID câu hỏi là bắt buộc
+  },
 } as const;
 
 export type ErrorCodeType = {

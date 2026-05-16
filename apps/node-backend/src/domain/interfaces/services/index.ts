@@ -6,4 +6,4 @@ export * from './integration'
 export * from './user-rank'
 export * from './external'
 export * from './leaderboard'
-
+export * from './statistics'

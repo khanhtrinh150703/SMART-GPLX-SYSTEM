@@ -1,6 +1,2 @@
-export * from './i-chapter.service'
-export * from './i-exam.service'
-export * from './i-license-category.service'
-export * from './i-master-data-cache.service'
-export * from './i-question.service'
+export * from './commands'
 export * from './queries'

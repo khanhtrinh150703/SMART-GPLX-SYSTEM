@@ -12,7 +12,6 @@ export const useSyncLogout = () => {
     const handleStorageChange = (event: StorageEvent) => {
       // Nếu thấy key 'logout-event' thay đổi ở Tab khác
       if (event.key === "logout-event") {
-        console.log("Phát hiện lệnh Logout từ Tab khác. Đang thoát...");
         
         // Reset state của tab hiện tại
         useUserStore.setState({ user: null, accessToken: null, refreshToken: null });

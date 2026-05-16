@@ -17,7 +17,6 @@ export const useExamTakingActions = () => {
   // Xác định trạng thái đăng nhập (Authentication State)
   const isAuthenticated = !!accessToken && accessToken !== "undefined";
 
-  const EXAM_KEY = ["exams"];
   const SESSION_KEY = ["active-session"];
 
   /**
@@ -26,28 +25,43 @@ export const useExamTakingActions = () => {
   const handleSubmitSuccess = async () => {
     // Thực hiện song song các tác vụ dọn dẹp (Parallel Execution)
     await Promise.all([
-      // 1. Xóa phiên làm bài dở dang trong Cache (Clear Query Cache)
-      queryClient.removeQueries({ queryKey: [...SESSION_KEY, "current"] }),
-      
-      // 2. Làm mới lịch sử thi nếu là User (Invalidate History)
-      isAuthenticated 
-        ? queryClient.invalidateQueries({ queryKey: [...EXAM_KEY, "history"] })
-        : Promise.resolve(),
-      
-      // 3. Reset toàn bộ trạng thái làm bài local (Zustand Reset)
-      resetStore()
+      // 1. Xóa phiên làm bài dở dang (Remove Current Session Cache)
+      queryClient.removeQueries({
+        queryKey: [...SESSION_KEY, "current"],
+      }),
+
+      // 2. SỬA TẠI ĐÂY: Làm mới danh sách lịch sử thi (Invalidate History List)
+      // Ta chỉ cần dùng "history-list-infinite" làm tiền tố để làm mới tất cả các trang/bộ lọc
+      queryClient.invalidateQueries({
+        queryKey: ["history-list-infinite"], // Khớp đúng với Key của useHistoryInfinite
+      }),
+
+      // 3. Làm mới chỉ số thống kê người dùng (Invalidate User Stats)
+      queryClient.invalidateQueries({
+        queryKey: ["user-stats"],
+      }),
+
+      // 4. Nếu có các key khác liên quan đến lịch sử chung
+      queryClient.invalidateQueries({
+        queryKey: ["exam-histories"],
+      }),
+
+      // 5. Reset trạng thái tại Local Store (Zustand Reset)
+      resetStore(),
     ]);
   };
 
   // 1. Mutation nộp bài cho Người dùng (User Submission)
   const userMutation = useMutation({
-    mutationFn: (payload: ICompleteExamRequestDTO) => examUserService.submit(payload),
+    mutationFn: (payload: ICompleteExamRequestDTO) =>
+      examUserService.submit(payload),
     onSuccess: handleSubmitSuccess,
   });
 
   // 2. Mutation nộp bài cho Khách (Guest Submission)
   const guestMutation = useMutation({
-    mutationFn: (payload: ICompleteExamRequestDTO) => examUserService.submitAsGuest(payload),
+    mutationFn: (payload: ICompleteExamRequestDTO) =>
+      examUserService.submitAsGuest(payload),
     onSuccess: handleSubmitSuccess,
   });
 
@@ -55,8 +69,8 @@ export const useExamTakingActions = () => {
    * @description Action nộp bài hợp nhất (Unified Submit Action)
    * UI chỉ cần gọi hàm này, Hook tự biết gọi API nào.
    */
-  const submitAction = isAuthenticated 
-    ? userMutation.mutateAsync 
+  const submitAction = isAuthenticated
+    ? userMutation.mutateAsync
     : guestMutation.mutateAsync;
 
   return {

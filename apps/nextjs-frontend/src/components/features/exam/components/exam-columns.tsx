@@ -3,11 +3,10 @@
 import React from "react";
 import {
   FileText,
-  Timer,
   Target,
-  User,
-  ShieldAlert,
-  Clock,
+  ClipboardList,
+  ShieldCheck,
+  Timer,
 } from "lucide-react";
 import { TableColumn } from "@/components/common/Generic-Table/GenericTable";
 import { TableColumnFactory } from "@/components/common/Generic-Table/table-column.factory";
@@ -29,19 +28,26 @@ export const getExamColumns = (
     sortable: true,
     sortKey: "name",
     accessor: (item) => (
-      <div className="flex flex-col gap-1 py-1">
+      <div className="flex flex-col gap-0.5 py-0.5">
+        {" "}
+        {/* Giảm gap và padding dọc */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-            <FileText size={14} className="text-emerald-600" />
+          {/* Thu nhỏ Icon Box xuống w-7 h-7 */}
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+            <FileText size={12} className="text-emerald-600" />{" "}
+            {/* Giảm size icon xuống 12 */}
           </div>
           <span className="font-bold text-slate-800 text-sm tracking-tight line-clamp-1">
             {item.name}
           </span>
         </div>
-        <div className="flex items-center gap-2 ml-10 text-[10px] font-medium text-slate-400 italic">
-          <span>{item.userName || "Admin"}</span>
-          <span className="w-1 h-1 rounded-full bg-slate-200" />
-          <span>
+        {/* Điều chỉnh ml-9 để thẳng hàng với text bên trên */}
+        <div className="flex items-center gap-1.5 ml-9 text-[10px] font-medium text-slate-400 italic">
+          <span className="truncate max-w-[80px]">
+            {item.fullName || "Admin"}
+          </span>
+          <span className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+          <span className="shrink-0">
             {item.startedAt
               ? format(new Date(item.startedAt), "dd/MM/yyyy")
               : "N/A"}
@@ -50,15 +56,15 @@ export const getExamColumns = (
       </div>
     ),
   },
-
   // 2. HẠNG GPLX: Dùng Border thay vì đổ màu nền đen kịt
   {
-    header: "HẠNG",
+    header: "HẠNG BẰNG",
+    sortable: true,
+    sortKey: "licenseCategoryName",
     accessor: (item) => (
       <div className="flex justify-center">
         <div className="px-4 py-1.5 rounded-2xl bg-white shadow-soft border-none transition-all hover:shadow-md active:scale-95">
           <div className="flex items-center gap-1.5">
-            {/* Một điểm nhấn nhỏ để nhận diện hạng bằng nhanh hơn */}
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">
               {item.licenseCategoryName}
@@ -72,47 +78,42 @@ export const getExamColumns = (
 
   // 3. CẤU TRÚC & CHỈ TIÊU: Gom về 1 cụm thống nhất, dùng Badge Danger tinh tế
   {
-    header: "Thông số",
+    header: "Quy chuẩn đề",
     accessor: (item) => (
-      <div className="flex flex-col gap-2">
-        {/* Hàng thông số kỹ thuật (Horizontal Metrics) */}
-        <div className="flex items-center gap-3 text-slate-500">
-          <div className="flex items-center gap-1" title="Tổng câu">
-            <span className="text-[10px] font-bold">#</span>
-            <span className="text-xs font-black text-slate-700">
-              {item.totalQuestions}
-            </span>
-          </div>
-          <div className="flex items-center gap-1" title="Thời gian">
-            <Clock size={12} strokeWidth={2.5} />
-            <span className="text-xs font-black text-slate-700">
-              {item.durationMinutes}
-            </span>
-          </div>
-          <div className="flex items-center gap-1" title="Điểm đạt">
-            <Target size={12} strokeWidth={2.5} className="text-emerald-500" />
-            <span className="text-xs font-black text-emerald-600">
-              {item.passingScore}đ
-            </span>
-          </div>
+      <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+        <div className="flex items-center gap-1.5" title="Tổng số câu hỏi">
+          <ClipboardList size={12} className="text-slate-400" />
+          <span className="text-xs font-bold text-slate-700">
+            {item.totalQuestions} câu
+          </span>
         </div>
 
-        {/* CÂU ĐIỂM LIỆT: Dùng dạng "Compact Danger Badge" */}
-        <div className="flex items-center">
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-rose-50 border border-rose-100 group">
-            <ShieldAlert
-              size={10}
-              strokeWidth={3}
-              className="text-rose-500 animate-pulse"
-            />
-            <span className="text-[9px] font-black text-rose-600 uppercase tracking-tight">
-              {item.minCriticalQuestions} CÂU LIỆT • STRICT
-            </span>
-          </div>
+        <div className="flex items-center gap-1.5" title="Thời gian làm bài">
+          <Timer size={12} className="text-slate-400" />
+          <span className="text-xs font-bold text-slate-700">
+            {item.durationMinutes}p
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5" title="Yêu cầu điểm đạt">
+          <Target size={12} className="text-amber-500" />
+          <span className="text-xs font-black text-amber-600">
+            {item.passingScore}đ
+          </span>
+        </div>
+
+        <div
+          className="flex items-center gap-1.5"
+          title="Số lượng câu điểm liệt"
+        >
+          <ShieldCheck size={12} className="text-rose-500" />
+          <span className="text-xs font-bold text-rose-600">
+            {item.minCriticalQuestions} câu liệt
+          </span>
         </div>
       </div>
     ),
-    className: "w-52",
+    className: "w-60",
   },
 
   TableColumnFactory.status<IExamResponse>(),

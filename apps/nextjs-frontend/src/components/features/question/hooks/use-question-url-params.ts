@@ -86,12 +86,10 @@ export function useQuestionUrlParams() {
       status: searchParams.get("status") || "all",
 
       // BƯỚC 3: Ném đúng biến 'search' cho Backend
-      // (Dịch: Pass the exact 'search' variable to Backend DTO)
       search: searchParams.get("search") || undefined,
     };
 
     // Các key filter nâng cao (Đã loại bỏ 'content' và các text field ra khỏi đây)
-    // (Dịch: Advanced filter keys - Removed text search fields to avoid duplication)
     const filterKeys = ["chapterId", "licenseCategoryIds", "difficultyLevel", "isCritical", "indexNumber"];
 
     filterKeys.forEach((key) => {

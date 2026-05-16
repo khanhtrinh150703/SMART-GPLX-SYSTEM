@@ -1,25 +1,42 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useExamStore } from "../store/exam.store.";
+import { useExamStore } from "../store/exam.store."; // Chú ý: đuôi file của bạn đang có dấu '.' ở cuối, hãy kiểm tra lại tên file gốc nhé
 import { useUserStore } from "@/store/user/user.store";
 import { useActiveSessionActions } from "./use-active-session-actions";
 import { activeSessionService } from "../service/active-session.service";
 import { IActiveSessionResponseDTO } from "../types/active-session.types";
+import { examUserService } from "../service/exam-user.service";
 
 interface UseExamSessionFlowProps {
   examId: string;
   limitMinutes: number;
 }
 
-export const useExamSessionFlow = ({ examId, limitMinutes }: UseExamSessionFlowProps) => {
+// 1. ĐỊNH NGHĨA STRICT TYPE ĐỂ TRÁNH DÙNG "any"
+interface IExamQuestion {
+  id?: string;
+  questionId?: string;
+}
+
+interface IPendingSession extends IActiveSessionResponseDTO {
+  hydratedQuestionIds: string[]; // Chứa danh sách ID đã được bù đắp từ Exam API
+  remainingSeconds: number;
+}
+
+export const useExamSessionFlow = ({
+  examId,
+  limitMinutes,
+}: UseExamSessionFlowProps) => {
   const { resetStore, startExam, resumeSession, sessionId } = useExamStore();
   const { user, accessToken, _hasHydrated } = useUserStore();
   const { actions: sessionActions } = useActiveSessionActions();
 
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [pendingSession, setPendingSession] = useState<IActiveSessionResponseDTO | null>(null);
-  
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [pendingSession, setPendingSession] = useState<IPendingSession | null>(
+    null,
+  );
+
   const processingRef = useRef<boolean>(false);
-  const sessionRef = useRef(sessionId);
+  const sessionRef = useRef<string>(sessionId);
 
   useEffect(() => {
     sessionRef.current = sessionId;
@@ -37,24 +54,43 @@ export const useExamSessionFlow = ({ examId, limitMinutes }: UseExamSessionFlowP
     return serverTime - Date.now();
   };
 
-  const handleInitNewSession = useCallback(async (isOfficial: boolean) => {
-    try {
-      const payload = {
-        examId,
-        clientStartedAt: new Date().toISOString(),
-        isForce: true,
-      };
-      const res = isOfficial
-        ? await sessionActions.startOfficial(payload)
-        : await sessionActions.startGuest(payload);
+  const handleInitNewSession = useCallback(
+    async (isOfficial: boolean) => {
+      try {
+        const payload = {
+          examId,
+          clientStartedAt: new Date().toISOString(),
+          isForce: true,
+        };
 
-      if (res.data) {
-        startExam(res.data.examId, limitMinutes, res.data.sessionId);
+        // PARALLEL FETCH: Vừa tạo phiên, vừa lấy chi tiết đề thi để nhặt questionIds
+        const [res, examRes] = await Promise.all([
+          isOfficial
+            ? sessionActions.startOfficial(payload)
+            : sessionActions.startGuest(payload),
+          examUserService.getDetails(examId),
+        ]);
+
+        if (res.data) {
+          // Trích xuất Type an toàn thay vì dùng any
+          const questions = (examRes.data?.questions || []) as IExamQuestion[];
+          const questionIds = questions
+            .map((q) => q.questionId || q.id || "")
+            .filter(Boolean); // Lọc bỏ các giá trị rỗng
+
+          startExam(
+            res.data.examId,
+            limitMinutes,
+            res.data.sessionId,
+            questionIds,
+          );
+        }
+      } catch (error) {
+        console.error("Initialization error:", error);
       }
-    } catch (error) {
-      console.error("Initialization error:", error);
-    }
-  }, [examId, limitMinutes, sessionActions, startExam]);
+    },
+    [examId, limitMinutes, sessionActions, startExam],
+  );
 
   const handleStartFresh = useCallback(async () => {
     setPendingSession(null);
@@ -72,7 +108,8 @@ export const useExamSessionFlow = ({ examId, limitMinutes }: UseExamSessionFlowP
 
   const handleResume = useCallback(() => {
     if (pendingSession) {
-      resumeSession(pendingSession);
+      // Truyền cả data session và danh sách ID đã lấy từ Exam API
+      resumeSession(pendingSession, pendingSession.hydratedQuestionIds);
       setPendingSession(null);
     }
   }, [pendingSession, resumeSession]);
@@ -86,22 +123,37 @@ export const useExamSessionFlow = ({ examId, limitMinutes }: UseExamSessionFlowP
       setIsInitializing(true);
       try {
         if (accessToken && user) {
-          const res = await activeSessionService.getCurrent();
+          // PARALLEL FETCH: Vừa lấy phiên cũ, vừa lấy chi tiết đề thi
+          const [res, examRes] = await Promise.all([
+            activeSessionService.getCurrent(),
+            examUserService.getDetails(examId),
+          ]);
+
           if (res.data) {
             const session = res.data;
+
+            // Trích xuất Type an toàn
+            const questions = (examRes.data?.questions ||
+              []) as IExamQuestion[];
+            const hydratedQuestionIds = questions
+              .map((q) => q.questionId || q.id || "")
+              .filter(Boolean);
+
             const offset = calculateServerOffset(session.serverTime);
             const limitMs = limitMinutes * 60 * 1000;
-            const examEndsAtMs = new Date(session.createdAt).getTime() + limitMs;
+            const examEndsAtMs =
+              new Date(session.createdAt).getTime() + limitMs;
             const currentTimeAdjusted = Date.now() + offset;
-            
+
             const secondsRemaining = Math.max(
               0,
-              Math.floor((examEndsAtMs - currentTimeAdjusted) / 1000)
+              Math.floor((examEndsAtMs - currentTimeAdjusted) / 1000),
             );
 
             setPendingSession({
               ...session,
               remainingSeconds: secondsRemaining,
+              hydratedQuestionIds, // Nạp danh sách ID đã bù đắp vào state
             });
             return;
           }
@@ -116,7 +168,14 @@ export const useExamSessionFlow = ({ examId, limitMinutes }: UseExamSessionFlowP
     };
 
     initializeFlow();
-  }, [_hasHydrated, accessToken, user, handleInitNewSession, limitMinutes]);
+  }, [
+    _hasHydrated,
+    accessToken,
+    user,
+    handleInitNewSession,
+    limitMinutes,
+    examId,
+  ]);
 
   return {
     isInitializing,

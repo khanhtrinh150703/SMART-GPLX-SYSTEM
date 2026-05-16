@@ -21,6 +21,7 @@ import {
   IChapterRepository,
   IQuestionRepository,
   IExamRepository,
+  IExamHistorySummaryRepository,
 } from "@/domain/interfaces/repositories/exam-mgmt";
 
 // Nhóm Exam Session & History (Dữ liệu phiên làm bài & Kết quả)
@@ -53,10 +54,10 @@ import {
   ILicenseCategoryService,
   IMasterDataCacheService,
   IExamService,
+  IExamHistorySummaryService,
 } from "@/domain/interfaces/services/exam-mgmt";
 
 // Nhóm Exam Engine & Session
-import { IExamGeneratorService } from "@/domain/interfaces/services/exam-engine";
 import {
   IActiveSessionService,
   ICompleteExamService,
@@ -87,9 +88,11 @@ import {
   ILicenseCategoryQueryService,
   IQuestionQueryService,
   IExamQueryService,
+  IExamHistorySummaryQueryService,
 } from "@/domain/interfaces/services/exam-mgmt/queries";
 
 import {
+  IActiveSessionQueryService,
   IExamAttemptQueryService,
   IExamMatrixQueryService,
 } from "@/domain/interfaces/services/exam-session/queries";
@@ -118,6 +121,8 @@ import {
 import {
   ChapterController,
   ExamController,
+  ExamHistoryController,
+  ExamHistorySummaryController,
   LicenseCategoryController,
   QuestionController,
 } from "@/api/controllers/exam-mgmt";
@@ -136,6 +141,25 @@ import { ImportController } from "@/api/controllers/integration";
 // Nhóm logger
 import { ILogger } from "@/domain/interfaces/logging";
 import { ILeaderboardCacheRepository } from "@/domain/interfaces/repositories/leaderboard/i-leaderboard-cache.repository";
+import {
+  IQuestionStatisticsRepository,
+  IUserStatisticsRepository,
+  IUserTopicStatisticsRepository,
+} from "@/domain/interfaces/repositories/statistics";
+import { IExamGeneratorService } from "@/domain/interfaces/services/exam-engine/commands";
+import {
+  IUserStatisticsQueryService,
+  IUserTopicStatisticsQueryService,
+} from "@/domain/interfaces/services/statistics/queries";
+import {
+  IQuestionStatisticsService,
+  IUserStatisticsService,
+  IUserTopicStatisticsService,
+} from "@/domain/interfaces/services/statistics/commands";
+import {
+  UserStatisticsController,
+  UserTopicStatisticsController,
+} from "@/api/controllers/statistics";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -196,10 +220,22 @@ export interface ICradle {
   examRepository: IExamRepository;
 
   /** @description Repository quản lý việc lưu trữ và truy xuất dữ liệu xếp hạng (Ranking) của người dùng trong hệ thống thi GPLX.*/
-  userExamRankRepo: IUserExamRankRepository;
+  userExamRankRepository: IUserExamRankRepository;
 
   /** @description Repository quản lý việc lưu trữ và truy xuất dữ liệu bảng xếp hạng (Leaderboard) từ bộ nhớ đệm (Cache) để tối ưu hiệu năng. */
-  leaderboardCacheRepo: ILeaderboardCacheRepository;
+  leaderboardCacheRepository: ILeaderboardCacheRepository;
+
+  /** @description Repository chịu trách nhiệm lưu trữ, cập nhật và đồng bộ dữ liệu thống kê người dùng. */
+  userStatsRepository: IUserStatisticsRepository;
+
+  /** @description Repository chịu trách nhiệm truy xuất dữ liệu lịch sử thi từ Database. */
+  historySummaryRepository: IExamHistorySummaryRepository;
+
+  /** @description Repository chịu trách nhiệm truy xuất dữ liệu thống kê câu hỏi từ Database. */
+  questionStatisticsRepository: IQuestionStatisticsRepository;
+
+  /** @description Repository chịu trách nhiệm truy xuất dữ liệu thống kê theo chủ đề của người dùng từ Database. */
+  userTopicStatisticsRepository: IUserTopicStatisticsRepository;
 
   // --- QUẢN LÝ KỸ THUẬT (MANAGERS) ---
 
@@ -265,6 +301,15 @@ export interface ICradle {
   /** @description Dịch vụ lõi điều phối toàn bộ quy trình hậu xử lý nhập liệu (Giải nén -> Đọc dữ liệu -> Lưu trữ). */
   importProcessorService: IImportProcessorService;
 
+  /** @description Quản lý nghiệp vụ cốt lõi về lịch sử thi, bao gồm lưu trữ, cập nhật và xử lý logic thực thể. */
+  examHistorySummaryService: IExamHistorySummaryService;
+
+  /** @description Dịch vụ chuyên biệt cho việc đọc dữ liệu thống kê (Query). */
+  userStatsQueryService: IUserStatisticsQueryService;
+
+  /** @description Dịch vụ xử lý cập nhật/đồng bộ chỉ số (Command). */
+  userStatsService: IUserStatisticsService;
+
   /** @description Service truy vấn ngân hàng câu hỏi. */
   questionQueryService: IQuestionQueryService;
 
@@ -288,6 +333,21 @@ export interface ICradle {
 
   /** @description Quản lý nghiệp vụ truy vấn lịch sử và snapshot kết quả lượt thi. */
   examAttemptQueryService: IExamAttemptQueryService;
+
+  /** @description Dịch vụ chuyên biệt cho các thao tác truy vấn dữ liệu, thống kê và kiểm tra trạng thái phiên (Query Side). */
+  activeSessionQueryService: IActiveSessionQueryService;
+
+  /** @description Quản lý nghiệp vụ truy vấn dữ liệu thống kê và tiến độ học tập theo từng chủ đề của người dùng. */
+  userTopicStatisticsQueryService: IUserTopicStatisticsQueryService;
+
+  /** @description Dịch vụ chuyên biệt phụ trách truy vấn danh sách, chi tiết và tổng hợp dữ liệu lịch sử thi thông qua việc ánh xạ các đối tượng DTO. */
+  examHistoryQuerySummaryService: IExamHistorySummaryQueryService;
+
+  /** @description Dịch vụ cập nhật thống kê theo từng câu hỏi (Đúng/Sai/Tỷ lệ lỗi). */
+  questionStatisticsService: IQuestionStatisticsService;
+
+  /** @description Dịch vụ cập nhật tiến độ và tỷ lệ lỗi theo chủ đề (Luật, Biển báo...). */
+  userTopicStatisticsService: IUserTopicStatisticsService;
 
   /** @description Quản lý truy vấn thông tin cấu hình và đường dẫn cho tiến trình xử lý tệp nén. */
   zipQueryService: IZipQueryService;
@@ -353,4 +413,16 @@ export interface ICradle {
 
   /** @description Điều phối các yêu cầu truy vấn bảng xếp hạng, vị trí cá nhân và các nghiệp vụ liên quan đến vinh danh người dùng. */
   userRankController: UserRankController;
+
+  /** @description Bộ điều khiển tiếp nhận, điều phối các yêu cầu HTTP và trả về phản hồi liên quan đến lịch sử thi. */
+  examHistorySummaryController: ExamHistorySummaryController;
+
+  /** @description Bộ điều khiển tiếp nhận, điều phối các yêu cầu HTTP liên quan đến dữ liệu thống kê học tập và kết quả thi cá nhân của người dùng. */
+  userStatisticsController: UserStatisticsController;
+
+  /** @description Bộ điều phối (Controller) chuyên trách xử lý các yêu cầu HTTP liên quan đến phân tích hiệu suất và tiến độ học tập chi tiết theo từng nhóm chủ đề kiến thức (Topic-based Metrics). */
+  userTopicStatisticsController: UserTopicStatisticsController;
+
+  /** @description Bộ điều khiển quản lý vòng đời lịch sử thi, bao gồm việc ghi nhận kết quả bài thi và truy xuất dữ liệu lịch sử. */
+  examHistoryController: ExamHistoryController;
 }

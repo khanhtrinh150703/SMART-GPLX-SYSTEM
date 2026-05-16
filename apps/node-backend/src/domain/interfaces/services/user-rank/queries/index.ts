@@ -1,1 +1,1 @@
-export * from './i-user-exam-rank-query.service'
+export * from './i-user-exam-rank.query.service'

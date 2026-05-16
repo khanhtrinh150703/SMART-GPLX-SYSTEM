@@ -1,4 +1,4 @@
-import { RoleSeed } from "../interface.seed";
+import { RoleSeed } from "./interface.seed";
 
 export const roles: RoleSeed[] = [
   {

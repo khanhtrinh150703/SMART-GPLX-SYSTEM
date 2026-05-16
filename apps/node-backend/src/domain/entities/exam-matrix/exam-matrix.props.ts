@@ -8,6 +8,7 @@ export interface IExamMatrixProps {
   id?: string;
   name: string;
   licenseCategoryId: string;
+  licenseCategoryName?: string;
   totalQuestions: number;
   passingScore: number;
   durationMinutes: number;
@@ -16,6 +17,7 @@ export interface IExamMatrixProps {
   createdAt: Date;
   updatedAt: Date;
   isDefault: boolean;
+  isChapter: boolean;
   deletedAt?: Date;
 }
 /**

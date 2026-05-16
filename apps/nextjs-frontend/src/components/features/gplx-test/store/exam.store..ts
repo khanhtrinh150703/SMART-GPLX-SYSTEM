@@ -2,6 +2,24 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { IActiveSessionResponseDTO } from "../types/active-session.types";
 
+// 1. ĐỊNH NGHĨA STRICT TYPE CHO BROADCAST VÀ ANSWERS
+interface SyncPayload {
+  sessionId?: string;
+  ownerTabId: string;
+}
+
+interface SyncMessage {
+  type: "NEW_SESSION_STARTED" | "PING_EXISTING_SESSION" | "PONG_ALIVE";
+  payload: SyncPayload;
+}
+
+interface ISessionAnswerItem {
+  questionId: string;
+  selectedAnswerIndex?: number | null;
+  timeSpent?: number;
+}
+
+// 2. KHAI BÁO STORE INTERFACE
 interface ExamStore {
   examId: string;
   sessionId: string;
@@ -11,12 +29,16 @@ interface ExamStore {
   isFinished: boolean;
   instanceId: string;
   isConflict: boolean; // Trạng thái xung đột phiên làm bài
+  
+  // -- CÁC TRƯỜNG THÊM MỚI ĐỂ QUẢN LÝ THỜI GIAN --
+  totalTimeSpent: number;
+  timeSpentPerQuestion: Record<string, number>; 
+  questionIds: string[]; 
+
   // Actions
-  startExam: (examId: string, limitMinutes: number, sessionId: string) => void;
-  /**
-   * Khôi phục trạng thái bài làm từ dữ liệu Backend
-   */
-  resumeSession: (data: IActiveSessionResponseDTO) => void;
+  startExam: (examId: string, limitMinutes: number, sessionId: string, questionIds: string[]) => void;
+  // Bổ sung tham số thứ 2 để nhận danh sách ID đã Hydrate
+  resumeSession: (data: IActiveSessionResponseDTO, hydratedQuestionIds: string[]) => void;
   setAnswer: (questionId: string, position: number) => void;
   nextQuestion: () => void;
   prevQuestion: () => void;
@@ -34,6 +56,10 @@ const defaultState = {
   answers: {},
   timeRemaining: 0,
   isFinished: false,
+  // -- RESET LUÔN THỜI GIAN --
+  totalTimeSpent: 0,
+  timeSpentPerQuestion: {},
+  questionIds: [],
 };
 
 export const useExamStore = create<ExamStore>()(
@@ -42,8 +68,9 @@ export const useExamStore = create<ExamStore>()(
       ...defaultState,
       isConflict: false,
       instanceId: typeof window !== "undefined" ? Math.random().toString(36).substring(7) : "",
-      setConflict: (status) => set({ isConflict: status }),
-      startExam: (examId, limitMinutes, sessionId) => {
+      setConflict: (status: boolean) => set({ isConflict: status }),
+      
+      startExam: (examId: string, limitMinutes: number, sessionId: string, questionIds: string[]) => {
         const { instanceId } = get();
         const bc = new BroadcastChannel("gplx_exam_sync_channel");
 
@@ -54,51 +81,52 @@ export const useExamStore = create<ExamStore>()(
         bc.close();
 
         set({
+          ...defaultState, // Chắc chắn dọn sạch rác từ phiên thi trước
           sessionId,
           examId,
-          answers: {},
-          isFinished: false,
+          questionIds, // Nạp danh sách ID vào Store
           timeRemaining: limitMinutes * 60,
         });
       },
 
-      /**
-       * Triển khai resumeSession: 
-       * 1. Tính toán timeRemaining từ ServerTime và ExpiresAt.
-       * 2. Map mảng câu trả lời sang Record object.
-       */
-      resumeSession: (data) => {
-        // 1. Chuyển đổi danh sách answers từ API sang format của Store
+      resumeSession: (data: IActiveSessionResponseDTO, hydratedQuestionIds: string[]) => {
         const mappedAnswers: Record<string, number> = {};
-        data.currentAnswers.forEach((ans) => {
+        const mappedTimeSpent: Record<string, number> = {};
+        
+        // Đảm bảo Type-safe khi duyệt mảng
+        const currentAnswers = (data.currentAnswers || []) as ISessionAnswerItem[];
+
+        currentAnswers.forEach((ans) => {
           if (ans.selectedAnswerIndex !== null && ans.selectedAnswerIndex !== undefined) {
             mappedAnswers[ans.questionId] = Number(ans.selectedAnswerIndex);
           }
+          // Khôi phục timeSpent của từng câu từ backend (nếu có)
+          mappedTimeSpent[ans.questionId] = ans.timeSpent || 0;
         });
 
-        // 2. KHÔNG CẦN TÍNH TOÁN LẠI THỜI GIAN NỮA! LẤY THẲNG TỪ DATA!
-        const remainingSeconds = data.remainingSeconds || 0;
+        // Lấy thời gian lấy từ interface trả về, dự phòng bằng 0 nếu API lỗi
+        const remainingSeconds = ("remainingSeconds" in data ? Number(data.remainingSeconds) : 0);
+        // Lấy tổng timeSpent (Cần kiểm tra xem DTO có trường này không, nếu không lấy tổng của timeSpentPerQuestion)
+        const serverTotalTime = ("timeSpent" in data ? Number(data.timeSpent) : 0);
 
-        // 3. Đổ vào Store
         set({
           sessionId: data.sessionId,
           examId: data.examId,
           answers: mappedAnswers,
           timeRemaining: remainingSeconds,
-          isFinished: remainingSeconds <= 0, // Chỉ true nếu thực sự hết thời gian
+          isFinished: remainingSeconds <= 0,
           currentQuestionIndex: get().currentQuestionIndex || 0,
+          
+          // -- NẠP DATA HYDRATE --
+          questionIds: hydratedQuestionIds,
+          timeSpentPerQuestion: mappedTimeSpent,
+          totalTimeSpent: serverTotalTime,
         });
       },
-      // Ví dụ hàm reset trong Store
-      reset: () => set({
-        answers: {},
-        examId: undefined,
-        currentQuestionIndex: 0,
-        timeRemaining: 0,
-        sessionId: undefined,
-      }),
 
-      setAnswer: (qId, position) =>
+      reset: () => set({ ...defaultState }),
+
+      setAnswer: (qId: string, position: number) =>
         set((state) => ({ answers: { ...state.answers, [qId]: position } })),
 
       nextQuestion: () =>
@@ -107,15 +135,30 @@ export const useExamStore = create<ExamStore>()(
       prevQuestion: () =>
         set((state) => ({ currentQuestionIndex: Math.max(0, state.currentQuestionIndex - 1) })),
 
-      goToQuestion: (index) => set({ currentQuestionIndex: index }),
+      goToQuestion: (index: number) => set({ currentQuestionIndex: index }),
 
       tick: () =>
         set((state) => {
+          // Ngừng đếm nếu đã nộp bài hoặc hết giờ
           if (state.isFinished || state.timeRemaining <= 0) return state;
-          const newTime = state.timeRemaining - 1;
+
+          const qIds = state.questionIds || [];
+          const currentId = qIds[state.currentQuestionIndex];
+
+          const newTimeSpentPerQuestion = { ...state.timeSpentPerQuestion };
+
+          // Cộng thêm 1 giây cho câu hỏi đang hiển thị trên màn hình
+          if (currentId) {
+            newTimeSpentPerQuestion[currentId] = (newTimeSpentPerQuestion[currentId] || 0) + 1;
+          }
+
+          const newTimeRemaining = state.timeRemaining - 1;
+
           return {
-            timeRemaining: newTime,
-            isFinished: newTime <= 0,
+            timeRemaining: newTimeRemaining,
+            totalTimeSpent: (state.totalTimeSpent || 0) + 1, // Cộng tổng thời gian thi
+            timeSpentPerQuestion: newTimeSpentPerQuestion,
+            isFinished: newTimeRemaining <= 0,
           };
         }),
 
@@ -130,12 +173,16 @@ export const useExamStore = create<ExamStore>()(
     {
       name: "exam-session-storage",
       storage: createJSONStorage(() => localStorage),
+      // BẮT BUỘC LƯU CÁC TRƯỜNG THỜI GIAN VÀ ID XUỐNG LOCALSTORAGE
       partialize: (state) => ({
         sessionId: state.sessionId,
         examId: state.examId,
         answers: state.answers,
         timeRemaining: state.timeRemaining,
         currentQuestionIndex: state.currentQuestionIndex,
+        questionIds: state.questionIds,
+        totalTimeSpent: state.totalTimeSpent,
+        timeSpentPerQuestion: state.timeSpentPerQuestion,
       }),
     }
   )
@@ -144,19 +191,17 @@ export const useExamStore = create<ExamStore>()(
 if (typeof window !== "undefined") {
   const bc = new BroadcastChannel("gplx_exam_sync_channel");
   
-  bc.onmessage = (event) => {
+  // Ép kiểu Event data thay vì để 'any'
+  bc.onmessage = (event: MessageEvent<SyncMessage>) => {
     const { type, payload } = event.data;
     const store = useExamStore.getState();
 
-    // 1. Khi Tab khác báo có Session mới
     if (type === "NEW_SESSION_STARTED") {
-      // Nếu ID tab chủ mới khác với ID tab mình, thì mình là "người cũ" -> Conflict
       if (payload.ownerTabId !== store.instanceId && store.sessionId !== "") {
         useExamStore.setState({ isConflict: true });
       }
     }
 
-    // 2. Cơ chế PING/PONG để chặn tab mới mở khi tab cũ đang thi
     if (type === "PING_EXISTING_SESSION") {
       if (store.sessionId !== "" && !store.isFinished) {
         bc.postMessage({ type: "PONG_ALIVE", payload: { ownerTabId: store.instanceId } });
@@ -164,7 +209,6 @@ if (typeof window !== "undefined") {
     }
 
     if (type === "PONG_ALIVE") {
-      // Nếu nhận được PONG từ tab khác, nghĩa là đã có chủ -> Conflict
       if (payload.ownerTabId !== store.instanceId) {
         useExamStore.setState({ isConflict: true });
       }

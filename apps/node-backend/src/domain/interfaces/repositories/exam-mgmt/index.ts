@@ -2,4 +2,4 @@ export * from './i-chapter.repository'
 export * from './i-exam.repository'
 export * from './i-license-category-repository'
 export * from './i-question.repository'
-
+export * from './i-exam-history-summary.repository.interface'

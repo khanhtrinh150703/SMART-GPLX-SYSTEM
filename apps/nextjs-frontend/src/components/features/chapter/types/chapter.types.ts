@@ -18,7 +18,7 @@ export interface Chapter {
  */
 export type CreateChapterRequest = Pick<
     Chapter,
-    "name" | "description" | "orderIndex"
+    "name" | "description" | "orderIndex" | "code"
 >;
 
 /**
