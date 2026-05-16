@@ -92,6 +92,7 @@ import {
 } from "@/domain/interfaces/services/exam-mgmt/queries";
 
 import {
+  IActiveSessionQueryService,
   IExamAttemptQueryService,
   IExamMatrixQueryService,
 } from "@/domain/interfaces/services/exam-session/queries";
@@ -332,6 +333,9 @@ export interface ICradle {
 
   /** @description Quản lý nghiệp vụ truy vấn lịch sử và snapshot kết quả lượt thi. */
   examAttemptQueryService: IExamAttemptQueryService;
+
+  /** @description Dịch vụ chuyên biệt cho các thao tác truy vấn dữ liệu, thống kê và kiểm tra trạng thái phiên (Query Side). */
+  activeSessionQueryService: IActiveSessionQueryService;
 
   /** @description Quản lý nghiệp vụ truy vấn dữ liệu thống kê và tiến độ học tập theo từng chủ đề của người dùng. */
   userTopicStatisticsQueryService: IUserTopicStatisticsQueryService;

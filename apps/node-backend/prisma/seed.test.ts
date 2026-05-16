@@ -259,6 +259,113 @@ async function main(): Promise<void> {
       }
     }
   }
+  // 7. Khởi tạo Đề thi mẫu hệ thống (Tự động phân bổ câu hỏi linh hoạt theo từng Chương)
+  console.log(
+    "📝 7. Đang nạp danh sách Đề thi mẫu và tự động phân bổ câu hỏi theo Chương...",
+  );
+
+  const allChapters = await prisma.chapter.findMany({
+    orderBy: { orderIndex: "asc" },
+  });
+
+  for (const e of SEED.mockExams) {
+    const user = await prisma.user.findUnique({
+      where: { email: e.userEmail },
+    });
+    const license = await prisma.licenseCategory.findUnique({
+      where: { name: e.licenseName },
+    });
+
+    if (!user || !license) {
+      console.log(
+        `⚠️ Bỏ qua đề mẫu "${e.name}" do thiếu dữ liệu User hoặc License.`,
+      );
+      continue;
+    }
+
+    const examDoc = await prisma.exam.upsert({
+      where: { name: e.name },
+      update: {},
+      create: {
+        name: e.name,
+        userId: user.id,
+        examMatrixId: null,
+        licenseCategoryId: license.id,
+        isChapter: e.isChapter,
+        totalQuestions: e.totalQuestions,
+        passingScore: e.passingScore,
+        durationMinutes: e.durationMinutes,
+        minCriticalQuestions: e.minCriticalQuestions,
+        status: "ACTIVE",
+        score: 0,
+        isPassed: false,
+        startedAt: new Date(),
+      },
+    });
+
+    await prisma.examQuestion.deleteMany({ where: { examId: examDoc.id } });
+
+    let globalIndexNumber = 1; // Số thứ tự câu hỏi hiển thị trong đề (Câu 1, Câu 2...)
+
+    // Vòng lặp duyệt qua từng chương để bốc câu hỏi
+    for (const chapter of allChapters) {
+      const currentCollected = globalIndexNumber - 1;
+      const remainingNeeded = e.totalQuestions - currentCollected;
+
+      // Nếu đã gom đủ 25 câu thì dừng bốc hỏi ngay lập tức
+      if (remainingNeeded <= 0) break;
+
+      // Lấy tối đa bằng số câu đang còn thiếu của đề để chạy cơ chế gánh bù
+      const matchingQuestions = await prisma.question.findMany({
+        where: {
+          chapterId: chapter.id,
+          licenseLinks: {
+            some: { licenseCategoryId: license.id },
+          },
+        },
+        include: {
+          answers: { orderBy: { id: "asc" } },
+        },
+        take: remainingNeeded,
+      });
+
+      for (const coreQ of matchingQuestions) {
+        // Kiểm tra lại nếu lỡ tay vượt quá số lượng câu của đề thì chặn đứng
+        if (globalIndexNumber - 1 >= e.totalQuestions) break;
+
+        const correctIndex = coreQ.answers.findIndex((a) => a.isCorrect) + 1;
+
+        if (correctIndex === 0) {
+          console.log(
+            `⚠️ Câu hỏi ID ${coreQ.id} bỏ qua do không tìm thấy đáp án đúng.`,
+          );
+          continue;
+        }
+
+        await prisma.examQuestion.create({
+          data: {
+            examId: examDoc.id,
+            questionId: coreQ.id,
+            correctAnswer: correctIndex,
+            isCritical: coreQ.isCritical,
+            indexNumber: globalIndexNumber++,
+          },
+        });
+      }
+    }
+
+    // Kiểm tra kết quả nạp cuối cùng của đề
+    const totalAdded = globalIndexNumber - 1;
+    if (totalAdded < e.totalQuestions) {
+      console.log(
+        `❌ LỖI: Đề "${e.name}" chỉ nạp được ${totalAdded}/${e.totalQuestions} câu. Hãy kiểm tra lại kho câu hỏi gốc.`,
+      );
+    } else {
+      console.log(
+        `✅ THÀNH CÔNG: Đề "${e.name}" đã nạp đủ chỉnh chu ${totalAdded}/${e.totalQuestions} câu hỏi.`,
+      );
+    }
+  }
   console.log("✨ --- TẤT CẢ DỮ LIỆU ĐÃ ĐƯỢC ĐỒNG BỘ THÀNH CÔNG ---");
 }
 

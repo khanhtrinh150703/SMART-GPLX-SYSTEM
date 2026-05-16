@@ -107,6 +107,7 @@ import {
 import {
   ExamMatrixQueryService,
   ExamAttemptQueryService,
+  ActiveSessionQueryService,
 } from "@/application/services/exam-session/queries";
 
 import { UserRankQueryService } from "@/application/services/user-rank/queries";
@@ -253,6 +254,7 @@ container.register({
   mongodbService: asClass(MongoDBService).singleton(),
   examAttemptService: asClass(ExamAttemptService),
   activeSessionService: asClass(ActiveSessionService),
+  activeSessionQueryService: asClass(ActiveSessionQueryService),
   completeExamService: asClass(CompleteExamService).singleton(),
   userExamRankService: asClass(UserExamRankService).singleton(),
   userRankQueryService: asClass(UserRankQueryService).singleton(),

@@ -126,34 +126,13 @@ export class ActiveSessionService implements IActiveSessionService {
             throw new AppError(ErrorCode.ACTIVE_SESSION.NOT_FOUND);
         }
         // 2. Domain Logic: Cập nhật trạng thái ngay trong Entity Object
-        // (Domain Logic: Update state within Entity Object)
         // Đảm bảo Entity sẽ tự xử lý logic như thay đổi updatedAt của câu trả lời
         session.syncAnswers(dto.answers, dto.currentQuestionIndex);
 
         // 3. Persist: Đồng bộ trạng thái mới xuống Database (NoSQL/Redis)
-        // (Persist: Sync new state down to Database)
         await this._sessionRepo.updateActiveSession(session);
 
         // 4. Trả về DTO thông qua Mapper
-        // (Return DTO via Mapper to ensure clean, structured data for Frontend)
-        return ActiveSessionMapper.toResponse(session);
-    }
-
-    /**
-     * @description Truy xuất phiên làm việc hiện tại và tự động xóa nếu đã hết hạn.
-     * @param {string} userId - ID định danh của người dùng.
-     * @returns {Promise<IActiveSessionResponseDTO | null>} DTO phiên hoạt động hoặc null nếu không tồn tại/hết hạn.
-     */
-    public async getCurrentSession(userId: string): Promise<IActiveSessionResponseDTO | null> {
-        const session = await this._sessionRepo.findByUserId(userId);
-        if (!session) return null;
-
-        // Kiểm tra hết hạn
-        if (new Date() > session.props.expiresAt) {
-            await this._sessionRepo.deleteByUserId(userId);
-            return null;
-        }
-
         return ActiveSessionMapper.toResponse(session);
     }
 
@@ -167,7 +146,6 @@ export class ActiveSessionService implements IActiveSessionService {
             throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT)
         }
         // 1. Thực hiện xóa toàn bộ dữ liệu phiên trong Repository (NoSQL/Cache)
-        // (Clear all session data in the Repository)
         await this._sessionRepo.deleteByUserId(userId);
 
         // 2. Trả về DTO phản hồi tiêu chuẩn thay vì void

@@ -1,11 +1,15 @@
 import { Router } from "express";
 
 // 1. Controller (Resolve từ Awilix DI Container)
-import { ExamHistoryController, ExamHistorySummaryController } from "@/api/controllers/exam-mgmt";
+import {
+  ExamHistoryController,
+  ExamHistorySummaryController,
+} from "@/api/controllers/exam-mgmt";
 
 // 2. Middlewares (Quản lý Identity & Security)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 
@@ -51,6 +55,7 @@ router.get(
  */
 router.get(
   "/summary/:id",
+  validateUuidParam("id"),
   requirePermission("exam-histories:read-detail"),
   controllerSummary.getHistorySummaryDetail,
 );
@@ -77,9 +82,9 @@ router.get(
  */
 router.get(
   "/:id",
+  validateUuidParam("id"),
   requirePermission("exam-attempts:read-detail"), // Permission riêng cho xem chi tiết
   controllerHistory.getHistoryDetail,
 );
 
 export default router;
-

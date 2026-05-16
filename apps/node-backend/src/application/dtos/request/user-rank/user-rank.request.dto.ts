@@ -1,25 +1,25 @@
 import { AppError, ErrorCode } from "@/shared/errors";
+import { isUUID } from "@/shared/utils/uuid.util"; // 💡 Đảm bảo import hàm helper isUUID của ông tại đây
 
 /**
  * @interface ISyncRankInputDTO
  * @description Hợp đồng dữ liệu đầu vào cho việc đồng bộ thống kê và thứ hạng.
- * Bổ sung đầy đủ Metadata để phục vụ Rich Domain Logic tại Entity.
  */
 export interface ISyncRankInputDTO {
   readonly userId: string;
   readonly examId: string;
-  readonly examName: string;       // Tên đề thi để lưu kỷ lục
+  readonly examName: string;
   readonly licenseCategoryId: string;
-  readonly attemptId: string;      // ID của Snapshot chi tiết
-  
-  readonly score: number;          // Số câu đúng (Correct Answers)
-  readonly wrongAnswers: number;   // Số câu sai
-  readonly unanswered: number;     // Số câu bỏ trống
-  readonly totalQuestions: number; // Tổng số câu hỏi trong đề
-  
+  readonly attemptId: string;
+
+  readonly score: number;
+  readonly wrongAnswers: number;
+  readonly unanswered: number;
+  readonly totalQuestions: number;
+
   readonly durationSeconds: number;
   readonly isPassed: boolean;
-  readonly isFailedByCritical: boolean; // Trượt do câu điểm liệt
+  readonly isFailedByCritical: boolean;
 }
 
 /**
@@ -32,81 +32,105 @@ export class SyncRankRequestDTO implements ISyncRankInputDTO {
   public readonly examName: string;
   public readonly licenseCategoryId: string;
   public readonly attemptId: string;
-  
+
   public readonly score: number;
   public readonly wrongAnswers: number;
   public readonly unanswered: number;
   public readonly totalQuestions: number;
-  
+
   public readonly durationSeconds: number;
   public readonly isPassed: boolean;
   public readonly isFailedByCritical: boolean;
 
   constructor(data: ISyncRankInputDTO) {
-    // 1. Kiểm tra tính hợp lệ trước khi gán
-    this.validate(data);
+    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
 
-    // 2. Chuẩn hóa chuỗi
-    this.userId = data.userId.trim();
-    this.examId = data.examId.trim();
-    this.examName = data.examName.trim();
-    this.licenseCategoryId = data.licenseCategoryId.trim();
-    this.attemptId = data.attemptId.trim();
-    
-    // 3. Chuẩn hóa số liệu (Ép kiểu và làm tròn)
+    // ============================================================
+    // 1. CHUẨN HÓA VÀ GÁN DỮ LIỆU VÀO CLASS TRƯỚC (PARSE PHASE)
+    // ============================================================
+    // 💡 Sử dụng fallback "" phòng thủ chặt, tránh crash runtime nếu dữ liệu đầu vào thiếu trường
+    this.userId = (data.userId || "").trim();
+    this.examId = (data.examId || "").trim();
+    this.examName = (data.examName || "").trim();
+    this.licenseCategoryId = (data.licenseCategoryId || "").trim();
+    this.attemptId = (data.attemptId || "").trim();
+
+    // Ép kiểu số liệu thô phục vụ việc check logic sau đó
     this.score = Math.floor(Number(data.score));
     this.wrongAnswers = Math.floor(Number(data.wrongAnswers));
     this.unanswered = Math.floor(Number(data.unanswered));
     this.totalQuestions = Math.floor(Number(data.totalQuestions));
-    this.durationSeconds = Math.max(0, Number(data.durationSeconds));
-    
-    // 4. Boolean giữ nguyên
+    this.durationSeconds = Number(data.durationSeconds);
+
     this.isPassed = data.isPassed;
     this.isFailedByCritical = data.isFailedByCritical;
+
+    // ============================================================
+    // 2. TIẾN HÀNH KIỂM TRA TRÊN CHÍNH THUỘC TÍNH (VALIDATE PHASE)
+    // ============================================================
+    // 💡 Không truyền 'data', toàn bộ logic validate bên trong sẽ gọi qua 'this'
+    this.validate();
+
+    // ============================================================
+    // 3. CHUẨN HÓA HẬU VALIDATE (SANIZATION PHASE)
+    // ============================================================
+    this.durationSeconds = Math.max(0, this.durationSeconds);
   }
 
   /**
-   * @description Kiểm tra nghiệp vụ chuyên sâu cho bộ dữ liệu thống kê.
+   * @description Kiểm tra nghiệp vụ chuyên sâu dựa trên các thuộc tính của instance (this).
    */
-  private validate(data: ISyncRankInputDTO): void {
-    if (!data) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
-
+  private validate(): void {
     const { EXAM_HISTORY: EH } = ErrorCode;
 
-    // 1. Kiểm tra định danh & Metadata
-    if (!data.userId) throw new AppError(EH.USER_ID_REQUIRED);
-    if (!data.examId) throw new AppError(EH.HISTORY_NOT_FOUND);
-    if (!data.examName) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT); // Cần tên để lưu kỷ lục
-    if (!data.licenseCategoryId) throw new AppError(EH.CATEGORY_INFO_REQUIRED);
-    if (!data.attemptId) throw new AppError(EH.SNAPSHOT_ID_REQUIRED);
+    // 1. Kiểm tra sự tồn tại (Không được để trống)
+    if (!this.userId) throw new AppError(EH.USER_ID_REQUIRED);
+    if (!this.examId) throw new AppError(EH.HISTORY_NOT_FOUND);
+    if (!this.examName) throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
+    if (!this.licenseCategoryId) throw new AppError(EH.CATEGORY_INFO_REQUIRED);
+    if (!this.attemptId) throw new AppError(EH.SNAPSHOT_ID_REQUIRED);
 
-    // 2. Kiểm tra bộ chỉ số câu hỏi (Metrics)
-    if (data.score < 0 || data.wrongAnswers < 0 || data.unanswered < 0) {
+    // 2. Kiểm tra định dạng UUID cho toàn bộ thực thể ID liên quan
+    if (!isUUID(this.userId))
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    if (!isUUID(this.examId))
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    if (!isUUID(this.licenseCategoryId))
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+    if (!isUUID(this.attemptId))
+      throw new AppError(ErrorCode.VALIDATION.ID_INVALID_UUID);
+
+    // 3. Kiểm tra kiểu dữ liệu Boolean nguyên bản
+    if (
+      typeof this.isPassed !== "boolean" ||
+      typeof this.isFailedByCritical !== "boolean"
+    ) {
+      throw new AppError(EH.RESULT_STATUS_REQUIRED);
+    }
+
+    // 4. Kiểm tra tính hợp lệ của bộ chỉ số câu hỏi (Metrics)
+    if (this.score < 0 || this.wrongAnswers < 0 || this.unanswered < 0) {
       throw new AppError(EH.SCORE_CANNOT_BE_NEGATIVE);
     }
-    
-    if (!data.totalQuestions || data.totalQuestions <= 0) {
+
+    if (Number.isNaN(this.totalQuestions) || this.totalQuestions <= 0) {
       throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // LOGIC CHECK: Tổng (Đúng + Sai + Trống) phải bằng tổng số câu trong đề
-    const checkSum = data.score + data.wrongAnswers + data.unanswered;
-    if (checkSum !== data.totalQuestions) {
-      throw new AppError(EH.INVALID_SCORE); 
+    // LOGIC CHECK: Tổng số câu (Đúng + Sai + Trống) bắt buộc phải khớp với tổng số câu cấu hình của đề
+    const checkSum = this.score + this.wrongAnswers + this.unanswered;
+    if (checkSum !== this.totalQuestions) {
+      throw new AppError(EH.INVALID_SCORE);
     }
 
-    // 3. Kiểm tra tính logic của kết quả
-    // Nếu trượt do điểm liệt thì isPassed bắt buộc phải là false
-    if (data.isFailedByCritical && data.isPassed) {
-      throw new AppError(EH.INVALID_SCORE); // Logic mâu thuẫn
+    // 5. Kiểm tra tính logic chặt chẽ của kết quả thi lý thuyết
+    // Nếu bị đánh trượt do dính câu điểm liệt, thuộc tính Đỗ (isPassed) bắt buộc phải là false
+    if (this.isFailedByCritical && this.isPassed) {
+      throw new AppError(EH.INVALID_SCORE); // Mâu thuẫn logic nghiệp vụ
     }
 
-    if (data.durationSeconds === undefined || data.durationSeconds < 0) {
+    if (Number.isNaN(this.durationSeconds) || this.durationSeconds < 0) {
       throw new AppError(EH.INVALID_DURATION);
-    }
-
-    if (typeof data.isPassed !== "boolean" || typeof data.isFailedByCritical !== "boolean") {
-      throw new AppError(EH.RESULT_STATUS_REQUIRED);
     }
   }
 }

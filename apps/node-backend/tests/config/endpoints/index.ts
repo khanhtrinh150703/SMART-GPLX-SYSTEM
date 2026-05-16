@@ -6,4 +6,7 @@ export * from './license.endpoints'
 export * from './question.endpoints'
 export * from './role.endpoints'
 export * from './user.endpoints'
-
+export * from './active-session.endpoints'
+export * from './exam-attempts.endpoints'
+export * from './history.endpoints'
+export * from './statistics.endpoints'

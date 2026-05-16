@@ -56,6 +56,21 @@ services:
     networks:
       - smart-gplx-network
 
+    # --- NHÓM NOSQL ---
+  mongodb:
+    image: mongo:latest
+    container_name: smart_gplx_mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - "27017:27017" # Port mặc định để kết nối từ máy thật hoặc client UI
+    volumes:
+      - mongo_data:/data/db # Gắn volume lưu dữ liệu bền vững cho Mongo
+    networks:
+      - smart-gplx-network
+
 # --- KHAI BÁO MẠNG ---
 networks:
   smart-gplx-network:
@@ -64,5 +79,6 @@ networks:
 # --- KHAI BÁO KHỐI DỮ LIỆU (CHỖ BẠN BỊ THIẾU GÂY RA LỖI) ---
 volumes:
   redis_data:
-  mysql_data: # BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ MYSQL KHÔNG BÁO LỖI UNDEFINED
-  loki_data: # Thêm dòng này
+  mysql_data:
+  loki_data:
+  mongo_data:

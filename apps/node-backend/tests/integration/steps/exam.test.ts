@@ -6,6 +6,7 @@ import { EXAM_ENDPOINTS } from "../../config/endpoints";
 import { EXAM_PAYLOAD } from "../../config/test-data";
 import { ErrorCode, ErrorStatus } from "@/shared/errors";
 import prisma from "../../../prisma/prisma";
+import { fakeID } from "../../config";
 
 /**
  * @description Tập hợp các bài kiểm tra tích hợp cho phân hệ Đề thi.
@@ -71,11 +72,9 @@ export const examSteps = (
       });
 
       it("Nên trả về 404 khi cố truy cập chi tiết một Đề thi bằng ID giả", async () => {
-        const fakeId = EXAM_PAYLOAD.INVALID.SERVICE_LEVEL.NON_EXISTENT_ID;
         const response = await request(app).get(
-          EXAM_ENDPOINTS.DETAIL_PUBLIC(fakeId),
+          EXAM_ENDPOINTS.DETAIL_PUBLIC(fakeID),
         );
-
         expect(response.status).toBe(404);
         expect(response.body.code).toBe(ErrorCode.EXAM.NOT_FOUND);
       });

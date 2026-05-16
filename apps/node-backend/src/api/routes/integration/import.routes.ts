@@ -10,6 +10,7 @@ import { validateFileSize } from "@/api/middlewares/shared";
 
 // 3. DI Container
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 const router = Router();
 const controller = container.resolve('importController') as ImportController;
 
@@ -61,6 +62,7 @@ router.post(
  */
 router.get(
     '/status/:jobId', 
+    validateUuidParam("jobId"), 
     controller.getStatus
 );
 

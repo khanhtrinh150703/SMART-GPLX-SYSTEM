@@ -1,4 +1,4 @@
-import { IRoleQueryService } from "@/domain/interfaces/services/identity/queries/i-role-query.service";
+import { IRoleQueryService } from "@/domain/interfaces/services/identity/queries/i-role.query.service";
 import { IRoleRepository } from "@/domain/interfaces/repositories/identity/i-role.repository";
 import { Role } from "@/domain/entities/role/role.entity";
 import { AppError, ErrorCode } from "@/shared/errors";

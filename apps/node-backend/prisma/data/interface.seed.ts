@@ -62,11 +62,29 @@ export interface IQuestionSeed {
   indexNumber: number;
   content: string;
   isCritical: boolean;
-  chapterCode: string; 
-  licenses: string[]; 
+  chapterCode: string;
+  licenses: string[];
   answers: IAnswerSeed[];
   imageUrl?: string;
   difficultyLevel?: number;
+}
+
+export interface IExamQuestionSeed {
+  questionIndexNumber: number;
+  correctAnswer: number;
+  isCritical: boolean;
+  indexNumber: number;
+}
+
+export interface IExamSeed {
+  name: string;
+  userEmail: string;          
+  licenseName: string;        
+  isChapter: boolean;
+  totalQuestions: number;       
+  passingScore: number;        
+  durationMinutes: number;      
+  minCriticalQuestions: number; 
 }
 
 // --- Data ---

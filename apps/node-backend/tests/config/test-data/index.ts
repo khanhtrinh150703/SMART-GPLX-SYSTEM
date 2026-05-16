@@ -5,3 +5,6 @@ export * from './question.test-data';
 export * from './user.test-data';
 export * from './auth.test-data';
 export * from './exam.test-data';
+export * from './active-sesstion.test-data'
+export * from './exam-attempt.test-data'
+export * from './history-statistics.test-data'
