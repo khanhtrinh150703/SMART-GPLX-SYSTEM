@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryParams } from "@/types/paginaton.type";
 import { toast } from "react-hot-toast";
 import { questionService } from "../services/question.service";
-import { masterService } from "@/services/master-data/master-data.service";
 
 /**
  * useQuestions: Hook quản lý toàn bộ logic dữ liệu cho tính năng Câu hỏi.

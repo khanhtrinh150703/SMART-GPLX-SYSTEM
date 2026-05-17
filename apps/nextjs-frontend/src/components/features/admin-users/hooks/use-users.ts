@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserQueryDTO } from "@/types/query-user";
 import { AdminUpdatePayload } from "../schema/user.schema";
 import { userAdminService } from "../services/user-admin.service";
-import { masterService } from "@/services/master-data/master-data.service";
 
 /**
  * Hook quản lý toàn bộ logic dữ liệu của Người dùng (User).

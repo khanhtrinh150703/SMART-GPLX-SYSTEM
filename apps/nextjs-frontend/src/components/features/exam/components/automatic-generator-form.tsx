@@ -1,15 +1,9 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Zap,
-  Info,
-  AlertTriangle,
-  CheckCircle2,
-  Settings,
-} from "lucide-react";
+import { Zap, Info, AlertTriangle, CheckCircle2, Settings } from "lucide-react";
 
 // Components UI & Common (Thành phần giao diện & Dùng chung)
 import { Alert } from "@/components/ui/Alert";
@@ -49,7 +43,6 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
   const {
     register,
     handleSubmit,
-    watch,
     reset,
     control,
     formState: { errors },
@@ -69,7 +62,7 @@ export const AutomaticGeneratorForm: React.FC<AutomaticGeneratorFormProps> = ({
   } | null>(null);
 
   // Theo dõi ma trận đang được chọn (Watch currently selected matrix)
-  const selectedId = watch("matrixId");
+  const selectedId = useWatch({ control, name: "matrixId" });
   const selectedMatrix = useMemo(
     () => matrices.find((m) => m.value === selectedId),
     [selectedId, matrices],
