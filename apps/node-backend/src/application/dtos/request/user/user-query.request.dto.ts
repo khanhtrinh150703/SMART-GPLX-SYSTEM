@@ -8,8 +8,8 @@ export class UserQueryDTO extends BaseQueryDTO {
   public name?: string;
   
   constructor(data: Partial<UserQueryDTO>) {
-    super(); // Gọi constructor của BaseQueryDTO
-
+    super(data);
+    
     // Gán dữ liệu thô vào class
     Object.assign(this, data);
 
