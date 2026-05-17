@@ -97,37 +97,37 @@ export const licenses: LicenseSeed[] = [
   },
   {
     name: 'I',
-    description: 'Mô tả chi tiết cho hạng bằng lái I.',
+    description: 'Mô tả chi tiết cho chương I.',
     minAge: 18,
     orderIndex: 16
   },
   {
     name: 'II',
-    description: 'Mô tả chi tiết cho hạng bằng lái II.',
+    description: 'Mô tả chi tiết cho chương II.',
     minAge: 18,
     orderIndex: 17
   },
   {
     name: 'III',
-    description: 'Mô tả chi tiết cho hạng bằng lái III.',
+    description: 'Mô tả chi tiết cho chương III.',
     minAge: 18,
     orderIndex: 18
   },
   {
     name: 'IV',
-    description: 'Mô tả chi tiết cho hạng bằng lái IV.',
+    description: 'Mô tả chi tiết cho chương IV.',
     minAge: 18,
     orderIndex: 19
   },
   {
     name: 'V',
-    description: 'Mô tả chi tiết cho hạng bằng lái V.',
+    description: 'Mô tả chi tiết cho chương V.',
     minAge: 18,
     orderIndex: 20
   },
   {
     name: 'VI',
-    description: 'Mô tả chi tiết cho hạng bằng lái VI.',
+    description: 'Mô tả chi tiết cho chương VI.',
     minAge: 18,
     orderIndex: 21
   }

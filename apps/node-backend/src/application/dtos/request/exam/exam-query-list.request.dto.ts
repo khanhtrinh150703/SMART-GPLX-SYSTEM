@@ -23,7 +23,7 @@ export class ExamUserQueryDTO
    * @param data - Dữ liệu thô từ req.query được ép kiểu Partial.
    */
   constructor(data: Partial<ExamUserQueryDTO>) {
-    super();
+    super(data);
 
     // 1. Gán dữ liệu thô vào instance (Ghi đè các giá trị mặc định của Base nếu có)
     Object.assign(this, data);

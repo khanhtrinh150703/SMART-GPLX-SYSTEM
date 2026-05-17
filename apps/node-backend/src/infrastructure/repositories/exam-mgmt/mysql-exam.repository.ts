@@ -210,7 +210,6 @@ export class MySQLExamRepository implements IExamRepository {
     ]);
 
     // --- 6. MAPPING SANG DOMAIN (Domain Mapping) ---
-    // rawRecords giờ đây đã mang kiểu ExamWithRelations[] một cách tự động
     const entities = rawRecords.map((record: PrismaExamWithRelations) =>
       ExamMapper.toDomain(record),
     );

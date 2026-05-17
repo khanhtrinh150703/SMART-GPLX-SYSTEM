@@ -14,7 +14,7 @@ export class LicenseCategoryQueryDTO extends BaseQueryDTO {
    * @param {Partial<LicenseCategoryQueryDTO>} data
    */
   constructor(data: Partial<LicenseCategoryQueryDTO>) {
-    super();
+    super(data);
 
     // 1. Mapping & Sanitization chuỗi (Chỉ gán nếu là string thực thụ)
     this.name =
@@ -32,8 +32,5 @@ export class LicenseCategoryQueryDTO extends BaseQueryDTO {
         ? Number(data.minAge)
         : undefined;
 
-    // 3. Mapping các trường từ BaseQueryDTO (limit, page)
-    if (this.limit !== undefined) this.limit = Number(this.limit);
-    if (this.page !== undefined) this.page = Number(this.page);
   }
 }

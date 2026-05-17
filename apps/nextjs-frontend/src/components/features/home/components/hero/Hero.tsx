@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { Reveal } from "@/components/ui/Reveal";
-import { HeroSearch } from "./HeroSearch";
+// import { HeroSearch } from "./HeroSearch";
 import { heroVariants, heroAnimations } from "./hero.variants";
 
 // Định nghĩa các "đầu vào" cho Hero
@@ -21,7 +21,7 @@ export const Hero = ({
   titleLine1,
   titleHighlight,
   description,
-  showSearch = true
+  // showSearch = true
 }: HeroProps) => {
   return (
     <section className="max-w-7xl mx-auto px-6 pt-40 pb-20 relative z-10">
@@ -50,11 +50,11 @@ export const Hero = ({
         </Reveal>
 
         {/* 4. Search Bar (Chỉ hiện nếu showSearch = true) */}
-        {showSearch && (
+        {/* {showSearch && (
           <Reveal delay={0.3}>
             <HeroSearch />
           </Reveal>
-        )}
+        )} */}
       </header>
     </section>
   );
