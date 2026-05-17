@@ -11,7 +11,7 @@ export class QuestionsAdminQueryDto extends BaseQueryDTO {
   public readonly indexNumber?: boolean;
 
   constructor(data: Record<string, unknown>) {
-    super();
+    super(data);
 
     // 1. Phân trang & Sắp xếp (Kế thừa từ BaseQueryDTO)
     this.page = data.page ? Math.max(1, Number(data.page)) : 1;

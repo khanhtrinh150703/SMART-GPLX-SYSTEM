@@ -29,7 +29,7 @@ export class ExamHistoryQueryDTO
    * @param data - Dữ liệu thô từ req.query.
    */
   constructor(data: Partial<ExamHistoryQueryDTO>) {
-    super();
+    super(data);
 
     // 1. Phân trang kế thừa (Page & Limit)
     this.page = data.page ? Number(data.page) : 1;

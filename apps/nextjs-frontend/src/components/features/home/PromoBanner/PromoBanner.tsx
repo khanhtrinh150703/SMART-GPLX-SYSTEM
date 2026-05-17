@@ -2,17 +2,20 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Reveal } from "@/components/ui/Reveal";
-import { MagneticWrapper } from "@/components/ui/Magnetic";
+import { Reveal } from "@/components/ui/Reveal"; // Thành phần hiệu ứng xuất hiện (Reveal animation wrapper)
+import { MagneticWrapper } from "@/components/ui/Magnetic"; // Thành phần tương tác nam châm (Magnetic interaction wrapper)
 import Button from "@/components/ui/Button/Button";
+import { promoBannerVariants, type PromoBannerTheme } from "./promo-banner.variants";
 
+// Định nghĩa cấu trúc kiểu dữ liệu đầu vào nghiêm ngặt cho Component (Component properties strict interface definition)
 interface PromoBannerProps {
-  badge: string;
-  title: string;
-  highlight: string;
-  description: string;
-  buttonText: string;
-  delay?: number;
+  badge: string;            // Nội dung nhãn (Badge text content)
+  title: string;            // Tiêu đề chính (Primary headline text)
+  highlight: string;        // Từ khóa điểm nhấn nghệ thuật (Artistic core highlight text)
+  description: string;      // Đoạn văn bản mô tả hệ thống (Description text copy)
+  buttonText: string;       // Chữ hiển thị trên nút bấm (Action call-to-action button text)
+  delay?: number;           // Thời gian trễ hiệu ứng chuyển động (Animation transition delay)
+  theme?: PromoBannerTheme; // Tùy chọn giao diện màu sắc: "dark" | "emerald" | "sage" (Contextual layout theme option)
 }
 
 export const PromoBanner = ({
@@ -21,44 +24,62 @@ export const PromoBanner = ({
   highlight,
   description,
   buttonText,
-  delay = 0.9
+  delay = 0.9,
+  theme = "sage", // Khởi tạo mặc định chạy tone màu Xanh Lá Xám - Sage Green (Default premium layout configuration)
 }: PromoBannerProps) => {
   return (
-    <Reveal delay={delay} className="max-w-7xl mx-auto px-6 mb-20 relative z-10">
-      <div className="bg-slate-900 rounded-[2.5rem] p-12 flex flex-col md:flex-row items-center justify-between shadow-2xl relative overflow-hidden group">
+    <Reveal delay={delay} className={promoBannerVariants.wrapper}>
+      
+      {/* 🟢 Khung Chứa Chính Chạy Biến Thể CVA (Main Responsive Container Block) */}
+      <div className={promoBannerVariants.container({ theme })}>
         
-        {/* Khối sáng xoay tròn phía sau */}
+        {/* 🟢 Quầng Sáng Chạy Ngầm Tương Thích Theo Môi Trường (Ambient Background Interactive Glow) */}
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -right-20 -top-20 w-96 h-96 bg-emerald-500/20 blur-[100px] rounded-full group-hover:bg-emerald-500/30 transition-colors duration-1000"
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className={promoBannerVariants.glow[theme]}
         />
 
-        <div className="z-10 text-center md:text-left mb-8 md:mb-0 relative">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-emerald-400 text-xs font-bold mb-4 border border-slate-700">
+        {/* =========================================================
+            KHỐI NỘI DUNG VĂN BẢN (Text Semantic Typography Block)
+            ========================================================= */}
+        <div className="z-10 text-center md:text-left mb-8 md:mb-0 relative max-w-2xl flex-grow">
+          
+          {/* Nhãn thể loại nhỏ phía trên (Top category context badge) */}
+          <div className={promoBannerVariants.badge[theme]}>
             {badge}
           </div>
-          <h3 className="text-white text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            {title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+          
+          {/* Tiêu đề phân cấp (Main interactive headline) */}
+          <h3 className={promoBannerVariants.title[theme]}>
+            {title}{" "}
+            {/* Chữ điểm nhấn Gradient (Dynamic gradient text element) */}
+            <span className={promoBannerVariants.highlight[theme]}>
               {highlight}
             </span>
           </h3>
-          <p className="text-slate-400 text-lg">
+          
+          {/* Đoạn mô tả: Tự động map text-slate-500 mượt mà khi chạy theme sage (Fluid copy representation) */}
+          <p className={promoBannerVariants.description[theme]}>
             {description}
           </p>
         </div>
 
-        <div className="z-10">
+        {/* =========================================================
+            KHỐI NÚT HÀNH ĐỘNG CTA (Call-To-Action Interaction Block)
+            ========================================================= */}
+        <div className="z-10 flex-shrink-0 ml-0 md:ml-12 relative">
           <MagneticWrapper>
             <Button
-              href={"/register"} 
+              href="/register"
               size="lg"
-              className="rounded-full px-12 py-7 text-lg bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_30px_rgba(5,150,104,0.3)] transition-all"
+              className={promoBannerVariants.button[theme]}
             >
               {buttonText}
             </Button>
           </MagneticWrapper>
         </div>
+
       </div>
     </Reveal>
   );

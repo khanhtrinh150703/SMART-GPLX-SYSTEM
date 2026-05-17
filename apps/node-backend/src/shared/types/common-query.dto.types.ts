@@ -1,52 +1,64 @@
-  /**
-   * @description Giao diện cơ sở cho các tham số truy vấn có phân trang và sắp xếp.
-   */
-  export interface IBaseQueryDTO {
-    page: number;
-    limit: number;
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
-    status?: string;
-    search?: string;
-  }
+/**
+ * @description Giao diện cơ sở cho các tham số truy vấn có phân trang và sắp xếp.
+ */
+export interface IBaseQueryDTO {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  status?: string;
+  search?: string;
+}
 
-  /**
-   * @description Lớp cơ sở để bóc tách và xử lý tham số truy vấn (Pagination & Sorting).
-   */
-  export abstract class BaseQueryDTO implements IBaseQueryDTO {
-    public page: number = 1;
-    public limit: number = 10;
-    public sortBy: string = 'createdAt';
-    public sortOrder: 'asc' | 'desc' = 'desc';
+/**
+ * @description Lớp cơ sở để bóc tách và xử lý tham số truy vấn (Pagination & Sorting).
+ */
+export abstract class BaseQueryDTO implements IBaseQueryDTO {
+  public page: number = 1;
+  public limit: number = 10;
+  public sortBy: string = "createdAt";
+  public sortOrder: "asc" | "desc" = "desc";
+  public status?: string;
+  public search?: string;
 
-    /** * @description Chế độ xem theo logic xóa mềm.
-     * active: Chỉ bản ghi hiện hành (deletedAt == null)
-     * deleted: Chỉ bản ghi đã xóa (deletedAt != null)
-     * all: Lấy tất cả
-     */
-    public status?: string;
-    public search?: string;
+  constructor(data?: Partial<IBaseQueryDTO>) {
+    if (!data) return;
 
-    /**
-     * @description Chuyển đổi tham số Page/Limit sang Skip/Take cho Prisma.
-     * @returns {Object} { skip: number, take: number }
-     */
-    public get pagination(): { readonly skip: number; readonly take: number } {
-      const p = Math.max(1, Number(this.page));
-      const l = Math.max(1, Number(this.limit));
-      
-      return {
-        skip: (p - 1) * l,
-        take: l,
-      };
+    // 1. Ép kiểu số an toàn và chặn giá trị nhỏ hơn 1 (Sanitize page & limit)
+    if (data.page !== undefined && data.page !== null) {
+      this.page = Math.max(1, Number(data.page));
+    }
+    if (data.limit !== undefined && data.limit !== null) {
+      this.limit = Math.max(1, Number(data.limit));
     }
 
-    /**
-     * @description Trả về cấu trúc sắp xếp chuẩn cho Prisma.
-     */
-    public get orderBy(): Record<string, 'asc' | 'desc'> {
-      return {
-        [this.sortBy]: this.sortOrder,
-      };
+    // 2. Chuẩn hóa chuỗi sắp xếp (Sanitize sort properties)
+    if (typeof data.sortBy === "string" && data.sortBy.trim() !== "") {
+      this.sortBy = data.sortBy.trim();
+    }
+    if (data.sortOrder === "asc" || data.sortOrder === "desc") {
+      this.sortOrder = data.sortOrder;
+    }
+
+    // 3. Chuẩn hóa bộ lọc tìm kiếm nâng cao (Sanitize search & status parameters)
+    if (typeof data.status === "string") {
+      this.status = data.status.trim();
+    }
+    if (typeof data.search === "string") {
+      this.search = data.search.trim() !== "" ? data.search.trim() : undefined;
     }
   }
+
+  public get pagination(): { readonly skip: number; readonly take: number } {
+    return {
+      skip: (this.page - 1) * this.limit,
+      take: this.limit,
+    };
+  }
+
+  public get orderBy(): Record<string, "asc" | "desc"> {
+    return {
+      [this.sortBy]: this.sortOrder,
+    };
+  }
+}
