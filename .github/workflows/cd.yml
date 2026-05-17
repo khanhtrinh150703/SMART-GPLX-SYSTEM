@@ -2,16 +2,18 @@ name: Project CD - Build & Push Images
 
 on:
   push:
-    branches:
-      - main
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    
+
+    permissions:
+      contents: read
+      packages: write
+      
     env:
       REPO_LOWER: ""
-      
+
     steps:
       - name: 🛰️ Checkout Repository
         uses: actions/checkout@v4

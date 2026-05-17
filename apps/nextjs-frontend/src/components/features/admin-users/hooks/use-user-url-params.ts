@@ -1,7 +1,6 @@
 // src/features/user-management/hooks/use-user-url-params.ts
 import { useCallback, useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { QueryParams } from "@/types/paginaton.type";
 import { FILTER_FIELDS } from "../components/users.config";
 import { UserQueryParams } from "../types/user.query";
 

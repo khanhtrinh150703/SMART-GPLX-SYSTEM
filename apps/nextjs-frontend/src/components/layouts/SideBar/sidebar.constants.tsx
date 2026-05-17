@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   History,
   UserCircle,
-  Settings,
   Database,
   Users,
   CreditCard,
