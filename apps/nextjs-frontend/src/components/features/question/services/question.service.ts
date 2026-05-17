@@ -69,7 +69,6 @@ export const questionService = {
         // Gọi xuống API service đã định nghĩa trước đó
         const response = await questionApi.selectionPool(params);
 
-        // Vì ở file api Trinh đã return response.data rồi, 
         // nên ở đây chỉ cần trả về kết quả cuối cùng là mảng hoặc object data.
         return response;
     },

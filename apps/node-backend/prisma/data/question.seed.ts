@@ -163,7 +163,7 @@ export const sampleQuestions: IQuestionSeed[] = [
           "Ở nơi đường bộ giao nhau cùng mức với đường sắt, đường dốc, đoạn đường cong tầm nhìn bị che khuất.",
         isCorrect: false,
       },
-      { content: "Cả ý 1 và ý 2.", isCorrect: false }, // Lưu ý: Câu này thực tế chọn Cả, nhưng tôi tách để Trinh test
+      { content: "Cả ý 1 và ý 2.", isCorrect: false }, 
     ],
   },
   {

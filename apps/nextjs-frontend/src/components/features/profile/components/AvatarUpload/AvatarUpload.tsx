@@ -98,7 +98,8 @@ export const AvatarUpload = ({ value, onChange, disabled }: AvatarUploadProps) =
               src={preview}
               alt="Avatar Preview"
               fill
-              unoptimized // Cần thiết khi dùng blob: URL
+              priority
+              unoptimized 
               className={cn(
                 "object-cover transition-all duration-500",
                 isUploading ? "blur-sm scale-110" : "group-hover:scale-110"

@@ -2,7 +2,7 @@ export const userSchemas = {
   UpdateProfileDTO: {
     type: "object",
     properties: {
-      fullName: { type: "string", example: "Trinh Cậu Vàng V2" },
+      fullName: { type: "string", example: "Cậu Vàng V2" },
       urlPicture: {
         type: "string",
         format: "uri",

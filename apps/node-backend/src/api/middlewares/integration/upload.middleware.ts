@@ -56,7 +56,6 @@ export const uploadImport = multer({
     fileSize: 15 * 1024 * 1024, // 15MB
   },
   fileFilter: (_req, file, cb) => {
-    // LOG để debug (Trinh nhìn vào terminal sẽ thấy mimetype thực tế của chunk)
     // console.log(`>>> [MULTER_FILTER] Receiving file: ${file.originalname}, Mime: ${file.mimetype}`);
 
     const allowedMimeTypes = [
@@ -73,7 +72,6 @@ export const uploadImport = multer({
     if (isAllowedType || isImage) {
       cb(null, true);
     } else {
-      // Nếu vẫn lỗi, Trinh hãy tạm thời cb(null, true) để test, 
       // nhưng Senior khuyên nên check kỹ mimetype này.
       cb(new AppError(ErrorCode.IMPORT.EXTRACT_FAILED, `Định dạng ${file.mimetype} không được hỗ trợ.`));
     }
