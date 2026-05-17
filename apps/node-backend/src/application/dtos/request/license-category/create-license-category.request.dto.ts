@@ -48,7 +48,7 @@ export class CreateLicenseCategoryRequestDTO implements ICreateLicenseCategoryIn
   }
 
   /**
-   * @description Hàm gác cổng check 100% logic của Trinh trên dữ liệu đã sạch.
+   * @description Hàm gác cổng check 100% logic .
    * @private
    */
   private validate(): void {

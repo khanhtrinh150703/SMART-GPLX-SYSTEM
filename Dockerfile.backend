@@ -1,0 +1,38 @@
+# Stage 1: Build và chuẩn bị sản phẩm
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Sao chép các file cấu hình package từ gốc và của backend
+COPY package*.json ./
+COPY apps/node-backend/package*.json ./apps/node-backend/
+
+# Cài đặt toàn bộ dependencies (bao gồm cả devDependencies để biên dịch)
+RUN npm ci
+
+# Sao chép toàn bộ mã nguồn vào container
+COPY . .
+
+# Sinh Prisma Client chuẩn xác dựa trên file schema của ông
+RUN npm run db:gen -w node-backend
+
+# Biên dịch TypeScript sang JavaScript (lệnh tsc sẽ sinh ra thư mục dist)
+RUN cd apps/node-backend && npm run build
+
+# Stage 2: Runner - Máy chạy sạch tinh gọn
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy package.json của gốc và backend sang môi trường chạy
+COPY package*.json ./
+COPY apps/node-backend/package*.json ./apps/node-backend/
+
+# Copy thư mục node_modules (đã chứa Prisma Client) và dist từ stage builder sang
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/node-backend/dist ./apps/node-backend/dist
+
+EXPOSE 5000
+
+# Khởi chạy backend bằng script start thông qua workspace định sẵn
+CMD ["npm", "start", "-w", "node-backend"]

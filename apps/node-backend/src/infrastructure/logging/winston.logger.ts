@@ -2,7 +2,6 @@ import { ILogger } from "@/domain/interfaces/logging/i-logger.interface";
 import winston from "winston";
 import LokiTransport from "winston-loki";
 
-// Giữ nguyên cấu hình cũ của Trinh
 const winstonInstance = winston.createLogger({
   level: "info",
   format: winston.format.json(),

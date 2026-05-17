@@ -284,6 +284,7 @@ export function QuestionFormFields<T extends FieldValues>({
                   src={previews.main}
                   alt="Question preview"
                   fill
+                  priority
                   className="object-contain p-4 transition-transform duration-500 group-hover:scale-105"
                   unoptimized
                 />
@@ -414,6 +415,7 @@ export function QuestionFormFields<T extends FieldValues>({
                           src={previews.answers[index]}
                           alt="Answer preview"
                           fill
+                          priority
                           className="object-cover"
                           unoptimized
                         />

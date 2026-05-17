@@ -15,6 +15,6 @@ export const formatImageUrl = (pathFromDb: string | null | undefined): string | 
   // Loại bỏ dấu gạch chéo '/' ở đầu đường dẫn ảnh nếu có
   const cleanPath = pathFromDb.replace(/^\/+/, '');
 
-  // Kết quả: http://localhost:3000/uploads/questions/abc.jpg
+  // Kết quả: http://localhost:5000/uploads/questions/abc.jpg
   return `${cleanBaseUrl}/${staticPrefix}/${cleanPath}`;
 };

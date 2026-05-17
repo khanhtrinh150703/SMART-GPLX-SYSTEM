@@ -11,7 +11,7 @@ import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/
 import { IMongoDBService } from "@/domain/interfaces/services/external/commands";
 import mongoose from "mongoose";
 
-const PORT = env.PORT || 3000;
+const PORT = env.PORT || 5000;
 let serverInstance: Server | null = null;
 export const connectDB = async () => {
   try {

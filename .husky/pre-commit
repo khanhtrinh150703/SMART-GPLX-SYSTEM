@@ -3,5 +3,3 @@
 echo "🚦 Đang kiểm tra lỗi kỹ thuật trước khi Commit..."
 npm run verify
 
-echo "🔍 Checking Website."
-act --rm
