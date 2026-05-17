@@ -186,7 +186,7 @@ export class ExamEntity extends BaseEntity<IExamProps> {
    * @param data - Dữ liệu cập nhật từng phần.
    */
   public update(data: IUpdateExamProps): void {
-    // --- 1. LOGIC IS_EDITED (Trọng tâm yêu cầu của Trinh) ---
+    // --- 1. LOGIC IS_EDITED  ---
     if (this._props.examMatrixId) {
       this._props.isEdited = true;
     }

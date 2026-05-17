@@ -1,6 +1,5 @@
 /**
  * @description Định nghĩa cấu trúc Record trong MySQL (Prisma).
- * IRecord (snake_case) theo tiêu chuẩn của Trinh.
  */
 export interface IUserExamRankRecord {
   readonly id: string;

@@ -163,7 +163,7 @@ export const sampleQuestions: IQuestionSeed[] = [
           "Ở nơi đường bộ giao nhau cùng mức với đường sắt, đường dốc, đoạn đường cong tầm nhìn bị che khuất.",
         isCorrect: false,
       },
-      { content: "Cả ý 1 và ý 2.", isCorrect: false }, // Lưu ý: Câu này thực tế chọn Cả, nhưng tôi tách để Trinh test
+      { content: "Cả ý 1 và ý 2.", isCorrect: false }, 
     ],
   },
   {
@@ -2083,6 +2083,534 @@ export const sampleQuestions: IQuestionSeed[] = [
       { content: "Vi phạm quy tắc giao thông.", isCorrect: true },
       { content: "Đúng quy tắc giao thông.", isCorrect: false },
       { content: "Được phép nếu đường vắng.", isCorrect: false },
+    ],
+  },
+
+  {
+    indexNumber: 1,
+    content:
+      "Hành vi đưa xe cơ giới không bảo đảm tiêu chuẩn an toàn kỹ thuật vào tham gia giao thông bị nghiêm cấm không?",
+    isCritical: true,
+    chapterCode: "CH01",
+    licenses: ["A1", "A", "B1", "B", "C", "D"],
+    answers: [
+      { content: "Không bị nghiêm cấm.", isCorrect: false },
+      { content: "Bị nghiêm cấm.", isCorrect: true },
+      { content: "Bị nghiêm cấm tuỳ từng trường hợp.", isCorrect: false },
+    ],
+  },
+  {
+    indexNumber: 2,
+    content: "Cuộc đua xe chỉ được thực hiện khi nào?",
+    isCritical: true,
+    chapterCode: "CH01",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content: "Diễn ra trên đường phố không có người qua lại.",
+        isCorrect: false,
+      },
+      { content: "Được người dân ủng hộ.", isCorrect: false },
+      { content: "Được cơ quan có thẩm quyền cấp phép.", isCorrect: true },
+    ],
+  },
+  {
+    indexNumber: 3,
+    content:
+      "Người lái xe không được vượt xe khác khi gặp trường hợp nào ghi dưới đây?",
+    isCritical: true,
+    chapterCode: "CH01",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Trên cầu hẹp có một làn xe. Nơi đường giao nhau, đường bộ giao nhau cùng mức với đường sắt.",
+        isCorrect: true,
+      },
+      { content: "On bridge with 2 or more lanes.", isCorrect: false },
+      {
+        content:
+          "Xe được quyền ưu tiên đang phát tín hiệu ưu tiên đi làm nhiệm vụ.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 4,
+    content:
+      "Ở phần đường dành cho người đi bộ qua đường, trên cầu, đầu cầu, đường cao tốc, đường hẹp, đường dốc, tại nơi đường bộ giao nhau cùng mức với đường sắt có được quay đầu xe hay không?",
+    isCritical: true,
+    chapterCode: "CH01",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      { content: "Được phép.", isCorrect: false },
+      { content: "Không được phép.", isCorrect: true },
+      { content: "Tùy từng trường hợp.", isCorrect: false },
+    ],
+  },
+  {
+    indexNumber: 5,
+    content:
+      "Người điều khiển xe mô tô hai bánh, ba bánh, xe gắn máy có được phép sử dụng xe để kéo hoặc đẩy các phương tiện khác khi tham gia giao thông không?",
+    isCritical: true,
+    chapterCode: "CH01",
+    licenses: ["A1", "A"],
+    answers: [
+      { content: "Được phép.", isCorrect: false },
+      {
+        content: "Nếu phương tiện được kéo có khối lượng nhỏ hơn xe mình.",
+        isCorrect: false,
+      },
+      { content: "Không được phép.", isCorrect: true },
+    ],
+  },
+
+  // =========================================================================
+  // --- CH02: VĂN HÓA GIAO THÔNG VÀ ĐẠO ĐỨC NGƯỜI LÁI XE (5 câu độc nhất) ---
+  // =========================================================================
+  {
+    indexNumber: 181,
+    content:
+      "Người lái xe cố tình vi phạm Luật giao thông đường bộ, gây tai nạn giao thông rồi bỏ chạy để trốn tránh trách nhiệm hoặc cố ý không cứu giúp người bị tai nạn giao thông thì bị xử lý như thế nào?",
+    isCritical: true,
+    chapterCode: "CH02",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      { content: "Không bị xử lý hình sự.", isCorrect: false },
+      { content: "Bị xử lý theo quy định của pháp luật.", isCorrect: true },
+      { content: "Chỉ bị xử phạt hành chính.", isCorrect: false },
+    ],
+  },
+  {
+    indexNumber: 182,
+    content:
+      "Trong các hành vi dưới đây, người lái xe có văn hóa giao thông phải ứng xử như thế nào?",
+    isCritical: false,
+    chapterCode: "CH02",
+    licenses: ["A1", "B1", "B", "C", "D"],
+    answers: [
+      {
+        content:
+          "Điều khiển xe đi bên phải theo chiều đi của mình; đi đúng làn đường, phần đường quy định; dừng, đỗ xe đúng nơi quy định.",
+        isCorrect: true,
+      },
+      {
+        content:
+          "Điều khiển xe đi trên phần đường, làn đường có ít phương tiện tham gia giao thông.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 183,
+    content:
+      "Khi xảy ra tai nạn giao thông, người lái xe và người có mặt tại hiện trường vụ tai nạn phải thực hiện các công việc gì dưới đây?",
+    isCritical: false,
+    chapterCode: "CH02",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Đặt biển cảnh báo hoặc vật báo hiệu ở phía trước và phía sau hiện trường xảy ra tai nạn để cảnh báo; kiểm tra tình trạng thương tích của người bị nạn và sơ cứu giúp người bị nạn; báo tin ngay cho cơ quan chức năng.",
+        isCorrect: true,
+      },
+      {
+        content:
+          "Nhanh chóng lái xe gây tai nạn hoặc nhờ xe khác ra khỏi hiện trường vụ tai nạn.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 184,
+    content:
+      "Khi sơ cứu người bị tai nạn giao thông đường bộ có vết thương chảy máu ngoài màu đỏ thẫm, trào ra sát mép vết thương và chảy chậm, người sơ cứu cần làm gì?",
+    isCritical: false,
+    chapterCode: "CH02",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      { content: "Thực hiện cầm máu trực tiếp.", isCorrect: true },
+      {
+        content: "Thực hiện cầm máu bằng gạc (ép động mạch).",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 185,
+    content:
+      "Hành vi gây gổ, ẩu đả hoặc đe dọa người khác sau khi xảy ra va chạm giao thông có vi phạm đạo đức người lái xe không?",
+    isCritical: true,
+    chapterCode: "CH02",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content: "Vi phạm nghiêm trọng đạo đức và văn hóa giao thông.",
+        isCorrect: true,
+      },
+      {
+        content: "Không vi phạm vì đó là phản ứng tâm lý bình thường.",
+        isCorrect: false,
+      },
+    ],
+  },
+
+  // =========================================================================
+  // --- CH03: KỸ THUẬT LÁI XE (5 câu độc nhất) ---
+  // =========================================================================
+  {
+    indexNumber: 210,
+    content:
+      "Khi điều khiển xe mô tô tay ga xuống đường dốc dài, độ dốc cao, người lái xe cần thực hiện các thao tác nào dưới đây để đảm bảo an toàn?",
+    isCritical: true,
+    chapterCode: "CH03",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Giữ tay ga ở mức độ phù hợp, sử dụng đồng thời cả phanh trước và phanh sau để giảm tốc độ.",
+        isCorrect: true,
+      },
+      {
+        content: "Nhả hết tay ga, tắt động cơ xe và rà phanh liên tục.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 211,
+    content:
+      "Khi quay đầu xe mô tô trong không gian hẹp, người lái xe cần thực hiện thao tác nào để đảm bảo an toàn giao thông?",
+    isCritical: false,
+    chapterCode: "CH03",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Quan sát kỹ địa hình, điều khiển xe với tốc độ thấp, giữ thăng bằng ổn định và báo tín hiệu chuyển hướng.",
+        isCorrect: true,
+      },
+      {
+        content:
+          "Tăng ga thật mạnh để xe quay đầu nhanh hơn, tránh cản trở xe khác.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 212,
+    content:
+      "Khi điều khiển xe mô tô chạy trên đường dốc, gặp chướng ngại vật khuất tầm nhìn, người lái xe cần làm gì?",
+    isCritical: false,
+    chapterCode: "CH03",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Đi đúng làn đường, giảm tốc độ quy định, không được vượt xe khác.",
+        isCorrect: true,
+      },
+      {
+        content: "Lấn sang làn đường ngược chiều để mở rộng góc quan sát.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 213,
+    content:
+      "Khi tránh nhau trên đường hẹp vào ban đêm, người điều khiển xe mô tô phải xử lý như thế nào?",
+    isCritical: false,
+    chapterCode: "CH03",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Chuyển từ đèn chiếu xa sang đèn chiếu gần, đi chậm sát về phía bên phải để nhường đường.",
+        isCorrect: true,
+      },
+      {
+        content:
+          "Bật đèn pha thật sáng để nhìn rõ chướng ngại vật của xe đối diện.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 214,
+    content:
+      "Khi lùi xe mô tô ba bánh hoặc đi vào ngõ hẹp, người lái xe phải lưu ý điều gì?",
+    isCritical: true,
+    chapterCode: "CH03",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Phải quan sát kỹ phía sau, phát tín hiệu cần thiết và chỉ lùi khi đảm bảo không có nguy hiểm.",
+        isCorrect: true,
+      },
+      {
+        content: "Lùi thật nhanh để không làm ùn tắc giao thông.",
+        isCorrect: false,
+      },
+    ],
+  },
+
+  // =========================================================================
+  // --- CH04: CẤU TẠO VÀ SỬA CHỮA (5 câu độc nhất) ---
+  // =========================================================================
+  {
+    indexNumber: 264,
+    content:
+      "Yêu cầu kỹ thuật đối với hệ thống xích hoặc dây đai truyền động của xe mô tô hai bánh phải như thế nào?",
+    isCritical: false,
+    chapterCode: "CH04",
+    licenses: ["A1", "A", "B", "C"],
+    answers: [
+      {
+        content:
+          "Lắp đặt chắc chắn, độ căng của xích hoặc dây đai nằm trong giới hạn tiêu chuẩn kỹ thuật.",
+        isCorrect: true,
+      },
+      {
+        content: "Càng căng càng tốt để xe tăng tốc nhanh hơn.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 265,
+    content:
+      "Âm lượng của còi điện lắp trên xe tham gia giao thông đường bộ yêu cầu an toàn kỹ thuật như thế nào?",
+    isCritical: false,
+    chapterCode: "CH04",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content: "Không nhỏ hơn 90 dB (A), không lớn hơn 115 dB (A).",
+        isCorrect: true,
+      },
+      {
+        content: "Không nhỏ hơn 70 dB (A), không lớn hơn 90 dB (A).",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 266,
+    content:
+      "Tác dụng chủ yếu của hệ thống phanh (thắng) trên xe mô tô hai bánh là gì?",
+    isCritical: false,
+    chapterCode: "CH04",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Dùng để giảm tốc độ, dừng hẳn xe hoặc giữ cố định xe khi dừng đỗ.",
+        isCorrect: true,
+      },
+      {
+        content: "Dùng để thay đổi mô men xoắn và hướng chuyển động.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 267,
+    content:
+      "Khi kiểm tra áp suất lốp (vỏ xe) của xe mô tô hai bánh, người lái xe nên tuân theo quy tắc nào?",
+    isCritical: false,
+    chapterCode: "CH04",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Kiểm tra định kỳ khi lốp nguội, áp suất khí nén phải đúng theo tiêu chuẩn quy định của nhà sản xuất.",
+        isCorrect: true,
+      },
+      {
+        content: "Bơm lốp thật căng để giảm diện tích tiếp xúc với mặt đường.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 268,
+    content:
+      "Đèn phanh (đèn báo tín hiệu dừng) phía sau xe mô tô có tác dụng gì?",
+    isCritical: false,
+    chapterCode: "CH04",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Cảnh báo cho các phương tiện phía sau biết xe đang giảm tốc độ để chủ động phòng tránh.",
+        isCorrect: true,
+      },
+      {
+        content: "Dùng để rọi đường phía sau khi đi ban đêm.",
+        isCorrect: false,
+      },
+    ],
+  },
+
+  // =========================================================================
+  // --- CH05: BÁO HIỆU ĐƯỜNG BỘ (5 câu độc nhất) ---
+  // =========================================================================
+  {
+    indexNumber: 301,
+    content:
+      "Biển báo hiệu có dạng hình tròn, viền đỏ, nền trắng, trên nền có hình vẽ hoặc chữ số màu đen là loại biển gì dưới đây?",
+    isCritical: false,
+    chapterCode: "CH05",
+    licenses: ["A1", "A", "B", "C", "D"],
+    answers: [
+      { content: "Biển báo nguy hiểm.", isCorrect: false },
+      { content: "Biển báo cấm.", isCorrect: true },
+      { content: "Biển báo chỉ dẫn.", isCorrect: false },
+    ],
+  },
+  {
+    indexNumber: 302,
+    content:
+      "Biển báo hiệu có dạng hình tam giác đều, viền đỏ, nền màu vàng, trên có hình vẽ màu đen là loại biển gì dưới đây?",
+    isCritical: false,
+    chapterCode: "CH05",
+    licenses: ["A1", "A", "B", "C"],
+    answers: [
+      { content: "Biển báo cấm.", isCorrect: false },
+      { content: "Biển báo nguy hiểm.", isCorrect: true },
+    ],
+  },
+  {
+    indexNumber: 303,
+    content:
+      "Biển báo hiệu có dạng hình chữ nhật hoặc hình vuông, nền màu xanh là loại biển gì?",
+    isCritical: false,
+    chapterCode: "CH05",
+    licenses: ["A1", "A", "B", "C"],
+    answers: [
+      { content: "Biển báo lệnh.", isCorrect: false },
+      { content: "Biển báo chỉ dẫn.", isCorrect: true },
+    ],
+  },
+  {
+    indexNumber: 304,
+    content: "Vạch kẻ đường màu vàng, nét đứt dùng để phân chia điều gì?",
+    isCritical: false,
+    chapterCode: "CH05",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Phạch phân chia hai chiều xe chạy ngược chiều nhau (tim đường).",
+        isCorrect: true,
+      },
+      {
+        content: "Vạch phân chia các làn xe chạy cùng chiều.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 305,
+    content: "Biển nào dưới đây báo hiệu 'Hết mọi lệnh cấm'?",
+    isCritical: false,
+    chapterCode: "CH05",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content: "Biển hình tròn nền trắng có các vạch đen chéo đè lên.",
+        isCorrect: true,
+      },
+      { content: "Biển báo hết giới hạn tốc độ tối đa.", isCorrect: false },
+    ],
+  },
+
+  // =========================================================================
+  // --- CH06: GIẢI THẾ SA HÌNH VÀ XỬ LÝ TÌNH HUỐNG (5 câu độc nhất) ---
+  // =========================================================================
+  {
+    indexNumber: 486,
+    content:
+      "Thứ tự các xe ưu tiên đi như thế nào là đúng quy tắc giao thông đường bộ Việt Nam?",
+    isCritical: false,
+    chapterCode: "CH06",
+    licenses: ["A1", "A", "B", "C"],
+    answers: [
+      { content: "Xe con, xe tải, xe khách.", isCorrect: false },
+      {
+        content: "Xe chữa cháy -> Xe quân sự, xe công an -> Xe cứu thương.",
+        isCorrect: true,
+      },
+    ],
+  },
+  {
+    indexNumber: 487,
+    content:
+      "Xe nào được quyền ưu tiên đi trước tại nơi đường giao nhau cùng cấp không có biển báo?",
+    isCritical: false,
+    chapterCode: "CH06",
+    licenses: ["A1", "A", "B", "C"],
+    answers: [
+      {
+        content: "Xe rẽ phải và xe đi thẳng hướng bên phải không vướng.",
+        isCorrect: true,
+      },
+      { content: "Xe rẽ trái được quyền đi trước.", isCorrect: false },
+    ],
+  },
+  {
+    indexNumber: 488,
+    content:
+      "Khi muốn vượt xe tải đi phía trước, người lái xe mô tô phải xử lý như thế nào là đúng luật?",
+    isCritical: false,
+    chapterCode: "CH06",
+    licenses: ["A1", "A", "B", "C"],
+    answers: [
+      {
+        content:
+          "Bật tín hiệu báo hiệu bằng đèn hoặc còi; khi đủ điều kiện an toàn mới được vượt.",
+        isCorrect: true,
+      },
+      {
+        content: "Tăng ga, nhanh chóng vượt qua phía bên phải.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 489,
+    content:
+      "Bạn xử lý như thế nào khi xe phía trước đang lùi ra khỏi điểm đỗ?",
+    isCritical: false,
+    chapterCode: "CH06",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content:
+          "Chờ xe phía trước lùi xong hoặc giảm tốc độ quan sát an toàn mới đi tiếp.",
+        isCorrect: true,
+      },
+      {
+        content: "Bấm còi liên tục và tăng tốc để lách qua.",
+        isCorrect: false,
+      },
+    ],
+  },
+  {
+    indexNumber: 490,
+    content:
+      "Tại ngã tư sa hình, một xe ô tô con đã tiến vào giao lộ vượt quá vạch dừng trước khi đèn đỏ bật sáng, xe đó phải làm gì?",
+    isCritical: true,
+    chapterCode: "CH06",
+    licenses: ["A1", "A", "B1", "B", "C"],
+    answers: [
+      {
+        content: "Được quyền tiếp tục di chuyển để thoát khỏi ngã tư.",
+        isCorrect: true,
+      },
+      { content: "Dừng lại ngay lập tức giữa ngã tư.", isCorrect: false },
     ],
   },
 ];

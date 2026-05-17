@@ -11,6 +11,7 @@ import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
 // 3. DI Container (Awilix)
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 
@@ -61,6 +62,7 @@ router.get(
  */
 router.get(
   "/me/topics/:topicId",
+  validateUuidParam("topicId"), 
   requirePermission("statistics:read"),
   topicStatsCtrl.getTopicDetail
 );

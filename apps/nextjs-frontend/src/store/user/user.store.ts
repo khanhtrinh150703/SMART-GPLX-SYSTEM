@@ -99,22 +99,41 @@ export const useUserStore = create<UserState>()(
          * @description Đăng xuất hoàn toàn (Full Logout)
          * Luồng xử lý: Lấy Token -> Gọi API -> Dọn dẹp Local
          */
-        logout: async () => {
-          // 1. LẤY TOKEN HIỆN TẠI TRƯỚC (Capture token first)
-          // Phải lấy trước khi clearLocalAuth chạy
+        logout: async (): Promise<void> => {
+          // 1. LẤY TOKEN HIỆN TẠI TRƯỚC (Capture current token)
+          // Phải lấy trước khi tiến hành dọn dẹp bộ nhớ cục bộ
           const token = get().accessToken;
 
-          // 2. GỌI API LOGOUT (Call API)
-          // Truyền token trực tiếp để đảm bảo API này luôn có "vé" để gửi đi
-          const logoutPromise = authService.logout(token ?? undefined);
+          // CƠ CHẾ PHÒNG VỆ SỚM (EARLY RETURN GUARD):
+          // Nếu mã xác thực (Token) không tồn tại (đã bị xóa hoặc hết hạn),
+          // dọn dẹp local, đồng bộ đa tab rồi thoát ngay, không gọi lên BE để tránh lỗi 401.
+          if (!token) {
+            get().clearLocalAuth(); // Dọn dẹp cục bộ (Local cleanup)
+            localStorage.setItem("logout-event", Date.now().toString()); // Đồng bộ đa tab (Multi-tab synchronization)
+            return; // Thoát hàm sớm (Exit function early)
+          }
 
-          // 3. DỌN DẸP LOCAL (Immediate Local Cleanup)
-          // Thực hiện ngay để bảo mật và UI phản hồi nhanh
+          // 2. GỌI API LOGOUT (Call logout API)
+          // Lúc này chắc chắn token hợp lệ tồn tại để gửi đi (Guaranteed token delivery)
+          const logoutPromise = authService.logout(token);
+
+          // 3. DỌN DẸP LOCAL LẬP TỨC (Immediate local cleanup)
+          // Thực hiện ngay để bảo mật và tối ưu hóa trải nghiệm người dùng (UX optimization)
           get().clearLocalAuth();
 
-          // 4. THÔNG BÁO CHO CÁC TAB KHÁC (Cross-tab broadcast)
+          // 4. THÔNG BÁO CHO CÁC TAB KHÁC (Cross-tab broadcast event)
           localStorage.setItem("logout-event", Date.now().toString());
-          await logoutPromise;
+
+          try {
+            // Đợi phản hồi kết quả từ máy chủ Backend (Await backend response)
+            await logoutPromise;
+          } catch (error: unknown) {
+            // Tuyệt đối không ném lỗi ra ngoài làm gián đoạn luồng trải nghiệm đăng xuất của UI
+            console.warn(
+              "[Auth Store Warning] Tiến trình xóa phiên phía Backend trả về lỗi:",
+              error,
+            );
+          }
         },
       }),
       {

@@ -10,24 +10,25 @@ import { validateFileSize } from "@/api/middlewares/shared";
 
 // 3. DI Container
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 
 // Lấy controller từ Dependency Injection Container (Awilix Proxy)
-const questionController = container.resolve("questionController") as QuestionController;
+const questionController = container.resolve(
+  "questionController",
+) as QuestionController;
 
 // Cấu hình upload dùng chung cho Question (Tránh lặp lại cấu hình fields)
 const questionUpload = upload.fields([
-  { name: 'imageFile', maxCount: 1 },    // Khớp với key imageFile từ FE
-  { name: 'answerImages', maxCount: 10 } // Khớp với key answerImages từ FE
+  { name: "imageFile", maxCount: 1 }, // Khớp với key imageFile từ FE
+  { name: "answerImages", maxCount: 10 }, // Khớp với key answerImages từ FE
 ]);
 
 // ============================================================================
 // NHÓM 1: CÔNG KHAI (PUBLIC SCOPE)
 // Các route này không cần authMiddleware để học viên có thể vào xem/ôn tập.
 // ============================================================================
-
-
 
 // ============================================================================
 // NHÓM 2: QUẢN LÝ (ADMIN & INSTRUCTOR SCOPE)
@@ -43,8 +44,8 @@ router.use(authMiddleware);
  */
 router.get(
   "/selection-pool",
-  requirePermission('questions:read'),
-  questionController.getSelectionPool
+  requirePermission("questions:read"),
+  questionController.getSelectionPool,
 );
 
 /**
@@ -52,14 +53,24 @@ router.get(
  * @route GET /api/v1/questions/chapter/:chapterId
  * @access Public/Private
  */
-router.get("/chapter/:chapterId", questionController.getByChapter);
+router.get(
+  "/chapter/:chapterId",
+  validateUuidParam("chapterId"),
+  requirePermission("questions:read"),
+  questionController.getByChapter,
+);
 
 /**
  * @description Lấy thông tin chi tiết của một câu hỏi theo ID.
  * @route GET /api/v1/questions/:id
  * @access Public/Private
  */
-router.get("/:id", questionController.getById);
+router.get(
+  "/:id",
+  validateUuidParam("id"),
+  requirePermission("questions:read"),
+  questionController.getById,
+);
 
 /**
  * Quản lý danh sách câu hỏi tại root path "/"
@@ -70,22 +81,25 @@ router.get("/:id", questionController.getById);
  * @route GET /api/v1/questions
  * @access Private (Admin/Instructor) - Yêu cầu vé questions:read
  */
-router.get("/", requirePermission('questions:read'), questionController.list);
+router.get("/", requirePermission("questions:read"), questionController.list);
 
-router.route("/")
+router.use(requirePermission("questions:manage"));
+
+router
+  .route("/")
   /**
    * @description Tạo mới một câu hỏi cùng các phương án trả lời.
    * @route POST /api/v1/questions
    * @access Private (Admin/Instructor) - Yêu cầu vé questions:manage
    */
-  .post(requirePermission('questions:manage'), validateFileSize(questionUpload), questionController.create);
-
-router.use(requirePermission('questions:manage'));
+  .post(validateFileSize(questionUpload), questionController.create);
 
 /**
  * Quản lý chi tiết câu hỏi tại path "/:id"
  */
-router.route("/:id")
+router
+  .route("/:id")
+  .all(validateUuidParam("id"))
   /**
    * @description Cập nhật thông tin câu hỏi và nội dung các đáp án.
    * @route PUT /api/v1/questions/:id
@@ -105,6 +119,10 @@ router.route("/:id")
  * @route PATCH /api/v1/questions/:id/restore
  * @access Private (Admin/Instructor) - Yêu cầu vé questions:manage
  */
-router.patch("/:id/restore", questionController.restore);
+router.patch(
+  "/:id/restore",
+  validateUuidParam("id"),
+  questionController.restore,
+);
 
 export default router;

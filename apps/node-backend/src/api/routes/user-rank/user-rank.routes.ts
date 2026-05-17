@@ -8,6 +8,7 @@ import { authMiddleware } from "@/api/middlewares/identity";
 
 // 3. DI Container (Giải nén phụ thuộc Awilix)
 import { container } from "@/shared/utils/container";
+import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 const controller = container.resolve(
@@ -19,14 +20,22 @@ const controller = container.resolve(
  * @route GET /api/v1/leaderboard/exams/:examId
  * @access Public (Công khai - Ai cũng có thể xem thành tích)
  */
-router.get("/exams/:examId", controller.getExamLeaderboard);
+router.get(
+  "/exams/:examId",
+  validateUuidParam("examId"),
+  controller.getExamLeaderboard,
+);
 
 /**
  * @description Lấy bảng xếp hạng tổng quát theo hạng bằng lái.
  * @route GET /api/v1/leaderboard/categories/:categoryId
  * @access Public (Công khai)
  */
-router.get("/categories/:categoryId", controller.getCategoryLeaderboard);
+router.get(
+  "/categories/:categoryId",
+  validateUuidParam("categoryId"),
+  controller.getCategoryLeaderboard,
+);
 
 /**
  * @description  Lấy danh sách kỷ lục cá nhân tốt nhất của người dùng hiện tại.

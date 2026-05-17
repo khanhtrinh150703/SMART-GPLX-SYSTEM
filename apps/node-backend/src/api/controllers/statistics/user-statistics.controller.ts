@@ -1,5 +1,9 @@
+import { SyncRankRequestDTO } from "@/application/dtos/request/user-rank/user-rank.request.dto";
 import { Result } from "@/application/dtos/response/shared/api.response.dto";
-import { IUserStatisticsQueryService, IUserStatisticsService } from "@/domain/interfaces/services";
+import {
+  IUserStatisticsQueryService,
+  IUserStatisticsService,
+} from "@/domain/interfaces/services";
 import { Message } from "@/shared/errors/messages/success-messages-vn";
 import { IAuthRequest } from "@/shared/types/authRequest.types";
 import { catchAsync } from "@/shared/utils/catch-async.utils";
@@ -29,7 +33,10 @@ export class UserStatisticsController {
    * @constructor
    * @description Khởi tạo thông qua cơ chế tiêm phụ thuộc của Awilix.
    */
-  constructor({ userStatsQueryService, userStatsService }: IUserStatisticsControllerCradle) {
+  constructor({
+    userStatsQueryService,
+    userStatsService,
+  }: IUserStatisticsControllerCradle) {
     this._queryService = userStatsQueryService;
     this._commandService = userStatsService;
   }
@@ -45,31 +52,26 @@ export class UserStatisticsController {
 
     // 2. Gọi Query Service để lấy thực thể Domain
     const result = await this._queryService.getUserSummary(userId);
-    
+
     // 3. Trả về response chuẩn mực của hệ thống
     Result.ok(
       res,
       result,
       Message.STATISTICS.FETCH_SUCCESS,
-      'STATS_FETCH_SUCCESS'
+      "STATS_FETCH_SUCCESS",
     );
   });
 
   /**
-   * @description Yêu cầu đồng bộ thủ công thống kê (Dùng cho các trường hợp đặc biệt/Fix lỗi).
+   * @description Yêu cầu đồng bộ thủ công thống kê .
    * @route POST /api/v1/statistics/sync
    * @access Private (Internal/Admin)
    */
   public manualSync = catchAsync(async (req: IAuthRequest, res: Response) => {
     // Lưu ý: Thường việc đồng bộ được thực hiện tự động sau khi nộp bài (Nhịp 2).
-    // Hàm này phục vụ việc tái tính toán nếu dữ liệu có sai lệch.
-    await this._commandService.syncUserStats(req.body);
+    const dto = new SyncRankRequestDTO(req.body);
+    await this._commandService.syncUserStats(dto);
 
-    Result.ok(
-      res,
-      null,
-      Message.STATISTICS.SYNC_SUCCESS,
-      'STATS_SYNC_SUCCESS'
-    );
+    Result.ok(res, null, Message.STATISTICS.SYNC_SUCCESS, "STATS_SYNC_SUCCESS");
   });
 }

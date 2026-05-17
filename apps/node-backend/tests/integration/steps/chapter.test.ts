@@ -303,10 +303,9 @@ export const chapterSteps = (
           .patch(CHAPTER_ENDPOINTS.RESTORE(getChapterId()))
           .set(getAuthHeader(getAdminToken()))
           .send();
-
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe(Message.CHAPTER.RESTORE_SUCCESS); // Đổi sang Message.CHAPTER
+        expect(res.body.message).toBe(Message.CHAPTER.RESTORE_SUCCESS);
       });
     });
   });

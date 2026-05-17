@@ -11,7 +11,7 @@ export interface FormFieldConfig {
 
 // Cấu hình (Schema) cho Form Đăng ký
 export const REGISTER_FORM_FIELDS: FormFieldConfig[] = [
-  { name: 'username', label: 'Tên đăng nhập', type: 'text', placeholder: 'VD: trinh_cau_vang', required: true },
+  { name: 'username', label: 'Tên đăng nhập', type: 'text', placeholder: 'VD: cau_vang', required: true },
   { name: 'email', label: 'Địa chỉ Email', type: 'email', placeholder: 'VD: hocvien@gmail.com', required: true },
   { name: 'password', label: 'Mật khẩu', type: 'password', placeholder: 'Ít nhất 8 ký tự', required: true },
   { name: 'confirmPassword', label: 'Xác nhận mật khẩu', type: 'password', placeholder: 'Nhập lại mật khẩu', required: true },

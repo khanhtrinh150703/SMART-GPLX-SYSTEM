@@ -185,20 +185,24 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
       query.sortBy === "status" ? "deletedAt" : query.sortBy || "name";
     const sortOrder = query.sortOrder || "asc";
 
-    // Khởi tạo mảng orderBy với kiểu chuẩn của Prisma
+    // Khởi tạo mảng orderBy với kiểu chuẩn của Prisma 
     const orderBy: Prisma.LicenseCategoryOrderByWithRelationInput[] = [];
 
-    // Ưu tiên 1: Gom nhóm theo trạng thái xóa (DeletedAt)
+    // Ưu tiên 1: Gom nhóm theo trạng thái xóa (deletedAt) dựa trên cấu hình truyền vào
     orderBy.push({ deletedAt: sortOrder });
 
-    // Ưu tiên 2: Nếu người dùng sort field khác, thêm vào làm tiêu chí phụ
-    if (sortField !== "deletedAt") {
+    // Ưu tiên 2: Sắp xếp theo chỉ mục hiển thị định sẵn (orderIndex)
+    const orderIndexDirection = sortField === "orderIndex" ? sortOrder : "asc";
+    orderBy.push({ orderIndex: orderIndexDirection });
+
+    // Ưu tiên 3: Nếu người dùng sắp xếp một trường khác (không trùng với deletedAt và orderIndex), thêm vào làm tiêu chí phụ
+    if (sortField !== "deletedAt" && sortField !== "orderIndex") {
       orderBy.push({
         [sortField]: sortOrder,
       } as Prisma.LicenseCategoryOrderByWithRelationInput);
     }
 
-    // Ưu tiên 3: Tie-breaker theo tên để danh sách luôn ổn định
+    // Ưu tiên 4: Tie-breaker theo tên để danh sách trả về luôn luôn ổn định, tránh nhảy dòng dữ liệu
     if (sortField !== "name") {
       orderBy.push({ name: "asc" });
     }
@@ -209,7 +213,7 @@ export class MySQLLicenseCategoryRepository implements ILicenseCategoryRepositor
         where,
         skip,
         take: limit,
-        orderBy: orderBy, // Truyền mảng orderBy đã build
+        orderBy: orderBy, // Truyền mảng orderBy đã build theo đúng thứ tự phân cấp mới
       }),
       this._prisma.licenseCategory.count({ where }),
     ]);

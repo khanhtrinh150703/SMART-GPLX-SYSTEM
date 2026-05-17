@@ -18,7 +18,7 @@ export class ExamMatrixQueryDTO extends BaseQueryDTO {
    * @param {Record<string, unknown>} data
    */
   constructor(data: Record<string, unknown>) {
-    super();
+    super(data);
 
     // 1. Phân trang & Sắp xếp (Kế thừa và chuẩn hóa từ BaseQueryDTO)
     this.page = data.page ? Math.max(1, Number(data.page)) : 1;

@@ -1,0 +1,37 @@
+# Stage 1: Build ứng dụng
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Sao chép file package từ gốc và frontend
+COPY package*.json ./
+COPY apps/nextjs-frontend/package*.json ./apps/nextjs-frontend/
+
+# Cài đặt dependencies
+RUN npm ci
+
+# Sao chép toàn bộ mã nguồn
+COPY . .
+
+# Chạy lệnh next build thông qua workspace
+RUN npm run build -w nextjs-frontend
+
+# Stage 2: Runner - Môi trường chạy Production
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Sao chép file package cấu hình hệ thống
+COPY package*.json ./
+COPY apps/nextjs-frontend/package*.json ./apps/nextjs-frontend/
+
+# Sao chép các thư mục phục vụ vận hành từ stage builder sang
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/nextjs-frontend/.next ./apps/nextjs-frontend/.next
+COPY --from=builder /app/apps/nextjs-frontend/public ./apps/nextjs-frontend/public
+COPY --from=builder /app/apps/nextjs-frontend/next.config.ts ./apps/nextjs-frontend/next.config.ts
+
+EXPOSE 3000
+
+# Chạy lệnh next start -p 3000 thông qua workspace
+CMD ["npm", "start", "-w", "nextjs-frontend"]

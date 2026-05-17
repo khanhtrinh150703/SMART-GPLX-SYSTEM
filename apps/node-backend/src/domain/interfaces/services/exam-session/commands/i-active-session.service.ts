@@ -32,12 +32,6 @@ export interface IActiveSessionService {
         dto: UpdateAnswerRequestDTO,
     ): Promise<IActiveSessionResponseDTO>;
 
-    /**
-     * @description Lấy thông tin phiên làm bài hiện tại để phục hồi trạng thái giao diện (Resume UI).
-     * @param {string} userId - ID người dùng.
-     * @returns {Promise<IActiveSessionResponseDTO | null>}
-     */
-    getCurrentSession(userId: string): Promise<IActiveSessionResponseDTO | null>;
 
     /**
      * @description Xóa toàn bộ phiên làm việc của một người dùng (Dùng khi đăng xuất hoặc hoàn thành bài).

@@ -28,8 +28,8 @@ export const authSchemas = {
     type: "object",
     required: ["username", "email", "password", "confirmPassword"],
     properties: {
-      username: { type: "string", minLength: 3, example: "trinh_dev" },
-      email: { type: "string", format: "email", example: "trinh@example.com" },
+      username: { type: "string", minLength: 3, example: "cauvang_dev" },
+      email: { type: "string", format: "email", example: "cauvang@example.com" },
       password: { type: "string", minLength: 8, example: "StrongPass@123" },
       confirmPassword: { type: "string", example: "StrongPass@123" },
     },
@@ -42,7 +42,7 @@ export const authSchemas = {
     type: "object",
     required: ["email", "otp"],
     properties: {
-      email: { type: "string", format: "email", example: "trinh@example.com" },
+      email: { type: "string", format: "email", example: "user@example.com" },
       otp: { type: "string", minLength: 6, maxLength: 6, example: "123456" },
     },
   },
@@ -54,7 +54,7 @@ export const authSchemas = {
     type: "object",
     required: ["username", "password"],
     properties: {
-      username: { type: "string", example: "trinh_dev" },
+      username: { type: "string", example: "user_dev" },
       password: { type: "string", example: "Password@123" },
     },
   },
@@ -80,7 +80,7 @@ export const authSchemas = {
   UpdateProfileInputDTO: {
     type: "object",
     properties: {
-      fullName: { type: "string", example: "Nguyễn Văn Trinh" },
+      fullName: { type: "string", example: "Nguyễn Văn User" },
       phoneNumber: { type: "string", example: "0901234567" },
       avatarFile: {
         type: "string",
@@ -111,7 +111,7 @@ export const authSchemas = {
     type: "object",
     required: ["email", "otp", "newPassword"],
     properties: {
-      email: { type: "string", format: "email", example: "trinh@example.com" },
+      email: { type: "string", format: "email", example: "user@example.com" },
       otp: { type: "string", minLength: 6, maxLength: 6, example: "123456" },
       newPassword: { type: "string", minLength: 6, example: "NewPass@123" },
     },
