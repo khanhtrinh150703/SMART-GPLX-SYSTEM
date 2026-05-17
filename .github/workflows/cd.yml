@@ -1,23 +1,31 @@
 name: Project CD - Build & Push Images
 
 on:
-  push: 
-    branches: [main, develop]
+  push:
+    branches:
+      - main
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
+    
+    env:
+      REPO_LOWER: ""
+      
     steps:
       - name: 🛰️ Checkout Repository
         uses: actions/checkout@v4
+
+      - name: 🔤 Chuyển tên Repo thành chữ thường
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: 🔐 Login to GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }} 
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐳 Build & Push Backend Image
         uses: docker/build-push-action@v5
@@ -25,7 +33,7 @@ jobs:
           context: .
           file: ./Dockerfile.backend
           push: true
-          tags: ghcr.io/${{ github.repository }}/backend:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/backend:latest # Thay đổi ở đây: dùng env.REPO_LOWER
 
       - name: 🐳 Build & Push Frontend Image
         uses: docker/build-push-action@v5
@@ -33,4 +41,4 @@ jobs:
           context: .
           file: ./Dockerfile.frontend
           push: true
-          tags: ghcr.io/${{ github.repository }}/frontend:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/frontend:latest # Thay đổi ở đây: dùng env.REPO_LOWER
