@@ -8,12 +8,18 @@
         "forceConsistentCasingInFileNames": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "sourceMap": true, 
-        "inlineSourceMap": false, 
+        "sourceMap": true,
+        "inlineSourceMap": false,
         "declaration": true,
         "paths": {
-            "@/*": ["./src/*"]
+            "@/*": [
+                "./src/*"
+            ]
         }
     },
-    "include": ["src/**/*", "tests/**/*", "../../exam-matrix.record.ts"]
+    "include": [
+        "src/**/*",
+        "tests/**/*",
+        "prisma/**/*"
+    ]
 }

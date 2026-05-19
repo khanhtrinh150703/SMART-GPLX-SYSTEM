@@ -1,53 +1,42 @@
 # ==========================================
-# STAGE 1: Builder - Cài đặt devDependencies và biên dịch code
+# STAGE 1: Builder - Cài đặt, Biên dịch và Xử lý Alias
 # ==========================================
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy các file quản lý package từ gốc và của riêng backend vào để tận dụng cache
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
+COPY tsconfig*.json ./
+COPY apps/node-backend/tsconfig*.json ./apps/node-backend/
 
-# Cài đặt toàn bộ dependencies (bao gồm cả dev để chạy lệnh build tsc)
 RUN npm ci
-
-# Copy toàn bộ mã nguồn của dự án vào container
 COPY . .
 
-# Tạo Prisma Client chuẩn xác dựa trên schema của bồ
 RUN npm run db:gen -w node-backend
-
-# Nhảy vào thư mục backend và biên dịch TypeScript sang JavaScript
 RUN cd apps/node-backend && npm run build
 
+# 🎯 BƯỚC QUYẾT ĐỊNH: Xử lý alias cho toàn bộ thư mục dist (bao gồm cả server lẫn seed nằm trong dist)
+RUN npx --yes tsc-alias -p apps/node-backend/tsconfig.json
+
 # ==========================================
-# STAGE 2: Runner - Môi trường chạy Production tinh gọn, bảo mật
+# STAGE 2: Runner - Môi trường chạy Production tinh gọn
 # ==========================================
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Tạo sẵn cấu trúc thư mục chứa ứng dụng
-RUN mkdir -p apps/node-backend
-
-# Copy lại file package để cài dependencies chạy thật
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
-# Chỉ cài đặt các thư viện sản xuất (--omit=dev) cho riêng workspace backend
-RUN npm ci --omit=dev -w node-backend
+RUN npm ci --omit=dev
+RUN npm install prisma @prisma/client
 
-RUN npm install tsconfig-paths -w node-backend
-
-# Copy Prisma Client đã được biên dịch từ Stage 1 sang Stage 2
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-
-# Copy thư mục dist (chứa code .js đã build) sang Stage 2
+COPY --from=builder /app/apps/node-backend/prisma ./apps/node-backend/prisma
 COPY --from=builder /app/apps/node-backend/dist ./apps/node-backend/dist
 
-# Mở cổng 5000 cho backend
 EXPOSE 5000
 
-CMD ["node", "-r", "./apps/node-backend/node_modules/tsconfig-paths/register", "apps/node-backend/dist/src/server.js"]
+CMD npx prisma db push --accept-data-loss --schema=apps/node-backend/prisma/schema.prisma && node apps/node-backend/dist/prisma/seed.main.js && node apps/node-backend/dist/src/server.js

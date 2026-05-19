@@ -3,7 +3,8 @@ import { IExamSeed } from "./interface.seed";
 export const mockExams: IExamSeed[] = [
   {
     name: "Đề thi mẫu Hạng A1 - Số 01",
-    userEmail: "admin@smartgplx.com", 
+    // 🎯 Đọc động từ biến môi trường admin email đã thiết lập ở file .env
+    userEmail: process.env.SEED_ADMIN_EMAIL || "admin@smartgplx.com", 
     licenseName: "A1",
     isChapter: false,
     totalQuestions: 25,
@@ -13,7 +14,8 @@ export const mockExams: IExamSeed[] = [
   },
   {
     name: "Đề thi mẫu Hạng A1 - Số 02",
-    userEmail: "admin@smartgplx.com",
+    // 🎯 Đồng bộ tương tự cho toàn bộ các đề thi mẫu khác
+    userEmail: process.env.SEED_ADMIN_EMAIL || "admin@smartgplx.com",
     licenseName: "A1",
     isChapter: false,
     totalQuestions: 25,
