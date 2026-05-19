@@ -2,6 +2,9 @@ name: Project CD - Build & Push Images
 
 on:
   push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 jobs:
   build-and-publish:
@@ -35,7 +38,7 @@ jobs:
           context: .
           file: ./Dockerfile.backend
           push: true
-          tags: ghcr.io/${{ env.REPO_LOWER }}/backend:latest # Thay đổi ở đây: dùng env.REPO_LOWER
+          tags: ghcr.io/${{ env.REPO_LOWER }}/backend:latest 
 
       - name: 🐳 Build & Push Frontend Image
         uses: docker/build-push-action@v5
@@ -43,4 +46,4 @@ jobs:
           context: .
           file: ./Dockerfile.frontend
           push: true
-          tags: ghcr.io/${{ env.REPO_LOWER }}/frontend:latest # Thay đổi ở đây: dùng env.REPO_LOWER
+          tags: ghcr.io/${{ env.REPO_LOWER }}/frontend:latest

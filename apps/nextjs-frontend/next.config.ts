@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
   images: {
     // 1. Cấp phép cho Next.js tối ưu ảnh từ các nguồn tuyệt đối
     remotePatterns: [
