@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils/utils";
-
+import { StrictMode } from "react";
 /**
  * Cấu hình phông chữ Inter chuyên dụng cho UI/UX.
  * - subsets: ["vietnamese"] - Đảm bảo hiển thị đúng dấu tiếng Việt.
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: "Smart GPLX System | Hệ thống đào tạo lái xe thông minh",
   description: "Hệ thống sát hạch và quản lý giấy phép lái xe tích hợp AI.",
   icons: {
-    icon: "/Smart.png", 
+    icon: "/Smart.png",
   },
 };
 
@@ -43,7 +43,7 @@ export default function RootLayout({
           inter.className, // Áp dụng trực tiếp phông chữ Inter cho body
         )}
       >
-        {children}
+        <StrictMode>{children}</StrictMode>
       </body>
     </html>
   );

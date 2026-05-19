@@ -1,0 +1,10 @@
+node_modules
+.git
+.github
+.husky
+.vscode
+apps/nextjs-frontend/.next
+apps/nextjs-frontend/out
+apps/node-backend/dist
+loki-data
+.env*

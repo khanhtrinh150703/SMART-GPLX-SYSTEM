@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Đang chạy giả lập 'act' để check TEST và LINT dưới local trước khi PUSH..."
+
+# Chỉ chạy duy nhất file workflow ci.yml, tự động xóa container sau khi chạy xong (--rm)
+act -W .github/workflows/ci.yml --rm --container-architecture linux/amd64
+
+# Nếu 'act' chạy lỗi (exit code khác 0), Husky sẽ tự chặn đứng lệnh git push lại
+if [ $? -ne 0 ]; then
+  echo "❌ 'act' phát hiện lỗi test hoặc linter! Vui lòng sửa lại trước khi push lên GitHub."
+  exit 1
+fi
+
+echo "✅ Tất cả các bài test đã PASS dưới local! Tiến hành push code lên GitHub..."

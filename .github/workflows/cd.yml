@@ -1,0 +1,49 @@
+name: Project CD - Build & Push Images
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      
+    env:
+      REPO_LOWER: ""
+
+    steps:
+      - name: 🛰️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔤 Chuyển tên Repo thành chữ thường
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: 🔐 Login to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Build & Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: ghcr.io/${{ env.REPO_LOWER }}/backend:latest 
+
+      - name: 🐳 Build & Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: ghcr.io/${{ env.REPO_LOWER }}/frontend:latest

@@ -28,7 +28,6 @@ export function GenericTable<T extends { id: string | number }>({
   data, 
   onEdit, 
   onDelete,
-  isLoading 
 }: GenericTableProps<T>) {
   return (
     <div className="w-full bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-soft border border-white/80 overflow-hidden">

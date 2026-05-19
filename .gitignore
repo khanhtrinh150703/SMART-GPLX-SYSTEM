@@ -111,9 +111,6 @@ uploads/
 #          Docker / DevOps
 # =====================================
 docker-compose.override.yml
-*.dockerignore
-Dockerfile.*
-Dockerfile
 
 # =====================================
 #          Deployment / CI
@@ -141,7 +138,7 @@ Dockerfile
 # scratch/
 # experiments/
 # backup/
-uploads/
 storage/temp
-public/
+public/uploads
 temp/
+.clinic

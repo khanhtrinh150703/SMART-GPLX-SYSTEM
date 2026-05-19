@@ -57,6 +57,7 @@ export const AiPreview = ({
             src={imageSrc}
             alt={title}
             fill
+            priority
             className="object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700"
           />
 

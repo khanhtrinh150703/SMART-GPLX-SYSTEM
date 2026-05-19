@@ -119,7 +119,6 @@ export class MongoExamAttemptRepository implements IExamAttemptRepository {
     ]);
 
     // 3. Mapping: Chuyển đổi từ dữ liệu thô sang Domain Entity
-    // Đây là bước quan trọng nhất để không bị "chém" này Trinh!
     const entities = rawRecords.map((raw) => ExamAttemptMapper.toDomain(raw));
 
     return [entities, total];

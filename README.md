@@ -16,7 +16,7 @@ npm run dev:be
 npm run dev:fe
 
 # AI Engine
-cd ai-engine && python src/main.py
+cd apps/ai-engine && python src/main.py
 ```
 
 ## 🏗️ Kiến Trúc Hệ Thống (Core Modules)
@@ -24,7 +24,7 @@ cd ai-engine && python src/main.py
 Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn kết:
 
 1. **Authentication & Security (RBAC):** Kiểm soát truy cập dựa trên vai trò và quyền hạn chi tiết (Permissions).
-2. **Knowledge & Question Bank:** Ngân hàng câu hỏi thông minh với cơ chế **Soft Delete**. 
+2. **Knowledge & Question Bank:** Ngân hàng câu hỏi thông minh với cơ chế **Soft Delete**.
 3. **Exam Engine:** Tự động sinh đề thi theo **Ma trận đề (Exam Matrix)** chuẩn Bộ GTVT.
 4. **Execution & Audit:** Ghi lại nhật ký thi chi tiết, phục vụ thống kê và làm dữ liệu đầu vào cho AI.
 5. **AI & Analytics:** "Bộ não" của hệ thống với khả năng giải thích luật (LLM) và học tập thích ứng (Adaptive Learning).
@@ -41,7 +41,6 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 - [📝 Giấy phép](#-giấy-phép)
 ---
 
-
 ## 🛠️ Công Nghệ Sử Dụng
 
 ### **Backend (Node.js/Express)**
@@ -50,147 +49,162 @@ Hệ thống được chia thành 5 phân hệ cốt lõi hoạt động gắn k
 * **Language:** TypeScript
 * **ORM:** Prisma / TypeORM
 * **Architecture:** Clean Architecture & Domain-Driven Design (DDD)
-* **Database:** MySQL & Redis (Caching/Queue)
+* **Database:** MySQL, MongoDB Atlas & Redis (Caching/Queue)
 * **Background Jobs:** BullMQ
+* **Testing Framework:** Jest (Integration Testing)
 * **Security & Auth:** JWT, Nodemailer
 * **API Documentation:** Swagger (OpenAPI 3.0)
 
-### **Frontend (Nextjs)**
+### **Frontend (Next.js)**
 
-* **Framework:** Nextjs
+* **Framework:** Next.js (App Router)
 * **Language:** TypeScript
 * **State Management:** Zustand
 * **Styling:** Tailwind CSS, Shadcn/UI
 
 ### **AI Engine (Python/FastAPI)**
 
+* **Status:** 🛠️ (Đang trong quá trình phát triển)
 * **Framework:** FastAPI
 * **CV Models:** YOLO (Object Detection), OCR (EasyOCR/PaddleOCR)
 * **Logic:** Pydantic, OpenCV, PyTorch/TensorFlow
 
 ### **DevOps & Monitoring**
-* **Containerization** Docker & Docker Compose .
-* **Logging:** Grafana Loki .
-* **Metrics:** Prometheus & Grafana Dashboard.
-* **Error Tracking:** Sentry.
 
+* **Containerization:** Docker & Docker Compose
+* **Logging:** Grafana Loki
+* **Metrics:** Prometheus & Grafana Dashboard
 
 ## 🚀 CI/CD Pipeline (GitHub Actions)
 
 Dự án sử dụng **GitHub Actions** để tự động hóa quy trình phát triển và deploy, đảm bảo code luôn chất lượng cao trước khi merge.
 
 ### Tính năng chính của pipeline
-* Linting: ESLint + Prettier (JS/TS), Ruff/Black (Python).
 
-* Testing: Unit & Integration tests (Jest/Vitest cho Frontend/Backend, pytest cho AI).
-
-* Build: Tự động build Docker images cho toàn bộ hệ thống.
-
-* Security Scan: Quét lỗ hổng (npm audit, pip-audit, Trivy).
-
-* Preview Deploy: Vercel (Frontend), Railway/Render (Backend).
+* **Linting:** ESLint + Prettier (JS/TS), Ruff/Black (Python).
+* **Testing:** Unit & Integration tests (Jest/Vitest cho Frontend/Backend, pytest cho AI).
+* **Build:** Tự động build Docker images cho toàn bộ hệ thống.
+* **Security Scan:** Quét lỗ hổng (npm audit, pip-audit, Trivy).
 
 ### Workflow chính
-- **`ci.yml`** — Chạy trên mọi **push** và **pull_request** (lint + test + build + scan)
-- **`cd.yml`** — Deploy tự động khi merge vào `main` (hoặc manual dispatch)
+
+* **`ci.yml`** — Chạy trên mọi **push** (lint + test + build + scan)
+* **`cd.yml`** — Deploy tự động, build và push image lên GHCR
 
 ## 📁 Cấu Trúc Thư Mục
 
-Dự án được tổ chức theo mô hình Monorepo hoặc tách biệt 3 Repo chính:
+Dự án được tổ chức theo mô hình Workspace, tách biệt rõ ràng các môi trường:
 
-### 1. Backend (`smart-gplx-backend/`)
+### 1. Backend (`node-backend/`)
 
-Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng:
+Tổ chức theo tầng để tách biệt Logic nghiệp vụ và Hạ tầng (Modular Monolith + Clean Architecture):
 
-## 📂 Folder Structure
-
-```bash
-src/
-├── api/                          # Tầng trình bày (Presentation Layer)
-│   ├── controllers/              # Xử lý request/response, gọi service
-│   ├── middlewares/              # Các middleware (auth, validation, error handling...)
-│   └── routes/                   # Định nghĩa các route API
+```text
+node-backend/
+├── prisma/                               # Quản lý cơ sở dữ liệu MySQL (Prisma ORM)
+│   ├── data/                             # File seed dữ liệu mẫu (Mock data)
+│   │   ├── exam.seed.ts                  # Ví dụ: Seed dữ liệu đề thi lý thuyết
+│   │   └── index.ts
+│   └── schema.prisma                     # Định nghĩa Database Schema chính
 │
-├── application/                  # Tầng ứng dụng (Application Layer)
-│   ├── dtos/                     # Data Transfer Objects - Dữ liệu truyền giữa các tầng
-│   └── services/                 # Business logic chính (Use Cases)
+├── public/uploads/                       # Thư mục tĩnh lưu trữ files upload công khai
 │
-├── domain/                       # Tầng Domain - Core của ứng dụng (Business Logic thuần)
-│   ├── constants/                # Các hằng số dùng chung trong domain
-│   ├── entities/                 # Các Entity chính (User, Exam, Question...)
-│   └── interfaces/               # Interface repository, service... (không phụ thuộc công nghệ)
+├── src/
+│   ├── api/                              # Tầng Trình Bày (Presentation Layer)
+│   │   ├── controllers/                  # Tiếp nhận request, gọi service xử lý và trả response
+│   │   │   ├── exam-mgmt/                # Ví dụ: Controller điều hướng phân hệ quản lý đề thi
+│   │   │   └── index.ts
+│   │   ├── middlewares/                  # Các bộ lọc xử lý trung gian (auth, validation, errors...)
+│   │   └── routes/                       # Định nghĩa các endpoint API hệ thống
+│   │       └── exam-mgmt/                # Ví dụ: Tuyến đường API phân hệ thi
+│   │
+│   ├── application/                      # Tầng Ứng Dụng (Application Layer)
+│   │   ├── dtos/                         # Data Transfer Objects (Chuẩn hóa dữ liệu Request/Response)
+│   │   └── services/                     # Business Logic chính của hệ thống (Use Cases)
+│   │       ├── cache/                    # Logic lưu trữ bộ nhớ đệm (Redis Leaderboard)
+│   │       └── exam-engine/              # Động cơ xử lý logic phòng thi chính
+│   │
+│   ├── domain/                           # Tầng Nghiệp Vụ Lõi (Core Domain - Chứa entities, interfaces thuần)
+│   │
+│   ├── infrastructure/                   # Tầng Hạ Tầng (Infrastructure Layer - Phụ thuộc công nghệ)
+│   │   ├── database/                     # Quản lý kết nối, mappers và NoSQL
+│   │   │   ├── mappers/                  # Chuyển đổi qua lại giữa DB Model và Domain Entity
+│   │   │   ├── mongoose/models/          # Schema MongoDB quản lý Active Session tạm thời (TTL)
+│   │   │   └── redis/                    # Khởi tạo cấu hình kết nối Redis Client
+│   │   ├── logging/                      # Hệ thống ghi nhật ký hoạt động (Winston Logger)
+│   │   ├── persistence/                  # Khai báo cấu trúc bản ghi lưu trữ vật lý (Records)
+│   │   ├── queues/                       # Hàng đợi tin nhắn xử lý bất đồng bộ (RabbitMQ/BullMQ)
+│   │   ├── repositories/                 # Triển khai (Implement) các Interface dữ liệu từ Domain
+│   │   │   ├── exam-mgmt/                # Ví dụ: Cụ thể hóa các truy vấn MySQL cho phân hệ thi
+│   │   │   └── repository-proxy.ts       # Proxy điều phối cơ chế truy vấn/ghi dữ liệu
+│   │   └── security/                     # Quản lý bảo mật (Cấp phát/Xác thực mã JWT Token)
+│   │
+│   ├── shared/                           # Các module dùng chung xuyên suốt toàn dự án
+│   │   ├── config/                       # Quản lý và nạp cấu hình biến môi trường (.env)
+│   │   ├── errors/                       # Định nghĩa và chuẩn hóa mã lỗi tập trung
+│   │   └── utils/                        # Các hàm tiện ích bổ trợ hệ thống
+│   │
+│   ├── app.ts                            # Khởi tạo và cấu hình ứng dụng Express
+│   └── server.ts                         # Khởi động server (Listen Port)
 │
-├── infrastructure/               # Tầng hạ tầng (Infrastructure Layer)
-│   ├── database/                 # Kết nối và thao tác với Database
-│   │   ├── mappers/              # Chuyển đổi giữa Entity và Model DB
-│   │   └── redis/                # Logic liên quan đến Redis
-│   ├── external-services/        # Kết nối với các dịch vụ bên thứ 3
-│   │   └── mailer/
-│   │       └── mailer.service.ts # Ví dụ: Gửi email
-│   ├── persistence
-│   ├── logging/                  # Hệ thống logging
-│   │   └── winston.logger.ts
-│   ├── repositories/             # Implement các interface từ Domain
-│   │   ├── mysql/                # Repository cho MySQL
-│   │   └── redis/                # Repository cho Redis
-│   ├── security/                 # Quản lý bảo mật (JWT token manger)
-│   └── swagger/                  # Cấu hình Swagger/OpenAPI
-│  
-├── shared/                       # Các module dùng chung toàn dự án
-│   ├── errors/                   # Quản lý lỗi tập trung
-│   ├── config/                   # Quản lý config
-│   ├── responses/                # Chuẩn hóa Response API
-│   ├── types/                    # Định nghĩa Types/Interfaces dùng chung
-│   └── utils/                    # Các hàm tiện ích bổ trợ
-│ 
-├── app.ts                        # Cấu hình Express/Fastify app (middleware, routes...)
-├── server.ts                     # Khởi động server
-├── tests/                        # Thư mục chứa test (unit, integration, e2e)
-├── .env                          # Biến môi trường
-├── Dockerfile                    # Docker configuration
-├── eslint.config.mjs
-├── jest.config.js
-├── package-lock.json
-├── package.json
-└── tsconfig.json
+├── storage/temp/                         # Lưu trữ tệp tin tạm thời trong bộ nhớ đệm
+└── tests/                                # Viết các kịch bản kiểm thử tích hợp (Integration Test Backend)
+
 ```
-  
+
 ### 2. Frontend (`nextjs-frontend/`)
 
-Tổ chức theo tính năng (Feature-based):
+Dự án được xây dựng với **Next.js App Router**, tổ chức theo tính năng (Feature-Driven Development):
 
-## 📂 Folder Structure
+```text
+nextjs-frontend/
+├── public/                               # Chứa tài nguyên tĩnh công khai (Hình ảnh, Icons, Fonts)
+│
+├── src/
+│   ├── api/                              # Cấu hình tầng gọi API hệ thống hoặc Next.js Route Handlers
+│   │   ├── auth/
+│   │   └── master-data.api/
+│   │
+│   ├── app/                              # Tầng Định Tuyến chính (Next.js App Router)
+│   │   ├── (auth)/                       # Route Group: Các trang xác thực (Đăng nhập, Đăng ký)
+│   │   ├── (dashboard)/                  # Route Group: Giao diện quản trị, bảng điều khiển admin
+│   │   ├── (home)/                       # Route Group: Trang chủ và không gian của thí sinh
+│   │   ├── layout.tsx                    # Khung bố cục gốc toàn hệ thống (Root Layout)
+│   │   └── globals.css                   # Định hình phong cách, cấu hình Tailwind & Emerald Palette
+│   │
+│   ├── components/
+│   │   └── common/                       # Thành phần giao diện dùng chung (Shared/Generic Components)
+│   │       ├── Form/                     # Các ô nhập liệu chuẩn hóa (Input, Select, Validation)
+│   │       ├── Generic-Table/            # Bộ khung bảng hiển thị dữ liệu động nâng cao
+│   │       ├── Modals/ / Loaders/        # Các hộp thoại thông báo và hiệu ứng tải trang
+│   │       └── Header.tsx / Sidebar.tsx  # Thanh điều hướng và thanh bảng chọn chính
+│   │
+│   ├── features/                         # Tầng Tính Năng lõi (Mỗi thư mục con là một phân hệ độc lập)
+│   │   ├── admin-users/                  # Ví dụ cụ thể Phân hệ: Quản lý người dùng dành cho Admin
+│   │   │   ├── api/                      # Các hàm gọi endpoint API riêng của phân hệ này
+│   │   │   ├── components/               # Giao diện đặc thù chỉ phục vụ cho việc quản lý user
+│   │   │   ├── hooks/                    # Custom Hooks xử lý Logic trạng thái (State) riêng
+│   │   │   ├── schema/                   # Định nghĩa cấu trúc kiểm tra dữ liệu đầu vào (Zod Schema)
+│   │   │   ├── services/                 # Xử lý, biến đổi định dạng dữ liệu thô trước khi render
+│   │   │   └── types/                    # Khai báo các kiểu dữ liệu (TypeScript types/interfaces) riêng
+│   │   ├── ai-analysis/                  # Phân hệ phân tích kết quả bằng trí tuệ nhân tạo
+│   │   ├── ai-camera/                    # Phân hệ xử lý giám sát thi qua camera trực tuyến
+│   │   ├── exam-management/              # Phân hệ quản trị và thiết lập ma trận đề thi GPLX
+│   │   └── gplx-test/                    # Phân hệ giao diện làm bài thi lý thuyết trực tuyến
+│   │
+│   ├── layouts/                          # Các khung Layout bọc ngoài (Layout Admin, Layout Học viên)
+│   ├── providers/                        # Nơi cấu hình và bọc các bộ quản lý trạng thái (Zustand, Query)
+│   ├── ui/                               # Các mảnh ghép giao diện nguyên bản nguyên tử (Primitives UI)
+│   │
+│   ├── constants/                        # Lưu trữ các biến hằng số, thông điệp tĩnh toàn cục
+│   ├── context/                          # Các luồng truyền dữ liệu xuyên suốt bằng React Context
+│   ├── hooks/                            # Kho chứa Custom Hooks toàn cục hệ thống (useAuth, useDebounce...)
+│   ├── lib/                              # Khởi tạo các thư viện bên thứ 3 (Axios instance, Tailwind Merge)
+│   └── middlewares/                      # Kiểm tra quyền truy cập route trực tiếp từ phía Frontend
 
-## Cấu trúc dự án (Project Structure)
-
-Dự án được xây dựng với **Next.js App Router**, tách biệt rõ ràng giữa routing và logic ứng dụng.
-
-```bash
-src/
-├── api/                          # Tầng gọi API và cấu hình HTTP Client
-│ 
-├── app/                          # Tầng Routing & Layouts (Next.js App Router)
-│   ├── (auth)/                   # Route Group cho phần xác thực
-│   └── (dashboard)/              # Route Group cho giao diện quản trị
-│ 
-├── assets/                       # Tài nguyên tĩnh (hình ảnh, fonts, icons)
-│ 
-├── components/                   # Các thành phần giao diện
-│   ├── ui/                       # Atomic components (Button, Input...)
-│   ├── common/                   # Components dùng chung có logic
-│   ├── layouts/                  # Các layout chính (AuthLayout, DashboardLayout)
-│   └── features/                 # Components theo từng tính năng
-│ 
-├── constants/                    # Hằng số toàn cục (endpoints, regex, theme...)
-├── context/                      # React Context Providers
-├── hooks/                        # Custom React Hooks
-├── lib/                          # Cấu hình thư viện bên thứ 3 và utilities
-├── services/                     # Business logic và state management
-├── types/                        # Định nghĩa TypeScript interfaces và types
-└── middleware.ts                 # Next.js Middleware                  # Định nghĩa TypeScript (Interfaces, Types, Enums)
 ```
 
-### 3. AI Engine (`ai-engine/`)
+### 3. AI Engine (`apps/ai-engine/`)
 
 Thiết kế theo chuẩn MLOps:
 
@@ -199,70 +213,98 @@ Thiết kế theo chuẩn MLOps:
 * `notebooks/`: Môi trường nghiên cứu và thử nghiệm (EDA, Training).
 * `src/services`: Logic xử lý chính (Detector, OCR, Validator).
 
----
 
-## 🚀 Tính Năng Nổi Bật
+## 🛠️ Hướng Dẫn Cài Đặt & Vận Hành
 
-### 🧠 Trợ lý AI Thông Minh
+### 📋 Yêu cầu hệ thống
 
-* **Giải thích luật:** Sử dụng LLM để giải thích các câu hỏi khó, hình ảnh sa hình phức tạp.
-* **Caching Lời giải:** Để tối ưu chi phí API AI, các lời giải đã sinh ra được cache vào Database cho người dùng sau.
-* **Adaptive Learning:** Hệ thống tự phát hiện "vùng kiến thức yếu" của người dùng để gợi ý bài tập trọng tâm.
-
-### 🧹 Cơ chế Xóa mềm (Soft Delete) & Cleanup
-
-Hệ thống không xóa vĩnh viễn dữ liệu ngay lập tức để bảo toàn lịch sử thi:
-
-1. **Soft Delete:** Đánh dấu `deleted_at`.
-<!-- 2. **Cron Job:** Tác vụ chạy ngầm 2 giờ sáng hàng ngày để quét và chuyển dữ liệu cũ vào **Archive** nếu không còn ràng buộc. -->
+* **Node.js**: v20+
+* **Python**: 3.9+
+* **Docker & Docker Desktop**
 
 ---
 
-## 🛠️ Cài Đặt
+### 🚀 Các bước khởi chạy dự án (Local Development)
 
-### Yêu cầu hệ thống:
+**1. Clone dự án và di chuyển vào thư mục gốc:**
 
-* Node.js v18+
-* Python 3.9+
-* Docker (tùy chọn)
-
-### Các bước thực hiện:
-
-1. **Clone dự án:**
 ```bash
-git clone https://github.com/khanhtrinh150703/SMART-GPLX-SYSTEM
+git clone [https://github.com/khanhtrinh150703/SMART-GPLX-SYSTEM](https://github.com/khanhtrinh150703/SMART-GPLX-SYSTEM)
+cd SMART-GPLX-SYSTEM
+
 ```
 
+**2. Cài đặt toàn bộ Dependencies cho Workspace:**
+*(Chỉ cần chạy một lệnh duy nhất tại thư mục gốc để cài cho cả Frontend và Backend)*
 
-2. **Cài đặt Backend:**
 ```bash
-cd apps/node-backend
 npm install
-npx prisma migrate dev
-npm run dev
 ```
 
+**3. Khởi động các database:**
 
-3. **Cài đặt Frontend:**
 ```bash
-cd apps/nextjs-frontend
-npm install
-npm run dev
+docker compose up -d
 ```
 
+**4. Khởi chạy Backend:**
 
-4. **Cài đặt AI Engine:**
+```bash
+npm run dev:be
+```
+
+**5. Khởi chạy Frontend:**
+
+```bash
+npm run dev:fe
+```
+
+**6. Khởi chạy AI Engine (Mở một Terminal độc lập):**
+
 ```bash
 cd apps/ai-engine
 pip install -r requirements.txt
 python src/main.py
 ```
 
+---
 
+### 🧪 Kiểm tra chất lượng Code & Testing (Tự động hóa với Husky & act)
+
+Hệ thống tự động kích hoạt quy trình kiểm duyệt chất lượng mã nguồn nghiêm ngặt ngay dưới máy local thông qua **Husky** và **act**:
+
+* **Khi Commit (`git commit`):** Husky tự động chạy bộ kiểm tra lỗi kỹ thuật nhanh (Type-check & Linter cho cả FE và BE) để đảm bảo code sạch lỗi cú pháp trước khi lưu:
+
+```bash
+npm run verify
+```
+
+* **Khi Push (`git push`):** Husky tự động sử dụng công cụ **`act`** để giả lập môi trường GitHub Actions, chạy duy nhất file workflow `ci.yml` nhằm thực thi toàn bộ các bài kiểm thử tích hợp (Integration Test bằng Jest) của Backend:
+
+```bash
+act -W .github/workflows/ci.yml --rm --container-architecture linux/amd64
+```
+
+---
+
+### 🐳 Triển khai nhanh bằng Docker
+
+Nếu muốn test thử các bản đóng gói Image tĩnh dưới máy local giống như môi trường deploy thật, sử dụng cụm lệnh sau tại thư mục gốc:
+
+```bash
+# Build các Docker Image
+docker build -t smart-be -f Dockerfile.backend .
+docker build -t smart-fe -f Dockerfile.frontend .
+
+# Khởi chạy hệ thống container
+docker compose up -d                               # Bật database dưới nền
+docker run -d -p 5000:5000 --name web-be smart-be  # Chạy Backend (Port 5000)
+docker run -d -p 3000:3000 --name web-fe smart-fe  # Chạy Frontend (Port 3000)
+```
 
 ---
 
 ## 📝 Giấy Phép
+
 Dự án được phân phối dưới giấy phép MIT License.
----
 

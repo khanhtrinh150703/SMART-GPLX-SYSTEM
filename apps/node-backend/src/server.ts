@@ -18,7 +18,7 @@ import { IMongoDBService } from "./domain/interfaces/services/external";
 // 4. Logging
 // import logger from '@/infrastructure/logging/winston.logger';
 
-const PORT = env.PORT || 3000;
+const PORT = env.PORT || 5000;
 async function startServer() {
   try {
     console.log("⏳ [System] Starting services...");

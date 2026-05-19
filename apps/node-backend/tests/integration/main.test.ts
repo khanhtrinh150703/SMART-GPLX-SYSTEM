@@ -87,7 +87,7 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
         .get(CHAPTER_ENDPOINTS.FETCH_ALL)
         .set("Authorization", `Bearer ${adminToken}`),
       request(app)
-        .get(LICENSE_ENDPOINTS.BASE)
+        .get(`${LICENSE_ENDPOINTS.BASE}?limit=100`)
         .set("Authorization", `Bearer ${adminToken}`),
       request(app)
         .get(EXAM_MATRIX_ENDPOINTS.BASE)
@@ -280,5 +280,5 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
   afterAll(async () => {
     console.log("✅ Teardown hoàn tất: Database đã được dọn dẹp.");
     await cleanupDB();
-  });
+  }, 30000);
 });

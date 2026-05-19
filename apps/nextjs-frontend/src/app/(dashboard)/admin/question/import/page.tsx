@@ -76,8 +76,7 @@ export default function AdvancedImportPage() {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   // Khởi tạo Mutation Hook (Dịch: Initialize Mutation Hook)
-  const { mutation, uploadProgress, processStatus } = useImportQuestions();
-  const [importLogs, setImportLogs] = useState([]);
+  const { mutation, uploadProgress } = useImportQuestions();
   const isLoading = mutation.isPending;
   // Dọn dẹp bộ nhớ khi component bị hủy (Clean up memory to prevent memory leaks)
   useEffect(() => {
@@ -142,6 +141,7 @@ export default function AdvancedImportPage() {
           intent: "error",
           text: "Lỗi định dạng file Excel. Vui lòng kiểm tra lại!",
         });
+        throw err;
       }
     };
     reader.readAsArrayBuffer(file);
@@ -309,8 +309,7 @@ export default function AdvancedImportPage() {
       <div className="flex justify-between items-center bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-            Import{" "}
-            <span className="text-emerald-500 italic">Questions</span>
+            Import <span className="text-emerald-500 italic">Questions</span>
           </h1>
           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em] mt-2">
             Trạng thái: Đã nạp {totalItems} câu hỏi
@@ -456,6 +455,7 @@ export default function AdvancedImportPage() {
                       fill
                       unoptimized
                       className="object-contain"
+                      priority
                     />
                   </div>
                 ) : (
@@ -515,6 +515,7 @@ export default function AdvancedImportPage() {
                           alt={`Answer ${idx + 1}`}
                           fill
                           unoptimized
+                          priority
                           className="object-contain p-2"
                         />
                       </div>

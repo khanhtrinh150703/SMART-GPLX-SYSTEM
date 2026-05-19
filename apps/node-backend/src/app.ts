@@ -35,7 +35,7 @@ app.set("trust proxy", true);
 
 app.use(
   cors({
-    origin: "http://localhost:3001", // Mở cửa cho cổng 3001 của Frontend
+    origin: "http://localhost:3000", // Mở cửa cho cổng 3000 của Frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], // Các phương thức HTTP được phép
     allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token"], // Các tiêu đề (Headers) được phép
     credentials: true, // Cho phép gửi kèm Cookie/Token bảo mật

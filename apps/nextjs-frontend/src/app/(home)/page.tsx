@@ -24,7 +24,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-x-hidden relative">
       {/* <AmbientBackground /> */}
-      <GeometricInteractiveBackground/>
+      <GeometricInteractiveBackground />
       <main className="max-w-7xl mx-auto px-6 pt-40 pb-20 relative z-10">
         <Hero
           titleLine1="Khám Phá Giải Pháp Học &"
@@ -42,27 +42,38 @@ export default function LandingPage() {
             <CategoryCard
               intent="emerald"
               delay={0.5}
-              title="GPLX B2 - Hạng xe ô tô"
-              imageSrc="/images/car-b2.png"
-              badgeText="B2"
-              description="Hệ thống AI nhận diện hành vi lái xe ô tô"
+              title="Hạng B1, B - Xe Ô Tô"
+              images={[
+                "/images/car-b.png",
+                "/images/car-b_1.png",
+                "/images/car-b_2.png",
+                "/images/car-b_3.png",
+              ]}
+              badgeText="B"
+              description="Trọn bộ câu hỏi lý thuyết, mẹo nhớ nhanh và cấu trúc đề thi thử sát hạch ô tô chuẩn."
             />
+
             <CategoryCard
               intent="teal"
               delay={0.6}
-              title="GPLX A1 - Hạng xe máy"
-              imageSrc="/images/moto-a1.png"
-              badgeText="A1"
+              title="Hạng A1, A2 - Xe Máy - Xe mô tô"
+              images={[
+                "/images/moto-a1.png",
+                "/images/moto-a1_1.png",
+                "/images/moto-a1_2.png",
+                "/images/moto-a1_3.png",
+              ]}
+              badgeText="A"
               ribbonText="Phổ biến"
-              description="Mô phỏng thi vòng số 8 bằng cảm biến"
+              description="Đầy đủ câu hỏi ôn tập, danh sách câu điểm liệt và đề thi mô phỏng xe máy."
             />
           </div>
         </div>
         <AiPreview
           theme="emerald"
-          title="Hạng GPLX B2 - AI Camera System"
-          imageSrc="/images/ai-driving-preview.jpg"
-          sessionId="#B2-ACTIVE-88"
+          title="Hạng GPLX B1 - AI Camera System"
+          imageSrc="/images/ai-driving-preview.png"
+          sessionId="#B1-ACTIVE-88"
           analysisText="Analysing Road Signs..."
         />
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">

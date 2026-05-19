@@ -7,7 +7,7 @@ export class ChapterQueryDTO extends BaseQueryDTO {
   public code?: string;
 
   constructor(data: Partial<ChapterQueryDTO>) {
-    super();
+    super(data);
 
     // 1. Gán dữ liệu thô (Object.assign vẫn ổn nhưng gán tường minh sẽ an toàn kiểu dữ liệu hơn)
     Object.assign(this, data);

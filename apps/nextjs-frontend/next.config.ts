@@ -1,32 +1,33 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
   images: {
     // 1. Cấp phép cho Next.js tối ưu ảnh từ các nguồn tuyệt đối
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '3000',
+        port: '5000',
         pathname: '/uploads/**',
       },
       {
         protocol: 'http',
         hostname: '127.0.0.1',
-        port: '3000',
+        port: '5000',
         pathname: '/uploads/**',
       },
     ],
   },
 
-  // 2. CẤU HÌNH QUAN TRỌNG: Proxy từ Port 3000 sang Port 5000
+  // 2. CẤU HÌNH QUAN TRỌNG: Proxy từ Port 5000 sang Port 5000
   async rewrites() {
     return [
       {
-        // Khi gọi /uploads/abc.jpg ở Port 3000
+        // Khi gọi /uploads/abc.jpg ở Port 5000
         source: '/uploads/:path*',
         // Nó sẽ âm thầm lấy từ Port 5000
-        destination: 'http://localhost:3000/uploads/:path*',
+        destination: 'http://localhost:5000/uploads/:path*',
       },
     ];
   },
