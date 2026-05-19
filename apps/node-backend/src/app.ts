@@ -35,7 +35,11 @@ app.set("trust proxy", true);
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // Mở cửa cho cổng 3000 của Frontend
+    origin: [
+      "https://gplx.dividesk.com",
+      "https://www.gplx.dividesk.com",
+      "http://localhost:3000",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], // Các phương thức HTTP được phép
     allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token"], // Các tiêu đề (Headers) được phép
     credentials: true, // Cho phép gửi kèm Cookie/Token bảo mật
