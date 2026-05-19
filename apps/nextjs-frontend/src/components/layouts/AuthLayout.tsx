@@ -57,8 +57,8 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
       {/* =========================================================
           CỘT PHẢI FORM: Chiếm chuẩn 50% không gian còn lại (Symmetrical Right Column Content)
           ========================================================= */}
-      <div className="w-full lg:w-[50%] h-full flex items-center justify-center p-6 sm:p-10 bg-slate-50 overflow-y-auto custom-scrollbar">
-        <div className="w-full max-w-md relative z-10 bg-white p-8 sm:p-10 rounded-3xl shadow-soft border border-slate-200/60 my-auto">
+      <div className="w-full lg:w-[50%] h-full flex flex-col items-center justify-center p-6 sm:p-10 bg-slate-50 overflow-hidden min-h-0">
+        <div className="w-full max-w-md relative z-10 bg-white p-8 sm:p-10 rounded-3xl shadow-soft border border-slate-200/60 flex flex-col justify-center">
           
           <div className="lg:hidden mb-6 flex justify-center">
             <Logo />

@@ -83,14 +83,15 @@ axiosClient.interceptors.response.use(
     }
 
     const { status } = error.response;
-    const authPath = "/auth/refresh-token"; // Đường dẫn API refresh
-
+    const authPath = "/auth/refresh-token";
+    const loginPath = "/auth/login";
     // 2. Xử lý 401 - Silent Refresh
     // ĐIỀU KIỆN CHẶN LOOP: Không được retry nếu chính URL này là API Refresh
     if (
       status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes(authPath)
+      !originalRequest.url?.includes(authPath) &&
+      !originalRequest.url?.includes(loginPath)
     ) {
       // Nếu đang có một request khác đang đi Refresh rồi, đưa mình vào hàng đợi
       if (isRefreshing) {

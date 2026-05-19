@@ -6,5 +6,4 @@ import 'dotenv/config';
 export const env = {
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   PORT: process.env.PORT || 5000,
-  // ... các biến khác
 };

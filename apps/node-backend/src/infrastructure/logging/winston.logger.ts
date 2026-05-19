@@ -1,4 +1,5 @@
 import { ILogger } from "@/domain/interfaces/logging/i-logger.interface";
+import { loki } from "@/shared/config/loki.config";
 import winston from "winston";
 import LokiTransport from "winston-loki";
 
@@ -13,7 +14,7 @@ const winstonInstance = winston.createLogger({
       ),
     }),
     new LokiTransport({
-      host: "http://127.0.0.1:3100",
+      host: loki.host,
       labels: { app: "smart-gplx-system" },
       json: true,
       batching: false,
