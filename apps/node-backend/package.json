@@ -55,7 +55,7 @@
   "scripts": {
     "dev": "npm run db:push && npm run db:seed && ts-node-dev -r tsconfig-paths/register --respawn --inspect=9229 src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "lint": "eslint .",
     "test": "npm run db:push:test &&  npm run db:seed:test && npx dotenv -e .env.local -- jest tests/integration/main.test.ts --runInBand --verbose --forceExit",
     "testcicd": "npm run db:push:cicd && npm run db:seed:cicd && npx dotenv -e .env.test -- jest tests/integration/main.test.ts --runInBand --verbose --forceExit",
