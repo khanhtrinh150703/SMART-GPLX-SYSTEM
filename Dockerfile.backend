@@ -34,6 +34,8 @@ RUN mkdir -p apps/node-backend
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
+RUN npm ci --omit=dev -w node-backend
+
 # Copy thư mục node_modules ĐÃ ĐƯỢC GIẢM CÂN sạch sẽ ở Stage 1 sang
 COPY --from=builder /app/node_modules ./node_modules
 
