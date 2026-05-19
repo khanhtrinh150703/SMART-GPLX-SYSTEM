@@ -18,6 +18,8 @@ RUN npm run db:gen -w node-backend
 # Biên dịch TypeScript sang JavaScript (lệnh tsc sẽ sinh ra thư mục dist)
 RUN cd apps/node-backend && npm run build
 
+RUN npm prune --production
+
 # ==========================================
 # Stage 2: Runner - Máy chạy sạch tinh gọn
 FROM node:20-alpine AS runner
@@ -25,18 +27,20 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Tạo sẵn cấu trúc thư mục con để chứa package.json và dist chuẩn bài
 RUN mkdir -p apps/node-backend
 
 # Copy package.json của gốc và backend sang môi trường chạy
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
-# Copy thư mục node_modules (đã chứa Prisma Client)
+# Copy thư mục node_modules ĐÃ ĐƯỢC GIẢM CÂN sạch sẽ ở Stage 1 sang
 COPY --from=builder /app/node_modules ./node_modules
 
+# Copy thư mục dist đã biên dịch sang
 COPY --from=builder /app/apps/node-backend/dist ./apps/node-backend/dist
 
 EXPOSE 5000
 
-# Khởi chạy backend bằng script start thông qua workspace định sẵn
+# Khởi chạy trực tiếp bằng node không qua trung gian npm, tối ưu PID 1
 CMD ["node", "apps/node-backend/dist/src/server.js"]
