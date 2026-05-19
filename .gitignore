@@ -141,3 +141,4 @@ docker-compose.override.yml
 storage/temp
 public/uploads
 temp/
+.clinic
