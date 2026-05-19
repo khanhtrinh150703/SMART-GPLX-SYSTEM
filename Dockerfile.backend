@@ -31,6 +31,8 @@ RUN mkdir -p apps/node-backend
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
+RUN npm ci --omit=dev
+RUN npx prisma generate --schema=apps/node-backend/prisma/schema.prisma
 # Copy thư mục node_modules (đã chứa Prisma Client)
 COPY --from=builder /app/node_modules ./node_modules
 
