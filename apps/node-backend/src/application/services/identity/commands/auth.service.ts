@@ -70,7 +70,6 @@ export class AuthService implements IAuthService {
    */
   public async login(dto: LoginRequestDTO): Promise<ILoginResponseDTO> {
     // 1. Cheap Check - Validate dữ liệu đầu vào cơ bản
-    // (Dịch: Kiểm tra nhanh - Xác thực dữ liệu đầu vào cơ bản)
 
     // 2. Tìm User qua Service
     const user = await this._userQueryService.getUserByIdentifier(dto.username);

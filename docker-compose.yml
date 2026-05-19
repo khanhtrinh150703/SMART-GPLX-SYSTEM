@@ -16,7 +16,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3200:3000" # Truy cập Grafana qua localhost:3200
+      - "3200:3000" 
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
@@ -45,7 +45,7 @@ services:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=smart_gplx_db
     ports:
-      - "3307:3306"
+      - "3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
       interval: 5s
@@ -65,9 +65,9 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
     ports:
-      - "27016:27017" # Port mặc định để kết nối từ máy thật hoặc client UI
+      - "27017:27017" 
     volumes:
-      - mongo_data:/data/db # Gắn volume lưu dữ liệu bền vững cho Mongo
+      - mongo_data:/data/db 
     networks:
       - smart-gplx-network
 

@@ -52,9 +52,7 @@ export class LicenseCategoryController {
    */
   public list = catchAsync(async (req: Request, res: Response): Promise<void> => {
 
-    console.log(req.query)
     const query = new LicenseCategoryQueryDTO(req.query as Record<string, unknown>);
-    console.log(query)
     const categories = await this._licenseQueryService.getPaginatedCategories(query);
     Result.ok(
       res,
