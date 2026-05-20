@@ -82,7 +82,7 @@ export default function LandingPage() {
               key={feature.title}
               {...feature}
               description={feature.desc}
-              delay={0.4 + idx * 0.1}
+              delay={0.3 + idx * 0.1}
             />
           ))}
         </div>

@@ -35,71 +35,103 @@ export default function EditUserModal({
   isLoading,
   roleOptions,
 }: EditUserModalProps) {
-  // 1. Quản lý thông báo dựa trên intent (Chuẩn hóa)
   const [message, setMessage] = useState<{
     type: "success" | "error" | "warning";
     text: string;
   } | null>(null);
+
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    control, // 1. Lấy control ở đây
+    control,
+    getValues, // Lấy getValues để xử lý logic không bị trễ nhịp
     formState: { errors },
   } = useForm<AdminUpdatePayload>({
     resolver: zodResolver(updateAdminRequestSchema),
     defaultValues: { roles: [] },
   });
 
-  // 2. Thay thế watch("roles") bằng useWatch
   const selectedRoles = useWatch({
     control,
     name: "roles",
-    defaultValue: [], // Giá trị mặc định khi chưa có dữ liệu
+    defaultValue: [],
   });
 
-  // 2. Đồng bộ hóa dữ liệu khi Modal mở
+  // Tìm chính xác ID (value) dựa vào Label
+  const ADMIN_ID =
+    roleOptions.find((r) => r.label === "ADMIN")?.value || "ADMIN";
+  const STUDENT_ID =
+    roleOptions.find((r) => r.label === "STUDENT")?.value || "STUDENT";
+
   useEffect(() => {
     if (user && isOpen) {
-      // Đưa vào đây để "lách" việc update đồng bộ
       requestAnimationFrame(() => {
         setMessage(null);
         reset({
           fullName: user.fullName,
-          roles: user.roles?.map((r) => r.id) || [],
+          // Đảm bảo user có ít nhất quyền Student nếu mảng rỗng
+          roles:
+            user.roles && user.roles.length > 0
+              ? user.roles.map((r) => r.id)
+              : [STUDENT_ID],
         });
       });
     }
-  }, [user, isOpen, reset, setMessage]);
+  }, [user, isOpen, reset, STUDENT_ID]);
 
-  // 3. Xử lý Submit và bóc tách lỗi từ Axios
   const handleInternalSubmit = async (data: AdminUpdatePayload) => {
     try {
-      setMessage(null); // Xóa lỗi cũ trước khi thử lại
-
-      // Đợi trang cha thực hiện lưu dữ liệu
+      setMessage(null);
       await onSave(data);
-
-      // Nếu không có lỗi: Đóng modal (Thành công xử lý ở trang cha qua Toast)
       onClose();
       reset();
     } catch (error) {
-      // Nếu trang cha ném lỗi (mutateAsync fail), Modal sẽ bắt ở đây
-      let errorText = "Không thể tạo hạng bằng lái. Vui lòng thử lại!";
-
+      let errorText = "Không thể cập nhật thông tin. Vui lòng thử lại!";
       if (axios.isAxiosError(error)) {
         errorText = error.response?.data?.message || errorText;
       }
-
       setMessage({ type: "error", text: errorText });
     }
   };
+
   const handleToggleRole = (roleId: string) => {
     if (isLoading) return;
-    const newRoles = selectedRoles.includes(roleId)
-      ? selectedRoles.filter((id) => id !== roleId)
-      : [...selectedRoles, roleId];
+
+    // Lấy mảng role hiện tại trực tiếp từ form để tránh bị bất đồng bộ
+    const currentRoles = getValues("roles") || [];
+
+    // Trường hợp 1: Chọn ADMIN
+    if (roleId === ADMIN_ID) {
+      // Nếu đang có ADMIN -> gỡ thành STUDENT, nếu chưa có -> gán 1 mình ADMIN
+      setValue(
+        "roles",
+        currentRoles.includes(ADMIN_ID) ? [STUDENT_ID] : [ADMIN_ID],
+        { shouldValidate: true },
+      );
+      return;
+    }
+
+    // Trường hợp 2: Chọn các quyền khác
+    let newRoles = [...currentRoles];
+
+    if (newRoles.includes(ADMIN_ID)) {
+      // Nếu đang là ADMIN mà bấm quyền khác -> đá ADMIN, lấy quyền mới
+      newRoles = [roleId];
+    } else {
+      if (newRoles.includes(roleId)) {
+        newRoles = newRoles.filter((id) => id !== roleId);
+      } else {
+        newRoles.push(roleId);
+      }
+    }
+
+    // Nếu gỡ hết sạch quyền, tự động đẩy về STUDENT
+    if (newRoles.length === 0) {
+      newRoles = [STUDENT_ID];
+    }
+
     setValue("roles", newRoles, { shouldValidate: true });
   };
 
@@ -115,7 +147,6 @@ export default function EditUserModal({
         onSubmit={handleSubmit(handleInternalSubmit)}
         className="space-y-6 pt-2"
       >
-        {/* ALERT BOX */}
         {message && (
           <Alert
             key={message.text}
@@ -144,7 +175,7 @@ export default function EditUserModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {roleOptions.map((role) => {
-                const isActive = selectedRoles.includes(role.value);
+                const isActive = (selectedRoles || []).includes(role.value);
                 return (
                   <div
                     key={role.value}

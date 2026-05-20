@@ -33,9 +33,8 @@ export class MongoDBService implements IMongoDBService {
     if (mongoose.connection.readyState === 1) return;
 
     try {
-      await mongoose.connect(this._config.uri, {
+      await mongoose.connect(this._config.url, {
         dbName: this._config.dbName,
-        // Các cấu hình bổ sung nếu cần
       });
 
       console.info(

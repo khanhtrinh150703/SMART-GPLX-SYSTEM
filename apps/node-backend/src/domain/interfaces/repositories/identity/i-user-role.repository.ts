@@ -1,5 +1,3 @@
-import { Prisma } from '@prisma/client';
-
 export interface IUserRoleRepository {
   /**
    * @description Đồng bộ hóa danh sách Role của User (Differential Sync).
@@ -10,6 +8,5 @@ export interface IUserRoleRepository {
   syncUserRoles(
     userId: string, 
     roleIds: string[], 
-    tx: Prisma.TransactionClient
   ): Promise<void>;
 }

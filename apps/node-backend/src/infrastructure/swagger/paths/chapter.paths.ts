@@ -1,4 +1,4 @@
-import { deleteResponse, securityResponses } from "../swaggerHelpers";
+import { deleteResponse, securityResponses } from "../helper/swaggerHelpers";
 
 /**
  * @description Định nghĩa các luồng API cho Module Chapters

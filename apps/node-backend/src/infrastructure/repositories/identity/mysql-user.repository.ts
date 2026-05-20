@@ -1,44 +1,57 @@
 import { User } from "@/domain/entities/user/user.entity";
 import { IUserRepository } from "@/domain/interfaces/repositories/identity/i-user.repository";
 import { UserQueryDTO } from "@/application/dtos/request/user/user-query.request.dto";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   IUserRecord,
   PrismaUserWithRoles,
 } from "@/infrastructure/persistence/identity/user.record";
 import { UserMapper } from "@/infrastructure/database/mappers/identity/user.mapper";
-import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service";
+import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/";
 import { Permission } from "@/domain/entities/permission/permission.entity";
 import { Role } from "@/domain/entities/role/role.entity";
 import { AppError, ErrorCode } from "@/shared/errors";
 import { UserRelatedCount } from "@/shared/types/count.types";
 import { STATUS } from "@/shared/config/status.config";
+import { IUnitOfWork } from "@/domain/interfaces/seedwork";
 
 /**
  * @interface IMySQLUserRepositoryCradle
- * @description Định nghĩa các phụ thuộc (dependencies) dành riêng cho User Repository.
- * Chỉ cho phép tiếp cận PrismaClient để thực hiện các thao tác với bảng Users.
+ * @description Định nghĩa các phụ thuộc (dependencies) dành riêng cho User Repository qua Awilix Proxy.
+ * Đảm bảo tính đóng gói bằng cách loại bỏ hoàn toàn PrismaClient thô, mọi tác vụ DB bắt buộc đi qua Unit of Work.
  */
 export interface IMySQLUserRepositoryCradle {
-  prisma: PrismaClient;
+  unitOfWork: IUnitOfWork;
   masterDataCacheService: IMasterDataCacheService;
 }
 
 /**
  * @class MySQLUserRepository
- * @description Triển khai Repository cho Người dùng sử dụng MySQL và Prisma ORM.
- * Quản lý các thông tin định danh, hồ sơ và trạng thái tài khoản.
+ * @description Triển khai Repository cho Người dùng sử dụng MySQL thông qua điều phối của PrismaUnitOfWork.
+ * Quản lý các thông tin định danh, hồ sơ, trạng thái tài khoản và tuân thủ nghiêm ngặt Zero-Any Architecture.
  */
 export class MySQLUserRepository implements IUserRepository {
-  private readonly _prisma: PrismaClient;
+  private readonly _uow: IUnitOfWork;
   private readonly _cacheService: IMasterDataCacheService;
+
   /**
-   * @description Khởi tạo Repository với "vũ khí" Prisma được "tiêm" từ DI Container.
-   * @param {IMySQLUserRepositoryCradle} cradle - Chỉ chứa PrismaClient.
+   * @description Khởi tạo Repository với sự cô lập hạ tầng dữ liệu tối đa.
+   * @param {IMYSQLUserRepositoryCradle} cradle - Thùng chứa phụ thuộc được tiêm tự động từ DI Container.
    */
-  constructor({ prisma, masterDataCacheService }: IMySQLUserRepositoryCradle) {
-    this._prisma = prisma;
+  constructor({
+    unitOfWork,
+    masterDataCacheService,
+  }: IMySQLUserRepositoryCradle) {
+    this._uow = unitOfWork;
     this._cacheService = masterDataCacheService;
+  }
+
+  /**
+   * @description ĐÂY CHÍNH LÀ CHÌA KHÓA: Khai báo thuộc tính "client" động.
+   * Mỗi khi trong hàm gọi "this.client", nó sẽ tự chạy lệnh lấy client mới nhất từ UoW.
+   */
+  private get client(): Prisma.TransactionClient {
+    return this._uow.getContext() as Prisma.TransactionClient;
   }
 
   /** @description Include roles từ bảng trung gian, map về key user_roles của IUserRecord */
@@ -68,7 +81,6 @@ export class MySQLUserRepository implements IUserRepository {
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
       deletedAt: raw.deletedAt,
-      // Map mảng userRoles (Prisma) sang user_roles (Record)
       userRoles: raw.userRoles?.map((ur) => ({
         roleId: ur.roleId,
       })),
@@ -103,7 +115,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveByEmail(email: string): Promise<User | null> {
-    const raw = await this._prisma.user.findFirst({
+    const raw = await this.client.user.findFirst({
       where: { email, deletedAt: null },
       include: this._userInclude,
     });
@@ -111,7 +123,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveByUsername(username: string): Promise<User | null> {
-    const raw = await this._prisma.user.findFirst({
+    const raw = await this.client.user.findFirst({
       where: { username, deletedAt: null },
       include: this._userInclude,
     });
@@ -119,7 +131,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveById(id: string): Promise<User | null> {
-    const raw = await this._prisma.user.findFirst({
+    const raw = await this.client.user.findFirst({
       where: { id, deletedAt: null },
       include: this._userInclude,
     });
@@ -127,7 +139,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findActiveByIdentifier(identifier: string): Promise<User | null> {
-    const raw = await this._prisma.user.findFirst({
+    const raw = await this.client.user.findFirst({
       where: {
         OR: [{ email: identifier }, { username: identifier }],
         deletedAt: null,
@@ -138,7 +150,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findExistingInSystem(email: string, username: string): Promise<User[]> {
-    const raws = await this._prisma.user.findMany({
+    const raws = await this.client.user.findMany({
       where: {
         OR: [{ email }, { username }],
       },
@@ -148,7 +160,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findByEmailInSystem(email: string): Promise<User | null> {
-    const raw = await this._prisma.user.findFirst({
+    const raw = await this.client.user.findFirst({
       where: { email },
       include: this._userInclude,
     });
@@ -156,7 +168,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findByUsernameInSystem(username: string): Promise<User | null> {
-    const raw = await this._prisma.user.findFirst({
+    const raw = await this.client.user.findFirst({
       where: { username },
       include: this._userInclude,
     });
@@ -164,7 +176,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   async findByIdInSystem(id: string): Promise<User | null> {
-    const raw = await this._prisma.user.findUnique({
+    const raw = await this.client.user.findUnique({
       where: { id },
       include: this._userInclude,
     });
@@ -173,7 +185,7 @@ export class MySQLUserRepository implements IUserRepository {
 
   async createUser(user: User): Promise<User> {
     const data = UserMapper.toPersistence(user);
-    const raw = await this._prisma.user.create({
+    const raw = await this.client.user.create({
       data: {
         ...data,
         userRoles: {
@@ -187,7 +199,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   public async restore(id: string): Promise<User | null> {
-    const record = await this._prisma.user.update({
+    const record = await this.client.user.update({
       where: { id },
       data: { deletedAt: null, status: STATUS.ACTIVE },
       include: this._userInclude,
@@ -204,7 +216,7 @@ export class MySQLUserRepository implements IUserRepository {
     tx?: Prisma.TransactionClient,
   ): Promise<User> {
     // 1. Chọn Client: Nếu có tx từ Service thì dùng, không thì dùng prisma mặc định
-    const client = tx || this._prisma;
+    const client = tx || this.client;
 
     const data = UserMapper.toPersistence(user);
 
@@ -316,15 +328,15 @@ export class MySQLUserRepository implements IUserRepository {
     }
 
     // --- 6. THỰC THI TRUY VẤN ---
-    const [rawUsers, total] = await this._prisma.$transaction([
-      this._prisma.user.findMany({
+    const [rawUsers, total] = await Promise.all([
+      this.client.user.findMany({
         where,
         include: this._userInclude,
         skip,
         take,
-        orderBy, // Sử dụng mảng gom nhóm vừa build
+        orderBy, // Sử dụng mảng gom nhóm vừa được tính toán
       }),
-      this._prisma.user.count({ where }),
+      this.client.user.count({ where }),
     ]);
 
     // --- 7. MAPPING ---
@@ -342,7 +354,7 @@ export class MySQLUserRepository implements IUserRepository {
    * @principle Data Retention - Giữ lại thông tin để phục vụ Audit Log hoặc tuân thủ chính sách lưu trữ dữ liệu người dùng. (Retaining info for auditing or data retention policies).
    */
   public async softDelete(id: string): Promise<void> {
-    await this._prisma.user.update({
+    await this.client.user.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -358,7 +370,7 @@ export class MySQLUserRepository implements IUserRepository {
    * @warning Irreversible - Thao tác này sẽ xóa sạch dữ liệu cá nhân, không thể khôi phục và có thể ảnh hưởng đến dữ liệu lịch sử thi. (This action is irreversible and permanent).
    */
   public async hardDelete(id: string): Promise<void> {
-    await this._prisma.user.delete({
+    await this.client.user.delete({
       where: { id },
     });
   }
@@ -372,11 +384,11 @@ export class MySQLUserRepository implements IUserRepository {
     // Sử dụng Promise.all để chạy song song các truy vấn đếm, tối ưu hiệu năng DB
     const [rolesCount, topicStatsCount, progressCount, rankCount, examCount] =
       await Promise.all([
-        this._prisma.userRole.count({ where: { userId: id } }),
-        this._prisma.userTopicStatistics.count({ where: { userId: id } }),
-        this._prisma.userQuestionProgress.count({ where: { userId: id } }),
-        this._prisma.userExamRank.count({ where: { userId: id } }),
-        this._prisma.exam.count({ where: { userId: id } }),
+        this.client.userRole.count({ where: { userId: id } }),
+        this.client.userTopicStatistics.count({ where: { userId: id } }),
+        this.client.userQuestionProgress.count({ where: { userId: id } }),
+        this.client.userExamRank.count({ where: { userId: id } }),
+        this.client.exam.count({ where: { userId: id } }),
       ]);
 
     return {

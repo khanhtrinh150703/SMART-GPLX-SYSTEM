@@ -11,7 +11,7 @@ export interface IResetPasswordInputDTO {
 
 /**
  * @class ResetPasswordRequestDTO
- * @description DTO xử lý đặt lại mật khẩu, thực hiện mapping trước khi validate.
+ * @description DTO xử lý đặt lại mật khẩu, thực hiện mapping trước khi validate dựa trên thuộc tính của class.
  */
 export class ResetPasswordRequestDTO implements IResetPasswordInputDTO {
   public readonly email: string;
@@ -37,22 +37,26 @@ export class ResetPasswordRequestDTO implements IResetPasswordInputDTO {
     this.newPassword =
       typeof data.newPassword === "string" ? data.newPassword : "";
 
-    // 2. Validation (Kiểm tra logic dựa trên dữ liệu gốc và dữ liệu đã map)
-    this.validate(data);
+    // 2. Validation (Kiểm tra logic dựa trên các thuộc tính của `this`)
+    this.validate();
   }
 
   /**
    * @private
    * @description Hàm gác cổng ném AppError nếu dữ liệu không đạt yêu cầu.
-   * @param {IResetPasswordInputDTO} data - Dùng để kiểm tra trường bắt buộc
    * @throws {AppError}
    */
-  private validate(data: IResetPasswordInputDTO): void {
-    // 1. Kiểm tra các trường bắt buộc
-    if (!data.email) throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
-    if (!data.otp) throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
-    if (!data.newPassword)
+  private validate(): void {
+    // 1. Kiểm tra các trường bắt buộc (Sử dụng dữ liệu đã gán vào `this`)
+    if (this.email.length === 0) {
+      throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
+    }
+    if (this.otp.length === 0) {
+      throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
+    }
+    if (this.newPassword.length === 0) {
       throw new AppError(ErrorCode.AUTH.NEW_PASSWORD_REQUIRED);
+    }
 
     // 2. Kiểm tra định dạng OTP (Sử dụng giá trị đã trim)
     if (this.otp.length !== 6) {
@@ -62,17 +66,6 @@ export class ResetPasswordRequestDTO implements IResetPasswordInputDTO {
     // 3. Kiểm tra độ dài mật khẩu mới
     if (this.newPassword.length < 6) {
       throw new AppError(ErrorCode.AUTH.PASSWORD_TOO_WEAK);
-    }
-  }
-
-  /**
-   * @public
-   * @description Xác thực bổ sung trước khi xử lý ở tầng Service.
-   * @throws {AppError}
-   */
-  public isValid(): void {
-    if (this.newPassword.trim() === "") {
-      throw new AppError(ErrorCode.AUTH.MISSING_FIELDS);
     }
   }
 }
