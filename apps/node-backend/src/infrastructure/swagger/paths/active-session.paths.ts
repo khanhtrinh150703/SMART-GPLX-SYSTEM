@@ -1,4 +1,4 @@
-import { securityResponses } from "../swaggerHelpers";
+import { securityResponses } from "../helper/swaggerHelpers";
 
 export const activeSessionPaths = {
   // 1. GET CURRENT SESSION (Lấy phiên đang làm dở)

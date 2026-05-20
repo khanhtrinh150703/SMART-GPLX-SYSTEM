@@ -1,13 +1,12 @@
-import { ErrorCode, AppError } from '@/shared/errors';
-import { User } from '@/domain/entities/user/user.entity';
-import { IPendingUserRepository } from '@/domain/interfaces/repositories/identity/i-pending-user.repository';
-import { IRegistrationService } from '@/domain/interfaces/services/identity/commands/i-registration.service';
-import { IUserService } from '@/domain/interfaces/services/identity/commands/i-user.service';
-import { IOtpService } from '@/domain/interfaces/services/identity/commands/i-otp.service';
-import { AUTH_CONFIG } from '@/shared/config/auth.config';
-import { RegisterRequestDTO } from '@/application/dtos/request/auth/register.request.dto';
-import { UserMapper } from '@/infrastructure/database/mappers/identity';
-import { IUserResponseDTO } from '@/application/dtos/response/user/user.respone.dto';
+import { ErrorCode, AppError } from "@/shared/errors";
+import { IPendingUserRepository } from "@/domain/interfaces/repositories/identity/i-pending-user.repository";
+import { IRegistrationService } from "@/domain/interfaces/services/identity/commands/i-registration.service";
+import { IUserService } from "@/domain/interfaces/services/identity/commands/i-user.service";
+import { IOtpService } from "@/domain/interfaces/services/identity/commands/i-otp.service";
+import { AUTH_CONFIG } from "@/shared/config/auth.config";
+import { RegisterRequestDTO } from "@/application/dtos/request/auth/register.request.dto";
+import { UserMapper } from "@/infrastructure/database/mappers/identity";
+import { IUserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
 
 /**
  * @interface IRegistrationServiceCradle
@@ -30,24 +29,24 @@ export interface IRegistrationServiceCradle {
  * @principle Loose Coupling - Sử dụng các Interface để giảm sự phụ thuộc trực tiếp giữa các thành phần.
  */
 export class RegistrationService implements IRegistrationService {
-  /** 
-   * @private 
-   * @readonly 
-   * @description Instance điều phối logic người dùng. 
+  /**
+   * @private
+   * @readonly
+   * @description Instance điều phối logic người dùng.
    */
   private readonly _userService: IUserService;
 
-  /** 
-   * @private 
-   * @readonly 
-   * @description Instance điều phối logic mã xác thực. 
+  /**
+   * @private
+   * @readonly
+   * @description Instance điều phối logic mã xác thực.
    */
   private readonly _otpService: IOtpService;
 
-  /** 
-   * @private 
-   * @readonly 
-   * @description Instance quản lý bộ nhớ tạm cho luồng đăng ký. 
+  /**
+   * @private
+   * @readonly
+   * @description Instance quản lý bộ nhớ tạm cho luồng đăng ký.
    */
   private readonly _pendingRepo: IPendingUserRepository;
 
@@ -56,7 +55,11 @@ export class RegistrationService implements IRegistrationService {
    * @description Khởi tạo Service với "túi đồ nghề" được tiêm từ DI Container (Awilix).
    * @param {IRegistrationServiceCradle} cradle - Chứa các Service và Repository cần thiết.
    */
-  constructor({ userService, otpService, pendingUserRepository }: IRegistrationServiceCradle) {
+  constructor({
+    userService,
+    otpService,
+    pendingUserRepository,
+  }: IRegistrationServiceCradle) {
     this._userService = userService;
     this._otpService = otpService;
     this._pendingRepo = pendingUserRepository;
@@ -78,7 +81,7 @@ export class RegistrationService implements IRegistrationService {
     await this._pendingRepo.save(
       normalizedEmail,
       JSON.stringify(dto),
-      AUTH_CONFIG.security.pendingTtlSeconds
+      AUTH_CONFIG.security.pendingTtlSeconds,
     );
 
     // 3. Ra lệnh cho OtpService sinh và gửi mã (OtpService giờ chỉ nhận mỗi email)
@@ -94,40 +97,37 @@ export class RegistrationService implements IRegistrationService {
    */
   public async complete(email: string, otp: string): Promise<IUserResponseDTO> {
     const normalizedEmail = email.trim().toLowerCase();
-    // 1. Lấy dữ liệu tạm từ PendingRepo để kiểm tra xem họ có thực sự đang đăng ký không
+
+    // 1. Lấy dữ liệu tạm từ PendingRepo trong Redis
     const rawData = await this._pendingRepo.get(normalizedEmail);
     if (!rawData) {
       throw new AppError(ErrorCode.AUTH.REGISTRATION_EXPIRED);
     }
     const userData: RegisterRequestDTO = JSON.parse(rawData);
-    // 2. Xác thực mã OTP thông qua OtpService
-    // Nếu sai, hàm verifyOtp sẽ tự động throw AppError
 
+    // 2. Xác thực mã OTP thông qua OtpService
     await this._otpService.verifyOtp(normalizedEmail, otp);
 
-    // 3. Hash mật khẩu
-
-    // 4. Gọi UserService để tạo User chính thức vào MySQL
-    const newUser = await User.create({
-      username: userData.username.trim().toLowerCase(),
+    // 3. Chỉ truyền Dữ liệu Interface sang UserService xử lý, không tự tạo Entity ở đây
+    const newUser = await this._userService.createUser({
+      username: userData.username,
       email: normalizedEmail,
-      fullName: userData.fullName ?? '',
+      fullName: userData.fullName ?? "",
       passwordPlain: userData.password,
     });
 
-    await this._userService.createUser(newUser);
-    // 5. Dọn dẹp dữ liệu tạm trong Redis
-    await this._pendingRepo.delete(normalizedEmail);
-    await this._otpService.deleteOtp(normalizedEmail);
+    // 4. Tối ưu hóa I/O chạy song song dọn dẹp bộ nhớ đệm
+    await Promise.all([
+      this._pendingRepo.delete(normalizedEmail),
+      this._otpService.deleteOtp(normalizedEmail),
+    ]);
 
-    const result = UserMapper.toResponse(newUser);
-
-    return result;
+    // 5. Chuyển đổi cấu trúc phản hồi an toàn qua Mapper
+    return UserMapper.toResponse(newUser);
   }
 
   /**
    * @description Gửi lại mã OTP cho quy trình.
-   * Kiểm tra sự tồn tại của phiên đăng ký tạm thời và thực thi logic gửi mã kèm chống spam.
    * @param {string} email - Địa chỉ email người dùng cần nhận lại mã.
    * @returns {Promise<void>}
    * @throws {AppError} AUTH.REGISTRATION_EXPIRED - Nếu phiên đăng ký tạm không tồn tại hoặc đã quá hạn.

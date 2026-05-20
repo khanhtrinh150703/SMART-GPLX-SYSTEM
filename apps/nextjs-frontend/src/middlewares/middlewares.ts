@@ -28,7 +28,7 @@ export function middleware(request: NextRequest) {
    * Nếu đang ở các trang đăng nhập/đăng ký mà đã có token -> Đẩy vào dashboard
    */
   if (pathname.startsWith('/auth') && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/overview', request.url));
   }
 
   return NextResponse.next();

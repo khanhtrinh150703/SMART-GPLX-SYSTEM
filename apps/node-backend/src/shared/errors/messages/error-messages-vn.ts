@@ -46,8 +46,12 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.EMAIL_REQUIRED]: 'Vui lòng nhập địa chỉ email.',
     [ErrorCode.AUTH.OTP_REQUIRED]: 'Vui lòng nhập mã xác thực OTP.',
     [ErrorCode.AUTH.NEW_PASSWORD_REQUIRED]: 'Vui lòng nhập mật khẩu mới.',
-
-
+    [ErrorCode.AUTH.FULL_NAME_INVALID]: 'Họ và tên không đúng định dạng hoặc không hợp lệ.',
+    [ErrorCode.AUTH.CONFIRM_PASSWORD_REQUIRED]: 'Vui lòng xác nhận lại mật khẩu.',
+    [ErrorCode.AUTH.ROLES_REQUIRED]: 'Vui lòng chọn ít nhất một quyền (role) cho tài khoản.',
+    [ErrorCode.AUTH.USERNAME_ALREADY_EXISTS]: 'Tên đăng nhập đã tồn tại trong hệ thống.',
+    [ErrorCode.AUTH.EMAIL_ALREADY_EXISTS]: 'Địa chỉ email này đã được sử dụng.',
+    
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',
     [ErrorCode.USER.EMAIL_EXISTS]: 'Địa chỉ email này đã được sử dụng.',

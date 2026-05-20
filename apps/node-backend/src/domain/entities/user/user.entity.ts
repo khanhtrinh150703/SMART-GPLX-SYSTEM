@@ -59,7 +59,7 @@ export class User extends BaseEntity<IUserDomainProps> {
       urlPicture: '',
 
       status: 'ACTIVE',
-      roles: [], // Mặc định chưa có role khi mới tạo (hoặc gán role mặc định ở Service)
+      roles: [], 
 
       createdAt: now,
       updatedAt: now,

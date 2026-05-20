@@ -20,7 +20,7 @@ interface PendingRequest {
 // Khởi tạo Client riêng cho Refresh để tránh bị Interceptor chính "tóm" được
 // (Separate client for refreshing to avoid interceptor loops)
 const refreshClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "/api/v1",
 });
 
 // 2. Biến kiểm soát trạng thái hàng đợi
@@ -39,7 +39,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
