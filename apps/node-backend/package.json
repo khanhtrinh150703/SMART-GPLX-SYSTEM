@@ -6,6 +6,7 @@
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "framer-motion": "^12.38.0",
     "glob": "^13.0.6",
@@ -77,5 +78,8 @@
   },
   "prisma": {
     "seed": "npx tsx -r tsconfig-paths/register prisma/seed.main.ts"
+  },
+  "_moduleAliases": {
+    "@": "dist/src"
   }
 }

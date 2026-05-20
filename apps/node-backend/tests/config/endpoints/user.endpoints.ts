@@ -8,4 +8,7 @@ export const USER_ENDPOINTS = {
   USER_DELETE: (userId: string): string => `${API_BASE.USER}/${userId}`,
   USER_RESTORE: (userId: string): string => `${API_BASE.USER}/${userId}/restore`,
   USERS_LIST: API_BASE.USER,
+  ADMIN_CREATE_USER: `${API_BASE.USER}/admin`,
+  ADMIN_UPDATE_USER: (userId: string): string => `${API_BASE.USER}/${userId}/admin`,
+  ADMIN_UPDATE_PROFILE: (userId: string): string => `${API_BASE.USER}/admin/${userId}`
 } as const;

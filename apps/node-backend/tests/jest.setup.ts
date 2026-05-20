@@ -33,10 +33,6 @@ export const connectDB = async () => {
     // ============================================================
     console.log("⏳ [System] Resolving Background Workers...");
 
-    // Ông chỉ cần 'resolve' chúng ra. Awilix sẽ tự động:
-    // - Tạo ImportProcessorService (vì Worker cần nó)
-    // - Tạo ImportQueue (Singleton)
-    // - Khởi chạy Worker (Lắng nghe Redis ngay lập tức)
     const importQueue = container.resolve("importQueue") as ImportQueue;
     const importWorker = container.resolve("importWorker") as ImportWorker;
 

@@ -10,7 +10,7 @@ export interface IRefreshTokenInputDTO {
 
 /**
  * @class RefreshTokenRequestDTO
- * @description DTO tiếp nhận và xác thực thô Refresh Token, mapping trước khi validate.
+ * @description DTO tiếp nhận và xác thực thô Refresh Token, mapping trước khi validate dựa trên thuộc tính của class.
  */
 export class RefreshTokenRequestDTO implements IRefreshTokenInputDTO {
   /** @readonly */
@@ -30,23 +30,23 @@ export class RefreshTokenRequestDTO implements IRefreshTokenInputDTO {
     this.refreshToken =
       typeof data.refreshToken === "string" ? data.refreshToken.trim() : "";
 
-    // 3. Validation (Kiểm tra logic dựa trên dữ liệu gốc và dữ liệu đã map)
-    this.validate(data);
+    // 3. Validation (Kiểm tra logic dựa trên các thuộc tính của `this`)
+    this.validate();
   }
 
   /**
    * @private
-   * @description Hàm gác cổng ném AppError nếu dữ liệu không đạt yêu cầu.
-   * @param {IRefreshTokenInputDTO} data - Dùng để kiểm tra kiểu dữ liệu nguyên bản
+   * @description Hàm gác cổng ném AppError nếu dữ liệu không đạt yêu cầu dựa trên thuộc tính của class.
    * @throws {AppError}
    */
-  private validate(data: IRefreshTokenInputDTO): void {
-    // Kiểm tra sự tồn tại và định dạng chuỗi
-    if (!data.refreshToken || typeof data.refreshToken !== "string") {
+  private validate(): void {
+    // Kiểm tra sự tồn tại và kiểu dữ liệu (đã được lọc ở bước mapping)
+    // Nếu dữ liệu thô không phải string, bước mapping đã gán thành chuỗi rỗng ""
+    if (!this.refreshToken || this.refreshToken.length === 0) {
       throw new AppError(ErrorCode.AUTH.REFRESH_TOKEN_REQUIRED);
     }
 
-    // Kiểm tra độ dài tối thiểu (sử dụng thuộc tính đã được trim)
+    // Kiểm tra độ dài tối thiểu của token đã được làm sạch
     if (this.refreshToken.length < 40) {
       throw new AppError(ErrorCode.AUTH.INVALID_REFRESH_TOKEN);
     }

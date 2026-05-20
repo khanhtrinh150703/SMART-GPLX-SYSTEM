@@ -115,6 +115,7 @@ import {
   AuthController,
   UserController,
   RoleController,
+  AdminUserController,
 } from "@/api/controllers/identity";
 
 // Nhóm Exam Management
@@ -160,6 +161,7 @@ import {
   UserStatisticsController,
   UserTopicStatisticsController,
 } from "@/api/controllers/statistics";
+import { IUnitOfWork } from "@/domain/interfaces/seedwork";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -241,7 +243,7 @@ export interface ICradle {
 
   /** @description Quản lý vòng đời JWT, ký và xác thực mã thông báo. */
   tokenManager: ITokenManager;
-
+ 
   // --- NGHIỆP VỤ ỨNG DỤNG (APPLICATION SERVICES) ---
 
   /** @description Dịch vụ gửi Email (Nodemailer/External API). */
@@ -376,6 +378,9 @@ export interface ICradle {
   /** @description Trình xử lý tác vụ chạy ngầm (Background Worker) thực thi các Job lấy từ hàng đợi nhập liệu (Job Consumer). */
   importWorker: ImportWorker;
 
+  /** @description Đơn vị điều phối transaction trừu tượng (Unit of Work). */
+  unitOfWork: IUnitOfWork;
+
   // --- GIAO TIẾP API (CONTROLLERS) ---
 
   /** @description Xử lý các yêu cầu HTTP liên quan đến xác thực (Auth). */
@@ -425,4 +430,7 @@ export interface ICradle {
 
   /** @description Bộ điều khiển quản lý vòng đời lịch sử thi, bao gồm việc ghi nhận kết quả bài thi và truy xuất dữ liệu lịch sử. */
   examHistoryController: ExamHistoryController;
+
+  /** @description Bộ điều khiển quản lý người dùng hệ thống dành cho quản trị viên, bao gồm việc tạo mới, cập nhật thông tin, phân quyền và quản lý trạng thái tài khoản. */
+  adminUserController: AdminUserController;
 }

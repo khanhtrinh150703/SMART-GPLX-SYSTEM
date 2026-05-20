@@ -16,14 +16,15 @@ import {
 
 // 3. Infrastructure & Config
 import { specs } from "./infrastructure/swagger";
-import { STORAGE_CONFIG } from "./shared/config/storage.config";
 import { ILogger } from "./domain/interfaces/logging";
 import { container } from "./shared/utils/container";
+import { STORAGE_CONFIG, swaggerAuth } from "./shared/config";
 
 const app = express();
 const uploadPath = path.resolve(STORAGE_CONFIG.PUBLIC_DIR);
 const logger = container.resolve("logger") as ILogger;
 const monitorMiddleware = apiMonitor(logger);
+
 // =========================================================
 // 1. SECURITY & PARSING (Bảo mật & Phân tích dữ liệu)
 // =========================================================
@@ -35,7 +36,11 @@ app.set("trust proxy", true);
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // Mở cửa cho cổng 3000 của Frontend
+    origin: [
+      "https://gplx.dividesk.com",
+      "https://www.gplx.dividesk.com",
+      "http://localhost:3000",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], // Các phương thức HTTP được phép
     allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token"], // Các tiêu đề (Headers) được phép
     credentials: true, // Cho phép gửi kèm Cookie/Token bảo mật
@@ -63,7 +68,7 @@ app.use(requestTimer); // Bộ đếm thời gian xử lý
 // =========================================================
 // 3. ROUTES & DOCS (Định tuyến & Tài liệu API)
 // =========================================================
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api-docs", swaggerAuth, swaggerUi.serve, swaggerUi.setup(specs));
 app.use("/api/v1", rootRouter);
 
 // =========================================================

@@ -76,18 +76,16 @@ export default function LoginForm() {
       <Divider text="Hoặc dùng tài khoản hệ thống" />
 
       {/* CẢNH BÁO LỖI HỆ THỐNG (Server-side Error Alert Display) */}
-      {/* Đặt ngay trên các ô nhập liệu giúp người dùng thấy ngay lý do thất bại (Contextual awareness placement) */}
       {errorMsg && (
         <Alert
           intent="error" // Biến thể màu đỏ Rose-500 của hệ thống thiết kế
           message={errorMsg}
           className="w-full animate-fade-in"
-          duration={7000}
+          duration={10000}
         />
       )}
 
       {/* BIỂU MẪU NHẬP LIỆU CHÍNH (Primary Credentials Input Form) */}
-      {/* Tăng khoảng cách gap lên space-y-5 để form thông thoáng, giảm áp lực điền dữ liệu (Form cognitive load reduction) */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Trường nhập Tên đăng nhập (Username Input Field) */}
         <Input

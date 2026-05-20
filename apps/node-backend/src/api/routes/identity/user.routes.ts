@@ -11,12 +11,16 @@ import { validateFileSize } from "@/api/middlewares/shared";
 // 3. DI Container
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
+import { AdminUserController } from "@/api/controllers/identity/admin-user.controller";
 const router = Router();
 
 /**
  * Resolve Controller từ Awilix Container.
  */
 const userController = container.resolve("userController") as UserController;
+const adminUserController = container.resolve(
+  "adminUserController",
+) as AdminUserController;
 
 // ============================================================================
 // CẤU HÌNH MIDDLEWARE CHUNG (GLOBAL FOR THIS ROUTER)
@@ -60,19 +64,15 @@ router.use(requirePermission("users:manage"));
  * @route GET /api/v1/users
  * @access Private (Admin)
  */
-router.get("/", userController.getUsers);
+router.get("/", adminUserController.getUsers);
+
 
 /**
- * @description Quản trị viên cập nhật thông tin chi tiết và ảnh đại diện của người dùng khác.
- * @route PATCH /api/v1/users/admin/:id
+ * @description Quản trị viên khởi tạo một tài khoản người dùng mới (Học viên, Giáo viên, Điều phối viên).
+ * @route POST /api/v1/users/admin
  * @access Private (Admin)
  */
-router.patch(
-  "/admin/:id",
-  validateUuidParam("id"), 
-  upload.single("pictureFile"),
-  userController.updateProfileAdmin,
-);
+router.post("/admin", adminUserController.adminCreateUser);
 
 /**
  * Nhóm các hành động thao tác dựa trên ID người dùng để code gọn gàng hơn.
@@ -84,17 +84,17 @@ router
    * @description Xóa (xóa mềm) tài khoản người dùng khỏi hệ thống.
    * @route DELETE /api/v1/users/:id
    */
-  .delete(userController.deleteUser);
+  .delete(adminUserController.deleteUser);
 
 /**
- * @description Cập nhật trạng thái hoạt động (Active/Inactive) cho tài khoản người dùng.
+ * @description Cập nhật trạng thái hoạt động cho tài khoản người dùng.
  * @route PATCH /api/v1/users/:id/status
  * @access Private (Admin)
  */
 router.patch(
   "/:id/status",
   validateUuidParam("id"),
-  userController.updateStatus,
+  adminUserController.updateStatus,
 );
 
 /**
@@ -105,7 +105,7 @@ router.patch(
 router.patch(
   "/:id/restore",
   validateUuidParam("id"),
-  userController.restoreUser,
+  adminUserController.restoreUser,
 );
 
 /**
@@ -116,7 +116,19 @@ router.patch(
 router.put(
   "/:id/admin",
   validateUuidParam("id"),
-  userController.updateUserByAdmin,
+  adminUserController.updateUserByAdmin,
+);
+
+/**
+ * @description Quản trị viên cập nhật thông tin chi tiết và ảnh đại diện của người dùng khác.
+ * @route PATCH /api/v1/users/admin/:id
+ * @access Private (Admin)
+ */
+router.patch(
+  "/admin/:id",
+  validateUuidParam("id"),
+  upload.single("pictureFile"),
+  adminUserController.updateProfileAdmin,
 );
 
 export default router;

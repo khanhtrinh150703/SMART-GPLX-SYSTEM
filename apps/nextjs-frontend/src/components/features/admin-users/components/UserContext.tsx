@@ -28,6 +28,7 @@ import {
 import { UserQueryDTO } from "@/types/query-user";
 import { userToolbarVariants as variants } from "./user-toolbar.variants";
 import { useRoleOptions } from "@/hooks/use-master-data";
+import { User } from "@/types/user.type";
 
 export default function AdminUserManagementPage() {
   // --- 1. QUẢN LÝ URL & PARAMS ---
@@ -103,6 +104,7 @@ export default function AdminUserManagementPage() {
     handleUnlock,
     handleRestore,
     handleUpdate,
+    handleCreate,
   } = useUsers(getApiParams() as UserQueryDTO);
 
   const { data: roles = [] } = useRoleOptions();
@@ -116,17 +118,23 @@ export default function AdminUserManagementPage() {
       : "Đã xảy ra lỗi không xác định.";
   };
 
-  const handleCreateUser = async (data: CreateUserPayload) => {
+  const handleCreateUser = async (data: CreateUserPayload): Promise<User> => {
     try {
       setMessage(null);
-      // Giả lập API delay (Thay bằng mutation thực tế khi có)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await handleCreate.mutateAsync(data);
+      // Kiểm tra phòng thủ (Guard Clause) để loại bỏ khả năng dính 'undefined'
+      if (!res?.data) {
+        throw new Error("Không nhận được dữ liệu phản hồi từ hệ thống.");
+      }
 
       setIsCreateModalOpen(false);
       setMessage({ intent: "success", text: "Thêm mới học viên thành công!" });
+
+      // Lúc này TypeScript tự biết res.data đã được loại trừ kiểu 'undefined'
+      return res.data;
     } catch (error: unknown) {
       setMessage({ intent: "error", text: getApiError(error) });
-      throw error;
+      return Promise.reject(error);
     }
   };
 
@@ -329,6 +337,7 @@ export default function AdminUserManagementPage() {
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateUser}
         isLoading={false}
+        roleOptions={roles}
       />
 
       <EditUserModal
@@ -349,7 +358,6 @@ export default function AdminUserManagementPage() {
         variant="danger"
         onConfirm={handleDeleteUserConfirm}
         isLoading={isDeleting}
-        // Truyền thông báo lỗi vào Modal
         apiMessage={message}
         onApiMessageClose={() => setMessage(null)}
         onClose={() => {

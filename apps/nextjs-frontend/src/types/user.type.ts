@@ -20,7 +20,7 @@ export interface User {
   fullName: string;
   urlPicture: string;
   status: string;
-  createdAt?: string; // Optional: Có thể không cần ở mọi nơi
+  createdAt?: string; 
   updatedAt?: string;
   roles: UserRole[];
   permissions: string[];

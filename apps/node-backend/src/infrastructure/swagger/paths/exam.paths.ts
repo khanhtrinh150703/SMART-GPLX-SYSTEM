@@ -1,4 +1,4 @@
-import { deleteResponse, securityResponses } from "../swaggerHelpers";
+import { deleteResponse, securityResponses } from "../helper/swaggerHelpers";
 
 export const examPaths = {
   /**

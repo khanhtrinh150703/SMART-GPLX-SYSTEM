@@ -1,46 +1,42 @@
-# Stage 1: Build và chuẩn bị sản phẩm
+# ==========================================
+# STAGE 1: Builder - Cài đặt, Biên dịch và Xử lý Alias
+# ==========================================
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Sao chép các file cấu hình package từ gốc và của backend
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
+COPY tsconfig*.json ./
+COPY apps/node-backend/tsconfig*.json ./apps/node-backend/
 
-# Cài đặt toàn bộ dependencies (bao gồm cả devDependencies để biên dịch)
 RUN npm ci
-
-# Sao chép toàn bộ mã nguồn vào container
 COPY . .
 
-# Sinh Prisma Client chuẩn xác dựa trên file schema 
 RUN npm run db:gen -w node-backend
-
-# Biên dịch TypeScript sang JavaScript (lệnh tsc sẽ sinh ra thư mục dist)
 RUN cd apps/node-backend && npm run build
 
-RUN npm prune --production
+# 🎯 BƯỚC QUYẾT ĐỊNH: Xử lý alias cho toàn bộ thư mục dist (bao gồm cả server lẫn seed nằm trong dist)
+RUN npx --yes tsc-alias -p apps/node-backend/tsconfig.json
 
 # ==========================================
-# Stage 2: Runner - Máy chạy sạch tinh gọn
+# STAGE 2: Runner - Môi trường chạy Production tinh gọn
+# ==========================================
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Tạo sẵn cấu trúc thư mục con để chứa package.json và dist chuẩn bài
-RUN mkdir -p apps/node-backend
-
-# Copy package.json của gốc và backend sang môi trường chạy
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
-# Copy thư mục node_modules ĐÃ ĐƯỢC GIẢM CÂN sạch sẽ ở Stage 1 sang
-COPY --from=builder /app/node_modules ./node_modules
+RUN npm ci --omit=dev
+RUN npm install prisma @prisma/client
 
-# Copy thư mục dist đã biên dịch sang
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/apps/node-backend/prisma ./apps/node-backend/prisma
 COPY --from=builder /app/apps/node-backend/dist ./apps/node-backend/dist
 
 EXPOSE 5000
 
-# Khởi chạy trực tiếp bằng node không qua trung gian npm, tối ưu PID 1
-CMD ["node", "apps/node-backend/dist/src/server.js"]
+CMD npx prisma db push --accept-data-loss --schema=apps/node-backend/prisma/schema.prisma && node apps/node-backend/dist/prisma/seed.main.js && node apps/node-backend/dist/src/server.js

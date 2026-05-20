@@ -1,4 +1,4 @@
-import { securityResponses } from "../swaggerHelpers";
+import { securityResponses } from "../helper/swaggerHelpers";
 
 /**
  * @description Path definitions for Selection Data (Dropdowns)
