@@ -25,6 +25,7 @@ import {
   userStatisticsSteps,
   userSteps,
 } from "./steps";
+import prisma from "../../prisma/prisma";
 
 describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
   // Shared Context: Dữ liệu dùng chung xuyên suốt các file
@@ -42,6 +43,8 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
   let activeSessionId: string | undefined;
   let validQuestionId: string | undefined;
   let historyId: string | undefined;
+  let studentId: string | undefined;
+  let tearcherId: string | undefined;
 
   // --- 🔑 SETUP: Khởi động, lấy Token và Dữ liệu nền ---
   beforeAll(async () => {
@@ -64,25 +67,36 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
       return res.body.data.accessToken;
     };
 
-    // 1. Đăng nhập song song hoặc tuần tự
-    adminToken = await login(
-      {
-        username: AUTH_PAYLOAD.ADMIN_ACCOUNT.username,
-        password: AUTH_PAYLOAD.ADMIN_ACCOUNT.password,
-      },
-      "Admin",
-    );
+    // 1. Tối ưu hóa đăng nhập song song (Parallelism) để tăng tốc độ chạy Test Suite
+    const [fetchedAdminToken, fetchedRegularToken] = await Promise.all([
+      login(
+        {
+          username: AUTH_PAYLOAD.ADMIN_ACCOUNT.username,
+          password: AUTH_PAYLOAD.ADMIN_ACCOUNT.password,
+        },
+        "Admin",
+      ),
+      login(
+        {
+          username: AUTH_PAYLOAD.NORMAL_ACCOUNT.username,
+          password: AUTH_PAYLOAD.NORMAL_ACCOUNT.password,
+        },
+        "Regular User",
+      ),
+    ]);
 
-    regularToken = await login(
-      {
-        username: AUTH_PAYLOAD.NORMAL_ACCOUNT.username,
-        password: AUTH_PAYLOAD.NORMAL_ACCOUNT.password,
-      },
-      "Regular User",
-    );
+    adminToken = fetchedAdminToken;
+    regularToken = fetchedRegularToken;
 
-    // 2. Fetch dữ liệu từ API
-    const [chapterRes, licenseRes, examMatrixRes, examRes] = await Promise.all([
+    // 2. Fetch dữ liệu từ API và truy vấn trực tiếp từ DB SONG SONG (Parallelism 100%)
+    const [
+      chapterRes,
+      licenseRes,
+      examMatrixRes,
+      examRes,
+      rawStudent,
+      rawTeacher,
+    ] = await Promise.all([
       request(app)
         .get(CHAPTER_ENDPOINTS.FETCH_ALL)
         .set("Authorization", `Bearer ${adminToken}`),
@@ -95,24 +109,38 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
       request(app)
         .get(EXAM_ENDPOINTS.LIST_PRIVATE)
         .set("Authorization", `Bearer ${adminToken}`),
+
+      // Đứng từ bảng roles lấy thẳng bản ghi, không vòng vo qua bảng khác
+      prisma.role.findFirst({
+        where: { name: "STUDENT" }, 
+        select: { id: true },
+      }),
+
+      prisma.role.findFirst({
+        where: { name: "INSTRUCTOR" },
+        select: { id: true },
+      }),
     ]);
 
-    // 3. Ép kiểu dữ liệu (Cast type) để không phải dùng any
+    studentId = rawStudent?.id;
+    tearcherId = rawTeacher?.id;
+
+    // 3. Ép kiểu dữ liệu (Cast type) chuẩn xác để không bị dính 'any' ngầm
     const chapters = (chapterRes.body.data?.data || []) as Chapter[];
     const licenses = (licenseRes.body.data?.data || []) as LicenseCategory[];
     const examMatrix = (examMatrixRes.body.data?.data || []) as ExamMatrix[];
     const exams = (examRes.body.data?.data || []) as Exam[];
 
-    const getChapter = (code: string) =>
+    const getChapter = (code: string): string | undefined =>
       chapters.find((c: Chapter) => c.code === code)?.id;
-    const getLicense = (name: string) =>
+    const getLicense = (name: string): string | undefined =>
       licenses.find((l: LicenseCategory) => l.name === name)?.id;
-    const getexamMatrix = (name: string) =>
+    const getexamMatrix = (name: string): string | undefined =>
       examMatrix.find((ex: ExamMatrix) => ex.name === name)?.id;
-    const getExam = (name: string) =>
+    const getExam = (name: string): string | undefined =>
       exams.find((e: Exam) => e.name === name)?.id;
 
-    // 4. Tìm kiếm ID chính xác theo nghiệp vụ
+    // 4. Tìm kiếm ID danh mục chính xác theo nghiệp vụ sát hạch
     chapterId = getChapter("CH01");
     chapterIdSecond = getChapter("CH05");
     chapterIdThird = getChapter("CH06");
@@ -123,23 +151,27 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
     examMatrixId = getexamMatrix("Ma trận chuẩn Hạng CE");
 
     examId = getExam("Đề thi mẫu Hạng A1 - Số 01");
-    anotherExamId = getExam("Đề thi mẫu Hạng A1 - Số 02"); // 💡 Bốc thêm ID đề mẫu số 02
+    anotherExamId = getExam("Đề thi mẫu Hạng A1 - Số 02");
 
-    // 5. Kiểm tra an toàn (Guard Clause)
+    // 5. Mệnh đề bảo vệ nghiêm ngặt (Guard Clause) kiểm tra toàn diện dữ liệu test
     if (
       !chapterId ||
       !chapterIdSecond ||
       !licenseId ||
       !examMatrixId ||
       !examId ||
-      !anotherExamId // 💡 Thêm check chặt chẽ cho anotherExamId
+      !anotherExamId ||
+      !studentId || // Bắt buộc phải có studentId mới cho chạy test
+      !tearcherId // Bắt buộc phải có tearcherId mới cho chạy test
     ) {
       throw new Error(
-        "❌ Test Fail: Không tìm thấy Seed Data cho các trường danh mục hoặc Đề thi mẫu",
+        `❌ Test Fail: Thiếu dữ liệu Seed Data nền! Chi tiết: ` +
+          `Chapter1: ${!!chapterId}, Chapter2: ${!!chapterIdSecond}, License: ${!!licenseId}, ` +
+          `Matrix: ${!!examMatrixId}, Exam1: ${!!examId}, Exam2: ${!!anotherExamId}, ` +
+          `Student: ${!!studentId}, Teacher: ${!!tearcherId}`,
       );
     }
   });
-
   // =========================================================================
   // THỰC THI CÁC GIAI ĐOẠN (SEQUENTIAL EXECUTION)
   // =========================================================================
@@ -149,7 +181,12 @@ describe("🏁 FULL SYSTEM INTEGRATION TEST FLOW", () => {
   });
 
   describe("Phase 2: User Operations", () => {
-    userSteps(() => adminToken);
+    // Gọi hàm thiết lập kịch bản chạy test, truyền token factory và object factory chứa 2 ID
+    userSteps(
+      () => adminToken,
+      () => studentId as string,
+      () => tearcherId as string,
+    );
   });
 
   describe("Phase 3: License Operations", () => {

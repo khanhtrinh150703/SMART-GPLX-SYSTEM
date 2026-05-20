@@ -19,8 +19,9 @@ export const ENDPOINTS = {
     GET_ALL: `/users`,
     UPDATE_PROFILE: `/users/me/profile`,
     CHANGE_PASSWORD: `/users/me/password`,
-    // 💡 FIX: Sử dụng function để truyền ID động vào đúng chuẩn
     UPDATE_BY_ADMIN: (id: string) => `/users/${id}/admin`,
+    CHANGE_STATUS: (id: string) => `/users/${id}/admin`,
+    CREATE_USER_BY_ADMIN: `/users/admin`,
     DELETE: (id: string) => `/users/${id}`,
     RESTORE: (id: string) => `/users/${id}/restore`,
   },

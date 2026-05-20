@@ -11,7 +11,7 @@ export interface IVerifyUserInputDTO {
 
 /**
  * @class VerifyUserRequestDTO
- * @description DTO xác thực tài khoản OTP, thực hiện mapping trước khi validate.
+ * @description DTO xác thực tài khoản OTP, thực hiện mapping trước khi validate dựa trên thuộc tính của class.
  */
 export class VerifyUserRequestDTO implements IVerifyUserInputDTO {
   public readonly email: string;
@@ -27,28 +27,31 @@ export class VerifyUserRequestDTO implements IVerifyUserInputDTO {
       throw new AppError(ErrorCode.SYSTEM.INVALID_INPUT);
     }
 
-    // 1. Mapping & Sanitization (Làm sạch và gán giá trị)
+    // 1. Mapping & Sanitization (Làm sạch và gán giá trị vào `this`)
     this.email =
       typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
 
     this.otp = typeof data.otp === "string" ? data.otp.trim() : "";
 
-    // 2. Validation (Kiểm tra dữ liệu sau khi mapping)
-    this.validate(data);
+    // 2. Validation (Kiểm tra dữ liệu sau khi gán vào `this`)
+    this.validate();
   }
 
   /**
    * @private
-   * @description Hàm gác cổng ném AppError dựa trên mã lỗi hệ thống.
-   * @param {IVerifyUserInputDTO} data - Dùng để check sự hiện diện nguyên bản.
+   * @description Hàm gác cổng ném AppError dựa trên mã lỗi hệ thống và thuộc tính của class.
    * @throws {AppError}
    */
-  private validate(data: IVerifyUserInputDTO): void {
-    // 1. Kiểm tra sự tồn tại (dựa trên data gốc)
-    if (!data.email) throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
-    if (!data.otp) throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
+  private validate(): void {
+    // 1. Kiểm tra sự tồn tại (Dựa trên dữ liệu đã được gán và làm sạch trong `this`)
+    if (this.email.length === 0) {
+      throw new AppError(ErrorCode.AUTH.EMAIL_REQUIRED);
+    }
+    if (this.otp.length === 0) {
+      throw new AppError(ErrorCode.AUTH.OTP_REQUIRED);
+    }
 
-    // 2. Kiểm tra định dạng (dựa trên dữ liệu đã trim)
+    // 2. Kiểm tra định dạng (Dựa trên độ dài thực tế của OTP đã trim)
     if (this.otp.length !== 6) {
       throw new AppError(ErrorCode.AUTH.OTP_INVALID);
     }

@@ -136,7 +136,7 @@ export const CategoryCard = ({
                   src={images[activeIndex]}
                   alt={`${title} view ${activeIndex + 1}`}
                   fill
-                  priority
+                  priority={activeIndex === 0} 
                   sizes="(max-w-7xl) 33vw"
                   draggable={false} // Chống trình duyệt tự kéo ảnh thô (Disable native image ghost dragging)
                   className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-transform duration-500 ease-out p-4 pointer-events-none"

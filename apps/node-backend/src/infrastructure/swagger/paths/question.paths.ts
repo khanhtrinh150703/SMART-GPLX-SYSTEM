@@ -1,4 +1,4 @@
-import { securityResponses, deleteResponse } from "../swaggerHelpers";
+import { securityResponses, deleteResponse } from "../helper/swaggerHelpers";
 
 export const questionPaths = {
   [`/questions/chapter/{chapterId}`]: {

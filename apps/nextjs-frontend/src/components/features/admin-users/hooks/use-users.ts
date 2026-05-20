@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserQueryDTO } from "@/types/query-user";
-import { AdminUpdatePayload } from "../schema/user.schema";
+import { AdminUpdatePayload, CreateUserPayload } from "../schema/user.schema";
 import { userAdminService } from "../services/user-admin.service";
 
 /**
@@ -45,6 +45,13 @@ export const useUsers = (params: UserQueryDTO) => {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: (dto: CreateUserPayload) =>
+      userAdminService.adminCreateUser(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
 
   // Trả về một đối tượng duy nhất chứa tất cả trạng thái và hàm xử lý.
   return {
@@ -61,7 +68,8 @@ export const useUsers = (params: UserQueryDTO) => {
     // Các hàm thực thi
     handleDelete: deleteMutation,
     handleRestore: restoreMutation,
-    handleUnlock: restoreMutation, // Dùng chung logic restore nếu API giống nhau
+    handleUnlock: restoreMutation,
     handleUpdate: updateMutation,
+    handleCreate: createMutation,
   };
 };

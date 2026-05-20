@@ -6,16 +6,16 @@ const nextConfig: NextConfig = {
     // 1. Cấp phép cho Next.js tối ưu ảnh từ các nguồn tuyệt đối
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '5000',
-        pathname: '/uploads/**',
+        protocol: "http",
+        hostname: "localhost",
+        port: "5000",
+        pathname: "/uploads/**",
       },
       {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-        port: '5000',
-        pathname: '/uploads/**',
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "5000",
+        pathname: "/uploads/**",
       },
     ],
   },
@@ -25,13 +25,26 @@ const nextConfig: NextConfig = {
     return [
       {
         // Khi gọi /uploads/abc.jpg ở Port 5000
-        source: '/uploads/:path*',
+        source: "/uploads/:path*",
         // Nó sẽ âm thầm lấy từ Port 5000
-        destination: 'http://localhost:5000/uploads/:path*',
+        destination: "http://localhost:5000/uploads/:path*",
       },
     ];
   },
-
+  async headers() {
+    return [
+      {
+        // Áp dụng cho tất cả file trong thư mục public/images
+        source: "/images/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
   /* Các cấu hình khác nếu cần (đã bỏ eslint/typescript theo yêu cầu) */
 };
 

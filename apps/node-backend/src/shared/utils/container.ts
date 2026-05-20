@@ -127,6 +127,7 @@ import {
   AuthController,
   UserController,
   RoleController,
+  AdminUserController,
 } from "@/api/controllers/identity";
 
 import {
@@ -155,6 +156,7 @@ import { MySQLQuestionStatisticsRepository, MySQLUserStatisticsRepository, MySQL
 import { RedisLeaderboardRepository } from "@/infrastructure/repositories/leaderboard";
 import { QuestionStatisticsService, UserTopicStatisticsService } from "@/application/services/statistics/commands";
 import { UserStatisticsController, UserTopicStatisticsController } from "@/api/controllers/statistics";
+import { PrismaUnitOfWork } from "@/infrastructure/persistence/prisma";
 
 // Service
 /**
@@ -218,6 +220,7 @@ container.register({
   tempStorageService: asClass(TempStorageService).singleton(),
 
   // --- TẦNG NGHIỆP VỤ (APPLICATION LAYER - SERVICES) ---
+  unitOfWork: asClass(PrismaUnitOfWork).singleton(),
   userService: asClass(UserService).singleton(),
   authService: asClass(AuthService).singleton(),
   licenseCategoryService: asClass(LicenseCategoryService).singleton(),
@@ -278,4 +281,5 @@ container.register({
   userStatisticsController: asClass(UserStatisticsController).singleton(),
   userTopicStatisticsController: asClass(UserTopicStatisticsController).singleton(),
   examHistoryController: asClass(ExamHistoryController).singleton(),
+  adminUserController: asClass(AdminUserController).singleton(),
 });
