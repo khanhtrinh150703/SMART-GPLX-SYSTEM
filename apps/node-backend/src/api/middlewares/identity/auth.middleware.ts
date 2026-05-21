@@ -5,7 +5,6 @@ import { AppError } from "@/shared/errors/error-app";
 import { ErrorCode } from "@/shared/errors/error-codes";
 import { jwtUtil } from "@/shared/utils/jwt.util";
 import { container } from "@/shared/utils/container";
-import { RedisTokenRepository } from "@/infrastructure/repositories/identity/redis-token.repository";
 import { REDIS_KEYS } from "@/shared/config/redis.config";
 import { IAuthRequest } from "@/shared/types/authRequest.types";
 
@@ -30,10 +29,8 @@ export const authMiddleware = catchAsync(
       const payload = jwtUtil.verifyAccessToken(token);
 
       // 3. Kiểm tra JTI trong Redis (Session Validation)
-      // Lấy tokenRepository từ DI Container gắn kèm trong Request
-      const tokenRepo = container.resolve(
-        "tokenRepository",
-      ) as RedisTokenRepository;
+      // Lấy tokenRepository từ DI Container dạng Cradle đảm bảo Type-safety tuyệt đối
+      const tokenRepo = container.cradle.tokenRepository;
 
       const deviceId = payload.deviceId || "default";
       const accessKey = REDIS_KEYS.AUTH.getAccessTokenKey(

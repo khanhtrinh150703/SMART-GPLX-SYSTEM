@@ -3,18 +3,35 @@ version: '3.8'
 services:
   # --- NHÓM MONITORING (GIÁM SÁT) ---
   loki:
-    image: grafana/loki:2.9.0
+    image: grafana/loki:latest
+    container_name: smart_gplx_loki
     ports:
       - "3100:3100"
-    # volumes:
-    #   - ./loki-config.yaml:/etc/loki/local-config.yaml
-    #   - ./loki-data:/loki # Gắn thư mục máy thật vào thư mục /loki của container
-    # command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - smart-gplx-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smart_gplx_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=730d'
     networks:
       - smart-gplx-network
 
   grafana:
     image: grafana/grafana:latest
+    container_name: smart_gplx_grafana
     ports:
       - "3200:3000" 
     environment:
@@ -23,6 +40,7 @@ services:
       - smart-gplx-network
     depends_on:
       - loki
+      - prometheus
 
   # --- NHÓM CACHE & DATABASE (CƠ SỞ DỮ LIỆU) ---
   redis-cache:
@@ -82,3 +100,4 @@ volumes:
   mysql_data:
   loki_data:
   mongo_data:
+  prometheus_data:

@@ -1,20 +1,18 @@
 import { Router } from "express";
-
-// 1. Controller (Gom từ index của exam-session)
-import { ExamMatrixController } from "@/api/controllers/exam-session";
-
-// 2. Middlewares (Gom từ nhóm bảo mật của identity)
+// 1. Middlewares (Gom từ nhóm bảo mật của identity)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
-
-// 3. DI Container
-import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
 
-const router = Router();
-const controller = container.resolve(
-  "examMatrixController",
-) as ExamMatrixController;
+// 2. DI Container
+import { container } from "@/shared/utils/container";
 
+const router = Router();
+
+/**
+ * @description Bộ điều khiển điều phối các yêu cầu HTTP liên quan đến quản lý và cấu hình Ma trận đề thi (Exam Matrix).
+ * Trích xuất trực tiếp từ Cradle tổng giúp đảm bảo 100% Type-safety tuyệt đối mà không cần ép kiểu thủ công.
+ */
+const controller = container.cradle.examMatrixController;
 /**
  * @description Tất cả các route quản lý Ma trận đều yêu cầu đăng nhập
  */

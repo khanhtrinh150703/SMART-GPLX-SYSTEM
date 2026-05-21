@@ -29,23 +29,23 @@ export const ErrorCode = {
   AUTH: {
     // --- Nhóm 1xx: Validation (Dữ liệu đầu vào) ---
     MISSING_FIELDS: "AUTH_100", // Thiếu các trường bắt buộc chung
-    EMAIL_REQUIRED: "AUTH_101", // Email là bắt buộc 
+    EMAIL_REQUIRED: "AUTH_101", // Email là bắt buộc
     EMAIL_INVALID: "AUTH_102", // Email không đúng định dạng
-    OTP_REQUIRED: "AUTH_103", // Mã OTP là bắt buộc 
+    OTP_REQUIRED: "AUTH_103", // Mã OTP là bắt buộc
     OTP_INVALID: "AUTH_104", // Mã OTP sai
     OTP_EXPIRED: "AUTH_105", // Mã OTP đã hết hạn
     PASSWORD_REQUIRED: "AUTH_106", // Mật khẩu là bắt buộc
-    NEW_PASSWORD_REQUIRED: "AUTH_107", // Mật khẩu mới là bắt buộc 
+    NEW_PASSWORD_REQUIRED: "AUTH_107", // Mật khẩu mới là bắt buộc
     PASSWORD_TOO_WEAK: "AUTH_108", // Mật khẩu quá yếu
     PASSWORD_MISMATCH: "AUTH_110", // Mật khẩu xác nhận không khớp
     USERNAME_REQUIRED: "AUTH_111", // Tên đăng nhập là bắt buộc
     USERNAME_INVALID: "AUTH_112", // Tên đăng nhập không hợp lệ
     REFRESH_TOKEN_REQUIRED: "AUTH_113", // Thiếu Refresh Token
-    FULL_NAME_INVALID: "AUTH_114", // Họ và tên không hợp lệ 
-    CONFIRM_PASSWORD_REQUIRED: "AUTH_115", // Xác nhận mật khẩu là bắt buộc 
-    ROLES_REQUIRED: "AUTH_116", // Quyền (Role) là bắt buộc 
-    USERNAME_ALREADY_EXISTS: "AUTH_117", // Tên đăng nhập đã tồn tại trên hệ thống 
-    EMAIL_ALREADY_EXISTS: "AUTH_118", // Email đã được đăng ký sử dụng 
+    FULL_NAME_INVALID: "AUTH_114", // Họ và tên không hợp lệ
+    CONFIRM_PASSWORD_REQUIRED: "AUTH_115", // Xác nhận mật khẩu là bắt buộc
+    ROLES_REQUIRED: "AUTH_116", // Quyền (Role) là bắt buộc
+    USERNAME_ALREADY_EXISTS: "AUTH_117", // Tên đăng nhập đã tồn tại trên hệ thống
+    EMAIL_ALREADY_EXISTS: "AUTH_118", // Email đã được đăng ký sử dụng
 
     // --- Nhóm 4xx: Security & Session (Bảo mật và Phiên làm việc) ---
     UNAUTHORIZED: "AUTH_401", // Chưa đăng nhập / Token sai
@@ -265,6 +265,9 @@ export const ErrorCode = {
     FILE_MISSING: "IMP_005", // FILE_MISSING
     CHUNK_SIZE_EXCEEDED: "IMP_006", // CHUNK_SIZE_EXCEEDED
     SESSION_EXPIRED: "IMP_007", // IMPORT_SESSION_EXPIRED
+    DIR_CREATION_FAILED: "IMP_008", // Lỗi không thể tạo thư mục tạm (Mới)
+    CHUNK_SAVE_FAILED: "IMP_009", // Lỗi không thể ghi/lưu mảnh dữ liệu (Mới)
+    MERGE_FAILED: "IMP_010", // Lỗi hợp nhất các mảnh dữ liệu thất bại (Mới thêm)
     FILE_NAME_REQUIRED: "IMP_101", // Tên tệp không được để trống
     INVALID_TOTAL_SIZE: "IMP_102", // Kích thước tệp không hợp lệ
     INVALID_TOTAL_CHUNKS: "IMP_103", // Số lượng mảnh (chunks) không hợp lệ
@@ -367,9 +370,9 @@ export const ErrorCode = {
     INVALID_QUESTION_INDEX: "SES_107", // Chỉ số câu hỏi không hợp lệ (không phải số hoặc âm)
     CLIENT_TIMESTAMP_REQUIRED: "SES_108", // Thiếu thời gian gửi từ client (clientTimestamp)
     SESSION_ID_REQUIRED: "SES_109", // ID phiên làm việc không được để trống
-    INVALID_TIME_SPENT: "SES_110", // Thời gian đã dùng không hợp lệ 
-    INVALID_TIME_REMAINING: "SES_111", // Thời gian còn lại không hợp lệ 
-    INVALID_FINISHED_DATE: "SES_112", // Ngày kết thúc không hợp lệ 
+    INVALID_TIME_SPENT: "SES_110", // Thời gian đã dùng không hợp lệ
+    INVALID_TIME_REMAINING: "SES_111", // Thời gian còn lại không hợp lệ
+    INVALID_FINISHED_DATE: "SES_112", // Ngày kết thúc không hợp lệ
 
     // --- 4xx: Flow & State (Lỗi luồng nghiệp vụ) ---
     NOT_FOUND: "SES_404", // Không tìm thấy phiên thi (Session ID sai)

@@ -1,19 +1,14 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của exam-mgmt)
-import { ChapterController } from "@/api/controllers/exam-mgmt";
-
-// 2. Middlewares (Gom từ nhóm bảo mật của identity)
+// 1. Middlewares (Gom từ nhóm bảo mật của identity)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
-// 3. DI Container
+// 2. DI Container
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
-const chapterController = container.resolve(
-  "chapterController",
-) as ChapterController;
+const chapterController = container.cradle.chapterController;
 
 // ============================================================================
 // CẤU HÌNH CHUNG: TẤT CẢ ROUTE TRONG MODULE ĐỀU CẦN AUTH

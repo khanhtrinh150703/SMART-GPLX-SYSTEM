@@ -43,7 +43,6 @@ export const validateFileSize = (uploadMiddleware: RequestHandler): RequestHandl
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
           // Trả về mã lỗi chung thay vì mã lỗi riêng của Import
-          // (Dịch: Return generic size error code)
           return next(new AppError(ErrorCode.SYSTEM.FILE_SIZE_EXCEEDED));
         }
         return next(new AppError(ErrorCode.SYSTEM.INTERNAL_ERROR, err.message));

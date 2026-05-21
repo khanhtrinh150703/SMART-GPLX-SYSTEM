@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { ExamController } from "@/api/controllers/exam-mgmt";
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
-const examController = container.resolve("examController") as ExamController;
+
+/** @description Bộ điều khiển tiếp nhận, điều phối và xử lý các yêu cầu HTTP liên quan đến Đề thi (Exam). */
+const examController = container.cradle.examController;
 
 /**
  * @route   GET /api/v1/exams/list

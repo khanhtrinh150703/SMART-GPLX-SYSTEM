@@ -1,21 +1,17 @@
 import { Router } from "express";
 
-// 1. Controller (Resolve từ Awilix DI Container)
-import { ExamAttemptController } from "@/api/controllers/exam-session";
-
-// 2. Middlewares (Quản lý Identity & Security)
+// 1. Middlewares (Quản lý Identity & Security)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
+
+// 2. DI Container
 import { container } from "@/shared/utils/container";
 
 const router = Router();
 
 /**
- * @description Resolve Controller từ DI Container.
- * Đảm bảo 100% Type-safety thông qua ép kiểu tường minh.
+ * @description Bộ điều khiển điều phối các yêu cầu nộp bài, chấm điểm và truy vấn lịch sử các lượt làm bài thi.
  */
-const controller = container.resolve(
-  "examAttemptController",
-) as ExamAttemptController;
+const controller = container.cradle.examAttemptController;
 
 /**
  * @description Nộp bài thi và chấm điểm dành cho Khách (Guest).
