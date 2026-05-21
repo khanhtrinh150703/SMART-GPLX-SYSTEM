@@ -1,21 +1,15 @@
 import { Router } from "express";
 
-// 1. Controller (Được resolve từ DI Container)
-import { ActiveSessionController } from "@/api/controllers/exam-session";
-
-// 2. Middlewares (Quản lý bảo mật và định danh)
+// 1. Middlewares (Quản lý bảo mật và định danh)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
-import { container } from "@/shared/utils/container";
 
-// 3. DI Container
+// 2. DI Container
+import { container } from "@/shared/utils/container";
 
 const router = Router();
 
-/**
- * @description Resolve Controller từ Container.
- * Ép kiểu về ActiveSessionController để đảm bảo Type-safety (Zero-Any).
- */
-const controller = container.resolve('activeSessionController') as ActiveSessionController;
+/** @description Bộ điều khiển tiếp nhận, điều phối và xử lý các trạng thái phiên làm việc (session) đang hoạt động của người dùng. */
+const controller = container.cradle.activeSessionController;
 
 /**
  * --- NHÓM 1: GUEST ROUTES (PUBLIC) ---

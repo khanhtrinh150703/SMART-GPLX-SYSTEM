@@ -1,28 +1,20 @@
 import { Router } from "express";
 
-// 1. Controllers (Triệu hồi từ Controller hợp nhất của module Statistics)
-import {
-  UserStatisticsController,
-  UserTopicStatisticsController,
-} from "@/api/controllers/statistics";
-
-// 2. Middlewares (Gom từ nhóm bảo mật của identity)
+// 1. Middlewares (Gom từ nhóm bảo mật của identity)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
-
-// 3. DI Container (Awilix)
-import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
+
+// 2. DI Container (Awilix)
+import { container } from "@/shared/utils/container";
 
 const router = Router();
 
-// Resolve controller từ Container (Đảm bảo tên trùng khớp với lúc đăng ký ở Awilix)
-const statsCtrl = container.resolve<UserStatisticsController>(
-  "userStatisticsController",
-);
+/** @description Bộ điều khiển xử lý các yêu cầu HTTP liên quan đến dữ liệu thống kê học tập và kết quả thi cá nhân của người dùng. */
+const statsCtrl = container.cradle.userStatisticsController;
 
-const topicStatsCtrl = container.resolve<UserTopicStatisticsController>(
-  "userTopicStatisticsController",
-);
+/** @description Bộ điều khiển xử lý các yêu cầu HTTP liên quan đến phân tích hiệu suất và tiến độ học tập chi tiết theo từng nhóm chủ đề kiến thức. */
+const topicStatsCtrl = container.cradle.userTopicStatisticsController;
+
 // ============================================================================
 // CẤU HÌNH CHUNG: TẤT CẢ ROUTE TRONG MODULE ĐỀU CẦN AUTH
 // ============================================================================

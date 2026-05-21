@@ -1,19 +1,15 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của identity)
-import { RoleController } from "@/api/controllers/identity";
-
-// 2. Middlewares (Gom từ nhóm bảo mật của identity)
+// 1. Middlewares (Gom từ nhóm bảo mật của identity)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
-// 3. DI Container
+// 2. DI Container
 import { container } from "@/shared/utils/container";
 const router = Router();
 
-/**
- * Resolve Controller từ DI Container.
- */
-const roleController = container.resolve('roleController') as RoleController;
+
+/** @description Bộ điều khiển xử lý các yêu cầu HTTP liên quan đến vai trò, cấu hình và phân quyền hệ thống (Roles). */
+const roleController = container.cradle.roleController;
 
 // ============================================================================
 // CẤU HÌNH MIDDLEWARE CHUNG (ADMIN ONLY SCOPE)

@@ -1,23 +1,18 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của exam-mgmt)
-import { QuestionController } from "@/api/controllers/exam-mgmt";
-
-// 2. Middlewares (Gom theo nhóm nghiệp vụ: Bảo mật | Tích hợp | Hệ thống)
+// 1. Middlewares (Gom theo nhóm nghiệp vụ: Bảo mật | Tích hợp | Hệ thống)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 import { upload } from "@/api/middlewares/integration";
 import { validateFileSize } from "@/api/middlewares/shared";
 
-// 3. DI Container
+// 2. DI Container
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 
-// Lấy controller từ Dependency Injection Container (Awilix Proxy)
-const questionController = container.resolve(
-  "questionController",
-) as QuestionController;
+/** @description Bộ điều khiển tiếp nhận, điều phối và xử lý các yêu cầu HTTP liên quan đến Ngân hàng câu hỏi. */
+const questionController = container.cradle.questionController;
 
 // Cấu hình upload dùng chung cho Question (Tránh lặp lại cấu hình fields)
 const questionUpload = upload.fields([

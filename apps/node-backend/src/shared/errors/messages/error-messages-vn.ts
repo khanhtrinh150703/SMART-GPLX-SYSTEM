@@ -230,7 +230,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.IMPORT.INVALID_TOTAL_SIZE]: 'Tổng kích thước tệp tin phải lớn hơn 0.',
     [ErrorCode.IMPORT.INVALID_TOTAL_CHUNKS]: 'Tổng số mảnh (chunks) phải lớn hơn 0.',
     [ErrorCode.IMPORT.JOB_ID_REQUIRED]: 'Mã công việc (Job ID) không được để trống.',
-
+    [ErrorCode.IMPORT.DIR_CREATION_FAILED]: 'Không thể tạo thư mục tạm thời để xử lý tệp.',
+    [ErrorCode.IMPORT.CHUNK_SAVE_FAILED]: 'Quá trình lưu trữ mảnh dữ liệu (chunk) thất bại.',
+    [ErrorCode.IMPORT.MERGE_FAILED]: 'Quá trình hợp nhất các mảnh dữ liệu thất bại.',
+    
     // --- MATRIX MESSAGES ---
     [ErrorCode.MATRIX.NAME_REQUIRED]: 'Tên ma trận đề thi không được để trống.',
     [ErrorCode.MATRIX.NAME_TOO_LONG]: 'Tên ma trận đề thi không được vượt quá 100 ký tự.',

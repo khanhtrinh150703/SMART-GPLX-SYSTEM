@@ -1,26 +1,20 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của identity)
-import { UserController } from "@/api/controllers/identity";
-
-// 2. Middlewares (Phân tầng rõ rệt: Bảo mật | Tích hợp | Hệ thống)
+// 1. Middlewares (Phân tầng rõ rệt: Bảo mật | Tích hợp | Hệ thống)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 import { upload } from "@/api/middlewares/integration"; // Xử lý upload thường nằm ở integration
 import { validateFileSize } from "@/api/middlewares/shared";
 
-// 3. DI Container
+// 2. DI Container
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
-import { AdminUserController } from "@/api/controllers/identity/admin-user.controller";
 const router = Router();
 
-/**
- * Resolve Controller từ Awilix Container.
- */
-const userController = container.resolve("userController") as UserController;
-const adminUserController = container.resolve(
-  "adminUserController",
-) as AdminUserController;
+/** @description Bộ điều khiển tiếp nhận và điều phối các yêu cầu HTTP liên quan đến người dùng (User) và hồ sơ cá nhân. */
+const userController = container.cradle.userController;
+
+/** @description Bộ điều khiển dành riêng cho quản trị viên để quản lý vòng đời người dùng, phân quyền và trạng thái tài khoản (Admin). */
+const adminUserController = container.cradle.adminUserController;
 
 // ============================================================================
 // CẤU HÌNH MIDDLEWARE CHUNG (GLOBAL FOR THIS ROUTER)
@@ -65,7 +59,6 @@ router.use(requirePermission("users:manage"));
  * @access Private (Admin)
  */
 router.get("/", adminUserController.getUsers);
-
 
 /**
  * @description Quản trị viên khởi tạo một tài khoản người dùng mới (Học viên, Giáo viên, Điều phối viên).
