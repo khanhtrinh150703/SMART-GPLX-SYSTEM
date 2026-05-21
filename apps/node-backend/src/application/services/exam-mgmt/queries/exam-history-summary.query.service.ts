@@ -18,11 +18,11 @@ export interface IExamHistorySummaryQueryServiceCradle {
 }
 
 /**
- * @class ExamHistorySummartQueryService
+ * @class ExamHistorySummaryQueryService
  * @description Dịch vụ chuyên trách các thao tác đọc (Read-side) liên quan đến lịch sử thi.
  * @principle Read-only Integrity - Đảm bảo dữ liệu truy vấn chính xác và không làm thay đổi trạng thái hệ thống.
  */
-export class ExamHistorySummartQueryService implements IExamHistorySummaryQueryService {
+export class ExamHistorySummaryQueryService implements IExamHistorySummaryQueryService {
   /** @private @readonly @description Instance thực hiện các thao tác tìm kiếm và đếm dữ liệu lịch sử. */
   private readonly _historySummaryRepo: IExamHistorySummaryRepository;
 

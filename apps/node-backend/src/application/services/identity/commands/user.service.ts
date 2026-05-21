@@ -22,7 +22,7 @@ import {
   DeleteResponseDTO,
 } from "@/application/dtos/response/shared/delete.response.dto";
 import { DeleteType } from "@/domain/constants/delete.constant";
-import { ILogger } from "@/domain/interfaces/logging/i-logger.interface";
+import { ILogger } from "@/domain/interfaces/monitoring/i-logger";
 import { AdminCreateUserRequestDTO } from "@/application/dtos/request/auth/admin-create-user.request.dto";
 import { ICreateUserInput } from "@/application/dtos/request/auth/create-user-request.dto";
 import { IUnitOfWork } from "@/domain/interfaces/seedwork";

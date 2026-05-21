@@ -19,7 +19,7 @@ import { IQuestionQueryService } from "@/domain/interfaces/services/exam-mgmt/qu
 
 // --- Infrastructure: Repositories, Mappers & Logging ---
 import { IExamRepository } from "@/domain/interfaces/repositories/exam-mgmt";
-import { ILogger } from "@/domain/interfaces/logging";
+import { ILogger } from "@/domain/interfaces/monitoring";
 import { ExamAttemptMapper } from "@/infrastructure/database/mappers/exam-session";
 import { ExamMapper } from "@/infrastructure/database/mappers/exam-mgmt";
 
