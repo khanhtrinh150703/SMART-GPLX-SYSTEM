@@ -65,8 +65,15 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: 🐳 Start Database (Docker)
-        # Chạy Docker Compose từ gốc để khởi động Postgres/MySQL
-        run: docker compose up -d
+        run: |
+          echo "🧹 [CI Infra] Purging faulty mount points and clearing docker runtime..."
+          
+          docker compose down --volumes --remove-orphans
+          
+          [ -d "prometheus.yml" ] && rm -rf prometheus.yml
+          [ -d "loki-config.yaml" ] && rm -rf loki-config.yaml
+          
+          docker compose up -d
 
       - name: 📥 Install Dependencies
         # Cài đặt toàn bộ dự án từ thư mục gốc
@@ -86,6 +93,9 @@ jobs:
 
       - name: 🧪 Run Integration Tests
         # Chạy bộ test Jest tích hợp
+        env:
+          LOKI_HOST: "http://127.0.0.1:3100"
+          
         run: npm run test:be:cicd
 
       - name: 🧹 Stop Services

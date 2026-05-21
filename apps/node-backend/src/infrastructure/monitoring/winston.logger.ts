@@ -19,7 +19,12 @@ const winstonInstance = winston.createLogger({
       json: true,
       batching: false,
       replaceTimestamp: true,
-      onConnectionError: (err) => console.error("❌ LỖI LOKI:", err),
+      onConnectionError: (err) => {
+        console.warn(
+          "⚠️ [Monitor Warning] Không thể đẩy log tới Loki:",
+          err,
+        );
+      },
     }),
   ],
 });
