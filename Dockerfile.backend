@@ -1,42 +1,56 @@
-# ==========================================
-# STAGE 1: Builder - Cài đặt, Biên dịch và Xử lý Alias
-# ==========================================
+# =========================================================
+# STAGE 1: Builder - Khởi tạo toàn bộ Workspace và Biên dịch
+# =========================================================
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# 1. Copy toàn bộ file package quản lý cấu trúc vào trước
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
+
+# Copy các file cấu hình TypeScript
 COPY tsconfig*.json ./
 COPY apps/node-backend/tsconfig*.json ./apps/node-backend/
 
-RUN npm ci
+# Tạo các thư mục rỗng định hình workspace
+RUN mkdir -p apps/node-backend
+
+# 2. Chạy npm ci kèm cờ --ignore-scripts để CHẶN đứng thằng postinstall tự sát
+# Lệnh này sẽ PASS 100% cực kỳ mượt mà vì không bị Prisma bắt bẻ thiếu file schema nữa
+RUN npm ci --ignore-scripts
+
+# 3. Bây giờ mới copy toàn bộ mã nguồn thực tế (bao gồm cả folder prisma/schema.prisma) vào
 COPY . .
 
+# 4. Khi file schema đã có mặt đầy đủ trong container, ta chủ động chạy lệnh tạo Prisma Client
 RUN npm run db:gen -w node-backend
+
+# 5. Thực hiện biên dịch TypeScript sang JavaScript của Backend
 RUN cd apps/node-backend && npm run build
 
-# 🎯 BƯỚC QUYẾT ĐỊNH: Xử lý alias cho toàn bộ thư mục dist (bao gồm cả server lẫn seed nằm trong dist)
+# 6. Xử lý alias đường dẫn cho thư mục dist
 RUN npx --yes tsc-alias -p apps/node-backend/tsconfig.json
 
-# ==========================================
-# STAGE 2: Runner - Môi trường chạy Production tinh gọn
-# ==========================================
+# 7. Dọn dẹp sạch sẽ devDependencies để tối ưu dung lượng cho Stage chạy
+RUN npm prune --omit=dev
+
+# =========================================================
+# STAGE 2: Runner - Môi trường vận hành Production tinh gọn
+# =========================================================
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=5000
 
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
-RUN npm ci --omit=dev
-RUN npm install prisma @prisma/client
-
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/apps/node-backend/prisma ./apps/node-backend/prisma
+# Bốc node_modules và sản phẩm sau build sang Stage chạy
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/node-backend/dist ./apps/node-backend/dist
+COPY --from=builder /app/apps/node-backend/prisma ./apps/node-backend/prisma
 
 EXPOSE 5000
 
-CMD npx prisma db push --accept-data-loss --schema=apps/node-backend/prisma/schema.prisma && node apps/node-backend/dist/prisma/seed.main.js && node apps/node-backend/dist/src/server.js
+CMD ["node", "apps/node-backend/dist/src/server.js"]
