@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY apps/nextjs-frontend/package*.json ./apps/nextjs-frontend/
 
 # Cài đặt dependencies
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Sao chép toàn bộ mã nguồn
 COPY . .
