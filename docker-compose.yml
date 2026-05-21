@@ -3,18 +3,35 @@ version: '3.8'
 services:
   # --- NHÓM MONITORING (GIÁM SÁT) ---
   loki:
-    image: grafana/loki:2.9.0
+    image: grafana/loki:latest
+    container_name: smart_gplx_loki
     ports:
       - "3100:3100"
-    # volumes:
-    #   - ./loki-config.yaml:/etc/loki/local-config.yaml
-    #   - ./loki-data:/loki # Gắn thư mục máy thật vào thư mục /loki của container
-    # command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./infra:/etc/loki/custom-config/
+      - loki_data:/loki
+    command: -config.file=/etc/loki/custom-config/loki-config.yaml
+    networks:
+      - smart-gplx-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smart_gplx_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra:/etc/prometheus/custom-config/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/custom-config/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=730d'
     networks:
       - smart-gplx-network
 
   grafana:
     image: grafana/grafana:latest
+    container_name: smart_gplx_grafana
     ports:
       - "3200:3000" 
     environment:
@@ -23,6 +40,7 @@ services:
       - smart-gplx-network
     depends_on:
       - loki
+      - prometheus
 
   # --- NHÓM CACHE & DATABASE (CƠ SỞ DỮ LIỆU) ---
   redis-cache:
@@ -34,6 +52,11 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --requirepass "root"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "root", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
     networks:
       - smart-gplx-network
 
@@ -66,6 +89,11 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=password
     ports:
       - "27017:27017" 
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --username root --password password --authenticationDatabase admin --eval 'db.runCommand({ping:1})' || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
     volumes:
       - mongo_data:/data/db 
     networks:
@@ -82,3 +110,4 @@ volumes:
   mysql_data:
   loki_data:
   mongo_data:
+  prometheus_data:

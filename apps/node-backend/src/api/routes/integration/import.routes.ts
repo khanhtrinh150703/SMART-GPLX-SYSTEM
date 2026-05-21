@@ -1,18 +1,18 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của integration)
-import { ImportController } from "@/api/controllers/integration";
-
-// 2. Middlewares (Gom theo nhóm nghiệp vụ)
+// 1. Middlewares (Gom theo nhóm nghiệp vụ)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 import { uploadImport } from "@/api/middlewares/integration";
 import { validateFileSize } from "@/api/middlewares/shared";
-
-// 3. DI Container
-import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
+
+// 2. DI Container
+import { container } from "@/shared/utils/container";
+
 const router = Router();
-const controller = container.resolve('importController') as ImportController;
+
+/** @description Bộ điều khiển tiếp nhận, điều phối và xử lý các yêu cầu HTTP liên quan đến quy trình nhập dữ liệu (Import). */
+const controller = container.cradle.importController;
 
 /**
  * @description Tất cả các route liên quan đến Import đều yêu cầu đăng nhập

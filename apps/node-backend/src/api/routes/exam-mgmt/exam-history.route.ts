@@ -1,12 +1,6 @@
 import { Router } from "express";
 
-// 1. Controller (Resolve từ Awilix DI Container)
-import {
-  ExamHistoryController,
-  ExamHistorySummaryController,
-} from "@/api/controllers/exam-mgmt";
-
-// 2. Middlewares (Quản lý Identity & Security)
+// 1. Middlewares (Quản lý Identity & Security)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
@@ -17,13 +11,11 @@ const router = Router();
  * @description Resolve Controller từ DI Container.
  * Đảm bảo 100% Type-safety thông qua ép kiểu tường minh.
  */
-const controllerHistory = container.resolve(
-  "examHistoryController",
-) as ExamHistoryController;
+/** @description Bộ điều khiển quản lý vòng đời và ghi nhận kết quả bài thi. */
+const controllerHistory = container.cradle.examHistoryController;
 
-const controllerSummary = container.resolve(
-  "examHistorySummaryController",
-) as ExamHistorySummaryController;
+/** @description Bộ điều khiển tiếp nhận và tổng hợp dữ liệu lịch sử thi thông qua DTO. */
+const controllerSummary = container.cradle.examHistorySummaryController;
 
 /**
  * --- NHÓM PROTECTED ROUTES (PRIVATE) ---

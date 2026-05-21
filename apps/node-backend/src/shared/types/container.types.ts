@@ -140,14 +140,14 @@ import { UserRankController } from "@/api/controllers/user-rank";
 import { ImportController } from "@/api/controllers/integration";
 
 // Nhóm logger
-import { ILogger } from "@/domain/interfaces/logging";
+import { IApiMonitorRegistry, ILogger } from "@/domain/interfaces/monitoring";
 import { ILeaderboardCacheRepository } from "@/domain/interfaces/repositories/leaderboard/i-leaderboard-cache.repository";
 import {
   IQuestionStatisticsRepository,
   IUserStatisticsRepository,
   IUserTopicStatisticsRepository,
 } from "@/domain/interfaces/repositories/statistics";
-import { IExamGeneratorService } from "@/domain/interfaces/services/exam-engine/commands";
+import { IExamGeneratorService, IExamPickerDomainService } from "@/domain/interfaces/services/exam-engine/commands";
 import {
   IUserStatisticsQueryService,
   IUserTopicStatisticsQueryService,
@@ -162,6 +162,7 @@ import {
   UserTopicStatisticsController,
 } from "@/api/controllers/statistics";
 import { IUnitOfWork } from "@/domain/interfaces/seedwork";
+import { IMongoConfig } from "../config";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -178,6 +179,12 @@ export interface ICradle {
 
   /** @description Dịch vụ ghi log để theo dõi hoạt động và hỗ trợ gỡ lỗi hệ thống. */
   logger: ILogger;
+
+  /** @description Cấu hình kết nối và các thiết lập cho cơ sở dữ liệu MongoDB. */
+  mongoConfig: IMongoConfig;
+
+  /** @description Bộ quản lý và đăng ký hệ thống chỉ số (Metrics) phục vụ giám sát hiệu năng. */
+  metricRegistry: IApiMonitorRegistry;
 
   /** @description Repository quản lý dữ liệu người dùng (MySQL). */
   userRepository: IUserRepository;
@@ -243,8 +250,11 @@ export interface ICradle {
 
   /** @description Quản lý vòng đời JWT, ký và xác thực mã thông báo. */
   tokenManager: ITokenManager;
- 
+
   // --- NGHIỆP VỤ ỨNG DỤNG (APPLICATION SERVICES) ---
+
+  /** @description Domain Service chứa thuật toán cốt lõi để lựa chọn câu hỏi dựa trên tiêu chí. */
+  examPickerService: IExamPickerDomainService;
 
   /** @description Dịch vụ gửi Email (Nodemailer/External API). */
   emailService: IEmailService;
@@ -399,7 +409,7 @@ export interface ICradle {
   chapterController: ChapterController;
 
   /** @description Xử lý các yêu cầu HTTP liên quan đến câu hỏi. */
-  quenstionController: QuestionController;
+  questionController: QuestionController;
 
   /** @description Xử lý các yêu cầu HTTP liên quan đến quy trình nhập liệu (Import). */
   importController: ImportController;

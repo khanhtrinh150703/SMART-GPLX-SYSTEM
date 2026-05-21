@@ -1,24 +1,19 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của exam-mgmt)
-import { LicenseCategoryController } from "@/api/controllers/exam-mgmt";
-
-// 2. Middlewares (Gom từ nhóm bảo mật của identity)
+// 1. Middlewares (Gom từ nhóm bảo mật của identity)
 import { authMiddleware, requirePermission } from "@/api/middlewares/identity";
 
-// 3. DI Container
+// 2. DI Container
 import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
 
 const router = Router();
 
-/**
- * Resolve Controller từ Awilix Container.
- * Sử dụng Generic Type để đảm bảo Type-safe (Zero Any).
+/** 
+ * @description Bộ điều khiển tiếp nhận, điều phối và xử lý các yêu cầu HTTP liên quan đến Hạng bằng lái. 
+ * Lấy trực tiếp từ Cradle tổng giúp đảm bảo tính nhất quán và Type-safe (Zero Any) tuyệt đối.
  */
-const licenseController = container.resolve<LicenseCategoryController>(
-  "licenseCategoryController",
-);
+const licenseController = container.cradle.licenseCategoryController;
 
 // ============================================================================
 // CHẤU HÌNH CHUNG: TẤT CẢ ROUTE ĐỀU YÊU CẦU ĐĂNG NHẬP

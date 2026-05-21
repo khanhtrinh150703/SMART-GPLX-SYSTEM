@@ -229,6 +229,9 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.IMPORT.INVALID_TOTAL_SIZE]: 400,
   [ErrorCode.IMPORT.INVALID_TOTAL_CHUNKS]: 400,
   [ErrorCode.IMPORT.JOB_ID_REQUIRED]: 400,
+  [ErrorCode.IMPORT.DIR_CREATION_FAILED]: 422, // Hoặc 422
+  [ErrorCode.IMPORT.CHUNK_SAVE_FAILED]: 422,   // Hoặc 422
+  [ErrorCode.IMPORT.MERGE_FAILED]: 500, // Internal Server Error 
 
   // --- MATRIX ERRORS ---
   [ErrorCode.MATRIX.NAME_REQUIRED]: 400,
