@@ -8,9 +8,9 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./infra:/etc/loki/custom-config/
+      - ./infra/loki-config.yaml:/etc/loki/loki-config.yaml
       - loki_data:/loki
-    command: -config.file=/etc/loki/custom-config/loki-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     networks:
       - smart-gplx-network
 
@@ -20,10 +20,10 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./infra:/etc/prometheus/custom-config/
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/custom-config/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=730d'
     networks:

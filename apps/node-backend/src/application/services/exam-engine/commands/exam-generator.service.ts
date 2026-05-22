@@ -117,18 +117,17 @@ export class ExamGeneratorService implements IExamGeneratorService {
     );
 
     // 4. Khởi tạo thực thể Exam qua Factory Method
-    // Để Entity tự xử lý Snapshot mapping, Invariants check và totalQuestions
     const exam = ExamEntity.create({
       name: dto.name,
       userId: dto.userId,
       examMatrixId: dto.matrixId,
       licenseCategoryId: matrix.props.licenseCategoryId,
-      totalQuestions: matrix.props.totalQuestions, // Fallback sẽ là length của pickedEntities
+      totalQuestions: matrix.props.totalQuestions, 
       durationMinutes: matrix.props.durationMinutes,
       passingScore: matrix.props.passingScore,
       isChapter: matrix.props.isChapter,
       minCriticalQuestions: matrix.props.minCriticalQuestions,
-      rawQuestions: pickedEntities, // Truyền entity thô để Domain tự "nấu" snapshot
+      rawQuestions: pickedEntities, 
       status: dto.status,
     });
 

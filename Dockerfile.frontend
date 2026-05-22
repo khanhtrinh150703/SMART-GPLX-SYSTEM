@@ -1,37 +1,44 @@
-# Stage 1: Build ứng dụng
+# =========================================================
+# STAGE 1: Builder - Cài đặt thư viện và biên dịch mã nguồn
+# =========================================================
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Sao chép file package từ gốc và frontend
+# Copy các file package quản lý cấu trúc vào trước để ăn cache
 COPY package*.json ./
 COPY apps/nextjs-frontend/package*.json ./apps/nextjs-frontend/
 
-# Cài đặt dependencies
+# Cài đặt sạch dependencies, chặn script postinstall của Backend
 RUN npm ci --ignore-scripts
 
-# Sao chép toàn bộ mã nguồn
+# Copy toàn bộ mã nguồn thực tế của dự án vào container
 COPY . .
 
-# Chạy lệnh next build thông qua workspace
+# Biên dịch ứng dụng Next.js (Tạo ra sản phẩm standalone trong .next)
 RUN npm run build -w nextjs-frontend
 
-# Stage 2: Runner - Môi trường chạy Production
+
+# =========================================================
+# STAGE 2: Runner - Môi trường vận hành Production siêu tinh gọn
+# =========================================================
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=3000
 
-# Sao chép file package cấu hình hệ thống
-COPY package*.json ./
-COPY apps/nextjs-frontend/package*.json ./apps/nextjs-frontend/
-
-# Sao chép các thư mục phục vụ vận hành từ stage builder sang
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/nextjs-frontend/.next ./apps/nextjs-frontend/.next
+# 🎯 BƯỚC QUYẾT ĐỊNH: Chỉ copy các thành phẩm tối giản được Next.js standalone sinh ra
+# 1. Copy thư mục public phục vụ tài nguyên tĩnh (ảnh, favicon...)
 COPY --from=builder /app/apps/nextjs-frontend/public ./apps/nextjs-frontend/public
-COPY --from=builder /app/apps/nextjs-frontend/next.config.ts ./apps/nextjs-frontend/next.config.ts
+
+# 2. Copy folder standalone (Trong này đã tự chứa code server và node_modules thu nhỏ)
+COPY --from=builder /app/apps/nextjs-frontend/.next/standalone ./
+
+# 3. Copy thư mục static (CSS, JS, Chunks cho phía Client) vào đúng vị trí của standalone
+COPY --from=builder /app/apps/nextjs-frontend/.next/static ./apps/nextjs-frontend/.next/static
 
 EXPOSE 3000
 
-# Chạy lệnh next start -p 3000 thông qua workspace
-CMD ["npm", "start", "-w", "nextjs-frontend"]
+# Chạy ứng dụng trực tiếp bằng Node vào file server.js của standalone (Không qua npm start)
+# Giúp tối ưu hóa RAM và lắng nghe tín hiệu tắt container từ Docker chính xác 100%
+CMD ["node", "apps/nextjs-frontend/server.js"]
