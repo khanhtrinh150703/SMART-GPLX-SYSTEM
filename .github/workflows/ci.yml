@@ -62,13 +62,17 @@ jobs:
 
       - name: 🐳 Start Database (Docker)
         run: |
-          echo "🧹 [CI Infra] Purging faulty mount points and clearing docker runtime..."
-          
+          echo "🧹 [CI Infra] Cleaning old containers..."
           docker compose down --volumes --remove-orphans
+
+          echo "⚙️ [CI Infra] Patching docker-compose for CI environment..."
+          sed -i '/.\/infra\/prometheus.yml/d' docker-compose.yml
+          sed -i '/.\/infra\/loki-config.yml/d' docker-compose.yml
           
-          [ -d "prometheus.yml" ] && rm -rf prometheus.yml
-          [ -d "loki-config.yaml" ] && rm -rf loki-config.yaml
-          
+          sed -i '/-config.file=/d' docker-compose.yml
+          sed -i '/--config.file=/d' docker-compose.yml
+
+          echo "🚀 [CI Infra] Launching core services for Testing..."
           docker compose up -d
 
       - name: 📥 Install Dependencies
