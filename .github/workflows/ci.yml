@@ -17,7 +17,6 @@ jobs:
   # ==========================================
   nextjs-frontend:
     runs-on: ubuntu-latest
-    # Thiết lập timeout tối đa 10 phút để tránh việc treo ngầm vô tận tốn tài nguyên
     timeout-minutes: 10 
     
     steps:

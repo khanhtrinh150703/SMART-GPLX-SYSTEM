@@ -1,9 +1,9 @@
 export const CATEGORY_MAP: Record<string, string | undefined> = {
   "Tất cả": undefined,
-  "Hạng A1": "A1", 
-  "Hạng A2": "A2",
+  "Hạng A": "A", 
+  "Hạng A1": "A1",
+  "Hạng B": "B",
   "Hạng B1": "B1",
-  "Hạng B2": "B2",
   "Hạng C": "C",
   "Hạng C1": "C",
 };
