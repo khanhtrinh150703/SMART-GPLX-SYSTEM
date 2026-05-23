@@ -232,7 +232,6 @@ export class ExamController {
      */
     public restore = catchAsync(async (req: IAuthRequest, res: Response) => {
         const id = req.params.id as string;
-
         // Xử lý nghiệp vụ khôi phục qua Service
         const response = await this._examService.restoreExam(id);
 
