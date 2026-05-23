@@ -48,7 +48,6 @@ ENV PORT=5000
 COPY package*.json ./
 COPY apps/node-backend/package*.json ./apps/node-backend/
 
-COPY --from=builder /app/apps/node-backend/public ./apps/node-backend/public
 # Bốc thẳng thư mục node_modules đã dọn sạch và sản phẩm sau build từ Stage 1 sang.
 # Không chạy lại lệnh cài đặt (npm ci/install) ở đây để tránh làm phình dung lượng image.
 COPY --from=builder /app/node_modules ./node_modules
