@@ -12,8 +12,6 @@ import { Alert } from "@/components/ui/Alert";
 import { Label } from "@/components/ui/Label";
 import Button from "@/components/ui/Button/Button";
 
-
-
 export default function VerifyOtpForm() {
   const router = useRouter();
 
@@ -23,10 +21,16 @@ export default function VerifyOtpForm() {
 
   // 2. QUẢN LÝ TRẠNG THÁI
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
-  const [email, setEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const [email] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("register_email") || "";
+    }
+    return "";
+  });
 
   // 3. CUSTOM HOOKS
   const resendTimer = useCountdown(RESEND_TIME);
@@ -36,31 +40,21 @@ export default function VerifyOtpForm() {
     const storedEmail = localStorage.getItem("register_email");
     if (!storedEmail) {
       router.push("/register");
-      return;
     }
-    setEmail(storedEmail);
   }, [router]);
 
-  // --- LOGIC KIỂM TRA OTP THỜI GIAN THỰC ---
-  useEffect(() => {
-    const otpString = otp.join("");
+  const handleOtpChange = (newOtp: string[]) => {
+    setOtp(newOtp);
+    const otpString = newOtp.join("");
 
-    // Nếu mới bắt đầu hoặc xóa hết thì không hiện lỗi
     if (otpString.length === 0) {
       setErrorMsg(null);
-      return;
-    }
-
-    // Nếu đang nhập dở (1-5 số)
-    if (otpString.length > 0 && otpString.length < 6) {
+    } else if (otpString.length < 6) {
       setErrorMsg("Vui lòng nhập đầy đủ 6 chữ số OTP.");
-    }
-
-    // Đủ 6 số thì xóa lỗi ngay lập tức
-    else if (otpString.length === 6) {
+    } else {
       setErrorMsg(null);
     }
-  }, [otp]);
+  };
 
   // 4. XỬ LÝ GỬI LẠI MÃ
   const handleResendOtp = async () => {
@@ -73,7 +67,7 @@ export default function VerifyOtpForm() {
       resendTimer.reset(RESEND_TIME);
       expiryTimer.reset(EXPIRY_TIME);
       setOtp(Array(6).fill(""));
-      setSuccessMsg("Mã xác xác nhận mới đã được gửi thành công!");
+      setSuccessMsg("Mã xác nhận mới đã được gửi thành công!");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         setErrorMsg(
@@ -107,8 +101,7 @@ export default function VerifyOtpForm() {
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         setErrorMsg(
-          error.response?.data?.message ||
-            "Mã OTP không hợp lệ hoặc đã hết hạn.",
+          error.response?.data?.message || "Mã OTP không hợp lệ hoặc đã hết hạn.",
         );
       } else {
         setErrorMsg("Đã có sự cố bất ngờ xảy ra.");
@@ -135,10 +128,9 @@ export default function VerifyOtpForm() {
           <OtpHeader email={email} />
           <div className="mt-4 flex justify-center">
             <Badge
-              // 💡 Tự động đổi màu dựa trên thời gian
               intent={expiryTimer.seconds < 30 ? "danger" : "default"}
               showDot
-              pulse={expiryTimer.isActive} // 💡 Chỉ nháy khi timer đang chạy
+              pulse={expiryTimer.isActive}
             >
               {expiryTimer.isActive
                 ? `Mã hết hạn trong: ${expiryTimer.formatTime()}`
@@ -147,41 +139,42 @@ export default function VerifyOtpForm() {
           </div>
         </div>
 
-        {/* THÔNG BÁO THÀNH CÔNG (Error giờ hiện dưới OTP) */}
+        {/* THÔNG BÁO THÀNH CÔNG */}
         {successMsg && (
           <Alert
             intent="success"
-            message="Xác thực mã thành công"
+            message={successMsg}
             className="mb-6"
           />
         )}
 
         {/* Ô NHẬP OTP */}
         <div className="flex flex-col">
-          <Label className="text-center">Mã xác thực OTP</Label>
-
+          <Label className="text-center mb-2">Mã xác thực OTP</Label>
           <OtpInput
             value={otp}
-            onChange={setOtp}
+            onChange={handleOtpChange}
             disabled={isLoading || !expiryTimer.isActive}
           />
 
-          {/* 🚀 Cách sửa dùng Alert đã có: Gọn và đồng bộ */}
-          <Alert
-            intent="error"
-            layout="centered"
-            message={errorMsg}
-            className="mt-4"
-          />
+          {errorMsg && (
+            <Alert
+              intent="error"
+              layout="centered"
+              message={errorMsg}
+              className="mt-4"
+            />
+          )}
         </div>
 
         {/* NÚT XÁC NHẬN */}
         <Button
           type="submit"
-          variant="primary" // 💡 Đã có emerald-600, shadow, active:scale...
-          size="lg" // 💡 Đã có w-full, py-4, rounded-xl
+          variant="primary"
+          size="lg"
           isLoading={isLoading}
-          disabled={!expiryTimer.isActive} // 💡 Chỉ cần truyền điều kiện hết hạn (isLoading nút tự xử)
+          disabled={!expiryTimer.isActive}
+          className="w-full font-semibold"
           text={expiryTimer.isActive ? "Xác nhận mã OTP" : "Mã đã hết hạn"}
         />
 
@@ -194,13 +187,12 @@ export default function VerifyOtpForm() {
         />
 
         {/* NÚT QUAY LẠI */}
-        {/* 🚀 Phiên bản đã "thuần hóa" theo chuẩn Design System */}
         <Button
           type="button"
-          variant="ghost" // 💡 Đã có sẵn màu slate, hiệu ứng hover và transition
-          size="md" // 💡 Kích thước vừa phải cho nút phụ
+          variant="ghost"
+          size="md"
           onClick={() => router.back()}
-          className="w-full font-bold" // 💡 Chỉ thêm w-full để dàn hàng ngang nếu cần
+          className="w-full font-bold text-slate-500 hover:text-slate-800"
         >
           Quay lại trang trước
         </Button>
