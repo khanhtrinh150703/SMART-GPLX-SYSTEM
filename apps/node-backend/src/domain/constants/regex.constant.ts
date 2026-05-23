@@ -30,14 +30,14 @@ export const REGEX = {
     VIETNAM: /(84|0[3|5|7|8|9])+([0-9]{8})\b/,
   },
   LICENSE: {
-    NAME_FORMAT: /^[a-zA-Z0-9\-_]+$/,
+    NAME_FORMAT:  /^[a-zA-Z0-9\-_]{1,20}$/,
   } /** * --- STRING PATTERNS --- */,
   COMMON: {
     /**
      * Không có khoảng trắng và ký tự đặc biệt
      * (Chỉ chấp nhận chữ cái a-z, A-Z và số 0-9)
      */
-    NO_SPACE_SPECIAL_CHAR: /^[a-zA-Z0-9\-_]+$/,
+    NO_SPACE_SPECIAL_CHAR:  /^[a-zA-Z0-9\-_]{3,20}$/,
 
     /**
      * Biến thể: Bao gồm cả tiếng Việt có dấu nhưng không có ký tự đặc biệt/khoảng trắng

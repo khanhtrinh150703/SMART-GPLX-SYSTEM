@@ -10,10 +10,6 @@ export const useExamActions = () => {
 
   // src/features/exam-mgmt/hooks/use-exam-actions.ts
   const handleSuccess = async () => {
-    console.log("🛠 [DEBUG] Bắt đầu lệnh càn quét cache...");
-
-    // 1. Soi xem trong bộ nhớ có cái query nào tên là "exams" không
-
     // 2. Lệnh cưỡng chế: Xóa sạch sành sanh và ép gọi lại bất kể active hay inactive
     await queryClient.resetQueries({
       queryKey: ["exams"],
@@ -26,10 +22,7 @@ export const useExamActions = () => {
       type: "all", // Ép cả những thằng đang ẩn cũng phải fetch lại
       exact: false,
     });
-
-    console.log(
-      "📡 [DEBUG] Đã phát lệnh. Nếu Network vẫn im thì là do Client ID lệch!",
-    );
+    
   };
 
   // 1. Sinh đề tự động (Auto Generation)

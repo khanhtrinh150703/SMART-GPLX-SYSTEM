@@ -5,7 +5,6 @@ import { IUpdateProfileResponse, UserChangePassword } from '@/types/user.type';
 
 /**
  * Profile API: Các tác vụ tự quản lý của người dùng.
- * (Profile API: Self-management tasks for users)
  */
 export const profileApi = {
   /**
@@ -18,7 +17,7 @@ export const profileApi = {
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
-        transformRequest: (data) => data, // Giữ nguyên FormData (Keep FormData intact)
+        transformRequest: (data) => data, 
       }
     );
     return response.data;
@@ -26,7 +25,6 @@ export const profileApi = {
 
   /**
    * Đổi mật khẩu cá nhân.
-   * (Change personal password)
    */
   changePassword: async (data: UserChangePassword): Promise<StandardResponse<null>> => {
     const response = await axiosClient.patch<StandardResponse<null>>(

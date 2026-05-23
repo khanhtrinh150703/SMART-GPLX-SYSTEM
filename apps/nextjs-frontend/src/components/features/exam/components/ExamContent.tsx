@@ -96,7 +96,7 @@ export function ExamContent() {
   const { data: licenseOptions = [] } = useLicenseOptions();
   const {
     isMutating,
-    actions: { delete: deletExam, createManual, update },
+    actions: { delete: deletExam, createManual, update, restore },
   } = useExamActions();
   // --- 4. EFFECTS (HIỆU ỨNG) ---
 
@@ -170,6 +170,21 @@ export function ExamContent() {
       setMessage({ intent: "success", text: "Đã xóa ma trận thành công!" });
     } catch (error) {
       throw error;
+    }
+  };
+
+  const handleRestore = async (exam: IExamResponse) => {
+    const id = exam.id;
+    if (!id) return;
+    try {
+      await restore(id);
+      setSelectedId(null);
+      setMessage({
+        intent: "success",
+        text: `Khôi phục ${exam.name} thành công`,
+      });
+    } catch (error) {
+      throw error; // Chuyển tiếp lỗi (Forward error) lên tầng xử lý cao hơn
     }
   };
 
@@ -323,9 +338,7 @@ export function ExamContent() {
           setSelectedId(exam.id);
           setIsDeleteModalOpen(true);
         }}
-        onRestore={(exam) =>
-          setMessage({ intent: "success", text: `Khôi phục ${exam.name}` })
-        }
+        onRestore={handleRestore}
         sortConfig={{
           key: apiParams.sortBy as keyof IExamResponse,
           direction:
