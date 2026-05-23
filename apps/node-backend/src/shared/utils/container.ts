@@ -6,6 +6,7 @@ import {
   asFunction,
   Constructor,
   Resolver,
+  NameAndRegistrationPair,
 } from "awilix";
 
 // --- 1. CORE INFRASTRUCTURE (Clients, Configs & Security) ---
@@ -36,8 +37,6 @@ import {
   MySQLExamRepository,
   MySQLExamHistorySummaryRepository,
 } from "@/infrastructure/repositories/exam-mgmt";
-
-
 
 // Nhóm Exam Session (Xử lý thực thi & Kết quả - Multi DB)
 import {
@@ -98,7 +97,7 @@ import {
 
 import {
   ChapterQueryService,
-  ExamHistorySummartQueryService,
+  ExamHistorySummaryQueryService,
   ExamQueryService,
   LicenseCategoryQueryService,
   QuestionQueryService,
@@ -127,6 +126,7 @@ import {
   AuthController,
   UserController,
   RoleController,
+  AdminUserController,
 } from "@/api/controllers/identity";
 
 import {
@@ -148,13 +148,28 @@ import { UserRankController } from "@/api/controllers/user-rank";
 import { ImportController } from "@/api/controllers/integration";
 
 // Nhóm logger
-import { WinstonLogger } from "@/infrastructure/logging";
+import { PrometheusRegistry, WinstonLogger } from "@/infrastructure/monitoring";
 import { UserStatisticsService } from "@/application/services/statistics/commands/user-statistics.service";
-import { UserStatisticsQueryService, UserTopicStatisticsQueryService } from "@/application/services/statistics/queries";
-import { MySQLQuestionStatisticsRepository, MySQLUserStatisticsRepository, MySQLUserTopicStatisticsRepository } from "@/infrastructure/repositories/statistics";
+import {
+  UserStatisticsQueryService,
+  UserTopicStatisticsQueryService,
+} from "@/application/services/statistics/queries";
+import {
+  MySQLQuestionStatisticsRepository,
+  MySQLUserStatisticsRepository,
+  MySQLUserTopicStatisticsRepository,
+} from "@/infrastructure/repositories/statistics";
 import { RedisLeaderboardRepository } from "@/infrastructure/repositories/leaderboard";
-import { QuestionStatisticsService, UserTopicStatisticsService } from "@/application/services/statistics/commands";
-import { UserStatisticsController, UserTopicStatisticsController } from "@/api/controllers/statistics";
+import {
+  QuestionStatisticsService,
+  UserTopicStatisticsService,
+} from "@/application/services/statistics/commands";
+import {
+  UserStatisticsController,
+  UserTopicStatisticsController,
+} from "@/api/controllers/statistics";
+import { PrismaUnitOfWork } from "@/infrastructure/persistence/prisma";
+import { ICradle } from "../types";
 
 // Service
 /**
@@ -174,20 +189,22 @@ export const asRepo = <T extends object>(
  * @description Khởi tạo Dependency Injection (DI) Container sử dụng thư viện Awilix.
  * Cơ chế PROXY được kích hoạt để hỗ trợ tự động giải quyết (resolve) các phụ thuộc linh hoạt thông qua ICradle.
  */
-export const container = createContainer({
+export const container = createContainer<ICradle>({
   injectionMode: InjectionMode.PROXY,
 });
 
 /**
  * @description Đăng ký toàn bộ các thành phần (Dependencies) vào Container theo mô hình phân tầng (Layered Architecture).
  * Tất cả các Class được đăng ký dưới dạng Singleton để tối ưu hóa hiệu năng và duy trì trạng thái nhất quán.
+ * 1. Đưa toàn bộ đống register của bạn vào một biến và ép kiểu nghiêm ngặt ở đây
  */
-container.register({
+const implementations: NameAndRegistrationPair<ICradle> = {
   // --- TẦNG CƠ SỞ (DATA SOURCES & CLIENTS) ---
   prisma: asValue(prisma),
   mongoConfig: asValue(mongoConfig),
   redisClient: asValue(redisClient),
-  logger: asClass(WinstonLogger),
+  logger: asClass(WinstonLogger).singleton(),
+  metricRegistry: asClass(PrometheusRegistry).singleton(),
 
   // --- TẦNG HẠ TẦNG (INFRASTRUCTURE LAYER - REPOSITORIES) ---
   userRepository: asRepo(MySQLUserRepository),
@@ -218,6 +235,7 @@ container.register({
   tempStorageService: asClass(TempStorageService).singleton(),
 
   // --- TẦNG NGHIỆP VỤ (APPLICATION LAYER - SERVICES) ---
+  unitOfWork: asClass(PrismaUnitOfWork).singleton(),
   userService: asClass(UserService).singleton(),
   authService: asClass(AuthService).singleton(),
   licenseCategoryService: asClass(LicenseCategoryService).singleton(),
@@ -258,8 +276,12 @@ container.register({
   completeExamService: asClass(CompleteExamService).singleton(),
   userExamRankService: asClass(UserExamRankService).singleton(),
   userRankQueryService: asClass(UserRankQueryService).singleton(),
-  userTopicStatisticsQueryService: asClass(UserTopicStatisticsQueryService).singleton(),
-  examHistoryQuerySummaryService: asClass(ExamHistorySummartQueryService).singleton(),
+  userTopicStatisticsQueryService: asClass(
+    UserTopicStatisticsQueryService,
+  ).singleton(),
+  examHistoryQuerySummaryService: asClass(
+    ExamHistorySummaryQueryService,
+  ).singleton(),
 
   // --- TẦNG GIAO TIẾP (API LAYER - CONTROLLERS) ---
   userController: asClass(UserController).singleton(),
@@ -274,8 +296,16 @@ container.register({
   activeSessionController: asClass(ActiveSessionController).singleton(),
   examAttemptController: asClass(ExamAttemptController).singleton(),
   userRankController: asClass(UserRankController).singleton(),
-  examHistorySummaryController: asClass(ExamHistorySummaryController).singleton(),
+  examHistorySummaryController: asClass(
+    ExamHistorySummaryController,
+  ).singleton(),
   userStatisticsController: asClass(UserStatisticsController).singleton(),
-  userTopicStatisticsController: asClass(UserTopicStatisticsController).singleton(),
+  userTopicStatisticsController: asClass(
+    UserTopicStatisticsController,
+  ).singleton(),
   examHistoryController: asClass(ExamHistoryController).singleton(),
-});
+  adminUserController: asClass(AdminUserController).singleton(),
+};
+
+// 2. Nạp biến này vào hàm register là xong
+container.register(implementations);

@@ -60,7 +60,8 @@ async function main(): Promise<void> {
     "licenses:manage", // Quản lý cấu hình hạng bằng lái
     "exam-matrices:read", // Lấy danh sách ma trận cấu trúc đề thi
     "exam-matrices:manage", // Toàn quyền khởi tạo/cập nhật ma trận
-    "exams:manage", // Khởi tạo (tự động/thủ công), cập nhật bộ đề
+    "exams:manage", // Khởi tạo (tự động/thủ công), cập nhật bộ đề,
+    "exams:read", // Khởi tạo (tự động/thủ công), cập nhật bộ đề
   ];
 
   const roleMapping = [

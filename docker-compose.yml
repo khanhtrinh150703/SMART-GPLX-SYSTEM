@@ -3,26 +3,44 @@ version: '3.8'
 services:
   # --- NHÓM MONITORING (GIÁM SÁT) ---
   loki:
-    image: grafana/loki:2.9.0
+    image: grafana/loki:latest
+    container_name: smart_gplx_loki
     ports:
       - "3100:3100"
-    # volumes:
-    #   - ./loki-config.yaml:/etc/loki/local-config.yaml
-    #   - ./loki-data:/loki # Gắn thư mục máy thật vào thư mục /loki của container
-    # command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./infra/loki-config.yml:/etc/loki/loki-config.yml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - smart-gplx-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smart_gplx_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=730d'
     networks:
       - smart-gplx-network
 
   grafana:
     image: grafana/grafana:latest
+    container_name: smart_gplx_grafana
     ports:
-      - "3200:3000" # Truy cập Grafana qua localhost:3200
+      - "3200:3000" 
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - smart-gplx-network
     depends_on:
       - loki
+      - prometheus
 
   # --- NHÓM CACHE & DATABASE (CƠ SỞ DỮ LIỆU) ---
   redis-cache:
@@ -34,6 +52,11 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --requirepass "root"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "root", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
     networks:
       - smart-gplx-network
 
@@ -45,7 +68,7 @@ services:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=smart_gplx_db
     ports:
-      - "3307:3306"
+      - "3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
       interval: 5s
@@ -65,9 +88,14 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
     ports:
-      - "27016:27017" # Port mặc định để kết nối từ máy thật hoặc client UI
+      - "27017:27017" 
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --username root --password password --authenticationDatabase admin --eval 'db.runCommand({ping:1})' || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
     volumes:
-      - mongo_data:/data/db # Gắn volume lưu dữ liệu bền vững cho Mongo
+      - mongo_data:/data/db 
     networks:
       - smart-gplx-network
 
@@ -82,3 +110,4 @@ volumes:
   mysql_data:
   loki_data:
   mongo_data:
+  prometheus_data:

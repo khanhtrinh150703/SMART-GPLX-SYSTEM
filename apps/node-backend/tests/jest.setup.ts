@@ -1,145 +1,160 @@
-import { connectRedis } from "@/infrastructure/database/redis/redis.client";
-import prisma from "../prisma/prisma"; // Đường dẫn tới file prisma client của bạn
-import { redisClient } from "@/infrastructure/database/redis/redis.client";
-import { container } from "@/shared/utils/container";
-import { ImportQueue } from "@/infrastructure/queues/import.queue";
-import { ImportWorker } from "@/infrastructure/workers/import.worker";
-import app from "@/app";
-import { env } from "process";
+// --- 1. NODE.JS CORE & THIRD-PARTY MODULES (Thư viện gốc & Bên thứ ba) ---
 import { Server } from "http";
-import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service";
-import { IMongoDBService } from "@/domain/interfaces/services/external/commands";
+import { env } from "process";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+// --- 2. APPLICATION CORE (Ứng dụng Express chính) ---
+import app from "@/app";
+
+// --- 3. INFRASTRUCTURE & DATABASE CLIENTS (Kết nối Cơ sở dữ liệu) ---
+import prisma from "../prisma/prisma";
+import {
+  connectRedis,
+  redisClient,
+} from "@/infrastructure/database/redis/redis.client";
+
+// --- 4. DEPENDENCY INJECTION CONTAINER (Quản lý Phụ thuộc) ---
+import { container } from "@/shared/utils/container";
 
 const PORT = env.PORT || 5000;
 let serverInstance: Server | null = null;
+
+/**
+ * @description Khởi chạy toàn bộ hạ tầng cơ sở và API Server phục vụ môi trường chạy/test.
+ */
 export const connectDB = async () => {
   try {
     console.log("⏳ [System] Starting services...");
 
-    // 1. Kết nối hạ tầng cơ sở
-    await Promise.all([prisma.$connect(), connectRedis()]);
-    console.log("✅ [System] Database & Redis connected");
+    const mongoService = container.cradle.mongodbService;
 
-    // 2. Nạp dữ liệu vào bộ nhớ
-    const masterDataCache = container.resolve<IMasterDataCacheService>(
-      "masterDataCacheService",
-    );
+    // 1. Kết nối hạ tầng cơ sở (Chạy song song tối ưu hóa I/O)
+    await Promise.all([
+      prisma.$connect(),
+      connectRedis(),
+      mongoService.connect(),
+    ]);
+    console.log("✅ [System] Infrastructure connected (SQL, Redis, MongoDB)");
+
+    // 2. Nạp dữ liệu vào bộ nhớ đệm
+    const masterDataCache = container.cradle.masterDataCacheService;
     await masterDataCache.initialize();
     console.log("✅ [System] MasterData Cache warmed up");
 
-    // ============================================================
-    // 3. KHỞI TẠO BULLMQ QUA CONTAINER (Dịch: Initialize via DI)
-    // ============================================================
+    // 3. Khởi tạo BullMQ
     console.log("⏳ [System] Resolving Background Workers...");
-
-    // Ông chỉ cần 'resolve' chúng ra. Awilix sẽ tự động:
-    // - Tạo ImportProcessorService (vì Worker cần nó)
-    // - Tạo ImportQueue (Singleton)
-    // - Khởi chạy Worker (Lắng nghe Redis ngay lập tức)
-    const importQueue = container.resolve("importQueue") as ImportQueue;
-    const importWorker = container.resolve("importWorker") as ImportWorker;
-
-    console.log("👷 [System] Import Worker & Queue are ready");
-
-    const mongoService = container.resolve<IMongoDBService>("mongodbService");
-    await mongoService.connect();
-
-    console.log("👷 [System] MongoDb are ready");
+    // const importQueue = container.cradle.importQueue;
+    // const importWorker = container.cradle.importWorker;
+    console.log("👷 [System] BullMQ Infrastructure is ready");
 
     // 4. Khởi chạy Server API
     serverInstance = app.listen(PORT, () => {
       console.log(`🚀 [System] Backend is live at http://127.0.0.1:${PORT}`);
     });
-    // ==========================================
-    // 5. GRACEFUL SHUTDOWN (Tắt máy an toàn)
-    // ==========================================
-    process.on("SIGTERM", async () => {
-      console.log("👋 [System] SIGTERM received.");
 
-      // Đóng Worker trước để ngừng nhận Job mới
-      await importWorker.close();
-      await importQueue.close();
-      console.log("✅ [System] BullMQ safely closed.");
-    });
+    // 5. Đăng ký Graceful Shutdown qua hàm dọn dẹp tổng thể
+    const handleSignal = async (signal: string) => {
+      console.log(`👋 [System] ${signal} received. Cleaning up...`);
+      await cleanupDB();
+      process.exit(0);
+    };
+
+    process.on("SIGTERM", () => handleSignal("SIGTERM"));
+    process.on("SIGINT", () => handleSignal("SIGINT"));
   } catch (error) {
     console.error("❌ [System] Startup failure:", error);
     process.exit(1);
   }
 };
 
+/**
+ * @description Nuke sạch cấu trúc và dữ liệu của toàn bộ các bảng trong MySQL (trừ bảng migration).
+ */
 export const dropAllTables = async () => {
-  console.log("💣 Nuking all tables...");
-
+  console.log("💣 Nuking all MySQL tables...");
   try {
-    // 1. Tắt khóa ngoại
     await prisma.$executeRawUnsafe(`SET FOREIGN_KEY_CHECKS = 0;`);
 
-    // 2. Lấy danh sách bảng
     const tableNames = await prisma.$queryRaw<Array<{ TABLE_NAME: string }>>`
       SELECT TABLE_NAME FROM information_schema.TABLES 
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
     `;
 
-    // 3. DROP từng bảng một
     for (const { TABLE_NAME } of tableNames) {
       if (TABLE_NAME !== "_prisma_migrations") {
         await prisma.$executeRawUnsafe(`DROP TABLE \`${TABLE_NAME}\`;`);
       }
     }
 
-    // 4. Bật lại khóa ngoại
     await prisma.$executeRawUnsafe(`SET FOREIGN_KEY_CHECKS = 1;`);
-
-    console.log("✨ All tables dropped! Now you need to run 'prisma db push'.");
+    console.log("✨ All MySQL tables dropped!");
   } catch (error) {
-    console.error("❌ Drop failed:", error);
+    console.error("❌ MySQL Drop failed:", error);
+    throw error; 
   }
 };
 
+/**
+ * @description Giải phóng hoàn toàn mọi tài nguyên, đóng cổng kết nối và nuke sạch dữ liệu test.
+ * Đảm bảo tiến trình kết thúc sạch sẽ không bị rò rỉ bộ nhớ hay treo luồng.
+ */
 export const cleanupDB = async (): Promise<void> => {
-  console.log(" Fleming [Cleanup] Releasing all resources...");
+  console.log("🧹 [Cleanup] Releasing all resources...");
 
+  // 1. Đóng các dịch vụ ứng dụng trước (HTTP Server & Message Queue)
   try {
-    // 1. Đóng BullMQ
-    const importWorker = container.resolve("importWorker") as ImportWorker;
-    const importQueue = container.resolve("importQueue") as ImportQueue;
+    const importQueue = container.cradle.importQueue;
+    const importWorker = container.cradle.importWorker;
     if (importWorker) await importWorker.close();
     if (importQueue) await importQueue.close();
     console.log("✅ [Cleanup] BullMQ Worker & Queue closed");
 
-    // 2. Đóng Server API
     if (serverInstance) {
       await new Promise<void>((resolve) => {
         serverInstance!.close(() => resolve());
       });
       console.log("✅ [Cleanup] Server closed");
     }
+  } catch (error) {
+    console.error("❌ [Cleanup] Error closing application services:", error);
+  }
 
-    // 3. Xóa dữ liệu và ngắt kết nối hệ thống DB
-    // --- Phần MySQL ---
+  // 2. Thực hiện xóa dữ liệu (Nuke dữ liệu)
+  try {
     await dropAllTables();
-    await prisma.$disconnect();
-    console.log("✅ [Cleanup] MySQL dropped and disconnected");
 
-    // --- 🔥 PHẦN MONGODB: NUKE SẠCH DATABASE TEST ---
     if (mongoose.connection.readyState === 1) {
-      await mongoose.connection.dropDatabase(); // Xóa sạch sành sanh không để lại vết
+      await mongoose.connection.dropDatabase();
       console.log("✨ [Cleanup] MongoDB database nuked!");
     }
-
-    const mongoService = container.resolve<IMongoDBService>("mongodbService");
-    if (mongoService) {
-      await mongoService.close(); // Gọi hàm close đã sửa ở trên để giải phóng kết nối
-      console.log("✅ [Cleanup] MongoDB disconnected");
-    }
-
-    // 4. Đóng Redis
-    if (redisClient) {
-      await redisClient.quit();
-      console.log("✅ [Cleanup] Redis connection closed");
-    }
   } catch (error) {
-    console.error("❌ [Cleanup] Failed:", error);
+    console.error("❌ [Cleanup] Error during database nuking:", error);
+  } finally {
+    console.log("⏳ [Cleanup] Closing all infrastructure connections...");
+
+    try {
+      await prisma.$disconnect();
+      console.log("✅ [Cleanup] MySQL disconnected");
+    } catch (err) {
+      console.error("❌ MySQL disconnect error:", err);
+    }
+
+    try {
+      const mongoService = container.cradle.mongodbService;
+      if (mongoService) await mongoService.close();
+      console.log("✅ [Cleanup] MongoDB disconnected");
+    } catch (err) {
+      console.error("❌ MongoDB disconnect error:", err);
+    }
+
+    try {
+      if (redisClient) await redisClient.quit();
+      console.log("✅ [Cleanup] Redis connection closed");
+    } catch (err) {
+      console.error("❌ Redis disconnect error:", err);
+    }
   }
 };

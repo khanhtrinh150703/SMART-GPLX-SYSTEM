@@ -39,18 +39,18 @@ export default function RegisterForm() {
 
     try {
       // Gọi API Đăng ký
-       await authApi.register({
+      await authApi.register({
         username: data.username.trim(),
         email: data.email.trim(),
         fullName: data.fullName,
         password: data.password,
+        confirmPassword: data.confirmPassword,
       });
 
       // Lưu tạm email để điền sẵn ở trang OTP
       localStorage.setItem("register_email", data.email);
 
       // Chuyển sang trang verify OTP
-      // LƯU Ý: Vì bạn đã dùng Route Group (auth), đường dẫn phải là /verify-otp (bỏ chữ auth)
       router.push("/verify");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -70,37 +70,59 @@ export default function RegisterForm() {
 
   return (
     <div className="w-full">
-      <div className="space-y-3">
+      {/* Thu nhỏ khoảng cách nút Google */}
+      <div className="space-y-2">
         <GoogleButton text="Đăng ký với Google" />
       </div>
 
-      <Divider text="Hoặc đăng ký bằng Email" />
+      <div className="my-3">
+        <Divider text="Hoặc đăng ký bằng Email" />
+      </div>
 
-      {/* Cảnh báo lỗi từ máy chủ (Server Error Alert) */}
       {errorMsg && (
         <Alert
           intent="error"
           message={errorMsg}
-          className="mb-6" // Thêm margin nếu cần
+          duration={10000}
+          className="mb-3 text-xs"
         />
       )}
-      {/* Form đăng ký */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div>
-          <Input
-            label="Tên đăng nhập"
-            placeholder="VD: wangwu"
-            disabled={isLoading}
-            {...register("username")}
-          />
-          {/* Lỗi hiển thị nội tuyến (Inline-error) */}
-          {errors.username && (
-            <p className="text-rose-500 text-sm mt-1">
-              {errors.username.message}
-            </p>
-          )}
+
+      {/* Thay space-y-3.5 thành space-y-3 để các ô khít nhau hơn nữa */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        {/* Hàng 1 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Input
+              label="Tên đăng nhập"
+              placeholder="VD: wangwu"
+              disabled={isLoading}
+              {...register("username")}
+            />
+            {errors.username && (
+              <p className="text-rose-500 text-xs mt-0.5">
+                {errors.username.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              label="Họ Tên"
+              type="text"
+              placeholder="Wang Wu"
+              disabled={isLoading}
+              {...register("fullName")}
+            />
+            {errors.fullName && (
+              <p className="text-rose-500 text-xs mt-0.5">
+                {errors.fullName.message}
+              </p>
+            )}
+          </div>
         </div>
 
+        {/* Hàng 2 */}
         <div>
           <Input
             label="Email"
@@ -110,68 +132,66 @@ export default function RegisterForm() {
             {...register("email")}
           />
           {errors.email && (
-            <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Input
-            label="Họ Tên"
-            type="fullName"
-            placeholder="Wang Wu"
-            disabled={isLoading}
-            {...register("fullName")}
-          />
-          {errors.email && (
-            <p className="text-rose-500 text-sm mt-1">{errors.email.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Input
-            label="Mật khẩu"
-            type="password"
-            placeholder="Tạo mật khẩu"
-            disabled={isLoading}
-            {...register("password")}
-          />
-          {errors.password && (
-            <p className="text-rose-500 text-sm mt-1">
-              {errors.password.message}
+            <p className="text-rose-500 text-xs mt-0.5">
+              {errors.email.message}
             </p>
           )}
         </div>
 
-        <div>
-          <Input
-            label="Xác nhận mật khẩu"
-            type="password"
-            placeholder="Nhập lại mật khẩu"
-            disabled={isLoading}
-            {...register("confirmPassword")}
-          />
-          {errors.confirmPassword && (
-            <p className="text-rose-500 text-sm mt-1">
-              {errors.confirmPassword.message}
-            </p>
-          )}
+        {/* Hàng 3 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Input
+              label="Mật khẩu"
+              type="password"
+              placeholder="Tạo mật khẩu"
+              disabled={isLoading}
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="text-rose-500 text-xs mt-0.5">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              label="Xác nhận mật khẩu"
+              type="password"
+              placeholder="Nhập lại mật khẩu"
+              disabled={isLoading}
+              {...register("confirmPassword")}
+            />
+            {errors.confirmPassword && (
+              <p className="text-rose-500 text-xs mt-0.5">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="pt-4">
+        {/* Nút Submit vừa vặn */}
+        <div className="w-full pt-2">
           <Button
             variant="primary"
-            size="lg" // size "lg" trong file variants đã có w-full và py-3.5
+            size="md"
             isLoading={isLoading}
             type="submit"
+            className="w-full py-2.5 font-semibold text-sm"
             text={isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
           />
         </div>
       </form>
 
-      {/* 🚀 Phiên bản Senior: Gọn gàng, đồng bộ và cực kỳ chuyên nghiệp */}
-      <div className="mt-8 text-center text-sm text-slate-600">
+      {/* Dòng này nằm cuối Form con, thêm pb-4 để không dính sát vào đường kẻ gạch ngang */}
+      <div className="mt-4 text-center text-xs text-slate-500 pb-4">
         Đã có tài khoản?{" "}
-        <TextLink href="/login" intent="primary">
+        <TextLink
+          href="/login"
+          intent="primary"
+          className="font-semibold text-emerald-600"
+        >
           Đăng nhập ngay
         </TextLink>
       </div>

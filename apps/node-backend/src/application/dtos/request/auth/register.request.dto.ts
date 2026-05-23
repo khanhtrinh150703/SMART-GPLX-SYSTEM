@@ -15,7 +15,7 @@ export interface IRegisterInputDTO {
 
 /**
  * @class RegisterRequestDTO
- * @description DTO xử lý đăng ký tài khoản mới, mapping trước khi validate.
+ * @description DTO xử lý đăng ký tài khoản mới, mapping trước khi validate dựa trên thuộc tính của class.
  */
 export class RegisterRequestDTO implements IRegisterInputDTO {
   public readonly username: string;
@@ -51,24 +51,28 @@ export class RegisterRequestDTO implements IRegisterInputDTO {
     this.fullName =
       typeof data.fullName === "string" ? data.fullName.trim() : undefined;
 
-    // 2. Validation (Kiểm tra logic trên dữ liệu đã mapping)
-    this.validate(data);
+    // 2. Validation (Kiểm tra logic trên dữ liệu đã mapping vào `this`)
+    this.validate();
   }
 
   /**
    * @private
-   * @description Kiểm tra tính hợp lệ đa tầng, giữ nguyên các case cũ.
-   * @param {IRegisterInputDTO} data - Dùng để check dữ liệu thô nếu cần.
+   * @description Kiểm tra tính hợp lệ đa tầng của các trường dữ liệu dựa trên thuộc tính của class.
    * @throws {AppError}
    */
-  private validate(data: IRegisterInputDTO): void {
+  private validate(): void {
     // --- Validate Username ---
-    if (!data.username || this.username.length < 3) {
+    if (!this.username || this.username.length < 3) {
       throw new AppError(ErrorCode.AUTH.USERNAME_INVALID);
     }
 
+    // --- Validate Full Name ---
+    if (!this.fullName || this.fullName.length === 0) {
+      throw new AppError(ErrorCode.AUTH.FULL_NAME_INVALID);
+    }
+
     // --- Validate Email ---
-    if (!data.email || !REGEX.EMAIL.BASIC.test(data.email)) {
+    if (!this.email || !REGEX.EMAIL.BASIC.test(this.email)) {
       throw new AppError(ErrorCode.AUTH.EMAIL_INVALID);
     }
 

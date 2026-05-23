@@ -1,19 +1,16 @@
 import { Router } from "express";
 
-// 1. Controller (Gom từ index của module user-rank thông qua Barrel file)
-import { UserRankController } from "@/api/controllers/user-rank";
-
-// 2. Middlewares (Gom theo nhóm nghiệp vụ Identity/Auth)
+// 1. Middlewares (Gom theo nhóm nghiệp vụ Identity/Auth)
 import { authMiddleware } from "@/api/middlewares/identity";
-
-// 3. DI Container (Giải nén phụ thuộc Awilix)
-import { container } from "@/shared/utils/container";
 import { validateUuidParam } from "@/api/middlewares/validate";
 
+// 2. DI Container (Giải nén phụ thuộc Awilix)
+import { container } from "@/shared/utils/container";
+
 const router = Router();
-const controller = container.resolve(
-  "userRankController",
-) as UserRankController;
+
+/** @description Bộ điều khiển điều phối các yêu cầu truy vấn bảng xếp hạng, vị trí cá nhân và các nghiệp vụ liên quan đến vinh danh người dùng. */
+const controller = container.cradle.userRankController;
 
 /**
  * @description  Lấy bảng xếp hạng của một đề thi cụ thể.

@@ -323,6 +323,7 @@ export function ExamMatrixContent() {
           onSubmit={handleCreateExamMatrix}
           isLoading={isMutating}
           chapters={chapterOptions}
+          onClose={() => setSheetOpen(false)}
           licenses={licenseOptions}
         />
       </Sheet>

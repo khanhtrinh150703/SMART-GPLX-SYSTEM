@@ -20,7 +20,7 @@ interface PendingRequest {
 // Khởi tạo Client riêng cho Refresh để tránh bị Interceptor chính "tóm" được
 // (Separate client for refreshing to avoid interceptor loops)
 const refreshClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "/api/v1",
 });
 
 // 2. Biến kiểm soát trạng thái hàng đợi
@@ -39,7 +39,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
@@ -83,14 +83,15 @@ axiosClient.interceptors.response.use(
     }
 
     const { status } = error.response;
-    const authPath = "/auth/refresh-token"; // Đường dẫn API refresh
-
+    const authPath = "/auth/refresh-token";
+    const loginPath = "/auth/login";
     // 2. Xử lý 401 - Silent Refresh
     // ĐIỀU KIỆN CHẶN LOOP: Không được retry nếu chính URL này là API Refresh
     if (
       status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes(authPath)
+      !originalRequest.url?.includes(authPath) &&
+      !originalRequest.url?.includes(loginPath)
     ) {
       // Nếu đang có một request khác đang đi Refresh rồi, đưa mình vào hàng đợi
       if (isRefreshing) {

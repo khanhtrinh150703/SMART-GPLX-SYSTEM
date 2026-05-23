@@ -42,7 +42,7 @@ export default function LandingPage() {
             <CategoryCard
               intent="emerald"
               delay={0.5}
-              title="Hạng B1, B - Xe Ô Tô"
+              title="Hạng B, B1 - Xe Ô Tô"
               images={[
                 "/images/car-b.png",
                 "/images/car-b_1.png",
@@ -56,7 +56,7 @@ export default function LandingPage() {
             <CategoryCard
               intent="teal"
               delay={0.6}
-              title="Hạng A1, A2 - Xe Máy - Xe mô tô"
+              title="Hạng A, A1 - Xe Máy - Xe mô tô"
               images={[
                 "/images/moto-a1.png",
                 "/images/moto-a1_1.png",
@@ -82,7 +82,7 @@ export default function LandingPage() {
               key={feature.title}
               {...feature}
               description={feature.desc}
-              delay={0.4 + idx * 0.1}
+              delay={0.3 + idx * 0.1}
             />
           ))}
         </div>

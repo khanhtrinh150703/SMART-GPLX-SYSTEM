@@ -46,8 +46,12 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.AUTH.EMAIL_REQUIRED]: 'Vui lòng nhập địa chỉ email.',
     [ErrorCode.AUTH.OTP_REQUIRED]: 'Vui lòng nhập mã xác thực OTP.',
     [ErrorCode.AUTH.NEW_PASSWORD_REQUIRED]: 'Vui lòng nhập mật khẩu mới.',
-
-
+    [ErrorCode.AUTH.FULL_NAME_INVALID]: 'Họ và tên không đúng định dạng hoặc không hợp lệ.',
+    [ErrorCode.AUTH.CONFIRM_PASSWORD_REQUIRED]: 'Vui lòng xác nhận lại mật khẩu.',
+    [ErrorCode.AUTH.ROLES_REQUIRED]: 'Vui lòng chọn ít nhất một quyền (role) cho tài khoản.',
+    [ErrorCode.AUTH.USERNAME_ALREADY_EXISTS]: 'Tên đăng nhập đã tồn tại trong hệ thống.',
+    [ErrorCode.AUTH.EMAIL_ALREADY_EXISTS]: 'Địa chỉ email này đã được sử dụng.',
+    
     // === USER & PROFILE (USER) ===
     [ErrorCode.USER.NOT_FOUND]: 'Người dùng không tồn tại trên hệ thống.',
     [ErrorCode.USER.EMAIL_EXISTS]: 'Địa chỉ email này đã được sử dụng.',
@@ -226,7 +230,10 @@ export const ErrorMessages: Record<ErrorCodeType, string> = {
     [ErrorCode.IMPORT.INVALID_TOTAL_SIZE]: 'Tổng kích thước tệp tin phải lớn hơn 0.',
     [ErrorCode.IMPORT.INVALID_TOTAL_CHUNKS]: 'Tổng số mảnh (chunks) phải lớn hơn 0.',
     [ErrorCode.IMPORT.JOB_ID_REQUIRED]: 'Mã công việc (Job ID) không được để trống.',
-
+    [ErrorCode.IMPORT.DIR_CREATION_FAILED]: 'Không thể tạo thư mục tạm thời để xử lý tệp.',
+    [ErrorCode.IMPORT.CHUNK_SAVE_FAILED]: 'Quá trình lưu trữ mảnh dữ liệu (chunk) thất bại.',
+    [ErrorCode.IMPORT.MERGE_FAILED]: 'Quá trình hợp nhất các mảnh dữ liệu thất bại.',
+    
     // --- MATRIX MESSAGES ---
     [ErrorCode.MATRIX.NAME_REQUIRED]: 'Tên ma trận đề thi không được để trống.',
     [ErrorCode.MATRIX.NAME_TOO_LONG]: 'Tên ma trận đề thi không được vượt quá 100 ký tự.',

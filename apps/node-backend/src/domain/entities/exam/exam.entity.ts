@@ -39,7 +39,7 @@ export class ExamEntity extends BaseEntity<IExamProps> {
 
     // --- BƯỚC 1: MAPPING & VALIDATE SNAPSHOT (Domain Logic) ---
     const examQuestions: IExamQuestionProps[] = input.rawQuestions.map(
-      (q, index) => {
+      (q, _index) => {
         // Tìm index của đáp án đúng (giả sử q.answers có thuộc tính isCorrect)
         const correctAnsIndex = q.answers.findIndex((a) => a.isCorrect);
 
@@ -52,11 +52,11 @@ export class ExamEntity extends BaseEntity<IExamProps> {
 
         return {
           questionId: q.id,
-          indexNumber: index + 1, // STT trong đề thi
+          indexNumber: q.props.indexNumber, 
           isCritical: q.isCritical,
-          correctAnswer: correctAnsIndex + 1, // Chuyển sang 1-index để User dễ đọc
+          correctAnswer: correctAnsIndex + 1, 
           chapterId: q.props.chapterId,
-          chapterName: q.props.chapterName, // ChapterName đã được Service chuẩn bị từ Cache
+          chapterName: q.props.chapterName,
         };
       },
     );

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils/utils";
 export default function SidebarLogo({ className }: { className?: string }) {
   return (
     <Link 
-      href="/dashboard" 
+      href="/overview" 
       // SỬA LẠI: Tự căn giữa nội dung bên trong, dọn sạch outline/khung
       className={cn(
         "flex items-center justify-center outline-none group transition-all",

@@ -1,21 +1,16 @@
 // --- 1. Frameworks & Third-party Libraries ---
-import { Router } from 'express';
+import { Router } from "express";
 
 // --- 2. Core Infrastructure & Shared Utilities ---
-import { container } from '@/shared/utils/container';
+import { container } from "@/shared/utils/container";
 
 // --- 3. Middlewares (Cross-cutting Concerns) ---
 import { authMiddleware } from "@/api/middlewares/identity";
 
-// --- 4. Controllers (Presentation Layer) ---
-import { AuthController } from '@/api/controllers/identity';
-
 const router = Router();
 
-/**
- * Resolve AuthController từ DI Container (Awilix).
- */
-const authController = container.resolve('authController') as AuthController;
+/** @description Bộ điều khiển xử lý các yêu cầu HTTP liên quan đến xác thực tài khoản, đăng nhập và bảo mật (Auth). */
+const authController = container.cradle.authController;
 
 // ============================================================================
 // 1. FLOW ĐĂNG KÝ (SIGNUP/REGISTER)
@@ -26,21 +21,21 @@ const authController = container.resolve('authController') as AuthController;
  * @route POST /api/v1/auth/register/init
  * @access Public
  */
-router.post('/register/init', authController.signUpInit);
+router.post("/register/init", authController.signUpInit);
 
 /**
  * @description Xác thực mã OTP và hoàn tất quá trình tạo tài khoản người dùng mới.
  * @route POST /api/v1/auth/register/verify
  * @access Public
  */
-router.post('/register/verify', authController.signUpVerify);
+router.post("/register/verify", authController.signUpVerify);
 
 /**
  * @description Gửi lại mã OTP xác thực trong trường hợp người dùng chưa nhận được hoặc mã hết hạn.
  * @route POST /api/v1/auth/resend-otp
  * @access Public
  */
-router.post('/resend-otp', authController.resendOtp);
+router.post("/resend-otp", authController.resendOtp);
 
 // ============================================================================
 // 2. FLOW ĐĂNG NHẬP & QUẢN LÝ TOKEN (SESSION MANAGEMENT)
@@ -51,21 +46,21 @@ router.post('/resend-otp', authController.resendOtp);
  * @route POST /api/v1/auth/login
  * @access Public
  */
-router.post('/login', authController.login);
+router.post("/login", authController.login);
 
 /**
  * @description Cấp mới Access Token bằng Refresh Token khi mã cũ đã hết hạn.
  * @route POST /api/v1/auth/refresh-token
  * @access Public (Requires Refresh Token in Body/Cookie)
  */
-router.post('/refresh-token', authController.refreshToken);
+router.post("/refresh-token", authController.refreshToken);
 
 /**
  * @description Đăng xuất, vô hiệu hóa Access Token và xóa session/refresh token tương ứng.
  * @route POST /api/v1/auth/logout
  * @access Private (Authenticated User)
  */
-router.post('/logout', authMiddleware, authController.logout);
+router.post("/logout", authMiddleware, authController.logout);
 
 // ============================================================================
 // 3. FLOW QUÊN MẬT KHẨU (PASSWORD RECOVERY)
@@ -76,13 +71,13 @@ router.post('/logout', authMiddleware, authController.logout);
  * @route POST /api/v1/auth/forgot-password
  * @access Public
  */
-router.post('/forgot-password', authController.forgotPassword);
+router.post("/forgot-password", authController.forgotPassword);
 
 /**
  * @description Xác thực OTP và thiết lập mật khẩu mới cho người dùng.
  * @route POST /api/v1/auth/reset-password
  * @access Public
  */
-router.post('/reset-password', authController.resetPassword);
+router.post("/reset-password", authController.resetPassword);
 
 export default router;

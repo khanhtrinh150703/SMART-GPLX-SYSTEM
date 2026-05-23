@@ -34,8 +34,8 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.AUTH.OTP_EXPIRED]: 400, // Bad Request
   [ErrorCode.AUTH.REGISTRATION_EXPIRED]: 400, // Bad Request
   [ErrorCode.AUTH.MISSING_FIELDS]: 400, // Bad Request
-  [ErrorCode.AUTH.INVALID_TOKEN]: 401, // Bad Request
-  [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 401, // Bad Request
+  [ErrorCode.AUTH.INVALID_TOKEN]: 401, // Unauthorized
+  [ErrorCode.AUTH.ROLES_NOT_INITIALIZED]: 400, // Bad Request
   [ErrorCode.AUTH.USERNAME_REQUIRED]: 400,
   [ErrorCode.AUTH.PASSWORD_REQUIRED]: 400,
   [ErrorCode.AUTH.USERNAME_INVALID]: 400,
@@ -46,6 +46,11 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.AUTH.EMAIL_REQUIRED]: 400,
   [ErrorCode.AUTH.OTP_REQUIRED]: 400,
   [ErrorCode.AUTH.NEW_PASSWORD_REQUIRED]: 400,
+  [ErrorCode.AUTH.FULL_NAME_INVALID]: 400, // Bad Request
+  [ErrorCode.AUTH.CONFIRM_PASSWORD_REQUIRED]: 400, // Bad Request
+  [ErrorCode.AUTH.ROLES_REQUIRED]: 400, // Bad Request
+  [ErrorCode.AUTH.USERNAME_ALREADY_EXISTS]: 409, // Conflict (hoặc 400 - Bad Request)
+  [ErrorCode.AUTH.EMAIL_ALREADY_EXISTS]: 409, // Conflict (hoặc 400 - Bad Request)
 
   // --- USER & PROFILE ---
   [ErrorCode.USER.NOT_FOUND]: 404, // Not Found
@@ -89,12 +94,12 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.EXAM.INVALID_TIME_RANGE]: 400,
   [ErrorCode.EXAM.TOTAL_QUESTIONS_INVALID]: 400,
   [ErrorCode.EXAM.NAME_ALREADY_EXISTS]: 409,
-  
+
   // --- Nhóm 2xx: Business/Pool (Lỗi logic kho dữ liệu/ma trận) ---
   [ErrorCode.EXAM.INSUFFICIENT_POOL_QUESTIONS]: 400, // Bad Request (Yêu cầu vượt quá khả năng đáp ứng của kho)
   [ErrorCode.EXAM.INSUFFICIENT_CHAPTER_QUESTIONS]: 400, // Bad Request
   [ErrorCode.EXAM.INSUFFICIENT_CRITICAL_QUESTIONS]: 400, // Bad Request
-  [ErrorCode.EXAM.QUESTION_DATA_INVALID]: 422, 
+  [ErrorCode.EXAM.QUESTION_DATA_INVALID]: 422,
 
   // --- Nhóm 4xx: State/Flow (Lỗi trạng thái bài thi) ---
   [ErrorCode.EXAM.NOT_FOUND]: 404, // Not Found
@@ -224,6 +229,9 @@ export const ErrorStatus: Record<ErrorCodeType, number> = {
   [ErrorCode.IMPORT.INVALID_TOTAL_SIZE]: 400,
   [ErrorCode.IMPORT.INVALID_TOTAL_CHUNKS]: 400,
   [ErrorCode.IMPORT.JOB_ID_REQUIRED]: 400,
+  [ErrorCode.IMPORT.DIR_CREATION_FAILED]: 422, // Hoặc 422
+  [ErrorCode.IMPORT.CHUNK_SAVE_FAILED]: 422,   // Hoặc 422
+  [ErrorCode.IMPORT.MERGE_FAILED]: 500, // Internal Server Error 
 
   // --- MATRIX ERRORS ---
   [ErrorCode.MATRIX.NAME_REQUIRED]: 400,

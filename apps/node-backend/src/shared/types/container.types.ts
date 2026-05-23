@@ -115,6 +115,7 @@ import {
   AuthController,
   UserController,
   RoleController,
+  AdminUserController,
 } from "@/api/controllers/identity";
 
 // Nhóm Exam Management
@@ -139,14 +140,14 @@ import { UserRankController } from "@/api/controllers/user-rank";
 import { ImportController } from "@/api/controllers/integration";
 
 // Nhóm logger
-import { ILogger } from "@/domain/interfaces/logging";
+import { IApiMonitorRegistry, ILogger } from "@/domain/interfaces/monitoring";
 import { ILeaderboardCacheRepository } from "@/domain/interfaces/repositories/leaderboard/i-leaderboard-cache.repository";
 import {
   IQuestionStatisticsRepository,
   IUserStatisticsRepository,
   IUserTopicStatisticsRepository,
 } from "@/domain/interfaces/repositories/statistics";
-import { IExamGeneratorService } from "@/domain/interfaces/services/exam-engine/commands";
+import { IExamGeneratorService, IExamPickerDomainService } from "@/domain/interfaces/services/exam-engine/commands";
 import {
   IUserStatisticsQueryService,
   IUserTopicStatisticsQueryService,
@@ -160,6 +161,8 @@ import {
   UserStatisticsController,
   UserTopicStatisticsController,
 } from "@/api/controllers/statistics";
+import { IUnitOfWork } from "@/domain/interfaces/seedwork";
+import { IMongoConfig } from "../config";
 
 /**
  * @description Định nghĩa cấu trúc "Cradle" chứa toàn bộ các phụ thuộc (Dependencies) của hệ thống.
@@ -176,6 +179,12 @@ export interface ICradle {
 
   /** @description Dịch vụ ghi log để theo dõi hoạt động và hỗ trợ gỡ lỗi hệ thống. */
   logger: ILogger;
+
+  /** @description Cấu hình kết nối và các thiết lập cho cơ sở dữ liệu MongoDB. */
+  mongoConfig: IMongoConfig;
+
+  /** @description Bộ quản lý và đăng ký hệ thống chỉ số (Metrics) phục vụ giám sát hiệu năng. */
+  metricRegistry: IApiMonitorRegistry;
 
   /** @description Repository quản lý dữ liệu người dùng (MySQL). */
   userRepository: IUserRepository;
@@ -243,6 +252,9 @@ export interface ICradle {
   tokenManager: ITokenManager;
 
   // --- NGHIỆP VỤ ỨNG DỤNG (APPLICATION SERVICES) ---
+
+  /** @description Domain Service chứa thuật toán cốt lõi để lựa chọn câu hỏi dựa trên tiêu chí. */
+  examPickerService: IExamPickerDomainService;
 
   /** @description Dịch vụ gửi Email (Nodemailer/External API). */
   emailService: IEmailService;
@@ -376,6 +388,9 @@ export interface ICradle {
   /** @description Trình xử lý tác vụ chạy ngầm (Background Worker) thực thi các Job lấy từ hàng đợi nhập liệu (Job Consumer). */
   importWorker: ImportWorker;
 
+  /** @description Đơn vị điều phối transaction trừu tượng (Unit of Work). */
+  unitOfWork: IUnitOfWork;
+
   // --- GIAO TIẾP API (CONTROLLERS) ---
 
   /** @description Xử lý các yêu cầu HTTP liên quan đến xác thực (Auth). */
@@ -394,7 +409,7 @@ export interface ICradle {
   chapterController: ChapterController;
 
   /** @description Xử lý các yêu cầu HTTP liên quan đến câu hỏi. */
-  quenstionController: QuestionController;
+  questionController: QuestionController;
 
   /** @description Xử lý các yêu cầu HTTP liên quan đến quy trình nhập liệu (Import). */
   importController: ImportController;
@@ -425,4 +440,7 @@ export interface ICradle {
 
   /** @description Bộ điều khiển quản lý vòng đời lịch sử thi, bao gồm việc ghi nhận kết quả bài thi và truy xuất dữ liệu lịch sử. */
   examHistoryController: ExamHistoryController;
+
+  /** @description Bộ điều khiển quản lý người dùng hệ thống dành cho quản trị viên, bao gồm việc tạo mới, cập nhật thông tin, phân quyền và quản lý trạng thái tài khoản. */
+  adminUserController: AdminUserController;
 }

@@ -7,7 +7,6 @@ import { IUserService } from "@/domain/interfaces/services/identity/commands/i-u
 import { UserMapper } from "@/infrastructure/database/mappers/identity/user.mapper";
 import { STORAGE_FOLDERS } from "@/domain/constants/storage.constant";
 import { IUserRoleRepository } from "@/domain/interfaces/repositories/identity/i-user-role.repository";
-import { PrismaClient } from "@prisma/client";
 import { IMediaService } from "@/domain/interfaces/services/integration/commands/i-media.service";
 import { IMasterDataCacheService } from "@/domain/interfaces/services/exam-mgmt/commands/i-master-data-cache.service";
 import { Role } from "@/domain/entities/role/role.entity";
@@ -23,12 +22,15 @@ import {
   DeleteResponseDTO,
 } from "@/application/dtos/response/shared/delete.response.dto";
 import { DeleteType } from "@/domain/constants/delete.constant";
-import { ILogger } from "@/domain/interfaces/logging/i-logger.interface"; /**
+import { ILogger } from "@/domain/interfaces/monitoring/i-logger";
+import { AdminCreateUserRequestDTO } from "@/application/dtos/request/auth/admin-create-user.request.dto";
+import { ICreateUserInput } from "@/application/dtos/request/auth/create-user-request.dto";
+import { IUnitOfWork } from "@/domain/interfaces/seedwork";
 
 /**
  * @interface IUserServiceCradle
- * @description Tập hợp các phụ thuộc (Dependencies) cần thiết cho UserService.
- * Bao gồm các cổng truy xuất dữ liệu, bảo mật và lưu trữ tập tin.
+ * @description Định nghĩa các phụ thuộc (dependencies) sạch được tiêm từ DI Container (Awilix Proxy).
+ * Tuyệt đối không chứa trực tiếp PrismaClient nhằm bảo vệ tính cô lập của tầng nghiệp vụ.
  */
 export interface IUserServiceCradle {
   /** @description Repository quản lý các thao tác CRUD cơ bản trên thực thể Người dùng. */
@@ -46,8 +48,8 @@ export interface IUserServiceCradle {
   /** @description Dịch vụ truy xuất dữ liệu danh mục từ bộ nhớ đệm (Cache). */
   masterDataCacheService: IMasterDataCacheService;
 
-  /** @description Instance Prisma dùng để thực hiện Transaction và truy vấn DB trực tiếp. */
-  prisma: PrismaClient;
+  /** @description Đơn vị điều phối transaction trừu tượng (Unit of Work). */
+  unitOfWork: IUnitOfWork;
 
   /** @description Dịch vụ ghi log để theo dõi hoạt động và hỗ trợ gỡ lỗi hệ thống. */
   logger: ILogger;
@@ -74,16 +76,16 @@ export class UserService implements IUserService {
   /** @private @readonly @description Dịch vụ cache dữ liệu hệ thống. */
   private readonly _cacheService: IMasterDataCacheService;
 
-  /** @private @readonly @description Client điều phối giao dịch Prisma. */
-  private readonly _prisma: PrismaClient;
+  /** @private @readonly @description Bộ điều phối giao dịch an toàn (Unit of Work). */
+  private readonly _uow: IUnitOfWork;
 
   /** @private @readonly @description Dịch vụ ghi log hệ thống. */
   private readonly _logger: ILogger;
 
   /**
    * @constructor
-   * @description Khởi tạo Service với các phụ thuộc được tiêm (inject) từ DI Container.
-   * @param {IUserServiceCradle} cradle - Chứa danh sách đầy đủ các Repository và Service bổ trợ.
+   * @description Khởi tạo Service với các phụ thuộc sạch hoàn toàn từ cấu trúc Cradle của Awilix.
+   * @param {IUserServiceCradle} cradle - Thùng chứa các phụ thuộc hạ tầng đã được trừu tượng hóa qua Interface.
    */
   constructor({
     userRepository,
@@ -91,7 +93,7 @@ export class UserService implements IUserService {
     tokenManager,
     mediaService,
     masterDataCacheService,
-    prisma,
+    unitOfWork,
     logger,
   }: IUserServiceCradle) {
     this._userRepo = userRepository;
@@ -99,7 +101,7 @@ export class UserService implements IUserService {
     this._tokenManager = tokenManager;
     this._mediaService = mediaService;
     this._cacheService = masterDataCacheService;
-    this._prisma = prisma;
+    this._uow = unitOfWork;
     this._logger = logger;
   }
 
@@ -128,7 +130,6 @@ export class UserService implements IUserService {
     }
 
     // 3. Thực hiện logic nghiệp vụ tại Entity (Rich Domain Model)
-    // (Dịch: Mô hình Domain giàu tính năng - chứa logic thay vì chỉ chứa dữ liệu)
     user.updateProfile(dto.fullName, newUrlPicture);
 
     // 4. Persistence - Lưu vào Database (Dịch: Tầng lưu trữ dữ liệu vĩnh viễn)
@@ -157,33 +158,43 @@ export class UserService implements IUserService {
   }
 
   /**
-   * @description API dành cho Admin cập nhật thông tin và quyền hạn người dùng.
-   * @param userId - ID của người dùng mục tiêu.
-   * @param dto - Dữ liệu cập nhật từ Admin.
-   * @throws {AppError} USER.NOT_FOUND - Nếu người dùng không tồn tại hoặc đã bị xóa/khóa.
+   * @description Dịch vụ dành cho Quản trị viên cập nhật thông tin họ tên và đồng bộ hóa quyền hạn (vai trò) của người dùng.
+   * @param {string} userId - Định danh duy nhất (UUID) của người dùng cần được cập nhật.
+   * @param {UpdateAdminRequestDTO} dto - Dữ liệu chuyển giao chứa các thông tin thay đổi được gửi từ phía Admin.
+   * @returns {Promise<void>} Trả về một Promise rỗng khi toàn bộ tiến trình cập nhật và đồng bộ hoàn tất thành công.
+   * @throws {AppError} USER.NOT_FOUND - Phát ra lỗi nghiệp vụ nếu tài khoản không tồn tại hoặc đã bị xóa mềm trên hệ thống.
    */
   public async updateUserByAdmin(
     userId: string,
     dto: UpdateAdminRequestDTO,
   ): Promise<void> {
-    // 1. Kiểm tra nghiệp vụ (Dùng Entity Rich Logic)
+    // 1. Kiểm tra sự tồn tại của người dùng mục tiêu (Sử dụng Active Domain Entity)
     const user = await this._userRepo.findActiveById(userId);
-    if (!user) throw new AppError(ErrorCode.USER.NOT_FOUND);
+    if (!user) {
+      throw new AppError(ErrorCode.USER.NOT_FOUND);
+    }
 
-    // 3. Kiểm tra tính hợp lệ sơ bộ của DTO trước khi xuống Service
+    // 2. Thực thi kiểm tra nghiệp vụ và đột biến trạng thái thông qua Entity Rich Logic
+    if (dto.fullName) {
+      user.updateFullName(dto.fullName);
+    }
 
-    // Cập nhật thông tin vào Entity (Validation thực hiện bên trong Entity)
-    if (dto.fullName) user.updateFullName(dto.fullName);
+    // 3. Khởi chạy Giao dịch an toàn (Transaction) được bao bọc cô lập bởi Unit of Work
+    await this._uow.runInTransaction(async () => {
+      // Khởi tạo mảng lưu trữ các tiến trình I/O nhằm kích hoạt tối ưu hóa chạy song song
+      const databaseOperations: Promise<unknown>[] = [
+        this._userRepo.updateUser(user), 
+      ];
 
-    // 2. Chạy Transaction
-    await this._prisma.$transaction(async (tx) => {
-      // Lưu thông tin cơ bản (Cần ép kiểu tx về Prisma.TransactionClient trong Repo update)
-      await this._userRepo.updateUser(user, tx);
-
-      // Đồng bộ hóa Role nếu Admin có gửi danh sách mới
+      // 4. Kiểm tra điều kiện đồng bộ hóa danh sách vai trò nếu Quản trị viên có cung cấp dữ liệu mới
       if (dto.roles) {
-        await this._userRoleRepo.syncUserRoles(userId, dto.roles, tx);
+        databaseOperations.push(
+          this._userRoleRepo.syncUserRoles(userId, dto.roles),
+        );
       }
+
+      // 5. Tối ưu hóa song song (Parallelism) - Kích hoạt thực thi đồng thời các câu lệnh ghi cơ sở dữ liệu
+      await Promise.all(databaseOperations);
     });
   }
 
@@ -208,7 +219,7 @@ export class UserService implements IUserService {
     userId: string,
     dto: ChangePasswordRequestDTO,
   ): Promise<IUserResponseDTO> {
-    // 1. Kiểm tra sự tồn tại của người dùng (Check user existence)
+    // 1. Kiểm tra sự tồn tại của người dùng
     // Chỉ cho phép người dùng đang hoạt động thực hiện đổi mật khẩu
     const user = await this._userRepo.findActiveById(userId);
     if (!user) {
@@ -216,7 +227,6 @@ export class UserService implements IUserService {
     }
 
     // 2. Rule 6: Rich Domain Model - Logic nghiệp vụ nằm trong Entity
-    // (Business logic resides in the Entity - Heavy Check)
     // Bao gồm so sánh mật khẩu cũ (bcrypt) và kiểm tra tính hợp lệ của mật khẩu mới
     await user.updatePassword(dto.oldPassword, dto.newPassword, bcrypt.compare);
 
@@ -231,7 +241,6 @@ export class UserService implements IUserService {
     await this._tokenManager.revokeTokenByPattern(userId);
 
     // 5. Trả về DTO thông qua Mapper để đảm bảo tính đóng gói
-    // (Return DTO via Mapper to ensure encapsulation)
     return UserMapper.toResponse(updatedUser);
   }
 
@@ -364,14 +373,16 @@ export class UserService implements IUserService {
   }
 
   /**
-   * @description Đăng ký người dùng mới, tự động gán vai trò STUDENT từ cache và lưu trữ.
-   * @param {User} user - Thực thể người dùng đã qua bước khởi tạo cơ bản.
-   * @returns {Promise<User>} Thực thể người dùng đã có đầy đủ thông tin vai trò và ID lưu trữ.
-   * @throws {AppError} AUTH.ROLES_NOT_INITIALIZED - Nếu dữ liệu vai trò STUDENT không tồn tại trong cache hệ thống.
+   * @description Tiếp nhận dữ liệu thô từ luồng đăng ký hợp lệ, phối hợp kiểm tra trùng lặp.
+   * @param {ICreateUserInput} input - Giao diện chứa thông tin cơ bản của người dùng đăng ký.
+   * @returns {Promise<User>} Thực thể người dùng hoàn chỉnh sau khi lưu trữ thành công vào MySQL.
    */
-  public async createUser(user: User): Promise<User> {
-    const roleData = this._cacheService.getRoleByName(UserRole.STUDENT);
+  public async createUser(input: ICreateUserInput): Promise<User> {
+    // 1. Kiểm tra tính duy nhất của tài khoản bằng hàm nội bộ song song (Tối ưu I/O)
+    await this.validateUserUniqueness(input.username, input.email);
 
+    // 2. Lấy dữ liệu cấu hình vai trò STUDENT từ cache hệ thống
+    const roleData = this._cacheService.getRoleByName(UserRole.STUDENT);
     if (!roleData) {
       throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);
     }
@@ -383,11 +394,97 @@ export class UserService implements IUserService {
       permissions: [],
     });
 
-    user.assignRole(defaultRole);
+    // 3. Khởi tạo Rich Domain Entity - Để Entity tự hash mật khẩu nội bộ theo đúng flow của dự án
+    const userEntity = await User.create({
+      username: input.username,
+      email: input.email,
+      fullName: input.fullName,
+      passwordPlain: input.passwordPlain,
+    });
 
-    const newUser = await this._userRepo.createUser(user);
+    // 4. Gán vai trò mặc định thông qua phương thức nghiệp vụ của Entity
+    userEntity.assignRole(defaultRole);
+
+    // 5. Hạ lệnh xuống Repository để lưu cấu trúc dữ liệu hoàn chỉnh xuống MySQL
+    const newUser = await this._userRepo.createUser(userEntity);
 
     return newUser;
+  }
+
+  /**
+   * @description Nghiệp vụ dành cho Admin khởi tạo một người dùng mới với danh sách quyền hạn tùy chọn, giao quyền mã hóa cho Entity.
+   * @param {AdminCreateUserRequestDTO} dto - Đối tượng DTO đầu vào đã qua bộ lọc tự kiểm tra dữ liệu sạch.
+   * @returns {Promise<IUserResponseDTO>} Đối tượng dữ liệu phản hồi sau khi qua lớp Mapper bảo mật.
+   * @throws {AppError} AUTH.USERNAME_ALREADY_EXISTS - Nếu tài khoản bị trùng.
+   * @throws {AppError} AUTH.EMAIL_ALREADY_EXISTS - Nếu email bị trùng.
+   * @throws {AppError} AUTH.ROLES_NOT_INITIALIZED - Nếu có vai trò truyền vào không tồn tại trong cache hệ thống.
+   */
+  public async adminCreateUser(
+    dto: AdminCreateUserRequestDTO,
+  ): Promise<IUserResponseDTO> {
+    // 1. Kiểm tra tính duy nhất của Username và Email thông qua hàm private song song (Tối ưu I/O)
+    await this.validateUserUniqueness(dto.username, dto.email);
+
+    // 2. Khởi tạo Rich Domain Entity - Truyền trực tiếp dữ liệu từ dto và để Entity tự thực hiện hash mật khẩu nội bộ
+    const userEntity = await User.create({
+      username: dto.username,
+      email: dto.email,
+      fullName: dto.fullName,
+      passwordPlain: dto.password,
+    });
+
+    // 3. Xử lý logic duyệt mảng và gán quyền hạn (Roles) do Admin chỉ định
+    dto.roles.forEach((roleId) => {
+      const roleData = this._cacheService.getRoleById(roleId);
+
+      if (!roleData) {
+        throw new AppError(ErrorCode.AUTH.ROLES_NOT_INITIALIZED);
+      }
+
+      const assignedRole = Role.reconstitute({
+        id: roleData.id,
+        name: roleData.name,
+        description: roleData.description,
+        permissions: [],
+      });
+
+      // Thực thi hành vi nghiệp vụ gán vai trò an toàn của Entity
+      userEntity.assignRole(assignedRole);
+    });
+
+    // 4. Hạ lệnh xuống Repository để thực hiện lưu trữ bản ghi mới kèm theo các bảng quan hệ vào MySQL
+    const newUser = await this._userRepo.createUser(userEntity);
+
+    // 5. Trả về Response DTO qua Mapper để lọc bỏ toàn bộ các trường nhạy cảm dữ liệu đầu ra
+    return UserMapper.toResponse(newUser);
+  }
+
+  /**
+   * @private
+   * @description Hàm bổ trợ nội bộ thực hiện kiểm tra song song tính duy nhất của Username và Email trong cơ sở dữ liệu.
+   * @param {string} username - Tên tài khoản người dùng cần kiểm tra.
+   * @param {string} email - Địa chỉ email cần kiểm tra.
+   * @returns {Promise<void>} Hoàn thành xử lý nếu dữ liệu là duy nhất và hợp lệ.
+   * @throws {AppError} AUTH.USERNAME_ALREADY_EXISTS - Nếu tên tài khoản đã tồn tại trên hệ thống.
+   * @throws {AppError} AUTH.EMAIL_ALREADY_EXISTS - Nếu địa chỉ email đã tồn tại trên hệ thống.
+   */
+  private async validateUserUniqueness(
+    username: string,
+    email: string,
+  ): Promise<void> {
+    // Tối ưu hóa song song (Parallelism) cho các tác vụ I/O truy vấn database để đạt hiệu năng tối đa
+    const [existingUsername, existingEmail] = await Promise.all([
+      this._userRepo.findByUsernameInSystem(username),
+      this._userRepo.findByEmailInSystem(email),
+    ]);
+
+    if (existingUsername) {
+      throw new AppError(ErrorCode.AUTH.USERNAME_ALREADY_EXISTS);
+    }
+
+    if (existingEmail) {
+      throw new AppError(ErrorCode.AUTH.EMAIL_ALREADY_EXISTS);
+    }
   }
 
   /**

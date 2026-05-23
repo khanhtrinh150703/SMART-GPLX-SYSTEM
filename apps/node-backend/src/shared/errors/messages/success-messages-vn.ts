@@ -39,6 +39,7 @@ export class Message {
     DELETE_SUCCESS: "Xóa tài khoản thành công.",
     RESTORE_SUCCESS: "Khôi phục tài khoản thành công",
     FETCH_USER: "Lấy danh sách người dùng thành công",
+    CREATED_SUCCESSFULLY: "Tạo tài khoản người dùng thành công."
   } as const;
 
   static readonly LICENSE = {

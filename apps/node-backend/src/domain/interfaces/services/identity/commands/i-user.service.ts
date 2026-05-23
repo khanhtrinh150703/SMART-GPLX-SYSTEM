@@ -6,6 +6,8 @@ import { UpdateAdminRequestDTO } from "@/application/dtos/request/user/update-ad
 import { ILoginResponseDTO } from "@/application/dtos/response/auth/auth.respone.dto";
 import { IDeleteResponseDTO } from "@/application/dtos/response/shared/delete.response.dto";
 import { IUserResponseDTO } from "@/application/dtos/response/user/user.respone.dto";
+import { AdminCreateUserRequestDTO } from "@/application/dtos/request/auth/admin-create-user.request.dto";
+import { ICreateUserInput } from "@/application/dtos/request/auth/create-user-request.dto";
 
 /**
  * @description Interface định nghĩa các nghiệp vụ cốt lõi quản lý người dùng (User Domain).
@@ -84,9 +86,15 @@ export interface IUserService {
 
   /**
    * @description Khởi tạo một người dùng mới vào hệ thống với các quyền mặc định.
-   * @param {Object} data - Dữ liệu khởi tạo người dùng cơ bản.
+   * @param {Object} input - Dữ liệu khởi tạo người dùng cơ bản.
    * @returns {Promise<User>} Thực thể User vừa được khởi tạo thành công.
    */
-  createUser(user: User): Promise<User>;
+  createUser(input: ICreateUserInput): Promise<User>;
 
+  /**
+   * @description Khởi tạo một người dùng mới vào hệ thống bởi Admin với các quyền mặc định.
+   * @param {AdminCreateUserRequestDTO} dto - Đối tượng dữ liệu (Data Transfer Object) chứa thông tin yêu cầu tạo người dùng.
+   * @returns {Promise<IUserResponseDTO>} Promise trả về đối tượng chứa thông tin người dùng đã được tạo thành công.
+   */
+  adminCreateUser(dto: AdminCreateUserRequestDTO): Promise<IUserResponseDTO>;
 }
