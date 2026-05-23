@@ -80,7 +80,12 @@ export default function RegisterForm() {
       </div>
 
       {errorMsg && (
-        <Alert intent="error" message={errorMsg} className="mb-3 text-xs" />
+        <Alert
+          intent="error"
+          message={errorMsg}
+          duration={10000}
+          className="mb-3 text-xs"
+        />
       )}
 
       {/* Thay space-y-3.5 thành space-y-3 để các ô khít nhau hơn nữa */}
