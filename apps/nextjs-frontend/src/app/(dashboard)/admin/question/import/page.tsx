@@ -301,7 +301,7 @@ export default function AdvancedImportPage() {
           intent={message.intent}
           message={message.text}
           onClose={() => setMessage(null)}
-          duration={30000}
+          duration={60000}
         />
       )}
 
